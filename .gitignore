@@ -1,0 +1,62 @@
+# === Secrets / env (NEVER commit) ===
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+
+# === MDD ephemeral ===
+.mdd/audits/
+.mdd/jobs/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# === Node / frontend ===
+node_modules/
+apps/frontend/dist/
+apps/frontend/.vite/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# === Tauri / Rust ===
+apps/desktop/target/
+target/
+Cargo.lock.orig
+
+# === ML artifacts / model weights (downloaded, never committed) ===
+# Root-anchored so they don't swallow source dirs like backend/app/datasets/.
+/models/
+/checkpoints/
+*.pt
+*.pth
+*.safetensors
+*.onnx
+.cache/
+hf_cache/
+
+# === Datasets (user data, never committed) ===
+/data/
+/datasets/
+*.db
+*.sqlite
+*.sqlite3
+
+# === OS / editor ===
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

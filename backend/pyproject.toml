@@ -1,0 +1,54 @@
+[project]
+name = "dinotraining-backend"
+version = "0.0.1"
+description = "FastAPI + PyTorch ML sidecar for DinoTraining (annotate / train / infer / generate)."
+requires-python = ">=3.11"
+readme = "../README.md"
+license = { text = "MIT" }
+dependencies = [
+    # --- API ---
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "python-multipart>=0.0.9",
+    # --- ML ---
+    # NOTE: install torch/torchvision per-platform (CUDA/MPS/CPU) — see project-docs.
+    "torch>=2.2",
+    "torchvision>=0.17",
+    "transformers>=4.44",       # Grounding DINO + DINOv2/v3 via AutoModel
+    "huggingface-hub>=0.24",    # model download manager (gated DINOv3 needs HF_TOKEN)
+    "pillow>=10.3",
+    "numpy>=1.26",
+    # --- Data / metadata ---
+    # SQLite via stdlib; SQLAlchemy optional if the store grows.
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"

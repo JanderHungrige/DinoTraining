@@ -1,0 +1,15 @@
+{
+  "autoDiscovery": true,
+  "stack": {
+    "language": ["python", "typescript"],
+    "runtime": ["python", "node", "rust"],
+    "frameworks": ["fastapi", "react", "tauri"],
+    "orm": ["sqlite"],
+    "auth": []
+  },
+  "overrides": {
+    "ml": ["pytorch", "transformers", "grounding-dino", "dinov2", "dinov3"]
+  },
+  "phaseLogging": true,
+  "securityScan": false
+}
