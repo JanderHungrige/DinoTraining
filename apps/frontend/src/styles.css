@@ -359,6 +359,102 @@ body {
   }
 }
 
+/* --- Annotation canvas --- */
+
+.canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.canvas__stage {
+  position: relative;
+  width: 100%;
+  height: min(62vh, 620px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  /* The stage is a drawing surface — a text cursor here is a lie. */
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.canvas__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.canvas__box {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.canvas__box--positive {
+  border-color: #4ade80;
+  background: rgb(74 222 128 / 12%);
+}
+
+.canvas__box--negative {
+  border-color: #f87171;
+  background: rgb(248 113 113 / 12%);
+}
+
+.canvas__box--unclear {
+  border-color: #fbbf24;
+  border-style: dashed;
+  background: rgb(251 191 36 / 12%);
+}
+
+.canvas__box--selected {
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgb(125 211 252 / 70%);
+}
+
+.canvas__boxtag {
+  position: absolute;
+  top: -1.35rem;
+  left: -2px;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: color-mix(in srgb, currentColor 85%, #000);
+  color: #06121f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.canvas__draft {
+  position: absolute;
+  border: 2px dashed var(--focus);
+  background: rgb(125 211 252 / 15%);
+  pointer-events: none;
+}
+
+.canvas__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.canvas__hint kbd {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-raised);
+  font-size: 0.75rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
