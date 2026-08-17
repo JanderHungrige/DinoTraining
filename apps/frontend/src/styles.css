@@ -170,6 +170,195 @@ body {
   color: var(--text-dim);
 }
 
+/* --- Admin / Models --- */
+
+.admin__title {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+.sysinfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.sysinfo__item--wide {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.sysinfo dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.sysinfo dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+}
+
+.sysinfo code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.admin__group {
+  margin-bottom: 2rem;
+}
+
+.admin__grouptitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.admin__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.admin__error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  color: var(--danger);
+}
+
+.modelcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.modelcard__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.modelcard__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modelcard__desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.modelcard__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  word-break: break-all;
+}
+
+.modelcard__reason {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--pending);
+}
+
+.modelcard__actions {
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.modelcard__progresstext {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.badge {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge--installed {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+.badge--gated {
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
+}
+
+.btn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.progress__bar--indeterminate {
+  width: 35%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
