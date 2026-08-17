@@ -2,12 +2,12 @@
 id: dinotraining-wave-2
 title: "Wave 2: Head Trainer"
 initiative: dinotraining
-initiative_version: 4
+initiative_version: 5
 status: in_progress
 depends_on: dinotraining-wave-1
-demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any compatible community head they imported) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved best checkpoint that records what task and datasets it was trained on."
+demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training."
 created: 2026-08-14
-hash: 387dd20e
+hash: 5365e309
 ---
 
 # Wave 2: Head Trainer
@@ -16,13 +16,17 @@ hash: 387dd20e
 
 In the **Head Trainer** tab the user selects one or more datasets built in Wave 1, chooses
 a head type — **classification, object detection or segmentation** built in, plus any
-**community head** they imported that is compatible with their backbone — and a training
+**default or community head** compatible with their backbone — and a training
 setup with sensible defaults (save-best-only, train/val/test split, epochs, batch size, lr,
 early stopping). Preprocessing is chosen internally from the backbone + head. The backbone
 stays frozen; only the head trains. Training runs on the local device via a pluggable job
-runner, streaming live loss/metric charts, and produces a saved best checkpoint registered
+runner, streaming live loss/metric charts, and produces a saved head instance registered
 with full provenance — task, backbone version, datasets, classes and metrics — so Waves 3
 and 4 can present it by what it does rather than by filename.
+
+Separately and without any training, the user can download **pretrained default heads** for
+classification, segmentation and depth and use them straight away — which is what makes
+segmentation and depth useful before the app can train them.
 *(Not complete until this can be manually demonstrated.)*
 
 ## Features (draft — refined in plan-wave)
@@ -34,10 +38,10 @@ and 4 can present it by what it does rather than by filename.
 | 3 | head-implementations | — | planned | head-registry |
 | 4 | preprocessing-pipeline | — | planned | head-registry |
 | 5 | training-job-runner | — | planned | head-implementations, preprocessing-pipeline |
-| 6 | checkpoint-registry | — | planned | training-job-runner, head-registry |
+| 6 | head-instance-registry | — | planned | training-job-runner, head-registry |
 | 7 | training-metrics-stream | — | planned | training-job-runner |
 | 8 | trainer-config-ui | — | planned | head-registry, training-job-runner |
-| 9 | community-head-import | — | planned | head-registry, checkpoint-registry |
+| 9 | head-catalog-import | — | planned | head-registry, head-instance-registry |
 
 ### Feature notes
 
@@ -55,31 +59,60 @@ and 4 can present it by what it does rather than by filename.
   Everything downstream — trainer, metrics stream, checkpoint format, inference viewer,
   generator — dispatches off this contract. Adding a head type must never require touching
   the training loop.
-- **Built-in head types this wave: classification, object detection, segmentation.**
-  Detection uses an **anchor-free dense head** (FCOS/CenterNet-style, per-patch classification
+- **Usable and trainable are two independent axes.** A head type declares both. *Usable*
+  means it can run for inference right now; *trainable* means this app can fine-tune it,
+  which requires targets the Annotation Studio can actually produce. Conflating the two is
+  what wrongly deferred depth. The registry must not assume a training loop exists for every
+  head type — depth is the deliberate proof of that.
+
+| Head type | Usable (inference) | Trainable in-app | Targets come from |
+|---|---|---|---|
+| classification | ✅ default head | ✅ | Wave 1 labels |
+| object detection | train your own | ✅ | Wave 1 boxes |
+| segmentation | ✅ default head | ✅ once masks exist | user-brought masks now; SAM in Wave 4 |
+| depth | ✅ default head | ❌ for now | — (inference-only) |
+
+- **Head *types* vs head *instances*.** The registry holds types; what the user picks anywhere
+  in the app is an *instance*, carrying a provenance `kind`:
+  `pretrained-default` | `community` | `trained-here`. One descriptor, one picker contract,
+  every tab. "Compare several heads on the same task" is then just listing instances filtered
+  by task — no separate mechanism.
+- Detection uses an **anchor-free dense head** (FCOS/CenterNet-style, per-patch classification
   + box regression on the ViT patch grid, NMS at inference). Segmentation is included
   deliberately as the first *dense per-pixel* task, to prove the registry contract against a
   genuinely different output shape rather than two near-identical box/label tasks.
-  **Depth is deferred** — it needs a data path the Annotation Studio does not produce and its
-  own eval story; it lands later as an additional registry entry, additively.
-- **community-head-import:** users can add third-party heads that fit their backbone.
-  **Safetensors only, from a HuggingFace repo id — `.pt`/`.pth` pickle checkpoints are
-  refused outright**, since `torch.load` on a pickle is arbitrary code execution and this app
-  is installed by strangers. Each community head requires a manifest declaring backbone
-  version, patch size, embed dim and task; the import validates it against the backbone
-  capability descriptor and explains *why* a head is incompatible rather than just greying it
-  out. Guide the user: show which of their downloaded backbones a head would work with.
+- **Default heads make segmentation and depth useful before they are trainable.** DINOv2
+  publishes linear evaluation heads for classification, segmentation (ADE20k) and depth
+  (NYUd) under Apache-2.0, plus a Mask2Former segmentation model. Those are the defaults.
+  **Detection has no official DINOv2 head** — which is fine, since detection is the one task
+  Wave 1 already produces targets for, so it is train-your-own from the start.
+- **head-catalog-import** covers *both* first-party defaults and community heads — one code
+  path, since both are "fetch a head, validate it against the backbone, register an instance".
+  - **⚠ The official DINOv2 heads are distributed as `.pth` (mmcv/mmsegmentation) — pickles.**
+    That collides head-on with the safetensors-only rule. Resolution: the rule governs
+    *untrusted user-supplied* imports. First-party defaults live in a **curated catalog with
+    pinned SHA-256 digests**, are verified against the digest, and are converted to
+    safetensors once on download. The pickle path is never reachable from user input.
+  - **Community imports: safetensors from a HuggingFace repo id only. `.pt`/`.pth` refused
+    outright**, since `torch.load` on a pickle is arbitrary code execution and this app is
+    installed by strangers.
+  - Every head requires a manifest declaring backbone version, patch size, embed dim and task,
+    validated against the backbone capability descriptor. When incompatible, explain *why*
+    rather than just greying it out, and show which of the user's downloaded backbones the
+    head would work with.
 - Training config with good defaults: split method, save-best-only, epochs, lr, batch,
   early stopping, augmentation on/off.
 - Job runner interface (local now) designed so a remote/hyperscaler runner drops in later
   (Wave 6).
 - Live metrics streamed to the UI (WebSocket/SSE) with loss + the metric set the head's
   registry entry declares (acc / mAP / mIoU / …) — the stream must not hardcode metric names.
-- **Checkpoint provenance is a hard requirement, not a nice-to-have.** Every registered
-  checkpoint records: head type, backbone version it was trained against, the datasets and
-  class list used, the training config, and its best metrics. Waves 3 and 4 present heads to
-  the user by *what they do and what they were trained on* — never by filename. This
-  descriptor is the cross-tab contract for the whole rest of the initiative.
+- **Head-instance provenance is a hard requirement, not a nice-to-have.** Every registered
+  instance records: `kind`, head type/task, backbone version it targets, and — for
+  `trained-here` — the datasets and class list used, the training config and its best
+  metrics. For `pretrained-default` and `community`, it records the source repo, digest and
+  whatever the upstream manifest declares it was trained on (e.g. "ADE20k, 150 classes").
+  Waves 3 and 4 present heads by *what they do and what they were trained on* — never by
+  filename. This descriptor is the cross-tab contract for the whole rest of the initiative.
 
 ## Open Research
 
@@ -90,8 +123,14 @@ and 4 can present it by what it does rather than by filename.
 - Metric set + charts per head type; best-model selection criterion (declared by the head's
   registry entry, not hardcoded in the trainer or the chart component).
 - Reproducibility: seeds, config snapshot saved alongside each checkpoint.
-- Segmentation targets from Wave 1 data: the Annotation Studio produces boxes, not masks —
-  decide whether segmentation trains on box-derived weak masks, or requires a mask-capable
-  dataset the user brings. Resolve before feature 3 (head-implementations).
+- ~~Segmentation targets from Wave 1 data~~ → **resolved 2026-08-17**: segmentation is
+  *usable* immediately via the pretrained default head, and *trainable* from a user-brought
+  mask dataset. **SAM lands in Wave 4** to generate masks in-app, at which point segmentation
+  becomes trainable end-to-end from the Annotation Studio. Same shape for depth: default head
+  now, trainable later or never. No box-derived weak masks.
+- Exact default-head weights + digests to pin per backbone version (DINOv2 sizes; DINOv3 may
+  have no published heads at all — check before promising defaults for it).
+- Whether DINOv3 default heads exist under a licence compatible with redistribution, given
+  the model itself is gated.
 - Which community heads actually exist as safetensors for DINOv2/v3 today — needed to make
   the import guidance concrete rather than theoretical.
