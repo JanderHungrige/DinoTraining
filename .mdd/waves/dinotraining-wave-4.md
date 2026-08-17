@@ -2,12 +2,12 @@
 id: dinotraining-wave-4
 title: "Wave 4: Dataset Generator (Expert-Head Auto-Annotation)"
 initiative: dinotraining
-initiative_version: 1
+initiative_version: 4
 status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head."
 created: 2026-08-14
-hash: ef4d9dfb
+hash: e6763c87
 ---
 
 # Wave 4: Dataset Generator (Expert-Head Auto-Annotation)
@@ -37,6 +37,9 @@ to train the next head. This closes the annotate→train→generate data flywhee
 - active-learning-hints (optional): surface low-confidence / disagreement items first.
 - generated-dataset-writer: write reviewed results via the Wave 1 dataset-store, tagged with
   provenance (which head/version produced them).
+- **Expert-head selection uses the same Wave 2 provenance descriptor as Wave 3** — one shared
+  head-picker contract across both tabs, listing task, datasets, classes and metrics. Review
+  UX adapts to the head's render hint (box review vs. mask review).
 
 ## Open Research
 

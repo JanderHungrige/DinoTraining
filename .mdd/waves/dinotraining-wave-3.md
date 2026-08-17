@@ -2,12 +2,12 @@
 id: dinotraining-wave-3
 title: "Wave 3: Inference Viewer"
 initiative: dinotraining
-initiative_version: 1
+initiative_version: 4
 status: planned
 depends_on: dinotraining-wave-2
 demo_state: "User loads an image or webcam/video, selects a backbone + trained head(s), and sees original vs. annotated results side-by-side in real time."
 created: 2026-08-14
-hash: 7e6b76de
+hash: c276124c
 ---
 
 # Wave 3: Inference Viewer
@@ -37,6 +37,10 @@ whatever the head produces) are shown side-by-side, updating in real time for st
 - Compose multiple heads (e.g. several expert detectors) over one backbone pass.
 - Video/webcam capture with a target FPS and frame-drop handling.
 - Side-by-side original vs. result, overlay renderer shared with the annotation canvas.
+- **Head selection consumes the Wave 2 checkpoint provenance descriptor**: heads are listed
+  by task, training datasets, class list and metrics — never by bare filename. The overlay
+  renderer dispatches off the head's registry render hint (boxes / labels / masks / …), so a
+  head type added to the registry later renders here without changing this wave's code.
 
 ## Open Research
 

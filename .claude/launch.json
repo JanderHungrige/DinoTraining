@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "apps/frontend"],
+      "name": "web",
+      "runtimeExecutable": "./scripts/dev.sh",
+      "runtimeArgs": ["web"],
       "port": 1420
     }
   ]
