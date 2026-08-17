@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-1
 demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training."
 created: 2026-08-14
-hash: 5365e309
+hash: e3edfe03
 ---
 
 # Wave 2: Head Trainer
@@ -33,7 +33,7 @@ segmentation and depth useful before the app can train them.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | backbone-feature-extractor | — | planned | — |
+| 1 | backbone-feature-extractor | [07](../docs/07-backbone-feature-extractor.md) | complete | — |
 | 2 | head-registry | — | planned | backbone-feature-extractor |
 | 3 | head-implementations | — | planned | head-registry |
 | 4 | preprocessing-pipeline | — | planned | head-registry |
@@ -100,6 +100,13 @@ segmentation and depth useful before the app can train them.
     validated against the backbone capability descriptor. When incompatible, explain *why*
     rather than just greying it out, and show which of the user's downloaded backbones the
     head would work with.
+- **preprocessing-pipeline must be task-aware, and this is not optional.** Found while
+  verifying feature 1 against real weights: the stock DINOv2 `AutoImageProcessor` does
+  `resize(shortest_edge=256)` + `center_crop(224)`, so a 200×900 image is reduced to its
+  middle square. Fine for classification, silently destructive for detection and
+  segmentation — annotations outside the crop disappear and training loss still looks
+  healthy. Dense tasks need aspect-preserving resize/pad, and **targets must be
+  transformed alongside the image**, not independently.
 - Training config with good defaults: split method, save-best-only, epochs, lr, batch,
   early stopping, augmentation on/off.
 - Job runner interface (local now) designed so a remote/hyperscaler runner drops in later
