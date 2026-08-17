@@ -36,10 +36,15 @@ async def client(cache_dir: Path) -> AsyncGenerator[AsyncClient, None]:
 
 
 def install(cache_dir: Path, model_id: str, size: int = 2048) -> Path:
-    """Fake an installed model on disk."""
+    """Fake an installed model on disk.
+
+    Must include a weights file: is_installed() deliberately ignores config-only
+    directories, because that is what a download looks like mid-flight.
+    """
     directory = cache_dir / model_id
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / "config.json").write_bytes(b"x" * size)
+    (directory / "config.json").write_text("{}")
+    (directory / "model.safetensors").write_bytes(b"x" * size)
     return directory
 
 

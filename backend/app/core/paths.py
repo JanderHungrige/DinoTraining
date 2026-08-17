@@ -76,9 +76,23 @@ def directory_size_bytes(path: Path) -> int:
     return total
 
 
+# What an actual set of model weights looks like on disk.
+WEIGHT_SUFFIXES = frozenset({".safetensors", ".bin", ".pth", ".pt", ".onnx", ".msgpack"})
+
+
 def is_installed(path: Path) -> bool:
-    """A model counts as installed only when its directory has content."""
-    return path.is_dir() and any(path.iterdir())
+    """A model counts as installed only once its *weights* are on disk.
+
+    Checking for a merely non-empty directory reports success the moment
+    ``snapshot_download`` writes ``config.json`` — while several hundred MB of
+    weights are still in flight. That made the catalogue show "Installed" mid
+    download, 409 a retry, and hand the loader a half-written model.
+    """
+    if not path.is_dir():
+        return False
+    return any(
+        entry.is_file() and entry.suffix.lower() in WEIGHT_SUFFIXES for entry in path.iterdir()
+    )
 
 
 def free_disk_bytes(path: Path) -> int:

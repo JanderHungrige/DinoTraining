@@ -104,6 +104,25 @@ class TestDirectoryInspection:
     def test_missing_directory_is_not_installed(self, tmp_path: Path) -> None:
         assert is_installed(tmp_path / "absent") is False
 
-    def test_directory_with_content_is_installed(self, tmp_path: Path) -> None:
+    def test_directory_with_weights_is_installed(self, tmp_path: Path) -> None:
         (tmp_path / "config.json").write_text("{}")
+        (tmp_path / "model.safetensors").write_bytes(b"weights")
         assert is_installed(tmp_path) is True
+
+    def test_config_without_weights_is_not_installed(self, tmp_path: Path) -> None:
+        """Regression: snapshot_download writes config.json first, then the weights.
+
+        Treating that as installed made the catalogue claim "Installed" while a
+        690 MB download was still running, and 409'd the retry.
+        """
+        (tmp_path / "config.json").write_text("{}")
+        (tmp_path / "tokenizer.json").write_text("{}")
+        assert is_installed(tmp_path) is False
+
+    def test_a_pytorch_bin_also_counts(self, tmp_path: Path) -> None:
+        (tmp_path / "pytorch_model.bin").write_bytes(b"weights")
+        assert is_installed(tmp_path) is True
+
+    def test_the_hf_cache_subdir_alone_is_not_installed(self, tmp_path: Path) -> None:
+        (tmp_path / ".cache").mkdir()
+        assert is_installed(tmp_path) is False

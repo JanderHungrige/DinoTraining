@@ -36,3 +36,22 @@ def _isolate_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _no_real_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail loudly if a test reaches the real snapshot_download.
+
+    A test that falls through to the real thing quietly pulls hundreds of MB and
+    makes the suite depend on the network. Tests that exercise the download path
+    override this with their own patch.
+    """
+    import huggingface_hub
+
+    def _blocked(*args: object, **kwargs: object) -> None:
+        raise AssertionError(
+            "Test attempted a real huggingface_hub.snapshot_download. "
+            "Patch it in the test instead."
+        )
+
+    monkeypatch.setattr(huggingface_hub, "snapshot_download", _blocked)
