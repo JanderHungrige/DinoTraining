@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 1
-hash: 845b3fcd
+version: 2
+hash: 76c5a76d
 created: 2026-08-14
 ---
 
@@ -53,10 +53,11 @@ as a swappable job runner so hyperscaler GPUs can be added later.
 - [x] Compute target → local now, cloud-ready job runner for later
 - [x] Repo → public `JanderHungrige/DinoTraining`, `main` + `dev`
 - [x] Model set → DINOv2 + DINOv3 (gated) + Grounding DINO from the start
-- [ ] Dataset on-disk format: adopt an existing standard (COCO JSON / YOLO txt) or a
-      DinoTraining-native format? (Wave 1 decides; leaning COCO-compatible + native sidecar)
-- [ ] DINOv3 gated access: bundle a HF-token setup flow in the admin tab — how to handle a
-      user without access (graceful fallback to DINOv2)?
+- [x] Dataset on-disk format → COCO JSON export + native `dataset.json` sidecar. COCO
+      cannot express `unclear`, box provenance, or the prompt, so the native side is the
+      source of truth and COCO is a generated export of positives only. (Wave 1)
+- [x] DINOv3 gated access → offered but marked unavailable without a token, with a
+      per-model licence link; DINOv2 stays fully usable tokenless. (Wave 1)
 - [ ] Detection head approach on a frozen DINO backbone (e.g. simple DETR-style / linear +
       anchor head) — pick in Wave 2 research.
 - [ ] Code-signing / notarization for macOS + Windows installers (Wave 5).
@@ -66,7 +67,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
 
 | Wave | File | Demo-state | Status |
 |------|------|------------|--------|
-| Wave 1 | waves/dinotraining-wave-1.md | User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab. | planned |
+| Wave 1 | waves/dinotraining-wave-1.md | User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab. | complete |
 | Wave 2 | waves/dinotraining-wave-2.md | User selects datasets + head type + training config (good defaults), starts training on the local device, watches live loss/metrics, and gets a saved best checkpoint. | planned |
 | Wave 3 | waves/dinotraining-wave-3.md | User loads an image or webcam/video, selects a backbone + trained head(s), and sees original vs. annotated results side-by-side in real time. | planned |
 | Wave 4 | waves/dinotraining-wave-4.md | User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. | planned |

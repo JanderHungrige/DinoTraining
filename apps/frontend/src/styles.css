@@ -455,6 +455,159 @@ body {
   font-size: 0.75rem;
 }
 
+/* --- Annotation studio --- */
+
+.studio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.studio__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.studio__title {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.studio__lead {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--text-dim);
+}
+
+.studio__path {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+.studio__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.studio__spacer {
+  flex: 1;
+}
+
+.btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- Setup form --- */
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 900px;
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.setup__row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.setup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 200px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.setup__field--grow {
+  flex: 1;
+  min-width: 260px;
+}
+
+.setup__control {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.setup__control input {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup__value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.setup input[type='text'],
+.setup select {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+/* --- Counters --- */
+
+.counters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.counters strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.counters__item--positive strong {
+  color: #4ade80;
+}
+
+.counters__item--negative strong {
+  color: #f87171;
+}
+
+.counters__item--unclear strong {
+  color: #fbbf24;
+}
+
+.counters__dirty {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
