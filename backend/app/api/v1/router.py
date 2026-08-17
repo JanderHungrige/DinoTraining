@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1 import health, models, system
+from app.api.v1 import datasets, health, models, system
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(models.router, tags=["models"])
 api_router.include_router(system.router, tags=["system"])
+api_router.include_router(datasets.router, tags=["datasets"])

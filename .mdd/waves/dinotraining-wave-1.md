@@ -7,7 +7,7 @@ status: in_progress
 depends_on: none
 demo_state: "User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab."
 created: 2026-08-14
-hash: f44a6e72
+hash: e2d87165
 ---
 
 # Wave 1: App Shell, Annotation Studio & Model Admin
@@ -28,7 +28,7 @@ A counter shows images processed and per-label counts.
 |---|---------|-----|--------|------------|
 | 1 | app-shell | .mdd/docs/01-app-shell.md | complete | — |
 | 2 | model-manager | .mdd/docs/02-model-manager.md | complete | app-shell |
-| 3 | dataset-store | — | planned | app-shell |
+| 3 | dataset-store | .mdd/docs/03-dataset-store.md | complete | app-shell |
 | 4 | grounding-dino-annotator | — | planned | model-manager, dataset-store |
 | 5 | annotation-canvas | — | planned | app-shell |
 | 6 | annotation-workflow | — | planned | annotation-canvas, grounding-dino-annotator, dataset-store |
