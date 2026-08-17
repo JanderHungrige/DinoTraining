@@ -3,11 +3,11 @@ id: dinotraining-wave-1
 title: "Wave 1: App Shell, Annotation Studio & Model Admin"
 initiative: dinotraining
 initiative_version: 1
-status: planned
+status: complete
 depends_on: none
 demo_state: "User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab."
 created: 2026-08-14
-hash: 2b64cea8
+hash: 524ae62a
 ---
 
 # Wave 1: App Shell, Annotation Studio & Model Admin
@@ -26,12 +26,12 @@ A counter shows images processed and per-label counts.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | app-shell | — | planned | — |
-| 2 | model-manager | — | planned | app-shell |
-| 3 | dataset-store | — | planned | app-shell |
-| 4 | grounding-dino-annotator | — | planned | model-manager, dataset-store |
-| 5 | annotation-canvas | — | planned | app-shell |
-| 6 | annotation-workflow | — | planned | annotation-canvas, grounding-dino-annotator, dataset-store |
+| 1 | app-shell | .mdd/docs/01-app-shell.md | complete | — |
+| 2 | model-manager | .mdd/docs/02-model-manager.md | complete | app-shell |
+| 3 | dataset-store | .mdd/docs/03-dataset-store.md | complete | app-shell |
+| 4 | grounding-dino-annotator | .mdd/docs/04-grounding-dino-annotator.md | complete | model-manager, dataset-store |
+| 5 | annotation-canvas | .mdd/docs/05-annotation-canvas.md | complete | app-shell |
+| 6 | annotation-workflow | .mdd/docs/06-annotation-workflow.md | complete | annotation-canvas, grounding-dino-annotator, dataset-store |
 
 ### Feature notes
 
