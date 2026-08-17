@@ -3,11 +3,11 @@ id: dinotraining-wave-1
 title: "Wave 1: App Shell, Annotation Studio & Model Admin"
 initiative: dinotraining
 initiative_version: 1
-status: planned
+status: in_progress
 depends_on: none
 demo_state: "User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab."
 created: 2026-08-14
-hash: 2b64cea8
+hash: 7d46a9a2
 ---
 
 # Wave 1: App Shell, Annotation Studio & Model Admin
@@ -26,7 +26,7 @@ A counter shows images processed and per-label counts.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | app-shell | — | planned | — |
+| 1 | app-shell | .mdd/docs/01-app-shell.md | complete | — |
 | 2 | model-manager | — | planned | app-shell |
 | 3 | dataset-store | — | planned | app-shell |
 | 4 | grounding-dino-annotator | — | planned | model-manager, dataset-store |

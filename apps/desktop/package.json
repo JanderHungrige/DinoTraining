@@ -1,0 +1,14 @@
+{
+  "name": "@dinotraining/desktop",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Tauri shell hosting the DinoTraining UI and the FastAPI sidecar.",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4"
+  }
+}

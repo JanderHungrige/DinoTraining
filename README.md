@@ -4,9 +4,9 @@ A sharable, installable desktop app for the full computer-vision data loop:
 **annotate → train → infer → generate more data**, built around DINOv2 / DINOv3
 backbones and Grounding DINO open-vocabulary detection.
 
-> Status: 🏗️ **Planning / scaffolding** — see [`.mdd/`](.mdd/) for the full initiative
-> and wave plan. No application code yet; this repo currently holds the plan, project
-> structure, and standards.
+> Status: 🏗️ **Wave 1 in progress** — the app shell runs: a Tauri window hosting the
+> React tabbed UI, with the FastAPI sidecar spawned and health-checked at startup.
+> The Studio and Admin tabs are still stubs. See [`.mdd/`](.mdd/) for the wave plan.
 
 ## What it does
 
@@ -61,6 +61,40 @@ backend/           FastAPI + PyTorch ML service
 project-docs/      architecture & design notes
 scripts/           dev / build / release scripts
 .mdd/              Manual-Driven Development plan (initiative + waves)
+```
+
+## Getting started
+
+Prerequisites: **Python 3.11+** (3.12 recommended), **Node 22 LTS or 24+**, **Rust 1.85+**.
+
+```bash
+git clone https://github.com/JanderHungrige/DinoTraining
+cd DinoTraining
+cp .env.example .env            # add HF_TOKEN only if you need gated DINOv3
+
+# Backend
+python3.12 -m venv backend/.venv
+source backend/.venv/bin/activate
+pip install -e "backend[dev]"
+
+# Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
+npm install --prefix apps/frontend --legacy-peer-deps
+```
+
+Then run whichever loop you need:
+
+```bash
+./scripts/dev.sh            # full desktop app — Tauri window + Vite + backend
+./scripts/dev.sh web        # browser-only at localhost:1420 (no Rust build — fastest loop)
+./scripts/dev.sh backend    # backend alone on 127.0.0.1:8756
+```
+
+Quality gates, all of which must be clean before a feature is done:
+
+```bash
+(cd backend && pytest && ruff check . && mypy app tests)
+npm run test --prefix apps/frontend && npm run typecheck --prefix apps/frontend
+(cd apps/desktop/src-tauri && cargo clippy --all-targets)
 ```
 
 ## Development plan
