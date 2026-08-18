@@ -17,10 +17,10 @@ import torch
 from app.datasets.store import DatasetStore
 from app.ml.backbone import BackboneCapabilities, load_backbone, read_capabilities
 from app.ml.heads.builders import build_head
+from app.ml.heads.decode import decode_for
 from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.preprocess import plan_preprocessing
 from app.ml.training.config import TrainingConfig, split_indices
-from app.ml.training.decode import decode_for
 from app.ml.training.job import EpochRecord, JobState, TrainingJob
 from app.ml.training.loop import evaluate, is_better, precompute_cache, run_epoch
 from app.ml.training.losses import loss_for

@@ -1,11 +1,16 @@
-"""Turning raw head outputs into what metrics consume, keyed by head type.
+"""Turning raw head outputs into consumable predictions, keyed by head type.
 
-A third registry alongside losses and metrics, for the same reason: the loop must not
-branch on task. Classification and segmentation metrics read logits directly, so their
-entries are the identity; detection needs its per-cell predictions decoded into boxes.
+A registry alongside losses and metrics, for the same reason: no consumer branches on
+task. Classification and segmentation read logits directly, so their entries are the
+identity; detection needs its per-cell predictions decoded into boxes.
 
 The decode happens here and only here — `decode_ltrb_to_boxes` owns the xywh convention,
 so nothing downstream re-derives it.
+
+**Lives under `heads/`, not `training/`.** It is keyed by head-type id and imports only
+from `heads.*`. It began life in the training package when the loop was its only caller;
+`16-inference-engine` is the second, and an inference module importing from `training`
+would misdescribe the dependency.
 """
 
 from __future__ import annotations
@@ -58,6 +63,17 @@ DECODERS: dict[str, DecodeFn] = {
     "linear-classifier": identity_decode,
     "dense-detector": detection_decode,
     "linear-segmenter": identity_decode,
+    # --- non-trainable head types (added by doc 16) ------------------------------
+    # These had no entry while the table lived under training/: the loop only ever
+    # asks for trainable heads, so it was complete for that caller. Inference must
+    # serve all seven, and the four below include every pretrained default — i.e.
+    # exactly the heads Wave 3 nominates as its smoke test. All are identity:
+    # classification and segmentation consumers read logits, and both depth heads
+    # already emit metres from their own forward.
+    "linear-depth": identity_decode,
+    "dinov2-linear-classifier-in1k": identity_decode,
+    "dinov2-linear-segmenter-ade20k": identity_decode,
+    "dinov2-linear-depth-nyu": identity_decode,
 }
 
 

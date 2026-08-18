@@ -173,6 +173,9 @@ def transform_boxes(
 ) -> tuple[list[Box], list[int]]:
     """Move xywh boxes into the transformed frame, clipping to the canvas.
 
+    The inverse — predictions in the frame back onto the source image — is
+    ``app.ml.inference.geometry.invert_boxes``. Edit one, look at the other.
+
     Returns the surviving boxes **and their original indices**. The indices are not
     bookkeeping: dropping a box without dropping its label silently misaligns every
     remaining label in that sample, which is unrecoverable downstream.
