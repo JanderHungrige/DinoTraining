@@ -1,8 +1,8 @@
 ---
 generated: 2026-08-18
-doc_count: 16
-connection_count: 34
-overlap_count: 13
+doc_count: 22
+connection_count: 46
+overlap_count: 22
 ---
 
 # Connections
@@ -12,6 +12,18 @@ overlap_count: 13
 ```
 Admin/Models
 └── Models  02-model-manager  complete
+Inference/Compare
+└── Compare  21-same-task-head-compare  complete
+Inference/Compose
+└── Compose  18-multi-head-compose  complete
+Inference/Engine
+└── Engine  16-inference-engine  complete
+Inference/Input
+└── Input  17-image-input-source  complete
+Inference/Overlay
+└── Overlay  20-inference-overlay-render  complete
+Inference/Viewer
+└── Viewer  19-side-by-side-viewer  complete
 Meta/Schema
 └── Schema  00-frontmatter-spec  complete
 Platform/Datasets
@@ -59,6 +71,12 @@ graph TD
     D13["13-training-metrics-stream"]:::complete
     D14["14-trainer-config-ui"]:::complete
     D15["15-head-catalog-import"]:::complete
+    D16["16-inference-engine"]:::complete
+    D17["17-image-input-source"]:::complete
+    D18["18-multi-head-compose"]:::complete
+    D19["19-side-by-side-viewer"]:::complete
+    D20["20-inference-overlay-render"]:::complete
+    D21["21-same-task-head-compare"]:::complete
     D01 --> D02
     D01 --> D03
     D02 --> D04
@@ -93,6 +111,18 @@ graph TD
     D08 --> D15
     D09 --> D15
     D12 --> D15
+    D07 --> D16
+    D08 --> D16
+    D09 --> D16
+    D10 --> D16
+    D12 --> D16
+    D16 --> D17
+    D16 --> D18
+    D17 --> D19
+    D18 --> D20
+    D19 --> D20
+    D18 --> D21
+    D20 --> D21
     classDef complete fill:#00e5cc,color:#000
     classDef in_progress fill:#ffaa00,color:#000
     classDef draft fill:#888,color:#fff
@@ -103,17 +133,26 @@ graph TD
 
 - `apps/frontend/src/api/client.ts` — 01-app-shell, 13-training-metrics-stream
 - `apps/frontend/src/api/headInstances.ts` — 12-head-instance-registry, 15-head-catalog-import
+- `apps/frontend/src/api/inference.ts` — 17-image-input-source, 20-inference-overlay-render
 - `apps/frontend/src/api/types.ts` — 01-app-shell, 07-backbone-feature-extractor
-- `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import
+- `apps/frontend/src/components/HeadRunPanel.tsx` — 20-inference-overlay-render, 21-same-task-head-compare
+- `apps/frontend/src/components/SessionSetup.tsx` — 06-annotation-workflow, 17-image-input-source
+- `apps/frontend/src/components/SideBySideViewer.tsx` — 19-side-by-side-viewer, 21-same-task-head-compare
+- `apps/frontend/src/hooks/useHeadRun.ts` — 20-inference-overlay-render, 21-same-task-head-compare
+- `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare
 - `apps/frontend/src/tabs/AdminTab.tsx` — 01-app-shell, 02-model-manager, 15-head-catalog-import
 - `apps/frontend/src/tabs/AnnotationStudioTab.tsx` — 01-app-shell, 06-annotation-workflow
 - `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui
-- `backend/app/api/v1/router.py` — 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import
+- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare
+- `backend/app/api/v1/inference.py` — 16-inference-engine, 17-image-input-source, 18-multi-head-compose
+- `backend/app/api/v1/router.py` — 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import, 16-inference-engine
 - `backend/app/datasets/db.py` — 03-dataset-store, 12-head-instance-registry
 - `backend/app/ml/heads/builders.py` — 09-head-implementations, 15-head-catalog-import
 - `backend/app/ml/heads/registry.py` — 08-head-registry, 15-head-catalog-import
+- `backend/app/ml/inference/engine.py` — 16-inference-engine, 18-multi-head-compose, 20-inference-overlay-render
+- `backend/app/ml/preprocess.py` — 10-preprocessing-pipeline, 16-inference-engine
 - `backend/app/ml/training/job.py` — 11-training-job-runner, 13-training-metrics-stream
-- `backend/app/ml/training/runner.py` — 11-training-job-runner, 13-training-metrics-stream
+- `backend/app/ml/training/runner.py` — 11-training-job-runner, 13-training-metrics-stream, 16-inference-engine
 
 ## Warnings
 

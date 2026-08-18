@@ -10,8 +10,8 @@ from __future__ import annotations
 import pytest
 import torch
 
-from app.ml.heads.registry import all_head_types, get_head_type
-from app.ml.training.decode import MAX_DETECTIONS, decode_for, detection_decode
+from app.ml.heads.decode import DECODERS, MAX_DETECTIONS, decode_for, detection_decode
+from app.ml.heads.registry import HeadTypeSpec, all_head_types, get_head_type
 
 
 def spec_for(head_id: str):  # type: ignore[no-untyped-def]
@@ -29,6 +29,17 @@ def detector_outputs(rows: int = 4, cols: int = 4, num_classes: int = 3) -> dict
 
 
 class TestDecoderRegistry:
+    def test_every_head_type_has_a_decoder(self) -> None:
+        """All seven, not just the trainable three.
+
+        The table covered only trainable heads while it lived under training/, because
+        the loop is the only caller that filters that way. Inference serves every usable
+        head — including the pretrained defaults — so a missing entry is now a crash in
+        the viewer rather than an unreachable branch.
+        """
+        missing = [entry.id for entry in all_head_types() if entry.id not in DECODERS]
+        assert missing == []
+
     def test_every_trainable_head_has_a_decoder(self) -> None:
         """A missing decoder is a runtime failure at the first validation epoch."""
         for entry in all_head_types():
@@ -89,7 +100,27 @@ class TestDetectionDecode:
         assert bool((decoded["boxes"][:, 3] > 0).all())
 
     def test_unknown_head_type_raises(self) -> None:
-        depth = get_head_type("linear-depth")
-        assert depth is not None
+        """A missing decoder must raise, not silently fall back to identity.
+
+        This used `linear-depth` as its example of an unregistered type; depth now has
+        a decoder, so the example is a fabricated spec instead. The behaviour under
+        test is unchanged — silently returning identity for an unknown head would ship
+        raw per-cell logits to a renderer expecting boxes.
+        """
+        unregistered = HeadTypeSpec(
+            id="not-registered-anywhere",
+            task="classification",
+            title="Fabricated",
+            description="Exists only to prove decode_for refuses the unknown.",
+            trainable=False,
+            target_format=None,
+            consumes="cls",
+            geometry="center-crop",
+            metrics=("accuracy",),
+            primary_metric=None,
+            primary_metric_mode=None,
+            render_hint="labels",
+            compatible_families=frozenset({"dinov2"}),
+        )
         with pytest.raises(LookupError):
-            decode_for(depth)
+            decode_for(unregistered)

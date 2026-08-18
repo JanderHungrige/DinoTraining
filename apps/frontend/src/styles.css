@@ -497,6 +497,105 @@ body {
   flex-wrap: wrap;
 }
 
+/* Side-by-side viewer (doc 19). Layout only — nothing here knows what a head draws. */
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  touch-action: none; /* the component owns panning; the browser must not also scroll */
+}
+
+.viewer:focus-visible {
+  outline: 2px solid var(--accent, #00e5cc);
+  outline-offset: 2px;
+}
+
+.viewer__panes {
+  display: grid;
+  /* Column count comes from the pane list (doc 21): one result is side-by-side, several
+     is a comparison, and there is no separate mechanism for the second case. */
+  grid-template-columns: repeat(var(--viewer-columns, 2), minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* One column below the point where two panes stop being comparable side by side. */
+@media (max-width: 720px) {
+  .viewer__panes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewer__pane {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0; /* or a wide image makes the grid column refuse to shrink */
+}
+
+.viewer__label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.viewer__frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  background: var(--surface-2, #1a1a1a);
+  cursor: grab;
+}
+
+.viewer__frame:active {
+  cursor: grabbing;
+}
+
+.viewer__stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.viewer__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.viewer__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.viewer__zoom {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.viewer__hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.viewer__placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  background: rgb(0 0 0 / 45%);
+}
+
 .studio__spacer {
   flex: 1;
 }
@@ -1008,4 +1107,155 @@ body {
 
 .headimport__row .field {
   flex: 1 1 12rem;
+}
+
+/* Overlays (doc 20). Dispatched by render_hint; nothing here knows about tasks. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlay__map {
+  position: absolute;
+  /* The map is data upsampled from a coarse patch grid; smoothing it invents boundaries
+     that the model did not predict. */
+  image-rendering: pixelated;
+}
+
+.overlay__boxes {
+  position: absolute;
+  inset: 0;
+}
+
+.overlay__box {
+  position: absolute;
+  border: 2px solid;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 45%);
+}
+
+.overlay__boxtag {
+  position: absolute;
+  top: -1.15rem;
+  left: -2px;
+  padding: 0 0.25rem;
+  font-size: 0.68rem;
+  line-height: 1.1rem;
+  color: #000;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.overlay__labels {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  right: 0.5rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  list-style: none;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  font-size: 0.75rem;
+}
+
+.overlay__label {
+  display: grid;
+  grid-template-columns: 0.7rem 1fr 4rem 2.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.overlay__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.overlay__labelname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay__labelbar {
+  display: block;
+  height: 0.35rem;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.overlay__labelbar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent, #00e5cc);
+}
+
+.overlay__labelscore {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Head selection */
+.runpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.runpanel__heads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+}
+
+.runpanel__head {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.runpanel__head--off {
+  opacity: 0.45;
+}
+
+.runpanel__headmeta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.runpanel__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.runpanel__cost {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.runpanel__filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.runpanel__compare {
+  font-size: 0.78rem;
+  color: var(--accent);
 }

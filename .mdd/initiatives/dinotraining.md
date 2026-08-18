@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 5
-hash: e08ac584
+version: 6
+hash: a5ac5ab3
 created: 2026-08-14
 ---
 
@@ -39,10 +39,11 @@ The user works across tabs:
    user picks anywhere is a head **instance** carrying a provenance kind —
    `pretrained-default`, `community` or `trained-here` — which is also what lets them compare
    several heads on the same task.
-3. **Inference Viewer** — run a DINO backbone + one or more trained heads on an image or
-   video stream; show original vs. results side-by-side (labels, boxes, masks, or whatever
-   the head produces — driven by the head's render hint). Heads are listed by task, training
-   datasets and metrics, never by bare filename.
+3. **Inference Viewer** — run a DINO backbone + one or more heads over a single image or an
+   image folder; show original vs. results side-by-side (labels, boxes, masks, depth — or
+   whatever the head produces, driven by the head's render hint). Heads are listed by task,
+   provenance, training datasets and metrics, never by bare filename. **Live webcam/video
+   is deferred past Wave 3** (see Open Product Questions).
 4. **Dataset Generator** — use the backbone + trained expert head(s) as an auto-annotator
    over new data (same review/mark UX as tab 1), saving results in the training format so
    the next head can be trained. Closes the data flywheel. Also hosts **SAM (Segment
@@ -111,6 +112,13 @@ as a swappable job runner so hyperscaler GPUs can be added later.
       metrics, while defaults and community imports record source repo, digest and upstream
       training claims. Waves 3 and 4 present heads by what they do and what they were trained
       on, never by filename. This descriptor is the cross-tab contract. (Wave 2)
+- [x] Live webcam/video inference → **deferred out of Wave 3 (2026-08-18)**. Capture
+      permissions in Tauri, frame pacing and drop handling are the largest uncertainty in the
+      viewer, and none of it is needed to demonstrate the backbone → head → render path or
+      same-task comparison. Wave 3 ships still images (single + folder); `image-input-source`
+      establishes an input contract a video source can later satisfy without changing the
+      viewer. Proposed home is **Wave 4**, where the Dataset Generator already ingests new
+      imagery and frames are just another source — to be confirmed when Wave 4 is planned.
 - [ ] Code-signing / notarization for macOS + Windows installers (Wave 5).
 - [ ] Which hyperscaler(s) to support first for the website (Wave 6).
 
@@ -120,7 +128,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
 |------|------|------------|--------|
 | Wave 1 | waves/dinotraining-wave-1.md | User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab. | complete |
 | Wave 2 | waves/dinotraining-wave-2.md | User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training. | complete |
-| Wave 3 | waves/dinotraining-wave-3.md | User loads an image or webcam/video, selects a backbone + trained head(s), and sees original vs. annotated results side-by-side in real time. | planned |
+| Wave 3 | waves/dinotraining-wave-3.md | User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only. | complete |
 | Wave 4 | waves/dinotraining-wave-4.md | User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app. | planned |
 | Wave 5 | waves/dinotraining-wave-5.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | planned |
 | Wave 6 | waves/dinotraining-wave-6.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

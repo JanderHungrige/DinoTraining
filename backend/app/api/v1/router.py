@@ -16,6 +16,7 @@ from app.api.v1 import (
     head_types,
     heads,
     health,
+    inference,
     models,
     system,
     training,
@@ -29,6 +30,7 @@ api_router.include_router(backbones.router, tags=["backbones"])
 api_router.include_router(head_types.router, tags=["heads"])
 api_router.include_router(heads.router, tags=["heads"])
 api_router.include_router(head_catalog.router, tags=["heads"])
+api_router.include_router(inference.router, tags=["inference"])
 api_router.include_router(training.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(datasets.router, tags=["datasets"])
