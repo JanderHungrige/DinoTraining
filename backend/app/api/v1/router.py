@@ -17,6 +17,7 @@ from app.api.v1 import (
     health,
     models,
     system,
+    training,
 )
 
 api_router = APIRouter()
@@ -26,5 +27,6 @@ api_router.include_router(models.router, tags=["models"])
 api_router.include_router(backbones.router, tags=["backbones"])
 api_router.include_router(head_types.router, tags=["heads"])
 api_router.include_router(heads.router, tags=["heads"])
+api_router.include_router(training.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(datasets.router, tags=["datasets"])

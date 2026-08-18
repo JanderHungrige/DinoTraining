@@ -10,17 +10,18 @@ from __future__ import annotations
 import logging
 import threading
 import uuid
+from collections.abc import Callable
 
 import torch
 
 from app.datasets.store import DatasetStore
-from app.ml.backbone import load_backbone, read_capabilities
+from app.ml.backbone import BackboneCapabilities, load_backbone, read_capabilities
 from app.ml.heads.builders import build_head
 from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.preprocess import plan_preprocessing
 from app.ml.training.config import TrainingConfig, split_indices
 from app.ml.training.decode import decode_for
-from app.ml.training.job import EpochRecord, TrainingJob
+from app.ml.training.job import EpochRecord, JobState, TrainingJob
 from app.ml.training.loop import evaluate, is_better, precompute_cache, run_epoch
 from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
@@ -37,10 +38,24 @@ class LocalJobRunner:
     instead of re-paying a multi-second load per job.
     """
 
-    def __init__(self, store: DatasetStore | None = None) -> None:
+    def __init__(
+        self,
+        store: DatasetStore | None = None,
+        on_complete: Callable[[TrainingJob, HeadTypeSpec, BackboneCapabilities], None]
+        | None = None,
+    ) -> None:
         self._jobs: dict[str, TrainingJob] = {}
         self._lock = threading.Lock()
         self._store = store or DatasetStore()
+        # Fires in the worker thread, not in a request handler. Persisting from the SSE
+        # endpoint instead would mean a run is only saved if someone was watching —
+        # close the tab and the weights are gone.
+        self._on_complete = on_complete
+
+    def list_all(self) -> list[TrainingJob]:
+        """Every job this process knows about, newest first."""
+        with self._lock:
+            return list(reversed(list(self._jobs.values())))
 
     # --- JobRunner protocol -----------------------------------------------------
 
@@ -85,6 +100,20 @@ class LocalJobRunner:
         except Exception as exc:  # noqa: BLE001 - surfaced on the job, logged with context
             logger.exception("Training job %s failed", job.job_id)
             job.finish("failed", str(exc))
+            return
+
+        # Read through an annotated local: mypy narrows job.state to "running" from the
+        # assignment above and cannot see that _train reassigns it via job.finish().
+        final_state: JobState = job.state
+        if self._on_complete is None or final_state != "complete" or job.best_state is None:
+            return
+        try:
+            self._on_complete(job, spec, read_capabilities(job.config.backbone_id))
+        except Exception:  # noqa: BLE001 - training succeeded; saving is a separate failure
+            # Deliberately does not flip the job to failed: the run genuinely completed,
+            # and reporting it as failed would hide good metrics behind a storage problem.
+            logger.exception("Training job %s completed but could not be saved", job.job_id)
+            job.message = f"{job.message} (could not save head — see the backend log)"
 
     def _train(self, job: TrainingJob, spec: HeadTypeSpec) -> None:
         config = job.config
@@ -162,10 +191,22 @@ _runner: LocalJobRunner | None = None
 _runner_lock = threading.Lock()
 
 
+def _save_completed_head(
+    job: TrainingJob, spec: HeadTypeSpec, capabilities: BackboneCapabilities
+) -> None:
+    """Register a finished run as a head instance. Imported lazily to keep the module
+    graph acyclic — persist imports the heads store, which the API also imports."""
+    from app.ml.training.persist import register_trained_head
+
+    instance = register_trained_head(job, spec, capabilities)
+    job.head_instance_id = instance.id
+    logger.info("Saved head instance %s from job %s", instance.id, job.job_id)
+
+
 def get_job_runner() -> LocalJobRunner:
     """Process-wide runner. Wave 6 swaps the construction here, not at call sites."""
     global _runner
     with _runner_lock:
         if _runner is None:
-            _runner = LocalJobRunner()
+            _runner = LocalJobRunner(on_complete=_save_completed_head)
         return _runner

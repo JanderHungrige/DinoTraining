@@ -46,6 +46,8 @@ class TrainingJob:
     class_names: tuple[str, ...] = ()
     skipped_mixed_class_images: int = 0
     message: str = ""
+    #: Set once the run is saved as a head instance, so the UI can link straight to it.
+    head_instance_id: str | None = None
     cancel_requested: threading.Event = field(default_factory=threading.Event, repr=False)
     best_state: dict[str, Tensor] | None = field(default=None, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)

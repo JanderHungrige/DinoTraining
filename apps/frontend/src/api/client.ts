@@ -45,6 +45,18 @@ function buildUrl(path: string): string {
   return `${API_BASE_URL}${API_PREFIX}${suffix}`;
 }
 
+/**
+ * Absolute URL for an API path.
+ *
+ * Exported for `EventSource`, which takes a URL rather than going through `apiFetch`.
+ * Sharing `buildUrl` keeps SSE on the same base and prefix as every other call — a
+ * second URL builder is how a stream ends up pointing at the wrong port in packaged
+ * builds while fetches keep working.
+ */
+export function apiUrl(path: string): string {
+  return buildUrl(path);
+}
+
 async function readErrorBody(response: Response): Promise<ApiErrorBody['error']> {
   try {
     const body: unknown = await response.json();

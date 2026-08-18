@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-1
 demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training."
 created: 2026-08-14
-hash: 219fb09e
+hash: cb5103cf
 ---
 
 # Wave 2: Head Trainer
@@ -39,7 +39,7 @@ segmentation and depth useful before the app can train them.
 | 4 | preprocessing-pipeline | [10](../docs/10-preprocessing-pipeline.md) | complete | head-registry |
 | 5 | training-job-runner | [11](../docs/11-training-job-runner.md) | complete | head-implementations, preprocessing-pipeline |
 | 6 | head-instance-registry | [12](../docs/12-head-instance-registry.md) | complete | training-job-runner, head-registry |
-| 7 | training-metrics-stream | — | planned | training-job-runner |
+| 7 | training-metrics-stream | [13](../docs/13-training-metrics-stream.md) | complete | training-job-runner |
 | 8 | trainer-config-ui | — | planned | head-registry, training-job-runner |
 | 9 | head-catalog-import | — | planned | head-registry, head-instance-registry |
 
