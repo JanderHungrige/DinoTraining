@@ -138,8 +138,12 @@ way during training and another way here, for reasons invisible to the user.
 |---|---|
 | `labels` | `scores: list[float]` over `class_names`, plus `top: list[{index, score}]` |
 | `boxes` | `boxes: list[[x,y,w,h]]` in **original image pixels**, `scores`, `classes` |
-| `masks` | `mask: list[list[int]]` class index per pixel at original resolution, or RLE |
-| `depth-map` | `depth: list[list[float]]` in metres at original resolution, plus `min`/`max` |
+| `masks` | `mask_png` — base64 PNG, pixel value = class index, at original resolution |
+| `depth-map` | `depth_png` — base64 PNG, 0..255 normalised across `min`/`max`, at original resolution |
+
+**The dense payloads changed transport in doc 20** (2026-08-18): nested JSON lists were
+12.5 MB for a 3000x2000 segmentation and are 17 KB as a PNG. The shaping code moved from
+`engine.py` to `app/ml/inference/payloads.py` at the same time.
 
 Boxes are xywh, absolute pixels, top-left origin — the dataset store's convention, so a
 prediction can be reviewed or saved as an annotation in Wave 4 without a second conversion.

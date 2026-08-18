@@ -7,6 +7,9 @@ than accepted, and the decoder registry must be consulted rather than the task s
 
 from __future__ import annotations
 
+import base64
+import io
+
 import pytest
 import torch
 from PIL import Image
@@ -17,6 +20,12 @@ from app.ml.inference.engine import BackboneMismatchError, run_inference
 from tests.head_testkit import install_fake_backbone
 
 EMBED = 32
+
+
+def decode_map(encoded: object) -> Image.Image:
+    """Read back a base64 PNG payload — the transport doc 20 introduced."""
+    assert isinstance(encoded, str)
+    return Image.open(io.BytesIO(base64.b64decode(encoded)))
 
 
 class StubBackbone:
@@ -186,8 +195,9 @@ class TestSegmentation:
         assert prediction.render_hint == "masks"
         assert prediction.payload["height"] == 360
         assert prediction.payload["width"] == 640
-        assert len(prediction.payload["mask"]) == 360
-        assert len(prediction.payload["mask"][0]) == 640
+        # The map travels as a PNG (doc 20), so the resolution is asserted by decoding it
+        # rather than by counting nested lists.
+        assert decode_map(prediction.payload["mask_png"]).size == (640, 360)
 
     def test_mask_holds_only_real_class_indices(self, stubbed: Settings) -> None:
         """Nearest-neighbour inversion must not invent ids between classes."""

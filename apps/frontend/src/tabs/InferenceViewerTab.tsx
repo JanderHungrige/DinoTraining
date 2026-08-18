@@ -1,30 +1,37 @@
 /**
  * Wave 3 — Inference Viewer.
  *
- * Feature 17 gives it an input source and nothing more: pick an image or a folder, step
- * through it, see which item is selected. Feature 19 replaces this layout with the
- * side-by-side panes and feature 20 draws the predictions; both consume `useImageSource`
- * exactly as it is used here.
+ * Assembles the wave: an input source (doc 17), a head selection run through one shared
+ * backbone pass (doc 18), the two panes (doc 19), and the overlays (doc 20).
+ *
+ * This file knows nothing about what a head produces. It hands predictions to
+ * `renderOverlayFor`, which dispatches on `render_hint`.
  */
 
 import { useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
+import { HeadRunPanel } from '../components/HeadRunPanel';
 import { ImageSourcePicker } from '../components/ImageSourcePicker';
 import { SideBySideViewer } from '../components/SideBySideViewer';
+import { renderOverlayFor } from '../components/overlays/registry';
+import { useHeadRun } from '../hooks/useHeadRun';
 import { useImageSource } from '../hooks/useImageSource';
 
 export function InferenceViewerTab(): JSX.Element {
   const [path, setPath] = useState<string | null>(null);
   const source = useImageSource(path);
+  const run = useHeadRun();
   const { current } = source;
+
+  const predictions = run.result?.predictions ?? [];
 
   return (
     <section className="studio">
       <h2 className="studio__title">Inference Viewer</h2>
       <p className="studio__lead">
-        Point at a single image or a folder of them. Heads and their overlays arrive with
-        the rest of this wave.
+        Point at a single image or a folder, pick one or more heads, and compare the
+        original against what they predicted.
       </p>
 
       <ImageSourcePicker onPick={setPath} value={path ?? ''} busy={source.loading} />
@@ -43,6 +50,12 @@ export function InferenceViewerTab(): JSX.Element {
 
       {current && (
         <>
+          <HeadRunPanel
+            state={run}
+            onRun={() => void run.run(current.path)}
+            disabled={source.loading}
+          />
+
           <p className="studio__path" title={current.path}>
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
@@ -50,11 +63,29 @@ export function InferenceViewerTab(): JSX.Element {
           <SideBySideViewer
             imageUrl={imageUrl(current.path)}
             imageAlt={current.name}
+            resultLabel={
+              predictions.length > 0
+                ? `Result — ${predictions.map((p) => p.head_name).join(', ')}`
+                : 'Result'
+            }
             resultPlaceholder={
               <p className="viewer__placeholder">
-                Heads and their overlays arrive with the rest of this wave.
+                {run.running ? 'Running…' : 'Select one or more heads and press Run.'}
               </p>
             }
+            {...(predictions.length > 0
+              ? {
+                  renderOverlay: (rendered) => (
+                    <>
+                      {predictions.map((prediction) => (
+                        <div key={prediction.instance_id} className="overlay">
+                          {renderOverlayFor(prediction, rendered)}
+                        </div>
+                      ))}
+                    </>
+                  ),
+                }
+              : {})}
           />
 
           <div className="studio__actions">

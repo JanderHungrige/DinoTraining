@@ -24,17 +24,13 @@ from app.ml.backbone import Backbone, BackboneFeatures
 from app.ml.heads.builders import build_head
 from app.ml.heads.decode import decode_for
 from app.ml.heads.instances import HeadInstance
-from app.ml.heads.modules import upsample_logits
 from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.heads.store import HeadInstanceStore
-from app.ml.inference.geometry import invert_boxes, invert_map
+from app.ml.inference.payloads import build_payload
 from app.ml.inference.results import Prediction
 from app.ml.preprocess import GeometryTransform, PreprocessPlan
 
 logger = logging.getLogger(__name__)
-
-#: Detections kept for display. The decoder already ranks by score.
-MAX_DISPLAY_BOXES = 50
 
 #: Below this the box is noise. Tunable per call; this is what the viewer defaults to.
 DEFAULT_SCORE_THRESHOLD = 0.3
@@ -122,7 +118,7 @@ def predict_from_features(
         outputs = head(features)
 
     decoded = decode_for(resolved.spec)(outputs, plan.patch_size)
-    payload = _build_payload(resolved.spec, decoded, transform, plan.size, score_threshold)
+    payload = build_payload(resolved.spec, decoded, transform, plan.size, score_threshold)
     elapsed = (time.perf_counter() - started) * 1000
 
     return Prediction(
@@ -162,101 +158,3 @@ def run_inference(
         score_threshold=score_threshold,
     )
     return result.predictions[0]
-
-
-def _build_payload(
-    spec: HeadTypeSpec,
-    decoded: dict[str, torch.Tensor],
-    transform: GeometryTransform,
-    frame_size: int,
-    score_threshold: float,
-) -> dict[str, object]:
-    """Shape the decoder's output for the render hint, in source coordinates.
-
-    Keyed off ``render_hint`` rather than task: two head types can share a task and a
-    renderer, and the hint is what feature 20 dispatches on.
-    """
-    if spec.render_hint == "labels":
-        return _labels_payload(decoded)
-    if spec.render_hint == "boxes":
-        return _boxes_payload(decoded, transform, score_threshold)
-    if spec.render_hint == "masks":
-        return _masks_payload(decoded, transform, frame_size)
-    return _depth_payload(decoded, transform, frame_size)
-
-
-def _labels_payload(decoded: dict[str, torch.Tensor]) -> dict[str, object]:
-    logits = decoded["logits"][0]
-    scores = torch.softmax(logits.float(), dim=-1)
-    return {"scores": [float(value) for value in scores]}
-
-
-def _boxes_payload(
-    decoded: dict[str, torch.Tensor], transform: GeometryTransform, threshold: float
-) -> dict[str, object]:
-    scores = decoded["scores"]
-    keep = scores >= threshold
-    if not bool(keep.any()):
-        return {"boxes": [], "scores": [], "classes": []}
-
-    kept_boxes = decoded["boxes"][keep][:MAX_DISPLAY_BOXES]
-    kept_scores = scores[keep][:MAX_DISPLAY_BOXES]
-    kept_classes = decoded["classes"][keep][:MAX_DISPLAY_BOXES]
-
-    frame_boxes = [tuple(float(v) for v in box) for box in kept_boxes]
-    source_boxes = invert_boxes(transform, frame_boxes)  # type: ignore[arg-type]
-
-    # A box predicted entirely inside the letterbox padding inverts to zero area: it
-    # describes pixels the user's image does not have. Dropped here rather than left
-    # for the renderer to filter — and dropped from all three arrays together, because
-    # they are read positionally and a partial drop misaligns every later score.
-    survivors = [
-        (box, float(score), int(cls))
-        for box, score, cls in zip(source_boxes, kept_scores, kept_classes, strict=True)
-        if box[2] > 0.0 and box[3] > 0.0
-    ]
-
-    return {
-        "boxes": [list(box) for box, _, _ in survivors],
-        "scores": [score for _, score, _ in survivors],
-        "classes": [cls for _, _, cls in survivors],
-    }
-
-
-def _masks_payload(
-    decoded: dict[str, torch.Tensor], transform: GeometryTransform, frame_size: int
-) -> dict[str, object]:
-    # Patch resolution -> frame resolution -> source resolution. The head has no idea
-    # what size to upsample to, which is why upsample_logits takes it explicitly.
-    logits = decoded["logits"]
-    at_frame = upsample_logits(logits.float(), (frame_size, frame_size))
-    classes = at_frame[0].argmax(dim=0).float()
-    # nearest: bilinear on a label map averages class ids into classes nobody predicted.
-    at_source = invert_map(transform, classes, mode="nearest").round().to(torch.int64)
-
-    return {
-        "mask": at_source.tolist(),
-        "present_classes": sorted({int(v) for v in at_source.flatten().tolist()}),
-        "height": int(at_source.shape[0]),
-        "width": int(at_source.shape[1]),
-    }
-
-
-def _depth_payload(
-    decoded: dict[str, torch.Tensor], transform: GeometryTransform, frame_size: int
-) -> dict[str, object]:
-    depth = decoded["depth"].float()
-    at_frame = torch.nn.functional.interpolate(
-        depth, size=(frame_size, frame_size), mode="bilinear", align_corners=False
-    )
-    # bilinear here: depth is continuous, so interpolation is meaningful — the opposite
-    # of the label-map case above.
-    at_source = invert_map(transform, at_frame[0, 0], mode="bilinear")
-
-    return {
-        "depth": at_source.tolist(),
-        "min": float(at_source.min()),
-        "max": float(at_source.max()),
-        "height": int(at_source.shape[0]),
-        "width": int(at_source.shape[1]),
-    }
