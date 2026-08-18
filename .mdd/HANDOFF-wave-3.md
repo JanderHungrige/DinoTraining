@@ -14,6 +14,39 @@ Stale-job detection reads `.mdd/jobs/wave-dinotraining-wave-3/MANIFEST.md`, find
 `[x]`, and resumes at `image-input-source`. Choose **Resume**, not Discard.
 Mode is **automated** (minimal interruptions, pause only on errors).
 
+## If you are in a fresh cloud environment (claude.ai/code, a remote agent, a new machine)
+
+The repo is ~2.6 MB and deliberately holds **no model weights and no venv** — both are
+gitignored. Everything below must be created before any integration verification is
+possible. On a local machine that already has them, skip this section.
+
+```bash
+cd backend
+python3 -m venv .venv
+.venv/bin/pip install -e '.[dev]'
+.venv/bin/python -m pytest tests/ -q          # expect 616 passing
+```
+
+Then get real weights — ungated, Apache-2.0, ~174 MB total:
+
+```bash
+# with the backend running on 127.0.0.1:8756
+curl -X POST http://127.0.0.1:8756/api/v1/models/dinov2-small/download   # 168 MB
+# poll /api/v1/models/jobs/{job_id} until state=complete, then:
+curl -X POST http://127.0.0.1:8756/api/v1/head-catalog/dinov2-linear-classifier-in1k.dinov2-small/install
+curl -X POST http://127.0.0.1:8756/api/v1/head-catalog/dinov2-linear-segmenter-ade20k.dinov2-small/install
+curl -X POST http://127.0.0.1:8756/api/v1/head-catalog/dinov2-linear-depth-nyu.dinov2-small/install
+```
+
+The head instance ids are generated per install, so they will **not** match the ones listed
+below — read them back from `GET /api/v1/heads`. Expect CPU-only inference off a local
+machine: correct, just slower.
+
+**Confirm the bootstrap before building on it** by reproducing feature 1's verification —
+the panorama case described under "Smoke test" further down. If the far-right region does
+not differ from the background, something is wrong with the weights or the geometry, and
+building feature 2 on top of that will waste the session.
+
 ## Wave planning decisions already made — do not re-litigate
 
 - **Live webcam/video is deferred out of Wave 3.** Still images only. `video-stream-source`
