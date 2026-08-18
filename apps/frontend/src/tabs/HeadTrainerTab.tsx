@@ -1,8 +1,106 @@
-import type { JSX } from 'react';
+/** Wave 2 — Head Trainer: configure a run, watch it live, keep the result. */
 
-import { StubPanel } from '../components/StubPanel';
+import { useCallback, useEffect, useState, type JSX } from 'react';
 
-/** Wave 2 — head training UI. */
+import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
+import { HeadInstanceList } from '../components/HeadInstanceList';
+import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
+import { TrainingProgress } from '../components/TrainingProgress';
+import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
+import { useTrainingRun } from '../hooks/useTrainingRun';
+
+const DEFAULTS: TrainerSelection = {
+  datasetIds: [],
+  backboneId: '',
+  headTypeId: '',
+  // Mirrors TrainingConfig's defaults so the form and the backend agree on "good
+  // defaults" — two sets of defaults is how a UI quietly trains something else.
+  epochs: 20,
+  learningRate: 0.001,
+  earlyStoppingPatience: 5,
+};
+
 export function HeadTrainerTab(): JSX.Element {
-  return <StubPanel tabId="trainer" />;
+  const [selection, setSelection] = useState<TrainerSelection>(DEFAULTS);
+  const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+
+  const refreshHeads = useCallback(async (): Promise<void> => {
+    try {
+      setHeads(await listHeadInstances());
+    } catch {
+      // A failed head list must not hide the trainer itself.
+    }
+  }, []);
+
+  const { datasets, backbones, headTypes, loading, error } = useTrainerOptions(
+    selection.backboneId || null,
+  );
+  const run = useTrainingRun({ onComplete: () => void refreshHeads() });
+
+  useEffect(() => {
+    void refreshHeads();
+  }, [refreshHeads]);
+
+  const installed = installedOnly(backbones);
+
+  // Preselect the only installed backbone: making the user pick from a list of one is
+  // friction with no decision in it.
+  useEffect(() => {
+    if (!selection.backboneId && installed.length === 1) {
+      setSelection((current) => ({ ...current, backboneId: installed[0]!.id }));
+    }
+  }, [installed, selection.backboneId]);
+
+  const remove = async (id: string): Promise<void> => {
+    setBusy((current) => ({ ...current, [id]: true }));
+    try {
+      await deleteHeadInstance(id);
+      await refreshHeads();
+    } finally {
+      setBusy((current) => ({ ...current, [id]: false }));
+    }
+  };
+
+  return (
+    <section className="trainer">
+      <h2 className="trainer__title">Head Trainer</h2>
+      <p className="trainer__hint">
+        The backbone stays frozen — only the head trains. Preprocessing is chosen from the
+        backbone and head type for you.
+      </p>
+
+      {error && <p className="run__warn">{error}</p>}
+      {loading && <p className="trainer__dim">Loading options…</p>}
+
+      <TrainerForm
+        datasets={datasets}
+        backbones={installed}
+        headTypes={headTypes}
+        value={selection}
+        disabled={run.running}
+        starting={run.starting}
+        onChange={setSelection}
+        onSubmit={() =>
+          void run.start({
+            head_type_id: selection.headTypeId,
+            backbone_id: selection.backboneId,
+            dataset_ids: selection.datasetIds,
+            epochs: selection.epochs,
+            learning_rate: selection.learningRate,
+            early_stopping_patience: selection.earlyStoppingPatience,
+          })
+        }
+      />
+
+      {run.error && <p className="run__warn">{run.error}</p>}
+
+      {run.job && (
+        <TrainingProgress job={run.job} history={run.history} onCancel={() => void run.cancel()} />
+      )}
+
+      <h3 className="trainer__subtitle">Trained heads</h3>
+      <HeadInstanceList heads={heads} busy={busy} onDelete={(id) => void remove(id)} />
+    </section>
+  );
 }

@@ -616,3 +616,261 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* --- Wave 2: Head Trainer ------------------------------------------------- */
+
+.trainer {
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.trainer__title,
+.trainer__subtitle {
+  margin: 0 0 0.25rem;
+}
+
+.trainer__subtitle {
+  margin-top: 2rem;
+  font-size: 1rem;
+}
+
+.trainer__hint {
+  margin: 0 0 1.25rem;
+  color: var(--text-dim);
+  max-width: 62ch;
+}
+
+.trainer__dim {
+  color: var(--text-dim);
+}
+
+.trainer__form {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+}
+
+.trainer__group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 0.75rem 1rem 1rem;
+  margin: 0;
+}
+
+.trainer__group legend {
+  padding: 0 0.35rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trainer__group--inline {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.trainer__group--inline label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+
+.trainer__group input[type='number'],
+.trainer__group select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  min-width: 9rem;
+}
+
+.trainer__checks,
+.trainer__heads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.trainer__checks label,
+.trainer__head {
+  display: flex;
+  gap: 0.55rem;
+  align-items: start;
+  cursor: pointer;
+}
+
+.trainer__head--off {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.trainer__reason {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--pending);
+  font-size: 0.84rem;
+  font-style: normal;
+}
+
+.trainer__empty {
+  color: var(--text-dim);
+  margin: 0.25rem 0;
+}
+
+.trainer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.trainer__blocked {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+
+/* --- live run ------------------------------------------------------------- */
+
+.run {
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 1rem;
+  max-width: 46rem;
+}
+
+.run__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.run__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.run__message,
+.run__classes,
+.run__saved {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.run__saved {
+  color: var(--accent);
+}
+
+.run__warn {
+  margin: 0.6rem 0 0;
+  color: var(--pending);
+  font-size: 0.9rem;
+}
+
+.run__sparks {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.run__spark {
+  display: grid;
+  grid-template-columns: minmax(9rem, 18rem) 120px 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.run__key {
+  color: var(--text-dim);
+}
+
+.run__key--primary {
+  color: var(--accent);
+}
+
+.spark {
+  width: 120px;
+  height: 24px;
+}
+
+.run__last {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.run__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.run__caption {
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  padding-bottom: 0.35rem;
+}
+
+.run__table th,
+.run__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+}
+
+.run__table th[scope='col']:first-child,
+.run__table th[scope='row'] {
+  text-align: left;
+}
+
+.run__best {
+  color: var(--accent);
+}
+
+/* --- saved heads ---------------------------------------------------------- */
+
+.heads {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 46rem;
+}
+
+.heads__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 0.7rem 0.9rem;
+}
+
+.heads__name {
+  margin-right: 0.5rem;
+}
+
+.heads__summary {
+  margin: 0.25rem 0 0.15rem;
+}
+
+.heads__body p {
+  margin: 0;
+  font-size: 0.88rem;
+}
