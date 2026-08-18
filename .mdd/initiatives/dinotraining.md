@@ -3,7 +3,7 @@ id: dinotraining
 title: DinoTraining
 status: active
 version: 6
-hash: 85d08a66
+hash: a5ac5ab3
 created: 2026-08-14
 ---
 
@@ -128,7 +128,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
 |------|------|------------|--------|
 | Wave 1 | waves/dinotraining-wave-1.md | User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab. | complete |
 | Wave 2 | waves/dinotraining-wave-2.md | User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training. | complete |
-| Wave 3 | waves/dinotraining-wave-3.md | User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only. | planned |
+| Wave 3 | waves/dinotraining-wave-3.md | User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only. | complete |
 | Wave 4 | waves/dinotraining-wave-4.md | User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app. | planned |
 | Wave 5 | waves/dinotraining-wave-5.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | planned |
 | Wave 6 | waves/dinotraining-wave-6.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

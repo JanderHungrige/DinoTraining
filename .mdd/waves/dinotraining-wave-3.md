@@ -3,11 +3,11 @@ id: dinotraining-wave-3
 title: "Wave 3: Inference Viewer"
 initiative: dinotraining
 initiative_version: 6
-status: planned
+status: complete
 depends_on: dinotraining-wave-2
 demo_state: "User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only; live video is deferred."
 created: 2026-08-14
-hash: 30dd77d0
+hash: fe18d896
 ---
 
 # Wave 3: Inference Viewer
@@ -50,7 +50,7 @@ note below.
 | 3 | multi-head-compose | [18](../docs/18-multi-head-compose.md) | complete | inference-engine |
 | 4 | side-by-side-viewer | [19](../docs/19-side-by-side-viewer.md) | complete | — |
 | 5 | inference-overlay-render | [20](../docs/20-inference-overlay-render.md) | complete | side-by-side-viewer |
-| 6 | same-task-head-compare | — | planned | multi-head-compose, inference-overlay-render |
+| 6 | same-task-head-compare | [21](../docs/21-same-task-head-compare.md) | complete | multi-head-compose, inference-overlay-render |
 
 ### Feature notes
 

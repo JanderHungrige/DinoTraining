@@ -14,6 +14,20 @@ import { useCallback, useEffect, useRef, useState, type JSX, type ReactNode } fr
 import { fitContain, type RenderedImage } from '../lib/geometry';
 import { PAN_STEP, ZOOM_STEP, useViewTransform } from '../hooks/useViewTransform';
 
+/**
+ * One result pane. A comparison is N of these, which is why the viewer takes a list
+ * rather than a single overlay — see doc 21.
+ */
+export interface ResultPane {
+  /** Stable identity for the pane. Use the head's instance id, never its position. */
+  readonly key: string;
+  readonly label: string;
+  /** Drawn inside the shared transform, so it moves with the image. */
+  readonly renderOverlay?: (rendered: RenderedImage) => ReactNode;
+  /** Chrome, drawn outside the transform, so it does not zoom. */
+  readonly placeholder?: ReactNode;
+}
+
 export interface SideBySideViewerProps {
   readonly imageUrl: string;
   readonly imageAlt: string;
@@ -24,23 +38,25 @@ export interface SideBySideViewerProps {
    */
   readonly naturalWidth?: number;
   readonly naturalHeight?: number;
-  /** Drawn over the result pane, inside the shared transform. */
-  readonly renderOverlay?: (rendered: RenderedImage) => ReactNode;
-  /** Shown in the result pane before anything has run. */
-  readonly resultPlaceholder?: ReactNode;
-  readonly resultLabel?: string;
+  /**
+   * Result panes, drawn to the right of the original.
+   *
+   * One is the side-by-side case; several is a comparison. They all render the *same*
+   * transform object, so N panes cannot drift apart any more than two could.
+   */
+  readonly results?: readonly ResultPane[];
 }
 
 const EMPTY_SIZE = { width: 0, height: 0 };
+
+const DEFAULT_RESULTS: readonly ResultPane[] = [{ key: 'result', label: 'Result' }];
 
 export function SideBySideViewer({
   imageUrl,
   imageAlt,
   naturalWidth = 0,
   naturalHeight = 0,
-  renderOverlay,
-  resultPlaceholder,
-  resultLabel = 'Result',
+  results = DEFAULT_RESULTS,
 }: SideBySideViewerProps): JSX.Element {
   const view = useViewTransform();
   const frameRef = useRef<HTMLDivElement | null>(null);
@@ -149,6 +165,7 @@ export function SideBySideViewer({
   };
 
   const pane = (
+    key: string,
     label: string,
     /** Inside the transform — it belongs to the image and must scale with it. */
     overlay: ReactNode,
@@ -156,7 +173,7 @@ export function SideBySideViewer({
     chrome: ReactNode,
     measureThis: boolean,
   ): JSX.Element => (
-    <figure className="viewer__pane">
+    <figure className="viewer__pane" key={key}>
       <figcaption className="viewer__label">{label}</figcaption>
       {/* The gestures live on the frame, not the component: the frame is the box the
           clamp is computed against, and a double-click on the controls must not reset
@@ -195,13 +212,21 @@ export function SideBySideViewer({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      <div className="viewer__panes">
-        {pane('Original', null, null, true)}
-        {pane(
-          resultLabel,
-          renderOverlay ? renderOverlay(rendered) : null,
-          renderOverlay ? null : resultPlaceholder,
-          false,
+      {/* The column count is data, not a breakpoint: one result is the side-by-side
+          case and several is a comparison, and the grid is the same either way. */}
+      <div
+        className="viewer__panes"
+        style={{ '--viewer-columns': results.length + 1 } as React.CSSProperties}
+      >
+        {pane('original', 'Original', null, null, true)}
+        {results.map((result) =>
+          pane(
+            result.key,
+            result.label,
+            result.renderOverlay ? result.renderOverlay(rendered) : null,
+            result.renderOverlay ? null : result.placeholder,
+            false,
+          ),
         )}
       </div>
 

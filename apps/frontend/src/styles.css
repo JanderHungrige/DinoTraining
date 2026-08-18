@@ -512,7 +512,9 @@ body {
 
 .viewer__panes {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Column count comes from the pane list (doc 21): one result is side-by-side, several
+     is a comparison, and there is no separate mechanism for the second case. */
+  grid-template-columns: repeat(var(--viewer-columns, 2), minmax(0, 1fr));
   gap: 0.75rem;
 }
 
@@ -1244,4 +1246,16 @@ body {
   font-size: 0.75rem;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+}
+
+.runpanel__filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.runpanel__compare {
+  font-size: 0.78rem;
+  color: var(--accent);
 }

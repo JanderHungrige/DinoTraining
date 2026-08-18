@@ -185,6 +185,17 @@ dblclick control →  no reset      dblclick image →  back to 100%
 placeholder      13.6px at 195% zoom (outside the transform)
 ```
 
+## Generalised by feature 21
+
+The component now takes `results: ResultPane[]` rather than a single `renderOverlay` /
+`resultLabel` / `resultPlaceholder`. One result is the side-by-side case; several is a
+comparison, and the grid's column count comes from the list length.
+
+**The single transform is what made this cheap** — rendering one transform object N times
+is the same code as rendering it twice. Had the panes each owned a transform and
+synchronised by events, two panes to four would have been a four-way echo problem. The
+generalisation cost about ten lines because the decision above was already right.
+
 ## Known Issues
 
 - **Zoom is about the stage box, not the image content inside it.** With `object-fit:

@@ -84,7 +84,7 @@ describe('SideBySideViewer', () => {
       <SideBySideViewer
         imageUrl="/img/cat.png"
         imageAlt="cat.png"
-        renderOverlay={() => <div data-testid="overlay">marks</div>}
+        results={[{ key: 'r', label: 'Result', renderOverlay: () => <div data-testid="overlay">marks</div> }]}
       />,
     );
 
@@ -104,7 +104,7 @@ describe('SideBySideViewer', () => {
         imageAlt="cat.png"
         naturalWidth={900}
         naturalHeight={300}
-        renderOverlay={renderOverlay}
+        results={[{ key: 'r', label: 'Result', renderOverlay }]}
       />,
     );
 
@@ -180,7 +180,7 @@ describe('SideBySideViewer', () => {
       <SideBySideViewer
         imageUrl="/img/cat.png"
         imageAlt="cat.png"
-        resultPlaceholder="Run a head to see results."
+        results={[{ key: 'r', label: 'Result', placeholder: 'Run a head to see results.' }]}
       />,
     );
 
@@ -195,12 +195,86 @@ describe('SideBySideViewer', () => {
       <SideBySideViewer
         imageUrl="/img/cat.png"
         imageAlt="cat.png"
-        resultPlaceholder={<p>Run a head to see results.</p>}
+        results={[
+          { key: 'r', label: 'Result', placeholder: <p>Run a head to see results.</p> },
+        ]}
       />,
     );
 
     const placeholder = screen.getByText('Run a head to see results.');
     expect(stages()[1]?.contains(placeholder)).toBe(false);
     expect(screen.getAllByTestId('viewer-frame')[1]?.contains(placeholder)).toBe(true);
+  });
+});
+
+describe('N-up comparison', () => {
+  const paneFor = (key: string) => ({
+    key,
+    label: key,
+    renderOverlay: () => <div data-testid={`overlay-${key}`}>{key}</div>,
+  });
+
+  it('renders one pane per result plus the original', () => {
+    render(
+      <SideBySideViewer
+        imageUrl="/img/cat.png"
+        imageAlt="cat.png"
+        results={[paneFor('a'), paneFor('b'), paneFor('c')]}
+      />,
+    );
+
+    expect(stages()).toHaveLength(4);
+    expect(screen.getByText('Original')).toBeInTheDocument();
+    for (const key of ['a', 'b', 'c']) {
+      expect(screen.getByTestId(`overlay-${key}`)).toBeInTheDocument();
+    }
+  });
+
+  it('keeps every pane on the one transform', () => {
+    // The whole reason comparison reuses this component rather than stacking N viewers:
+    // four independently-zoomed panes are not a comparison.
+    render(
+      <SideBySideViewer
+        imageUrl="/img/cat.png"
+        imageAlt="cat.png"
+        results={[paneFor('a'), paneFor('b'), paneFor('c')]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /zoom in/i }));
+
+    const transforms = new Set(stages().map((stage) => stage.style.transform));
+    expect(transforms.size).toBe(1);
+  });
+
+  it('tells the grid how many columns to draw', () => {
+    const { container } = render(
+      <SideBySideViewer
+        imageUrl="/img/cat.png"
+        imageAlt="cat.png"
+        results={[paneFor('a'), paneFor('b')]}
+      />,
+    );
+
+    const panes = container.querySelector('.viewer__panes') as HTMLElement;
+    expect(panes.style.getPropertyValue('--viewer-columns')).toBe('3');
+  });
+
+  it('keys panes by identity, not by position', () => {
+    // Deselecting the first of three heads must not make React reuse its canvas for the
+    // second head's mask — that is how one head's result ends up labelled as another's.
+    const { rerender } = render(
+      <SideBySideViewer
+        imageUrl="/img/cat.png"
+        imageAlt="cat.png"
+        results={[paneFor('a'), paneFor('b')]}
+      />,
+    );
+    rerender(
+      <SideBySideViewer imageUrl="/img/cat.png" imageAlt="cat.png" results={[paneFor('b')]} />,
+    );
+
+    expect(screen.queryByTestId('overlay-a')).toBeNull();
+    expect(screen.getByTestId('overlay-b')).toBeInTheDocument();
   });
 });

@@ -60,32 +60,35 @@ export function InferenceViewerTab(): JSX.Element {
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
 
+          {/* One pane per prediction. Comparing three segmenters is three panes; it is
+              not a mode, and nothing here branches on how many there are. */}
           <SideBySideViewer
             imageUrl={imageUrl(current.path)}
             imageAlt={current.name}
-            resultLabel={
+            results={
               predictions.length > 0
-                ? `Result — ${predictions.map((p) => p.head_name).join(', ')}`
-                : 'Result'
+                ? predictions.map((prediction) => ({
+                    key: prediction.instance_id,
+                    // Provenance, never a filename — doc 12's contract at the pane title.
+                    label: prediction.head_name,
+                    renderOverlay: (rendered) => (
+                      <div className="overlay">{renderOverlayFor(prediction, rendered)}</div>
+                    ),
+                  }))
+                : [
+                    {
+                      key: 'result',
+                      label: 'Result',
+                      placeholder: (
+                        <p className="viewer__placeholder">
+                          {run.running
+                            ? 'Running…'
+                            : 'Select one or more heads and press Run.'}
+                        </p>
+                      ),
+                    },
+                  ]
             }
-            resultPlaceholder={
-              <p className="viewer__placeholder">
-                {run.running ? 'Running…' : 'Select one or more heads and press Run.'}
-              </p>
-            }
-            {...(predictions.length > 0
-              ? {
-                  renderOverlay: (rendered) => (
-                    <>
-                      {predictions.map((prediction) => (
-                        <div key={prediction.instance_id} className="overlay">
-                          {renderOverlayFor(prediction, rendered)}
-                        </div>
-                      ))}
-                    </>
-                  ),
-                }
-              : {})}
           />
 
           <div className="studio__actions">
