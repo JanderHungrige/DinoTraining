@@ -2,12 +2,12 @@
 id: dinotraining-wave-5
 title: "Wave 5: Packaging & Distribution"
 initiative: dinotraining
-initiative_version: 1
+initiative_version: 5
 status: planned
 depends_on: dinotraining-wave-4
 demo_state: "A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works."
 created: 2026-08-14
-hash: 332f2716
+hash: 9dac49a6
 ---
 
 # Wave 5: Packaging & Distribution

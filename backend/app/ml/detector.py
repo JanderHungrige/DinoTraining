@@ -15,17 +15,18 @@ from PIL import Image
 
 from app.core.config import get_settings
 from app.core.paths import is_installed, resolve_model_dir
+from app.ml.errors import ModelNotInstalledError
 from app.ml.registry import ModelSpec, get_model
 
 logger = logging.getLogger(__name__)
 
+# Re-exported: this was defined here in Wave 1 and `api/v1/annotate.py` and the tests
+# import it from this module. It moved to ml/errors.py once backbones needed it too.
+__all__ = ["ModelNotInstalledError", "Detection", "Detector", "load_detector", "detect"]
+
 DEFAULT_DETECTOR = "grounding-dino-tiny"
 DEFAULT_BOX_THRESHOLD = 0.3
 DEFAULT_TEXT_THRESHOLD = 0.25
-
-
-class ModelNotInstalledError(LookupError):
-    """The requested detector has not been downloaded yet."""
 
 
 @dataclass(frozen=True, slots=True)

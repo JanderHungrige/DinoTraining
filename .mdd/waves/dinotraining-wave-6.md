@@ -2,12 +2,12 @@
 id: dinotraining-wave-6
 title: "Wave 6: Website & Hyperscaler Compute/Storage"
 initiative: dinotraining
-initiative_version: 1
+initiative_version: 5
 status: planned
 depends_on: dinotraining-wave-5
 demo_state: "The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models."
 created: 2026-08-14
-hash: 7d19ca65
+hash: 58ebaffa
 ---
 
 # Wave 6: Website & Hyperscaler Compute/Storage

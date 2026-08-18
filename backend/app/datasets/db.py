@@ -19,7 +19,7 @@ from app.core.paths import default_data_dir
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS datasets (
@@ -53,9 +53,41 @@ CREATE TABLE IF NOT EXISTS boxes (
     h          REAL NOT NULL CHECK (h > 0)
 );
 
+-- Schema v2: trained, imported and default heads. Metadata here, weights on disk —
+-- the same split datasets use, so "which heads do this task on this backbone" is a
+-- SQL query rather than a directory walk that opens every weight file.
+CREATE TABLE IF NOT EXISTS head_instances (
+    id                   TEXT PRIMARY KEY,
+    name                 TEXT NOT NULL,
+    kind                 TEXT NOT NULL CHECK (
+                             kind IN ('pretrained-default', 'community', 'trained-here')),
+    head_type_id         TEXT NOT NULL,
+    task                 TEXT NOT NULL,
+    backbone_id          TEXT NOT NULL,
+    backbone_family      TEXT NOT NULL,
+    embed_dim            INTEGER NOT NULL,
+    num_classes          INTEGER NOT NULL,
+    -- JSON array. Order is load-bearing: index 3 in the weights means whatever index 3
+    -- meant at training time, and nothing inside a tensor file records that.
+    class_names          TEXT NOT NULL DEFAULT '[]',
+    dataset_ids          TEXT NOT NULL DEFAULT '[]',
+    metrics              TEXT NOT NULL DEFAULT '{}',
+    primary_metric       TEXT,
+    primary_metric_value REAL,
+    config               TEXT NOT NULL DEFAULT '{}',
+    source_repo          TEXT,
+    source_digest        TEXT,
+    epochs_trained       INTEGER NOT NULL DEFAULT 0,
+    best_epoch           INTEGER,
+    weights_path         TEXT NOT NULL,
+    created_at           TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_images_dataset ON images(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_boxes_image    ON boxes(image_id);
 CREATE INDEX IF NOT EXISTS idx_boxes_label    ON boxes(label);
+CREATE INDEX IF NOT EXISTS idx_heads_task     ON head_instances(task);
+CREATE INDEX IF NOT EXISTS idx_heads_backbone ON head_instances(backbone_id);
 """
 
 _lock = threading.Lock()
