@@ -1,33 +1,38 @@
-# Wave 3 handoff — 1 of 6 features complete
+# Wave 3 handoff — COMPLETE (6 of 6)
 
-**Branch:** `feat/dinotraining-wave-3` (pushed, 3 commits ahead of `dev`)
+**Branch:** `feat/dinotraining-wave-3` — pushed, **10 commits ahead of `dev`, not merged**
 **Date:** 2026-08-18
-**Next:** feature 2, `image-input-source`
+**Tests:** 672 backend (`pytest`), 207 frontend (`vitest`). ruff, mypy, tsc all clean.
 
-## Resume in a new session with
+Wave 3 delivered the **Inference Viewer**: pick an image or a folder, pick one or more
+heads, see original vs. annotated results side by side, and compare several heads on the
+same task. Still images only — video was deliberately deferred.
 
-```
-/mdd plan-execute dinotraining-wave-3
-```
+## Waiting on Jan — do not do these unasked
 
-Stale-job detection reads `.mdd/jobs/wave-dinotraining-wave-3/MANIFEST.md`, finds 1/6
-`[x]`, and resumes at `image-input-source`. Choose **Resume**, not Discard.
-Mode is **automated** (minimal interruptions, pause only on errors).
+1. **Merge to `dev`.** Jan merges himself. He delegated the Wave 2 merge explicitly and
+   that does **not** generalise. Ask.
+2. **Confirm the demo-state.** The wave is not "done" until he can demonstrate it himself.
+   It has been driven end to end in the app, but that is not the same thing.
+3. **Delete `.mdd/jobs/wave-dinotraining-wave-3/`** once he confirms. MDD's PE4 deletes the
+   job folder on confirmation; it is ephemeral tracking and was left in place on purpose.
+4. **Plan Wave 4** (`/mdd plan-wave dinotraining-wave-4`), and **confirm where live
+   video/webcam lands**. Wave 4 (Dataset Generator) is the *proposed* home because it
+   already ingests new imagery and a frame is just another source — proposed, never agreed.
 
-## If you are in a fresh cloud environment (claude.ai/code, a remote agent, a new machine)
+## If you are in a fresh environment (claude.ai/code, a remote agent, a new machine)
 
-The repo is ~2.6 MB and deliberately holds **no model weights and no venv** — both are
-gitignored. Everything below must be created before any integration verification is
-possible. On a local machine that already has them, skip this section.
+The repo holds **no model weights and no venv** — both gitignored.
 
 ```bash
 cd backend
 python3 -m venv .venv
 .venv/bin/pip install -e '.[dev]'
-.venv/bin/python -m pytest tests/ -q          # expect 616 passing
+.venv/bin/python -m pytest tests/ -q          # expect 672 passing
+cd ../apps/frontend && npm install --legacy-peer-deps && npx vitest run   # expect 207
 ```
 
-Then get real weights — ungated, Apache-2.0, ~174 MB total:
+Then real weights — ungated, Apache-2.0, ~174 MB:
 
 ```bash
 # with the backend running on 127.0.0.1:8756
@@ -38,96 +43,8 @@ curl -X POST http://127.0.0.1:8756/api/v1/head-catalog/dinov2-linear-segmenter-a
 curl -X POST http://127.0.0.1:8756/api/v1/head-catalog/dinov2-linear-depth-nyu.dinov2-small/install
 ```
 
-The head instance ids are generated per install, so they will **not** match the ones listed
-below — read them back from `GET /api/v1/heads`. Expect CPU-only inference off a local
-machine: correct, just slower.
-
-**Confirm the bootstrap before building on it** by reproducing feature 1's verification —
-the panorama case described under "Smoke test" further down. If the far-right region does
-not differ from the background, something is wrong with the weights or the geometry, and
-building feature 2 on top of that will waste the session.
-
-## Wave planning decisions already made — do not re-litigate
-
-- **Live webcam/video is deferred out of Wave 3.** Still images only. `video-stream-source`
-  was replaced by `image-input-source`, which must establish an input contract a video
-  source can later satisfy without the viewer changing. Proposed home is Wave 4 — to be
-  confirmed when Wave 4 is planned, not decided here.
-- **The Open Product Questions gate was waived deliberately.** The two unchecked items are
-  scoped to Waves 5 and 6 (code-signing, first hyperscaler) and cannot affect an inference
-  viewer. Recorded in both the wave doc and the initiative so it is not rediscovered.
-- **Feature boundaries are settled:** the engine owns "features from an image",
-  `multi-head-compose` owns "many heads from one set of features".
-
-## What exists now
-
-| # | Feature | Doc | State |
-|---|---|---|---|
-| 1 | inference-engine | [16](docs/16-inference-engine.md) | ✅ complete |
-| 2 | image-input-source | — | ← **next** |
-| 3 | multi-head-compose | — | planned |
-| 4 | side-by-side-viewer | — | planned |
-| 5 | inference-overlay-render | — | planned |
-| 6 | same-task-head-compare | — | planned |
-
-**Feature 1 delivers:** `POST /api/v1/inference` — one image path, one backbone, one head
-instance → predictions **in original image coordinates**, tagged with the head's
-`render_hint`. Verified end to end against real weights.
-
-### What feature 1 changed in Wave 2 code
-
-Three gaps where Wave 2 only ever needed the *training* direction:
-
-1. **`app/ml/inference/geometry.py`** — new. `invert_boxes` / `invert_map` are the mirror
-   of `transform_boxes` / `transform_mask` in `preprocess.py`. They live apart because the
-   forward pair is a training concern and the inverse an inference one; each docstring
-   points at the other. **If a third consumer of either direction appears, unify them.**
-2. **`DECODERS` extended from 3 entries to 7.** It covered only trainable head types, so
-   `decode_for` raised for all four non-trainable ones — including all three pretrained
-   defaults. The four additions are `identity_decode`.
-3. **`decode.py` moved `training/` → `heads/`.** Keyed by head-type id, imports only from
-   `heads.*`, two consumers now. Its test moved to `tests/test_head_decode.py`.
-
-## Feature 2 — what is already known
-
-`image-input-source`: a single image or a folder. Two things doc 16 recorded specifically
-so feature 2 does not rediscover them:
-
-- **`detection_decode` decodes one image, not a batch** — it indexes `[0]` throughout
-  (`app/ml/heads/decode.py`). Either loop per image, or generalise the decoder first.
-  Do not assume a batched forward pass will work end to end.
-- **`masks` and `depth-map` payloads are large.** A 900×300 map serialises as ~270k JSON
-  numbers and measured ~460 ms per call. Fine for one image on loopback; watch it over a
-  folder run. RLE or a PNG response is the obvious lever if it bites.
-
-Reuse Wave 1's `app/ml/images.py` — `read_image` and `list_images` — rather than writing a
-second file-reading path. `list_images` is deliberately **non-recursive** so pointing it at
-`/` enumerates one level instead of walking the disk.
-
-**The input contract is the real deliverable here**, not the file listing. Feature 4's
-viewer and a future video source both consume it, so shape it as "something that yields
-images one at a time with a stable identity", not as "a list of paths".
-
-## Architecture that later features must honour
-
-- **Two backbone passes, not one per task.** Cache key is `(backbone_id, geometry, size)`.
-  Today's seven head types collapse to two passes: `aspect-preserve @ 448` (32×32 grid —
-  detection, segmentation, depth) and `center-crop @ 224` (16×16 — classification).
-  `consumes` is **not** part of the key: `cls` and `patches` come from the same
-  `BackboneFeatures`, so a `cls` head shares a pass with a `patch-grid` one.
-  What is impossible is *synthesising* one pass from another — CLS is attention over every
-  patch in that pass, and a 14px patch at 448 covers half the extent it does at 224. This
-  is feature 3's whole problem; the reasoning is in the wave doc's Open Research.
-- **The renderer dispatches off `render_hint`**, never a task string it re-derives. Adding
-  a head type to the registry later must render without touching feature 5's code.
-- **Heads are presented via `HeadInstance.summary`** — never a filename. Wave 2 shipped one
-  bug from breaking this, and doc 16 deliberately does *not* claim doc 12's `list_all`
-  contract because the engine runs a head it is handed rather than offering a picker.
-  Feature 6 is where that contract actually lands.
-
-## Smoke test — free, no training required
-
-Three real default heads are installed on this machine and need no training:
+Head instance ids are generated per install, so they will **not** match the ones below —
+read them from `GET /api/v1/heads`. On this machine today:
 
 ```
 08ab54602f614a5f861cc64346ba1789   classification (IN1k, 1000 classes)
@@ -135,58 +52,124 @@ a81053b637a542d8923e38434120555d   segmentation   (ADE20k, 150 classes)
 313c37d38a0844e2a39d61f94555e1be   depth          (NYUd, metres)
 ```
 
-They exercise backbone → head → render across two dense render hints and both geometry
-passes. The panorama used to verify feature 1 is worth recreating: a 900×300 image with an
-object at x=770–880, i.e. exactly the region a centre crop destroys. Correct behaviour is
-distinct segmentation/depth values in that region against the background — that is the
-letterbox and the inversion both working.
+**Confirm the bootstrap before building on it** with the smoke test below.
+
+## Smoke test — free, no training
+
+Recreate the panorama: a 900×300 image with an object at x=770–880, i.e. exactly the region
+a centre crop destroys.
 
 ```bash
 curl -s -X POST -H 'Content-Type: application/json' \
-  -d '{"image_path":"/abs/path.png","backbone_id":"dinov2-small","instance_id":"<id>"}' \
-  http://127.0.0.1:8756/api/v1/inference
+  -d '{"image_path":"/abs/path.png","backbone_id":"dinov2-small","instance_ids":["<cls>","<seg>","<depth>"]}' \
+  http://127.0.0.1:8756/api/v1/inference/compose
 ```
 
-## Testing conventions established this wave
+Expect **`passes: 2`** for those three heads (two framings, not three), and grids `[16,16]`
+and `[32,32]`.
 
-- **`StubBackbone` + patched `extract`** (`tests/test_inference_engine.py`). Loading
-  `dinov2-small` in unit tests would make every one depend on a 168 MB download and seconds
-  of model load. The doc-07 tensor contract is what the engine consumes and it is fully
-  expressible in a stub — but **integration must still use real weights**, which is where
-  every real bug this project has found came from.
-- **`head_settings` fixture** in `tests/conftest.py` — a throwaway data + model root, so
-  install tests never leak into the developer's real application-support directory.
-- `tests/head_testkit.py` holds `install_fake_backbone` and the upstream state-dict builders.
+**Read the result correctly.** *Depth* is the head that proves letterbox + inversion: that
+far-right region reads clearly different from the background. The **ADE20k segmenter does
+not distinguish it** on a synthetic flat-colour panorama — it returns two classes and the
+object is not one of them. That is the model on unnatural input, not a bug, and it is
+recorded in doc 20. Do not "fix" it.
 
-## Gotchas
+## What Wave 3 built
 
-- **`git commit -m` with quotes in the message breaks under zsh**, and `git merge -F -`
-  does not accept stdin at all. Write the message to a file and use `-F <file>`. Both bit
-  this session.
-- **Restart the dev server after backend edits** (`preview_stop` then `preview_start`);
-  uvicorn does not reload. Stale Vite HMR errors persist in the browser console buffer
-  across a restart and name files you never touched — verify with `tsc` + `read_page`, not
-  the console.
-- **`useState` seeded from async props is a live trap in this codebase** — it bit twice in
-  Wave 2. Store the user's override and fall back to `props[0]`. Now in CLAUDE.md.
+| # | Feature | Doc | The load-bearing idea |
+|---|---|---|---|
+| 1 | inference-engine | [16](docs/16-inference-engine.md) | predictions in **original image coordinates**, tagged with `render_hint` |
+| 2 | image-input-source | [17](docs/17-image-input-source.md) | one image and a folder are **the same shape**, items keyed by an opaque `item_id` |
+| 3 | multi-head-compose | [18](docs/18-multi-head-compose.md) | N heads, **one pass per framing**; cache key `(backbone_id, geometry, size)` |
+| 4 | side-by-side-viewer | [19](docs/19-side-by-side-viewer.md) | **one transform rendered N times** — panes cannot drift |
+| 5 | inference-overlay-render | [20](docs/20-inference-overlay-render.md) | dispatch on `render_hint` via a `Record`; dense maps travel as **PNG** |
+| 6 | same-task-head-compare | [21](docs/21-same-task-head-compare.md) | comparison is **a filtered list, not a mode** |
+
+## Architecture later waves must honour
+
+- **Heads are registry entries, not enum branches.** Losses, metrics, decoders, builders,
+  and now **overlay renderers** are registries keyed by id. `OVERLAY_RENDERERS` is
+  `Record<RenderHint, …>` on purpose: adding a hint without a renderer is a compile error,
+  not a blank pane. A `task ===` comparison in `components/overlays/` is a defect.
+- **Two backbone passes, not one per task.** `consumes` is **not** in the cache key — `cls`
+  and `patches` come from the same `BackboneFeatures`. One pass cannot be synthesised from
+  another. The cache lives in the compose call and dies with it; a cross-call cache needs an
+  invalidation answer (mtime) nobody has needed yet, and would show up as `passes: 0`.
+- **Dense maps travel as base64 PNG** (`mask_png` / `depth_png`), never nested JSON lists.
+  Measured: 12.5 MB → 17 KB for a 3000×2000 segmentation, because the map is upsampled from
+  a 32×32 grid and PNG removes exactly that redundancy. The pixel value is *data* (a class
+  index, or 0..255 depth) — no palette is baked in, so the client owns colour.
+- **Usable ≠ trainable**, and **provenance is the cross-tab contract** — `HeadInstance.summary`,
+  never a filename. Wave 2 shipped one bug from breaking this; Wave 3 has three consumers of
+  it now.
+- **The pickle carve-out stays narrow:** one `torch.load`, on digest-pinned bytes only.
+- **Preprocessing is derived from (backbone, head)**, never configured by a caller.
+- SAM lands in **Wave 4**, making segmentation trainable in-app.
+
+## Gotchas (all still live)
+
+- **Restart the dev server after backend edits** — uvicorn does not reload. `preview_stop`
+  then `preview_start`. Stale Vite HMR errors persist in the browser console **across a
+  restart and a reload**, and name files you never touched. Verify with `tsc` + `read_page`,
+  not the console.
+- **`git commit -m` with quotes breaks under zsh**, and `git merge -F -` does not accept
+  stdin. Write the message to a file and use `-F <file>`.
+- **A 300-line hook blocks writes.** It fired twice this wave. `registry.py` is at 293 and
+  `preprocess.py` at 259 — the next addition to either needs a split, not a trim.
 - **Do not use `perl -pi -e 's|…|…|'` with `|` as the delimiter** on regexes containing `|`.
-- **The project has no prettier config** and uses single quotes. Do not run prettier.
-- **A 300-line hook blocks writes.** `registry.py` is at 293 and `preprocess.py` at 259 —
-  both are close, and the next addition to either will need a split rather than a trim.
+- **No prettier config; single quotes.** Do not run prettier.
 - **MDD hashes** must be recomputed after any initiative/wave edit or the next
-  `plan-execute` hard-stops:
+  `plan-execute` hard-stops. Feature docs carry no hash.
   ```bash
-  f=.mdd/waves/dinotraining-wave-3.md
+  f=.mdd/waves/dinotraining-wave-4.md
   new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
   perl -pi -e "s/^hash: .*/hash: $new/" "$f"
   ```
-  Feature docs carry no hash — only `initiatives/` and `waves/`.
 
-## State to be aware of
+## Testing lessons this wave — the bugs the suite could not see
 
-- Locally downloaded: `dinov2-small`, `grounding-dino-tiny`, plus the three default heads
-  above (~6 MB). `dinov2-base` and `dinov2-large` are **not** installed, so any catalogue
-  entry for them correctly reports "Download the backbone first".
-- Wave 2 is merged to `dev`; `main` is untouched and must stay that way.
-- Jan normally merges to `dev` himself — he delegated the Wave 2 merge explicitly, which
-  does not generalise. Ask.
+Every real bug again came from driving the app, never from the suite. Three new shapes:
+
+1. **CPU-only tests over an MPS runtime.** `.numpy()` raises on any tensor that is not a
+   plain CPU leaf. All 668 tests passed while every dense prediction 500'd, because every
+   test builds tensors on the CPU. → route device→host through one
+   `.detach().cpu().numpy()` helper; pair a `@skipif` MPS test with a **deterministic**
+   `requires_grad` one.
+2. **Geometry measured against the wrong element.** jsdom reports every element as `0×0`, so
+   a clamp against the wrong box behaves exactly like one against the right box. → stub
+   `HTMLElement.prototype.clientWidth/Height` **before mount** (measurement happens in a
+   mount effect) and assert the **exact** boundary value — a loose assertion passes at 0.
+3. **A handler on an outer container catching a bubbled event** from a control inside it
+   (double-clicking "Zoom in" reset the view).
+
+**Always confirm a regression test fails against the old code.** One written this wave was
+vacuous and passed either way until it was rewritten.
+
+## Known issues worth picking up
+
+- **The ImageNet classifier ships no class names**, so results render as `class 416` rather
+  than `Siamese cat`. The head is close to unreadable in the UI. The 1000-name list belongs
+  with the catalogue entry in doc 15, not hardcoded in the frontend. *(Best first task —
+  small, self-contained, visibly improves the app.)*
+- **A fresh install cannot demonstrate comparison** — only one head per task ships as a
+  default, so the user must train or import a second first.
+- **N panes are equal-width columns**, so five heads gives five narrow strips. Left
+  unsolved until real use shows how many simultaneous heads are useful.
+- **Zoom is about the stage box, not the image content**, so zoom-at-cursor drifts slightly
+  on a letterboxed image. Nothing misaligns (all panes and the overlay share the geometry);
+  the gesture is just looser than it should be.
+- **`GET /api/v1/annotate/image`** serves the viewer's image bytes from the *annotate* API
+  slice. One implementation is right, the naming is not — promote it out of that slice if a
+  third consumer appears.
+- **`GET /api/v1/annotate/folder`** and `GET /api/v1/inference/source` both list a folder
+  through `list_images`. Two endpoints over one helper is deliberate; a *third* consumer
+  means migrating Wave 1's onto the newer shape and deleting it.
+
+## State of the machine
+
+- Installed: `dinov2-small`, `grounding-dino-tiny`, plus the three default heads (~6 MB).
+  `dinov2-base` and `dinov2-large` are **not** installed, so any catalogue entry for them
+  correctly reports "Download the backbone first".
+- Waves 1 and 2 are merged to `dev`. `main` is untouched and must stay that way.
+- A scratch segmenter was registered during feature 6's verification and **removed again** —
+  the head registry is back to its original three.
