@@ -3,8 +3,10 @@
 import type { JSX } from 'react';
 
 import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
+import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
 import { ModelCard } from '../components/ModelCard';
 import { useModels } from '../hooks/useModels';
+import { useTrainerOptions } from '../hooks/useTrainerOptions';
 
 const FAMILY_ORDER: readonly ModelFamily[] = ['grounding-dino', 'dinov2', 'dinov3'];
 
@@ -45,6 +47,9 @@ function SystemPanel({
 
 export function AdminTab(): JSX.Element {
   const { models, system, jobs, loading, error, busy, download, remove } = useModels();
+  // Null backbone: the head-catalogue panel does its own per-backbone filtering, and
+  // asking for verdicts here would tie the whole tab to one selection.
+  const { backbones, headTypes } = useTrainerOptions(null);
 
   const byFamily = (family: ModelFamily): ModelInfo[] =>
     models.filter((model) => model.family === family);
@@ -93,6 +98,8 @@ export function AdminTab(): JSX.Element {
           );
         })
       )}
+
+      <HeadCatalogPanel backbones={backbones} headTypes={headTypes} />
     </section>
   );
 }

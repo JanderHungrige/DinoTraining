@@ -16,7 +16,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 import pytest  # noqa: E402
 
-from app.core.config import get_settings  # noqa: E402
+from app.core.config import Settings, get_settings  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -36,6 +36,20 @@ def _isolate_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()
+
+
+@pytest.fixture
+def head_settings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Settings:
+    """Settings pointed at a throwaway data + model root.
+
+    Head installs write both a SQLite row and a weights file, so a shared fixture keeps
+    every install test from leaking into the developer's real application-support
+    directory — which Wave 2 already had to clean up by hand once.
+    """
+    monkeypatch.setenv("DINO_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("DINO_MODEL_CACHE_DIR", str(tmp_path / "models"))
+    get_settings.cache_clear()
+    return get_settings()
 
 
 @pytest.fixture(autouse=True)

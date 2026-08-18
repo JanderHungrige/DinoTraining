@@ -50,7 +50,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isHeadInstance(value: unknown): value is HeadInstanceInfo {
+/** Exported because the head-catalogue endpoints return this same shape. */
+export function isHeadInstance(value: unknown): value is HeadInstanceInfo {
   if (!isRecord(value)) return false;
   return (
     typeof value['id'] === 'string' &&

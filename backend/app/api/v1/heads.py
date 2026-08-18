@@ -49,7 +49,10 @@ class DeleteResponse(BaseModel):
     removed: bool
 
 
-def _describe(instance: HeadInstance) -> HeadInstanceInfo:
+def describe_instance(instance: HeadInstance) -> HeadInstanceInfo:
+    """Instance -> API shape. Public because doc 15's catalogue router returns the
+    same model — a second copy is how two endpoints start describing one head
+    differently."""
     return HeadInstanceInfo(
         id=instance.id,
         name=instance.name,
@@ -79,7 +82,7 @@ async def list_heads(
     backbone: str | None = Query(default=None, description="Hide heads that cannot run."),
 ) -> HeadInstanceListResponse:
     instances = HeadInstanceStore().list_all(task=task, backbone_id=backbone)
-    return HeadInstanceListResponse(heads=[_describe(instance) for instance in instances])
+    return HeadInstanceListResponse(heads=[describe_instance(instance) for instance in instances])
 
 
 @router.get(
@@ -87,7 +90,7 @@ async def list_heads(
 )
 async def get_head(instance_id: str) -> HeadInstanceInfo:
     try:
-        return _describe(HeadInstanceStore().get(instance_id))
+        return describe_instance(HeadInstanceStore().get(instance_id))
     except HeadInstanceNotFoundError:
         raise HTTPException(status_code=404, detail=f"Unknown head: {instance_id}") from None
 

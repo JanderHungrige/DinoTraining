@@ -22,6 +22,11 @@ from app.ml.heads.modules import (
     DetectionHead,
     SegmentationHead,
 )
+from app.ml.heads.pretrained import (
+    PretrainedClassifier,
+    PretrainedDepth,
+    PretrainedSegmenter,
+)
 from app.ml.heads.registry import get_head_type
 
 if TYPE_CHECKING:
@@ -54,11 +59,35 @@ def _depth(capabilities: BackboneCapabilities, num_classes: int | None) -> nn.Mo
     return DepthHead(embed_dim=capabilities.embed_dim)
 
 
+# The pretrained defaults carry a fixed upstream label set, so their class counts are
+# module constants rather than a caller argument — build_head requires num_classes=None
+# for a non-trainable head, and a caller has nothing meaningful to pass.
+def _pretrained_classifier(
+    capabilities: BackboneCapabilities, num_classes: int | None
+) -> nn.Module:
+    return PretrainedClassifier(embed_dim=capabilities.embed_dim)
+
+
+def _pretrained_segmenter(
+    capabilities: BackboneCapabilities, num_classes: int | None
+) -> nn.Module:
+    return PretrainedSegmenter(embed_dim=capabilities.embed_dim)
+
+
+def _pretrained_depth(
+    capabilities: BackboneCapabilities, num_classes: int | None
+) -> nn.Module:
+    return PretrainedDepth(embed_dim=capabilities.embed_dim)
+
+
 HEAD_BUILDERS: dict[str, HeadBuilder] = {
     "linear-classifier": _classifier,
     "dense-detector": _detector,
     "linear-segmenter": _segmenter,
     "linear-depth": _depth,
+    "dinov2-linear-classifier-in1k": _pretrained_classifier,
+    "dinov2-linear-segmenter-ade20k": _pretrained_segmenter,
+    "dinov2-linear-depth-nyu": _pretrained_depth,
 }
 
 

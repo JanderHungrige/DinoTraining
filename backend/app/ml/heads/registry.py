@@ -24,8 +24,10 @@ HeadTask = Literal["classification", "detection", "segmentation", "depth"]
 TargetFormat = Literal["image-labels", "boxes", "masks", "depth-map"]
 RenderHint = Literal["labels", "boxes", "masks", "depth-map"]
 
-#: Which part of :class:`BackboneFeatures` a head consumes.
-FeatureUse = Literal["cls", "patch-grid"]
+#: Which part of :class:`BackboneFeatures` a head consumes. ``cls+patch-grid`` is for
+#: the pretrained defaults, which concatenate both — declaring one of them would
+#: misdescribe the head in the API for no gain.
+FeatureUse = Literal["cls", "patch-grid", "cls+patch-grid"]
 
 #: How preprocessing must treat geometry. ``center-crop`` is the stock classification
 #: transform; ``aspect-preserve`` is mandatory for dense tasks, where a centre crop
@@ -96,6 +98,11 @@ class Compatibility:
 
 
 _ALL_DINO: frozenset[ModelFamily] = frozenset({"dinov2", "dinov3"})
+
+#: The pretrained defaults are DINOv2 weights and fit nothing else. DINOv3 publishes
+#: heads only for ViT-7B/16, gated and under a non-redistributable licence, so there is
+#: no DINOv3 equivalent to add later either — see doc 15.
+_DINOV2_ONLY: frozenset[ModelFamily] = frozenset({"dinov2"})
 
 
 _SPECS: tuple[HeadTypeSpec, ...] = (
@@ -174,6 +181,64 @@ _SPECS: tuple[HeadTypeSpec, ...] = (
         primary_metric_mode=None,
         render_hint="depth-map",
         compatible_families=_ALL_DINO,
+    ),
+    # --- pretrained defaults (doc 15) -------------------------------------------
+    # All three are trainable=False: they carry someone else's fixed label set, so
+    # fine-tuning them here is meaningless. trainable_head_types() already excludes
+    # them, which keeps them out of the trainer without a new condition anywhere.
+    HeadTypeSpec(
+        id="dinov2-linear-classifier-in1k",
+        task="classification",
+        title="DINOv2 linear classifier (ImageNet)",
+        description=(
+            "Meta's published linear probe over ImageNet-1k. Downloadable and usable "
+            "immediately; its 1000 classes are fixed, so train your own for your labels."
+        ),
+        trainable=False,
+        target_format=None,
+        consumes="cls+patch-grid",
+        geometry="center-crop",
+        metrics=("accuracy",),
+        primary_metric=None,
+        primary_metric_mode=None,
+        render_hint="labels",
+        compatible_families=_DINOV2_ONLY,
+    ),
+    HeadTypeSpec(
+        id="dinov2-linear-segmenter-ade20k",
+        task="segmentation",
+        title="DINOv2 linear segmenter (ADE20k)",
+        description=(
+            "Meta's published ADE20k linear head, 150 scene classes. This is what "
+            "makes segmentation usable before the app can produce mask targets."
+        ),
+        trainable=False,
+        target_format=None,
+        consumes="patch-grid",
+        geometry="aspect-preserve",
+        metrics=("miou",),
+        primary_metric=None,
+        primary_metric_mode=None,
+        render_hint="masks",
+        compatible_families=_DINOV2_ONLY,
+    ),
+    HeadTypeSpec(
+        id="dinov2-linear-depth-nyu",
+        task="depth",
+        title="DINOv2 linear depth (NYUd)",
+        description=(
+            "Meta's published NYU-Depth head, predicting metres. Depth has no "
+            "in-app ground truth, so this is the only way to get a usable depth head."
+        ),
+        trainable=False,
+        target_format=None,
+        consumes="cls+patch-grid",
+        geometry="aspect-preserve",
+        metrics=("rmse", "abs_rel"),
+        primary_metric=None,
+        primary_metric_mode=None,
+        render_hint="depth-map",
+        compatible_families=_DINOV2_ONLY,
     ),
 )
 

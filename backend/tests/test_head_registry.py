@@ -19,6 +19,7 @@ from app.ml.heads.registry import (
     check_compatibility,
     get_head_type,
     head_types_for_task,
+    trainable_head_types,
 )
 
 
@@ -121,8 +122,16 @@ class TestLookup:
         assert get_head_type("not-a-head") is None
 
     def test_filter_by_task(self) -> None:
+        """Two segmentation heads since doc 15: the trainable one and the ADE20k default.
+
+        This is what same-task comparison in Wave 3 lists — filtering by task is the
+        whole mechanism, so more than one entry per task is the expected shape.
+        """
         found = head_types_for_task("segmentation")
-        assert [entry.id for entry in found] == ["linear-segmenter"]
+        assert [entry.id for entry in found] == [
+            "linear-segmenter",
+            "dinov2-linear-segmenter-ade20k",
+        ]
 
     def test_filter_by_task_with_no_matches(self) -> None:
         assert head_types_for_task("pose") == ()  # type: ignore[arg-type]
@@ -187,10 +196,29 @@ class TestCompatibility:
         assert "dinov2" in result.reason
         assert "dinov3" in result.reason
 
-    def test_every_built_in_head_supports_both_dino_families(self) -> None:
-        for entry in all_head_types():
+    def test_every_trainable_head_supports_both_dino_families(self) -> None:
+        """Heads this app builds from scratch fit any backbone width, so any family."""
+        for entry in trainable_head_types():
             for family in ("dinov2", "dinov3"):
                 assert check_compatibility(entry, capabilities(family=family)).compatible
+
+    def test_pretrained_defaults_are_dinov2_only_and_say_so(self) -> None:
+        """Doc 15: DINOv3 publishes no head this app can ship, and the user is told why.
+
+        These carry actual DINOv2 weights, so unlike a from-scratch head they cannot
+        adapt to another family — and per the wave rule the refusal must explain
+        itself rather than grey the row out.
+        """
+        defaults = [entry for entry in all_head_types() if not entry.trainable]
+        defaults = [entry for entry in defaults if entry.id.startswith("dinov2-")]
+        assert len(defaults) == 3
+
+        for entry in defaults:
+            assert check_compatibility(entry, capabilities(family="dinov2")).compatible
+            verdict = check_compatibility(entry, capabilities(family="dinov3"))
+            assert verdict.compatible is False
+            assert verdict.reason is not None
+            assert "dinov3" in verdict.reason
 
     def test_embed_dim_is_not_a_type_level_constraint(self) -> None:
         """A linear head is built to whatever width the backbone reports."""

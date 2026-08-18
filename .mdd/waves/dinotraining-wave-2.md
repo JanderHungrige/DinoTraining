@@ -3,11 +3,11 @@ id: dinotraining-wave-2
 title: "Wave 2: Head Trainer"
 initiative: dinotraining
 initiative_version: 5
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-1
 demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training."
 created: 2026-08-14
-hash: e358bb0b
+hash: e57cf2b7
 ---
 
 # Wave 2: Head Trainer
@@ -41,7 +41,7 @@ segmentation and depth useful before the app can train them.
 | 6 | head-instance-registry | [12](../docs/12-head-instance-registry.md) | complete | training-job-runner, head-registry |
 | 7 | training-metrics-stream | [13](../docs/13-training-metrics-stream.md) | complete | training-job-runner |
 | 8 | trainer-config-ui | [14](../docs/14-trainer-config-ui.md) | complete | head-registry, training-job-runner |
-| 9 | head-catalog-import | — | planned | head-registry, head-instance-registry |
+| 9 | head-catalog-import | [15](../docs/15-head-catalog-import.md) | complete | head-registry, head-instance-registry |
 
 ### Feature notes
 
@@ -135,9 +135,15 @@ segmentation and depth useful before the app can train them.
   mask dataset. **SAM lands in Wave 4** to generate masks in-app, at which point segmentation
   becomes trainable end-to-end from the Annotation Studio. Same shape for depth: default head
   now, trainable later or never. No box-derived weak masks.
-- Exact default-head weights + digests to pin per backbone version (DINOv2 sizes; DINOv3 may
-  have no published heads at all — check before promising defaults for it).
-- Whether DINOv3 default heads exist under a licence compatible with redistribution, given
-  the model itself is gated.
-- Which community heads actually exist as safetensors for DINOv2/v3 today — needed to make
-  the import guidance concrete rather than theoretical.
+- ~~Exact default-head weights + digests to pin per backbone version~~ → **resolved
+  2026-08-18**: the *linear* variants of all three heads exist for vits14/vitb14/vitl14
+  (the 290 MB DPT depth head is not needed). Nine entries pinned in
+  `backend/app/ml/heads/catalog.py`, each digest computed from the real downloaded file.
+- ~~Whether DINOv3 default heads exist under a compatible licence~~ → **resolved
+  2026-08-18: no.** Meta publishes DINOv3 heads only for ViT-7B/16 — not the ViT-B/16 or
+  ViT-L/16 this app ships — gated behind a per-user e-mailed URL list, under the DINOv3
+  License rather than Apache-2.0. All three conditions fail, so DINOv3 backbones are
+  train-your-own only and the head types declare `compatible_families={"dinov2"}`.
+- Which community heads actually exist as safetensors for DINOv2/v3 today — **still
+  open**. The import path is built and verified against a synthetic safetensors head, but
+  no real third-party DINOv2 head repo has been identified, so the guidance stays generic.
