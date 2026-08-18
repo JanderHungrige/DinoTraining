@@ -11,6 +11,7 @@ import { useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { ImageSourcePicker } from '../components/ImageSourcePicker';
+import { SideBySideViewer } from '../components/SideBySideViewer';
 import { useImageSource } from '../hooks/useImageSource';
 
 export function InferenceViewerTab(): JSX.Element {
@@ -46,7 +47,15 @@ export function InferenceViewerTab(): JSX.Element {
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
 
-          <img className="viewer__image" src={imageUrl(current.path)} alt={current.name} />
+          <SideBySideViewer
+            imageUrl={imageUrl(current.path)}
+            imageAlt={current.name}
+            resultPlaceholder={
+              <p className="viewer__placeholder">
+                Heads and their overlays arrive with the rest of this wave.
+              </p>
+            }
+          />
 
           <div className="studio__actions">
             <button
