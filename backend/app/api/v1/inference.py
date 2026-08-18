@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.ml.errors import ModelNotInstalledError
@@ -31,6 +31,7 @@ from app.ml.inference.engine import (
     run_inference,
 )
 from app.ml.inference.results import Prediction
+from app.ml.inference.source import InputSource, SourceKind, resolve_source
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -72,6 +73,53 @@ def describe(prediction: Prediction) -> PredictionResponse:
         grid=list(prediction.grid),
         elapsed_ms=prediction.elapsed_ms,
     )
+
+
+class SourceItemResponse(BaseModel):
+    item_id: str = Field(description="Stable, opaque identity — never a path.")
+    name: str
+    path: str = Field(description="Absolute path, for image bytes and POST /inference.")
+
+
+class SourceResponse(BaseModel):
+    kind: SourceKind
+    root: str
+    items: list[SourceItemResponse]
+    truncated: bool = Field(description="True when the folder held more than the cap.")
+
+
+def describe_source(source: InputSource) -> SourceResponse:
+    return SourceResponse(
+        kind=source.kind,
+        root=str(source.root),
+        items=[
+            SourceItemResponse(item_id=item.item_id, name=item.name, path=str(item.path))
+            for item in source.items
+        ],
+        truncated=source.truncated,
+    )
+
+
+@router.get(
+    "/inference/source",
+    response_model=SourceResponse,
+    summary="Resolve a path into the images to step through",
+)
+async def read_source(path: str = Query(min_length=1)) -> SourceResponse:
+    """A single image or a folder, returned as one shape.
+
+    An empty folder is a 200 with no items, not a 404: "this folder has no images in it"
+    is a routine thing for a user to discover and the viewer has to be able to say it.
+    """
+    try:
+        source = resolve_source(path)
+    # ImageReadError subclasses ValueError; FolderNotFoundError subclasses FileNotFoundError.
+    except ImageReadError as exc:
+        raise HTTPException(status_code=415, detail=str(exc)) from None
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from None
+
+    return describe_source(source)
 
 
 @router.post(

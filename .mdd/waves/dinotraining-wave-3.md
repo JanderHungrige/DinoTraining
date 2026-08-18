@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-2
 demo_state: "User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only; live video is deferred."
 created: 2026-08-14
-hash: 309fcf80
+hash: 9e6b1f01
 ---
 
 # Wave 3: Inference Viewer
@@ -46,7 +46,7 @@ note below.
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
 | 1 | inference-engine | [16](../docs/16-inference-engine.md) | complete | — |
-| 2 | image-input-source | — | planned | — |
+| 2 | image-input-source | [17](../docs/17-image-input-source.md) | complete | — |
 | 3 | multi-head-compose | — | planned | inference-engine |
 | 4 | side-by-side-viewer | — | planned | — |
 | 5 | inference-overlay-render | — | planned | side-by-side-viewer |

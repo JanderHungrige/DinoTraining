@@ -11,22 +11,11 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { DEFAULT_BOX_THRESHOLD, DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
+import { hasNativeDialog, pickFolder } from '../lib/dialog';
 
 export interface SessionSetupProps {
   readonly onStart: (config: SessionConfig) => void;
   readonly disabled?: boolean;
-}
-
-async function pickFolder(): Promise<string | null> {
-  // Only present inside the Tauri webview; absent in a plain browser.
-  if (!('__TAURI_INTERNALS__' in window)) return null;
-  try {
-    const { open } = await import('@tauri-apps/plugin-dialog');
-    const selected = await open({ directory: true, multiple: false });
-    return typeof selected === 'string' ? selected : null;
-  } catch {
-    return null;
-  }
 }
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
@@ -40,7 +29,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   const [hasPicker, setHasPicker] = useState(false);
 
   useEffect(() => {
-    setHasPicker('__TAURI_INTERNALS__' in window);
+    setHasPicker(hasNativeDialog());
     void listDatasets()
       .then(setDatasets)
       .catch(() => setError('Could not load datasets.'));

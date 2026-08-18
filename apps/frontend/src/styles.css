@@ -497,6 +497,16 @@ body {
   flex-wrap: wrap;
 }
 
+/* Feature 19 replaces this with the side-by-side panes; until then the preview is
+   simply bounded so a 4000px photo does not push the controls off-screen. */
+.viewer__image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  border-radius: 6px;
+  background: var(--surface-2, #1a1a1a);
+}
+
 .studio__spacer {
   flex: 1;
 }
