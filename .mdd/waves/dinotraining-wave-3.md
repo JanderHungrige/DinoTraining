@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-2
 demo_state: "User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only; live video is deferred."
 created: 2026-08-14
-hash: fe18d896
+hash: f8d7ee29
 ---
 
 # Wave 3: Inference Viewer
@@ -30,9 +30,9 @@ note below.
 - **Live video/webcam deferred out of this wave.** Capture permissions in Tauri, frame
   pacing and drop handling are the largest and least-certain chunk of the original draft,
   and none of it is needed to prove the wave's real payoff — the backbone → head → render
-  path and same-task comparison. Its natural home is **Wave 4**, where the Dataset
-  Generator already ingests new imagery and video frames are simply another source; that
-  placement is a proposal, to be confirmed when Wave 4 is planned.
+  path and same-task comparison. Wave 4 was proposed as its home; **that proposal was
+  withdrawn on 2026-08-18** — Wave 4 is dataset-generator only. Video is unassigned and
+  tracked in `.mdd/BACKLOG.md` until a wave claims it.
 - **`video-stream-source` is replaced by `image-input-source`**, not simply removed. The
   wave still needs an input-source feature; it just loads files rather than frames.
 - **Open Product Questions gate waived.** Two questions remain unchecked in the initiative
