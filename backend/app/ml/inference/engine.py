@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 
 import torch
 from PIL import Image
 
-from app.core.config import Settings, get_settings
-from app.ml.backbone import Backbone, extract, load_backbone, read_capabilities
+from app.core.config import Settings
+from app.ml.backbone import Backbone, BackboneFeatures
 from app.ml.heads.builders import build_head
 from app.ml.heads.decode import decode_for
 from app.ml.heads.instances import HeadInstance
@@ -28,7 +29,7 @@ from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.heads.store import HeadInstanceStore
 from app.ml.inference.geometry import invert_boxes, invert_map
 from app.ml.inference.results import Prediction
-from app.ml.preprocess import GeometryTransform, plan_preprocessing, prepare_images
+from app.ml.preprocess import GeometryTransform, PreprocessPlan
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +77,67 @@ def load_head(instance: HeadInstance, backbone: Backbone, settings: Settings) ->
     return head
 
 
+@dataclass(frozen=True, slots=True)
+class ResolvedHead:
+    """A head instance and its registry contract, checked against the backbone."""
+
+    instance: HeadInstance
+    spec: HeadTypeSpec
+
+
+def resolve_head(instance_id: str, backbone_id: str, settings: Settings) -> ResolvedHead:
+    """Look a head up and confirm it belongs to this backbone.
+
+    Separated from running it so a caller with several heads can resolve them all before
+    paying for a single forward pass — see :mod:`app.ml.inference.compose`.
+    """
+    instance = _require_instance(instance_id, settings)
+    if instance.backbone_id != backbone_id:
+        raise BackboneMismatchError(
+            f"{instance.name} was registered for {instance.backbone_id}, "
+            f"but {backbone_id} was requested. Select {instance.backbone_id} to run it."
+        )
+    return ResolvedHead(instance=instance, spec=_require_spec(instance))
+
+
+def predict_from_features(
+    resolved: ResolvedHead,
+    features: BackboneFeatures,
+    transform: GeometryTransform,
+    plan: PreprocessPlan,
+    backbone: Backbone,
+    settings: Settings,
+    score_threshold: float = DEFAULT_SCORE_THRESHOLD,
+) -> Prediction:
+    """One head's work, given features somebody else paid for.
+
+    ``elapsed_ms`` measures *this* — forward, decode, inversion — and deliberately not
+    the backbone pass, which may be shared with other heads. The total is reported by
+    the caller; the gap between the two is the saving. See doc 18.
+    """
+    started = time.perf_counter()
+    head = load_head(resolved.instance, backbone, settings)
+
+    with torch.no_grad():
+        outputs = head(features)
+
+    decoded = decode_for(resolved.spec)(outputs, plan.patch_size)
+    payload = _build_payload(resolved.spec, decoded, transform, plan.size, score_threshold)
+    elapsed = (time.perf_counter() - started) * 1000
+
+    return Prediction(
+        instance_id=resolved.instance.id,
+        head_name=resolved.instance.name,
+        head_type_id=resolved.spec.id,
+        task=resolved.spec.task,
+        render_hint=resolved.spec.render_hint,
+        class_names=resolved.instance.class_names,
+        payload=payload,
+        grid=features.grid,
+        elapsed_ms=elapsed,
+    )
+
+
 def run_inference(
     image: Image.Image,
     backbone_id: str,
@@ -83,49 +145,23 @@ def run_inference(
     settings: Settings | None = None,
     score_threshold: float = DEFAULT_SCORE_THRESHOLD,
 ) -> Prediction:
-    """Run one image through one head and return predictions in source coordinates."""
-    settings = settings or get_settings()
-    started = time.perf_counter()
+    """Run one image through one head and return predictions in source coordinates.
 
-    instance = _require_instance(instance_id, settings)
-    if instance.backbone_id != backbone_id:
-        raise BackboneMismatchError(
-            f"{instance.name} was registered for {instance.backbone_id}, "
-            f"but {backbone_id} was requested. Select {instance.backbone_id} to run it."
-        )
+    Delegates to :func:`compose.run_heads` with a single head rather than keeping a
+    second copy of the same sequence — one head is simply one pass group. The import is
+    function-local because compose builds on this module's per-head step, and a
+    module-level import either way would close the cycle.
+    """
+    from app.ml.inference.compose import run_heads
 
-    spec = _require_spec(instance)
-    capabilities = read_capabilities(backbone_id)
-
-    # Derived from the (backbone, head) pair — never passed in. If a caller could
-    # supply geometry, a head would behave one way in the trainer and another here.
-    plan = plan_preprocessing(capabilities, spec)
-    pixel_values, transforms = prepare_images(plan, [image])
-
-    backbone = load_backbone(backbone_id)
-    head = load_head(instance, backbone, settings)
-
-    with torch.no_grad():
-        features = extract(backbone, pixel_values)
-        outputs = head(features)
-
-    decoded = decode_for(spec)(outputs, capabilities.patch_size)
-    payload = _build_payload(spec, decoded, transforms[0], plan.size, score_threshold)
-
-    elapsed = (time.perf_counter() - started) * 1000
-    logger.info("Inference %s on %s in %.0f ms", instance.id, backbone_id, elapsed)
-
-    return Prediction(
-        instance_id=instance.id,
-        head_name=instance.name,
-        head_type_id=spec.id,
-        task=spec.task,
-        render_hint=spec.render_hint,
-        class_names=instance.class_names,
-        payload=payload,
-        grid=features.grid,
-        elapsed_ms=elapsed,
+    result = run_heads(
+        image,
+        backbone_id,
+        [instance_id],
+        settings=settings,
+        score_threshold=score_threshold,
     )
+    return result.predictions[0]
 
 
 def _build_payload(

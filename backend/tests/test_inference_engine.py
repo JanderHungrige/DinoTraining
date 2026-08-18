@@ -62,8 +62,11 @@ def stubbed(monkeypatch: pytest.MonkeyPatch, head_settings: Settings):  # type: 
             grid=(rows, cols),
         )
 
-    monkeypatch.setattr("app.ml.inference.engine.load_backbone", fake_load)
-    monkeypatch.setattr("app.ml.inference.engine.extract", fake_extract)
+    # Patched on `compose`: since feature 18 the backbone pass is paid for there, and
+    # `run_inference` reaches it by delegating rather than running its own. That these
+    # tests still pass unchanged otherwise is the regression check for that refactor.
+    monkeypatch.setattr("app.ml.inference.compose.load_backbone", fake_load)
+    monkeypatch.setattr("app.ml.inference.compose.extract", fake_extract)
     return head_settings
 
 
