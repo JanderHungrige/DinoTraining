@@ -195,8 +195,11 @@ That is not a hang.
   trips the safety hook. Write the message to a file and use `-F <file>`.
 - **`rm -rf` and `DROP TABLE` are blocked by hooks.** The `DROP TABLE` block fired on an
   in-memory test fixture; rewriting it to avoid `DROP` gave a cleaner test anyway.
-- **A 300-line hook blocks writes.** It fired four times this wave. Currently closest:
-  `store.py` 270, `AnnotationCanvas.tsx` 264, `generate.py` ~250.
+- **The 300-line hook guards the *editing tools*, not the filesystem.** It fired four
+  times this wave — and two files still slipped over the limit because the last edits to
+  them went through a scripted `python` heredoc, which the hook never sees. Check with
+  `find … | xargs wc -l | sort -rn | head` before calling a wave done. Currently closest:
+  `heads/registry.py` 293, `store.py` 284, `head_catalog.py` 283.
 - **MDD hashes** must be recomputed after any initiative/wave edit:
   ```bash
   f=.mdd/waves/dinotraining-wave-4.md
@@ -234,6 +237,13 @@ Everything from Wave 3's handoff still holds. New this wave:
   went stale this wave and neither failed until something assigned to them. When you change
   a backend literal or model, grep `apps/frontend/src/types` and `src/api` in the same
   commit.
+
+## Regenerating the doc graph
+
+`.mdd/connections.md` is generated from feature-doc **frontmatter only** — never doc
+bodies. It was stale by nine docs at the end of this wave. Current state: **30 docs, 69
+dependency edges, 47 shared source files, zero warnings** — no broken `depends_on`, no
+cycles, every doc has a `path`.
 
 ## Known issues — good first tasks
 
