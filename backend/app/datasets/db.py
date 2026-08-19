@@ -16,79 +16,15 @@ from pathlib import Path
 
 from app.core.config import Settings, get_settings
 from app.core.paths import default_data_dir
+from app.datasets.migrations import LATEST_VERSION, run_migrations
+from app.datasets.schema import SCHEMA_SQL
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 2
-
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS datasets (
-    id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL,
-    created_at  TEXT NOT NULL,
-    prompt      TEXT,
-    copy_images INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS images (
-    id           INTEGER PRIMARY KEY,
-    dataset_id   TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
-    path         TEXT NOT NULL,
-    width        INTEGER NOT NULL,
-    height       INTEGER NOT NULL,
-    annotated_at TEXT NOT NULL,
-    UNIQUE (dataset_id, path)
-);
-
-CREATE TABLE IF NOT EXISTS boxes (
-    id         INTEGER PRIMARY KEY,
-    image_id   INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
-    label      TEXT NOT NULL CHECK (label IN ('positive', 'negative', 'unclear')),
-    provenance TEXT NOT NULL CHECK (provenance IN ('grounding-dino', 'hand-drawn')),
-    prompt     TEXT,
-    score      REAL,
-    x          REAL NOT NULL,
-    y          REAL NOT NULL,
-    w          REAL NOT NULL CHECK (w > 0),
-    h          REAL NOT NULL CHECK (h > 0)
-);
-
--- Schema v2: trained, imported and default heads. Metadata here, weights on disk —
--- the same split datasets use, so "which heads do this task on this backbone" is a
--- SQL query rather than a directory walk that opens every weight file.
-CREATE TABLE IF NOT EXISTS head_instances (
-    id                   TEXT PRIMARY KEY,
-    name                 TEXT NOT NULL,
-    kind                 TEXT NOT NULL CHECK (
-                             kind IN ('pretrained-default', 'community', 'trained-here')),
-    head_type_id         TEXT NOT NULL,
-    task                 TEXT NOT NULL,
-    backbone_id          TEXT NOT NULL,
-    backbone_family      TEXT NOT NULL,
-    embed_dim            INTEGER NOT NULL,
-    num_classes          INTEGER NOT NULL,
-    -- JSON array. Order is load-bearing: index 3 in the weights means whatever index 3
-    -- meant at training time, and nothing inside a tensor file records that.
-    class_names          TEXT NOT NULL DEFAULT '[]',
-    dataset_ids          TEXT NOT NULL DEFAULT '[]',
-    metrics              TEXT NOT NULL DEFAULT '{}',
-    primary_metric       TEXT,
-    primary_metric_value REAL,
-    config               TEXT NOT NULL DEFAULT '{}',
-    source_repo          TEXT,
-    source_digest        TEXT,
-    epochs_trained       INTEGER NOT NULL DEFAULT 0,
-    best_epoch           INTEGER,
-    weights_path         TEXT NOT NULL,
-    created_at           TEXT NOT NULL
-);
-
-CREATE INDEX IF NOT EXISTS idx_images_dataset ON images(dataset_id);
-CREATE INDEX IF NOT EXISTS idx_boxes_image    ON boxes(image_id);
-CREATE INDEX IF NOT EXISTS idx_boxes_label    ON boxes(label);
-CREATE INDEX IF NOT EXISTS idx_heads_task     ON head_instances(task);
-CREATE INDEX IF NOT EXISTS idx_heads_backbone ON head_instances(backbone_id);
-"""
+#: Re-exported for callers that want the schema version. The authoritative value lives in
+#: migrations.py and is written to ``PRAGMA user_version``; the constant that used to sit
+#: here was never read by anything.
+SCHEMA_VERSION = LATEST_VERSION
 
 _lock = threading.Lock()
 _connection: sqlite3.Connection | None = None
@@ -134,10 +70,13 @@ def get_connection(settings: Settings | None = None) -> sqlite3.Connection:
         # locking covers the concurrency, so the per-thread check is not wanted here.
         connection = sqlite3.connect(str(path), check_same_thread=False)
         _configure(connection)
-        connection.executescript(_SCHEMA)
+        connection.executescript(SCHEMA_SQL)
         connection.commit()
+        # Creates what is missing above; this moves what already exists. Both are needed:
+        # executescript cannot change a table that is already there. See migrations.py.
+        version = run_migrations(connection)
 
-        logger.info("SQLite index ready at %s", path)
+        logger.info("SQLite index ready at %s (schema v%d)", path, version)
         _connection, _connected_path = connection, path
         return connection
 

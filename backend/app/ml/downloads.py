@@ -133,6 +133,24 @@ class DownloadManager:
         logger.info("Download complete for %s", spec.id)
 
 
+#: Weight formats that are never loaded, and so are never fetched.
+#:
+#: A HuggingFace repo usually publishes the same tensors twice — once as safetensors and
+#: once as a pickle (``pytorch_model.bin``, ``*.pt``). This project loads safetensors only;
+#: its single ``torch.load`` carve-out is narrow and applies to digest-pinned catalogue
+#: bytes, never to a downloaded repo. Fetching the pickle anyway doubled every download and
+#: left a file on disk that the app refuses to open — 660 MB of it for grounding-dino-tiny
+#: alone. Excluding them halves the download and makes the catalogue's size estimates true.
+PICKLE_PATTERNS: tuple[str, ...] = (
+    "*.bin",
+    "*.pt",
+    "*.pth",
+    "*.ckpt",
+    "*.h5",
+    "*.msgpack",
+)
+
+
 def _download(job: DownloadJob, spec: ModelSpec, target_dir: Path, token: str | None) -> None:
     """Blocking download body. Runs on a worker thread."""
     from huggingface_hub import snapshot_download
@@ -142,6 +160,7 @@ def _download(job: DownloadJob, spec: ModelSpec, target_dir: Path, token: str | 
         "repo_id": spec.repo_id,
         "local_dir": str(target_dir),
         "tqdm_class": _make_tqdm_class(job),
+        "ignore_patterns": list(PICKLE_PATTERNS),
     }
     if token:
         kwargs["token"] = token

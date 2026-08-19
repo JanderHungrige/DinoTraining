@@ -13,7 +13,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from app.datasets.models import Box
+from app.datasets.models import Box, Mask
+from app.datasets.rle import rle_area, rle_bbox
 
 COCO_FILENAME = "annotations.coco.json"
 
@@ -26,11 +27,19 @@ def build_coco(
     dataset_name: str,
     images: list[tuple[int, str, int, int, list[Box]]],
     prompt: str | None = None,
+    masks: list[tuple[int, str, int, int, list[Mask]]] | None = None,
 ) -> dict[str, Any]:
-    """Build a COCO-shaped dict from stored annotations."""
+    """Build a COCO-shaped dict from stored annotations.
+
+    Masks are optional so the Wave 1 call site keeps working unchanged. When present they
+    become ``segmentation`` entries on the same image ids — positives only, for the same
+    reason boxes are: a negative mask asserts "this is *not* the thing", which as a COCO
+    annotation teaches a consumer the opposite of what the reviewer meant.
+    """
     coco_images: list[dict[str, Any]] = []
     annotations: list[dict[str, Any]] = []
     annotation_id = 1
+    masks_by_image = {entry[0]: entry[4] for entry in (masks or [])}
 
     for image_id, path, width, height, boxes in images:
         coco_images.append(
@@ -56,6 +65,31 @@ def build_coco(
                     "area": box.w * box.h,
                     "iscrowd": 0,
                     **({"score": box.score} if box.score is not None else {}),
+                }
+            )
+            annotation_id += 1
+
+        for mask in masks_by_image.get(image_id, []):
+            if mask.label != "positive":
+                continue
+            bbox = rle_bbox(mask.rle.counts, mask.rle.size)
+            if bbox is None:
+                continue
+            annotations.append(
+                {
+                    "id": annotation_id,
+                    "image_id": image_id,
+                    "category_id": DEFAULT_CATEGORY["id"],
+                    # COCO's uncompressed RLE: size is [height, width], counts is the run
+                    # list. This is already the wire format, so nothing is decoded here.
+                    "segmentation": {
+                        "size": [mask.rle.size[0], mask.rle.size[1]],
+                        "counts": mask.rle.counts,
+                    },
+                    "bbox": list(bbox),
+                    "area": rle_area(mask.rle.counts),
+                    "iscrowd": 0,
+                    **({"score": mask.score} if mask.score is not None else {}),
                 }
             )
             annotation_id += 1

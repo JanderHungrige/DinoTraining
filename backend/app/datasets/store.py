@@ -10,13 +10,15 @@ from __future__ import annotations
 import json
 import logging
 import shutil
+import sqlite3
 import uuid
-from datetime import UTC, datetime
 from pathlib import Path
 
 from app.core.config import Settings
 from app.core.paths import ensure_within
 from app.datasets.db import data_root, transaction
+from app.datasets.images import now as _now
+from app.datasets.images import store_image_file, upsert_image
 from app.datasets.models import Box, DatasetCounts, DatasetInfo, ImageAnnotation
 
 logger = logging.getLogger(__name__)
@@ -26,10 +28,6 @@ MANIFEST_NAME = "dataset.json"
 
 class DatasetNotFoundError(LookupError):
     """Raised when a dataset id does not exist."""
-
-
-def _now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def datasets_root(settings: Settings | None = None) -> Path:
@@ -149,23 +147,13 @@ class DatasetStore:
         if not self.exists(dataset_id):
             raise DatasetNotFoundError(dataset_id)
 
-        stored_path = self._store_image(dataset_id, annotation.path)
-
         with transaction(self._settings) as connection:
-            connection.execute(
-                "INSERT INTO images (dataset_id, path, width, height, annotated_at)"
-                " VALUES (?, ?, ?, ?, ?)"
-                " ON CONFLICT(dataset_id, path) DO UPDATE SET"
-                "   width = excluded.width,"
-                "   height = excluded.height,"
-                "   annotated_at = excluded.annotated_at",
-                (dataset_id, stored_path, annotation.width, annotation.height, _now()),
+            stored_path = store_image_file(
+                dataset_dir(dataset_id, self._settings), connection, dataset_id, annotation.path
             )
-            row = connection.execute(
-                "SELECT id FROM images WHERE dataset_id = ? AND path = ?",
-                (dataset_id, stored_path),
-            ).fetchone()
-            image_id = int(row["id"])
+            image_id = upsert_image(
+                connection, dataset_id, stored_path, annotation.width, annotation.height
+            )
 
             connection.execute("DELETE FROM boxes WHERE image_id = ?", (image_id,))
             connection.executemany(
@@ -190,53 +178,49 @@ class DatasetStore:
 
         return self.counts(dataset_id)
 
-    def _store_image(self, dataset_id: str, source_path: str) -> str:
-        """Copy the image into the dataset when copy_images is on; else keep the path."""
-        with transaction(self._settings) as connection:
-            row = connection.execute(
-                "SELECT copy_images FROM datasets WHERE id = ?", (dataset_id,)
-            ).fetchone()
-        if row is None or not row["copy_images"]:
-            return source_path
-
-        source = Path(source_path)
-        if not source.is_file():
-            # Reference it anyway: a missing source is the caller's problem to report,
-            # and failing the whole save would lose the labels the user just made.
-            logger.warning("Cannot copy missing image %s", source_path)
-            return source_path
-
-        images_dir = dataset_dir(dataset_id, self._settings) / "images"
-        images_dir.mkdir(parents=True, exist_ok=True)
-        destination = ensure_within(images_dir, images_dir / source.name)
-        if not destination.exists():
-            shutil.copy2(source, destination)
-        return str(destination)
-
     # --- counters --------------------------------------------------------------
 
     def counts(self, dataset_id: str) -> DatasetCounts:
-        """Aggregate counters. SQL does the counting — never load boxes to tally them."""
+        """Aggregate counters. SQL does the counting — never load rows to tally them.
+
+        ``boxes`` and ``masks`` are reported separately because the trainer consumes them
+        for different tasks. The per-verdict counters span both: a reviewer marking masks
+        is making the same three judgements as one marking boxes, and a `positive` stuck at
+        zero through a whole mask review session would be simply wrong.
+        """
         with transaction(self._settings) as connection:
             images = connection.execute(
                 "SELECT COUNT(*) AS n FROM images WHERE dataset_id = ?", (dataset_id,)
             ).fetchone()["n"]
-            rows = connection.execute(
-                "SELECT b.label AS label, COUNT(*) AS n FROM boxes b"
-                " JOIN images i ON i.id = b.image_id"
-                " WHERE i.dataset_id = ?"
-                " GROUP BY b.label",
-                (dataset_id,),
-            ).fetchall()
+            box_rows = self._labels_by_table(connection, "boxes", dataset_id)
+            mask_rows = self._labels_by_table(connection, "masks", dataset_id)
 
-        by_label = {row["label"]: int(row["n"]) for row in rows}
+        def verdict(label: str) -> int:
+            return box_rows.get(label, 0) + mask_rows.get(label, 0)
+
         return DatasetCounts(
             images=int(images),
-            boxes=sum(by_label.values()),
-            positive=by_label.get("positive", 0),
-            negative=by_label.get("negative", 0),
-            unclear=by_label.get("unclear", 0),
+            boxes=sum(box_rows.values()),
+            masks=sum(mask_rows.values()),
+            positive=verdict("positive"),
+            negative=verdict("negative"),
+            unclear=verdict("unclear"),
         )
+
+    @staticmethod
+    def _labels_by_table(
+        connection: sqlite3.Connection, table: str, dataset_id: str
+    ) -> dict[str, int]:
+        # `table` is a literal from this module, never caller-supplied — the annotation
+        # values themselves stay parameterised.
+        rows = connection.execute(
+            f"SELECT a.label AS label, COUNT(*) AS n FROM {table} a"  # noqa: S608
+            " JOIN images i ON i.id = a.image_id"
+            " WHERE i.dataset_id = ?"
+            " GROUP BY a.label",
+            (dataset_id,),
+        ).fetchall()
+        return {row["label"]: int(row["n"]) for row in rows}
 
     def image_annotations(self, dataset_id: str) -> list[tuple[int, str, int, int, list[Box]]]:
         """Every image with its boxes. Used by the COCO exporter."""

@@ -8,7 +8,13 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.datasets.coco import build_coco, write_coco
-from app.datasets.models import DatasetCounts, DatasetInfo, ImageAnnotation
+from app.datasets.masks import MaskStore
+from app.datasets.models import (
+    DatasetCounts,
+    DatasetInfo,
+    ImageAnnotation,
+    ImageMaskAnnotation,
+)
 from app.datasets.store import DatasetNotFoundError, DatasetStore, dataset_dir
 
 logger = logging.getLogger(__name__)
@@ -84,6 +90,26 @@ async def put_image(dataset_id: str, annotation: ImageAnnotation) -> DatasetCoun
         raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_id}") from None
 
 
+@router.put(
+    "/datasets/{dataset_id}/images/masks",
+    response_model=DatasetCounts,
+    summary="Save one image's segmentation masks (replaces any existing set)",
+)
+async def put_image_masks(
+    dataset_id: str, annotation: ImageMaskAnnotation
+) -> DatasetCounts:
+    try:
+        return MaskStore().replace_image_masks(dataset_id, annotation)
+    except DatasetNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Unknown dataset: {dataset_id}") from None
+    except ValueError as exc:
+        # Backstop below the specific clauses: a mask with no foreground, or any future
+        # raise site in the RLE path, is caller error and must not escape as a 500 with the
+        # reason visible only in the log.
+        logger.warning("Rejected masks for dataset %s: %s", dataset_id, exc)
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+
+
 @router.get(
     "/datasets/{dataset_id}/counts",
     response_model=DatasetCounts,
@@ -104,7 +130,8 @@ async def export_coco(dataset_id: str) -> ExportResponse:
     store = _store()
 
     images = store.image_annotations(dataset_id)
-    coco = build_coco(info.name, images, info.prompt)
+    masks = MaskStore().image_masks(dataset_id)
+    coco = build_coco(info.name, images, info.prompt, masks=masks)
     path = write_coco(dataset_dir(dataset_id), coco)
 
     logger.info("Exported COCO for %s (%d annotations)", dataset_id, len(coco["annotations"]))

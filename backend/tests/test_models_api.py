@@ -16,6 +16,7 @@ from httpx import ASGITransport, AsyncClient
 
 from app.core.config import Settings, get_settings
 from app.main import create_app
+from app.ml.registry import all_models
 
 
 @pytest.fixture
@@ -51,7 +52,10 @@ def install(cache_dir: Path, model_id: str, size: int = 2048) -> Path:
 class TestListModels:
     async def test_returns_the_whole_catalogue(self, client: AsyncClient) -> None:
         body = (await client.get("/api/v1/models")).json()
-        assert len(body["models"]) == 7
+        # Derived from the registry rather than hard-coded: a magic number here means
+        # every catalogue addition fails a test that was not actually about counting.
+        assert len(body["models"]) == len(all_models())
+        assert {m["id"] for m in body["models"]} == {s.id for s in all_models()}
 
     async def test_reports_not_installed_for_an_empty_cache(self, client: AsyncClient) -> None:
         body = (await client.get("/api/v1/models")).json()
@@ -71,7 +75,39 @@ class TestListModels:
         assert gated
         for model in gated:
             assert model["available"] is False
-            assert "licence" in (model["unavailable_reason"] or "").lower()
+            reason = model["unavailable_reason"] or ""
+            # Substance, not spelling: Meta's own licences are named "SAM License" and
+            # "DINOv3 License", so matching the British form would test the wrong thing.
+            # What must always hold is that the user is told where to go.
+            assert model["licence_url"] in reason
+            assert "token" in reason.lower()
+
+    async def test_a_model_needing_approval_says_so_rather_than_just_asking_for_a_token(
+        self, client: AsyncClient
+    ) -> None:
+        """SAM 3's failure mode: a valid token still 403s until a human grants access.
+
+        Telling that user to "set HF_TOKEN" is advice they have already followed, and is
+        the most confusing message this app can produce.
+        """
+        body = (await client.get("/api/v1/models")).json()
+        approval = [m for m in body["models"] if m["requires_access_request"]]
+        assert [m["id"] for m in approval] == ["sam3"]
+
+        reason = (approval[0]["unavailable_reason"] or "").lower()
+        assert "request access" in reason
+        assert "not immediate" in reason
+
+    async def test_models_needing_only_terms_do_not_mention_an_access_request(
+        self, client: AsyncClient
+    ) -> None:
+        body = (await client.get("/api/v1/models")).json()
+        terms_only = [
+            m for m in body["models"] if m["gated"] and not m["requires_access_request"]
+        ]
+        assert terms_only, "DINOv3 should still be gated-without-approval"
+        for model in terms_only:
+            assert "request access" not in (model["unavailable_reason"] or "").lower()
 
     async def test_open_models_are_available_without_a_token(self, client: AsyncClient) -> None:
         body = (await client.get("/api/v1/models")).json()

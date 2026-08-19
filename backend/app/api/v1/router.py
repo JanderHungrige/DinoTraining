@@ -10,14 +10,17 @@ from fastapi import APIRouter
 
 from app.api.v1 import (
     annotate,
+    annotators,
     backbones,
     datasets,
+    generate,
     head_catalog,
     head_types,
     heads,
     health,
     inference,
     models,
+    settings,
     system,
     training,
 )
@@ -25,6 +28,7 @@ from app.api.v1 import (
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(annotate.router, tags=["annotate"])
+api_router.include_router(annotators.router, tags=["annotators"])
 api_router.include_router(models.router, tags=["models"])
 api_router.include_router(backbones.router, tags=["backbones"])
 api_router.include_router(head_types.router, tags=["heads"])
@@ -33,4 +37,6 @@ api_router.include_router(head_catalog.router, tags=["heads"])
 api_router.include_router(inference.router, tags=["inference"])
 api_router.include_router(training.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
+api_router.include_router(settings.router, tags=["settings"])
 api_router.include_router(datasets.router, tags=["datasets"])
+api_router.include_router(generate.router, tags=["generate"])

@@ -119,3 +119,32 @@ def add_segmenter(num_classes: int = 3, name: str = "Shapes segmenter") -> str:
 def write_image(path: Path, size: tuple[int, int] = (320, 240)) -> str:
     Image.new("RGB", size, (120, 90, 60)).save(path)
     return str(path)
+
+
+def add_detector(num_classes: int = 2, name: str = "Shapes detector") -> str:
+    """A `boxes`-hint head — the only kind Wave 4's expert annotator will accept.
+
+    Weight shapes follow DetectionHead in app/ml/heads/modules.py: a 1x1 conv classifier,
+    a four-channel box regressor for the l/t/r/b distances, and a single centerness
+    channel.
+    """
+    instance = HeadInstanceStore().register(
+        name=name,
+        kind="trained-here",
+        head_type_id="dense-detector",
+        task="detection",
+        backbone_id="dinov2-small",
+        backbone_family="dinov2",
+        embed_dim=EMBED,
+        num_classes=num_classes,
+        weights={
+            "classifier.weight": torch.randn(num_classes, EMBED, 1, 1),
+            "classifier.bias": torch.randn(num_classes),
+            "box_regressor.weight": torch.randn(4, EMBED, 1, 1),
+            "box_regressor.bias": torch.randn(4),
+            "centerness.weight": torch.randn(1, EMBED, 1, 1),
+            "centerness.bias": torch.randn(1),
+        },
+        class_names=tuple(f"object{i}" for i in range(num_classes)),
+    )
+    return instance.id

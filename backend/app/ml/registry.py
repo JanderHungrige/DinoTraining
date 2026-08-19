@@ -10,8 +10,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-ModelKind = Literal["detector", "backbone"]
-ModelFamily = Literal["grounding-dino", "dinov2", "dinov3"]
+ModelKind = Literal["detector", "backbone", "segmenter"]
+ModelFamily = Literal["grounding-dino", "dinov2", "dinov3", "sam2", "sam3"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +25,14 @@ class ModelSpec:
     gated: bool
     approx_size_mb: int
     description: str
+    #: Shown before a download is offered, never after. Not every model here is
+    #: permissively licensed — SAM 3 ships under Meta's own terms.
+    licence: str = "Apache-2.0"
+    #: A token alone is not always enough. DINOv3 gates on accepting terms, which is
+    #: instant; SAM 3 additionally requires *manual approval* of an access request, so a
+    #: 403 there means "ask for access", not "bad token". Conflating the two produces the
+    #: single most confusing error this app can show.
+    requires_access_request: bool = False
 
 
 _SPECS: tuple[ModelSpec, ...] = (
@@ -34,7 +42,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="detector",
         family="grounding-dino",
         gated=False,
-        approx_size_mb=690,
+        approx_size_mb=658,
         description="Open-vocabulary detector for box proposals. Fast; start here.",
     ),
     ModelSpec(
@@ -43,7 +51,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="detector",
         family="grounding-dino",
         gated=False,
-        approx_size_mb=1740,
+        approx_size_mb=891,
         description="Larger open-vocabulary detector. Better recall, slower.",
     ),
     ModelSpec(
@@ -52,7 +60,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov2",
         gated=False,
-        approx_size_mb=88,
+        approx_size_mb=84,
         description="Smallest DINOv2 backbone. Good for quick head experiments.",
     ),
     ModelSpec(
@@ -70,7 +78,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov2",
         gated=False,
-        approx_size_mb=1200,
+        approx_size_mb=1161,
         description="Large DINOv2 backbone. Stronger features, more memory.",
     ),
     ModelSpec(
@@ -79,8 +87,9 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov3",
         gated=True,
-        approx_size_mb=350,
+        approx_size_mb=327,
         description="DINOv3 ViT-B/16. Gated — accept the licence on HuggingFace first.",
+        licence="DINOv3 License (Meta, custom)",
     ),
     ModelSpec(
         id="dinov3-vitl16",
@@ -88,8 +97,35 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov3",
         gated=True,
-        approx_size_mb=1200,
+        approx_size_mb=1156,
         description="DINOv3 ViT-L/16. Gated — accept the licence on HuggingFace first.",
+        licence="DINOv3 License (Meta, custom)",
+    ),
+    ModelSpec(
+        id="sam2.1-hiera-small",
+        repo_id="facebook/sam2.1-hiera-small",
+        kind="segmenter",
+        family="sam2",
+        gated=False,
+        approx_size_mb=176,
+        description=(
+            "Segment Anything 2.1. Turns boxes into masks. Ungated and Apache-2.0 — "
+            "with Grounding DINO it gives text-prompted masks and needs no account."
+        ),
+    ),
+    ModelSpec(
+        id="sam3",
+        repo_id="facebook/sam3",
+        kind="segmenter",
+        family="sam3",
+        gated=True,
+        approx_size_mb=3285,
+        description=(
+            "Segment Anything 3. Prompts on a text concept directly and returns masks "
+            "and boxes. Needs your own HuggingFace token AND an approved access request."
+        ),
+        licence="SAM License (Meta, custom)",
+        requires_access_request=True,
     ),
 )
 

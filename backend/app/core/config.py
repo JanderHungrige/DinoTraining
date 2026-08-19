@@ -13,6 +13,8 @@ from typing import Any, Literal
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.core.env_file import env_file_path
+
 Device = Literal["cuda", "mps", "cpu"]
 
 _VALID_DEVICES = frozenset({"auto", "cuda", "mps", "cpu"})
@@ -58,8 +60,10 @@ def resolve_device(requested: str) -> Device:
 class Settings(BaseSettings):
     """Backend configuration, loaded from the environment and ``.env``."""
 
+    # No env_file here on purpose. A bare ``Settings()`` reads the environment only,
+    # which is what keeps a test run away from the developer's real credentials; the
+    # file is supplied by get_settings() below, at call time.
     model_config = SettingsConfigDict(
-        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
@@ -100,5 +104,13 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    """Return the process-wide settings, loaded once."""
-    return Settings()
+    """Return the process-wide settings, loaded once.
+
+    The ``.env`` path is resolved *here* rather than in ``model_config``, for two reasons.
+    It must be absolute — a relative ".env" resolves against the working directory, so a
+    backend started from ``backend/`` looked for ``backend/.env``, found nothing, and ran
+    on defaults while the real file sat at the repository root, saying nothing. And it must
+    be resolved per call, so that clearing this cache after the token is written picks the
+    new value up without a restart — uvicorn does not reload.
+    """
+    return Settings(_env_file=env_file_path())

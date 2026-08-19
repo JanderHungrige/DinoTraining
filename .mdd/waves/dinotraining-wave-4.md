@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: bb60dd7b
+hash: 592db6a7
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -27,16 +27,30 @@ trainable in-app — until this wave lands, segmentation trains only on user-bro
 datasets.
 *(Not complete until this can be manually demonstrated.)*
 
-## Blocked on Jan
+## Nothing is blocked (revised 2026-08-19)
 
-**`facebook/sam3` is a gated HuggingFace repo.** Meta requires accepting the SAM License and
-sharing contact information before the weights can be downloaded. This is the same shape as
-DINOv3 — `HF_TOKEN` plus a per-model licence link — but it means **features 4 and 6 cannot be
-demonstrated until access is granted on Jan's HuggingFace account**. Request it early; the
-box half of the wave (features 1, 3, 5, 7) is unblocked and can ship first.
+An earlier version of this plan had features 4 and 6 blocked on Meta granting access to the
+gated `facebook/sam3` repo. **That block is gone.** Measured, not assumed:
 
-Weights are ~0.9B parameters in F32 (**≈3.6 GB**) against ~14 GB free on the home volume.
-Not blocking, but it is the largest single download the project has asked for.
+| Model | Prompt | Returns | Gated | Licence | Weights |
+|---|---|---|---|---|---|
+| `facebook/sam3` | text concept | masks + boxes | **yes, manual approval** | SAM License | **3.44 GB** |
+| `facebook/sam2.1-hiera-small` | points/boxes | masks | no | Apache-2.0 | **184 MB** |
+| `facebook/sam2.1-hiera-tiny` | points/boxes | masks | no | Apache-2.0 | 156 MB |
+| `facebook/sam-vit-base` | points/boxes | masks | no | Apache-2.0 | 375 MB |
+
+No ungated model is a drop-in for SAM 3: SAM 1 and SAM 2.1 are *visually* prompted, take no
+text and return no boxes. But **Grounding DINO + SAM 2.1 composed reproduces SAM 3's exact
+contract** — a text concept in, masks and boxes out. Grounding DINO is already installed and
+ungated, so the whole wave is buildable and verifiable today for a 184 MB Apache-2.0
+download and no gated access whatsoever.
+
+`transformers` 5.15.0 already exposes `SamModel`, `Sam2Model` **and** `Sam3Model`, so neither
+path needs dependency work.
+
+**We never download SAM 3.** It is offered in the admin tab and the *user* triggers it, after
+supplying their own token and acknowledging the licence (feature 3). Nothing in this wave
+requires SAM 3 weights to be present to be complete.
 
 ## Open questions waived for this wave
 
@@ -70,6 +84,25 @@ export path extends rather than forks. The trade-off accepted: RLE is not hand-e
 without decoding, which is fine given verdict-only review, and is the constraint to revisit
 first if mask editing is ever added.
 
+**Grounded SAM is a permanent first-class annotator, not a test scaffold.** Most users of an
+installable desktop app will not want to accept Meta's custom licence or wait on manual
+approval, so an Apache-2.0 segmentation path that needs no gating at all is a product
+feature rather than scaffolding. It also keeps this wave verifiable forever instead of only
+until SAM 3 arrives.
+
+**One `MaskAnnotator` interface, two implementations keyed by id** — `grounded-sam` and
+`sam3` — following the project's registry rule. This is what makes SAM 3 a drop-in addition
+later rather than a rewrite, and it is why the review UI never learns which annotator
+produced a mask.
+
+**The ungated path uses `facebook/sam2.1-hiera-small`** (184 MB, Apache-2.0). Newest
+architecture, small enough to matter against ~15 GB free, and swappable via the registry.
+
+**The user supplies their own HF token through the app.** A field in the admin tab writes
+`HF_TOKEN` to `.env`, alongside an explicit acknowledgement that they have read Meta's SAM
+License. Since the app deliberately does not download gated weights on the user's behalf,
+the obligation is made visible rather than implied — and Wave 8 packaging needs that record.
+
 **`active-learning-hints` is dropped to `.mdd/BACKLOG.md`.** It prioritises review order in a
 loop that must exist before it can be prioritised, and this wave already grew to seven
 features. Not a rejection — a sequencing call.
@@ -78,46 +111,59 @@ features. Not a rejection — a sequencing call.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | mask-dataset-store | — | planned | — |
-| 2 | sam3-model-entry | — | planned | — |
-| 3 | expert-annotator | — | planned | — |
-| 4 | sam-mask-annotator | — | planned | mask-dataset-store, sam3-model-entry |
+| 1 | mask-dataset-store | [22](../docs/22-mask-dataset-store.md) | complete | — |
+| 2 | mask-annotator-registry | [23](../docs/23-mask-annotator-registry.md) | complete | — |
+| 3 | hf-token-settings | [24](../docs/24-hf-token-settings.md) | complete | — |
+| 4 | expert-annotator | [25](../docs/25-expert-annotator.md) | complete | — |
 | 5 | generator-review-ui | — | planned | expert-annotator |
-| 6 | mask-review-ui | — | planned | sam-mask-annotator, generator-review-ui |
-| 7 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui, mask-review-ui |
+| 6 | grounded-sam-annotator | — | planned | mask-dataset-store, mask-annotator-registry |
+| 7 | mask-review-ui | — | planned | grounded-sam-annotator, generator-review-ui |
+| 8 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui, mask-review-ui |
+| 9 | sam3-annotator | — | planned | mask-annotator-registry, hf-token-settings |
 
-Features 1–3 are independent and can be built in any order; 1 and 2 are pure backend and are
-the safest place to start. The box path (1, 3, 5, 7) is demonstrable without SAM 3 access.
+**Build order: 1 ✅ → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9.**
+
+Revised 2026-08-19 after the gating research above. The wave grew from seven features to
+nine: `sam3-model-entry` split into `mask-annotator-registry` (the interface plus both
+catalogue entries) and `sam3-annotator` (the gated implementation), and `hf-token-settings`
+was added because the user supplies their own token through the app. It is a large wave, but
+the added features are small and the split is what removes the external block.
+
+`sam3-annotator` is deliberately **last**: it is the only feature whose real-weights
+verification depends on a download we do not perform. Its code and unit tests do not — it is
+written against the same interface feature 6 already proved, and stubbed for tests.
 
 ### Feature notes
 
-**1. mask-dataset-store** — extend `03-dataset-store` with masks. A new `masks` table keyed to
-`images`, RLE stored alongside the box rows, manifest `version: 2`, and the COCO exporter
-emitting `segmentation`. `Provenance` grows from `["grounding-dino", "hand-drawn"]` to include
-`expert-head` and `sam3`. `DatasetCounts` gains a mask tally so the Wave 1 `CounterBar`
-reports both.
-⚠️ `backend/app/datasets/store.py` is at **286 lines** — the 300-line hook will block this.
-The mask write path is a **new sibling module**, not an addition to `store.py`. Split first,
-then build. The same applies to `models.py` if the mask types push it over.
+**2. mask-annotator-registry** — one `MaskAnnotator` contract: a text concept and an image in,
+masks-plus-boxes out. Two catalogue entries keyed by id, `grounded-sam` and `sam3`, each
+declaring its model requirements, licence, whether it is gated, and its download size. Model
+registry entries for `facebook/sam2.1-hiera-small` and `facebook/sam3` land here too. No
+`if annotator == "sam3"` anywhere downstream — that is a defect, exactly as `task ===` is in
+`components/overlays/`.
+✅ **Correction (2026-08-19):** an earlier draft warned that `backend/app/ml/registry.py`
+was at 293 lines and needed splitting. It is at **115** and has room. The 293-line file is
+`backend/app/ml/heads/registry.py` — the *head* registry, which this feature does not
+touch. The handoff named "registry.py" without a path and the ambiguity propagated.
 
-**2. sam3-model-entry** — SAM 3 in the model registry and manager as a **gated family beside
-`dinov3`**: `repo_id="facebook/sam3"`, family `sam3`, licence surfaced as Meta's custom *SAM
-License* with a link, marked unavailable without a token, download / remove / cache-size via
-the existing admin tab. No new download machinery — reuse the gated path Wave 1 built.
-⚠️ `backend/app/ml/registry.py` is at **293 lines**. Split before adding the entry.
+**3. hf-token-settings** — a field in the admin tab where the user pastes their own
+HuggingFace token, plus an explicit checkbox acknowledging Meta's SAM License with a link to
+it. Writes `HF_TOKEN` to `.env` and records the acknowledgement.
+- **The token is never returned, never logged, and never rendered back.** The read endpoint
+  reports only `configured: true|false` and a masked hint (last 4 characters at most).
+- `.env` is written with `0600` permissions and is already gitignored.
+- `get_settings` is `lru_cache`d, so the cache must be cleared after a write or the new token
+  is invisible until restart — and uvicorn does not reload.
+- Explanation text must state plainly: what the token is for, that the app never downloads
+  gated weights on the user's behalf, that SAM 3 needs *manual approval* on top of a token,
+  and that Grounded SAM needs neither.
 
-**3. expert-annotator** — run an installed head instance over an image set through the Wave 3
+**4. expert-annotator** — run an installed head instance over an image set through the Wave 3
 inference engine and turn each `Prediction` into proposed annotations. **No coordinate
 conversion is needed**: `app/ml/inference/results.py` already defines its `Box` as xywh in
 absolute source pixels, top-left origin, explicitly so this wave could consume it directly.
 Boxes arrive with `provenance="expert-head"` and the head's score. Backend only; refuses
 heads whose `render_hint` is not `boxes` with a reason the UI can display.
-
-**4. sam-mask-annotator** — SAM 3 as the second foundation annotator. Concept-prompted: a text
-noun phrase returns masks **and** boxes. Also accepts existing Grounding DINO boxes as
-prompts, so a Wave 1 box dataset can be lifted into masks rather than re-annotated from
-scratch. Returns RLE for storage; dense preview travels as base64 PNG per the Wave 3 rule
-(`mask_png`, never nested JSON).
 
 **5. generator-review-ui** — the Dataset Generator tab, currently an 8-line stub
 (`apps/frontend/src/tabs/DatasetGeneratorTab.tsx`). Image-source picker + annotator picker +
@@ -127,17 +173,33 @@ task, provenance kind, datasets, classes and metrics, never a filename. If that 
 promoting `HeadRunPanel` to a shared component, do that rather than copying it; the handoff
 already flags a third consumer as the trigger for promotion.
 
-**6. mask-review-ui** — mask overlay plus per-mask accept / reject / unclear, using the same
+**6. grounded-sam-annotator** — the ungated implementation of the feature-2 contract, and the
+one that proves the pipeline end to end. A text concept goes to Grounding DINO, whose boxes
+become SAM 2.1 box prompts, and the masks come back as RLE for storage with the originating
+boxes alongside. This is also exactly the "lift an existing Wave 1 box dataset into masks"
+path, since the box source is pluggable. Dense preview travels as base64 PNG per the Wave 3
+rule (`mask_png`, never nested JSON); RLE is what is stored.
+
+**7. mask-review-ui** — mask overlay plus per-mask accept / reject / unclear, using the same
 three verdicts as boxes so the dataset store stays one format.
 ⚠️ `AnnotationCanvas.tsx` is at **264 lines**. This is a **sibling component**, not an
 extension of it. Reuse `components/overlays/` — the `OVERLAY_RENDERERS` record is already
 keyed by `RenderHint`, so the mask renderer exists; a `task ===` comparison here is a defect.
 
-**7. generated-dataset-writer** — write reviewed boxes and masks into a dataset through the
+**8. generated-dataset-writer** — write reviewed boxes and masks into a dataset through the
 feature-1 store, tagged with **what produced them**: the head instance id and its provenance
-summary, or `sam3` plus the concept prompt. This is what makes generated data traceable back
-to the model that generated it, and it is the contract the Wave 2 trainer reads when the next
-head is trained on this output.
+summary, or the annotator id plus the concept prompt. This is what makes generated data
+traceable back to the model that generated it, and it is the contract the Wave 2 trainer
+reads when the next head is trained on this output.
+
+**9. sam3-annotator** — the gated implementation of the same feature-2 contract, using
+`Sam3Model`/`Sam3Processor` and SAM 3's native concept prompting (no Grounding DINO stage).
+Selected by id; nothing downstream changes. **We do not download the weights** — the admin
+tab offers it and the user triggers it once they have a token and approval.
+- A **403 with a valid token means "request access at this URL", not "bad token"**, and must
+  say so. This is the one failure mode DINOv3 does not have.
+- Unit-testable with a stubbed model; real-weights verification waits on the user's download
+  and is recorded as such rather than silently skipped.
 
 ## Open Research
 
@@ -148,9 +210,11 @@ head is trained on this output.
   Whether a generated dataset also needs a parent-dataset link and a generation timestamp —
   i.e. a lineage chain — is unresolved and affects the manifest `version: 2` schema, so settle
   it during feature 1 rather than after.
-- **SAM 3 gated-access UX.** DINOv3 shows "unavailable without a token" plus a licence link.
-  SAM 3 additionally requires *per-repo access approval*, which a token alone does not grant —
-  a 403 with a valid token must read as "request access at this URL", not "bad token".
+- **Does Grounded SAM need its own provenance value?** The store currently records `sam3`.
+  A mask produced by Grounding DINO + SAM 2.1 is not from SAM 3, so either the value widens
+  to `grounded-sam` (another migration — cheap now that the runner exists) or provenance
+  records the *class* of producer and the annotator id lives beside it. Settle in feature 2,
+  before feature 6 writes any masks.
 
 ## Explicitly not in scope
 
