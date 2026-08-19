@@ -14,8 +14,12 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
+import {
+  GeneratorDestination,
+  destinationReady,
+  resolveDataset,
+} from './GeneratorDestination';
 import { GROUNDED_SAM, listAnnotators, type AnnotatorInfo } from '../api/annotators';
-import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
 export interface GeneratorSetupProps {
@@ -24,20 +28,12 @@ export interface GeneratorSetupProps {
 
 const DEFAULT_THRESHOLD = 0.3;
 
-/** An existing dataset id, or a freshly created one. Resolved before the session starts. */
-async function resolveDataset(datasetId: string, newName: string): Promise<string> {
-  if (datasetId) return datasetId;
-  const created = await createDataset(newName.trim(), null, false);
-  return created.id;
-}
-
 type Mode = 'expert' | 'masks';
 
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
   const [mode, setMode] = useState<Mode>('expert');
   const [concept, setConcept] = useState('');
-  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const [datasetOverride, setDatasetOverride] = useState('');
   const [newName, setNewName] = useState('');
   const [starting, setStarting] = useState(false);
@@ -70,18 +66,6 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   useEffect(() => {
     const controller = new AbortController();
-    listDatasets(controller.signal)
-      .then((found) => {
-        if (!controller.signal.aborted) setDatasets(found);
-      })
-      .catch(() => {
-        /* the form still allows creating a new one */
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
     listHeadInstances({}, controller.signal)
       .then((found) => {
         if (!controller.signal.aborted) setHeads(found);
@@ -107,13 +91,10 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   );
   const instanceId = headOverride || eligible[0]?.id || '';
 
-  // '' means "create a new one", which is a valid choice — so readiness depends on the
-  // name field instead, not on the select having a value.
   const datasetId = datasetOverride;
-  const datasetReady = datasetId !== '' || newName.trim().length > 0;
 
   const ready =
-    datasetReady &&
+    destinationReady(datasetId, newName) &&
     folder.trim().length > 0 &&
     (mode === 'expert'
       ? backboneId !== '' && instanceId !== ''
@@ -151,32 +132,12 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
           .finally(() => setStarting(false));
       }}
     >
-      <label className="genpanel__field">
-        <span>Save into</span>
-        <select
-          value={datasetId}
-          onChange={(event) => setDatasetOverride(event.target.value)}
-        >
-          <option value="">Create a new dataset…</option>
-          {datasets.map((dataset) => (
-            <option key={dataset.id} value={dataset.id}>
-              {dataset.name} ({dataset.counts.images} images)
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {datasetId === '' && (
-        <label className="genpanel__field">
-          <span>New dataset name</span>
-          <input
-            type="text"
-            value={newName}
-            placeholder="Bolts, round two"
-            onChange={(event) => setNewName(event.target.value)}
-          />
-        </label>
-      )}
+      <GeneratorDestination
+        datasetId={datasetId}
+        newName={newName}
+        onSelect={setDatasetOverride}
+        onNameChange={setNewName}
+      />
 
       <fieldset className="genpanel__modes">
         <legend>What proposes the annotations</legend>
