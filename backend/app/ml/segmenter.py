@@ -53,6 +53,28 @@ _cache: dict[tuple[str, str], Segmenter] = {}
 _lock = threading.Lock()
 
 
+def _classes_for(family: str) -> tuple[Any, Any]:
+    """The processor/model pair for a segmenter family.
+
+    A table rather than an ``if family == "sam3"``, for the reason the whole annotator
+    layer is a registry: the two models differ in how they are *prompted*, which is their
+    annotators' business, not the loader's. Loading is the same job either way — resolve a
+    directory, refuse to download, move to the device, eval.
+
+    Imported lazily because transformers is slow to import and this is called once per
+    process per model.
+    """
+    if family == "sam2":
+        from transformers import Sam2Model, Sam2Processor
+
+        return Sam2Processor, Sam2Model
+    if family == "sam3":
+        from transformers import Sam3Model, Sam3Processor
+
+        return Sam3Processor, Sam3Model
+    raise ValueError(f"No segmenter loader for family {family!r}")
+
+
 def _require_spec(model_id: str) -> ModelSpec:
     spec = get_model(model_id)
     if spec is None:
@@ -78,17 +100,16 @@ def load_segmenter(model_id: str = DEFAULT_SEGMENTER) -> Segmenter:
             raise ModelNotInstalledError(spec.id)
 
         logger.info("Loading %s on %s", spec.id, device)
-        from transformers import Sam2Model, Sam2Processor
+        processor_cls, model_cls = _classes_for(spec.family)
 
-        # The checkpoint's config declares `sam2_video` because the repo serves both
-        # image and video use; Sam2Model is the image half, and transformers warns about
-        # the mismatch on load. Verified against the real weights: the masks are exact.
+        # For SAM 2 the checkpoint's config declares `sam2_video` because the repo serves
+        # both image and video use; Sam2Model is the image half, and transformers warns
+        # about the mismatch on load. Verified against the real weights: masks are exact.
         #
-        # Unlike AutoProcessor in detector.py, Sam2Processor.from_pretrained is typed, so
-        # it needs no ignore. `.to()` is the untyped edge: transformers types it as
-        # accepting a PreTrainedModel rather than a device string.
-        processor = Sam2Processor.from_pretrained(str(directory))
-        model = Sam2Model.from_pretrained(str(directory)).to(device)  # type: ignore[arg-type]
+        # `.to()` is the untyped edge here: transformers types it as accepting a
+        # PreTrainedModel rather than a device string.
+        processor = processor_cls.from_pretrained(str(directory))
+        model = model_cls.from_pretrained(str(directory)).to(device)
         model.eval()
 
         segmenter = Segmenter(

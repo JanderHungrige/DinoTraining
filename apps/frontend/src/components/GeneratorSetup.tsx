@@ -14,7 +14,7 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
-import { GROUNDED_SAM } from '../api/annotators';
+import { GROUNDED_SAM, listAnnotators, type AnnotatorInfo } from '../api/annotators';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
@@ -41,6 +41,8 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [datasetOverride, setDatasetOverride] = useState('');
   const [newName, setNewName] = useState('');
   const [starting, setStarting] = useState(false);
+  const [annotators, setAnnotators] = useState<readonly AnnotatorInfo[]>([]);
+  const [annotatorOverride, setAnnotatorOverride] = useState('');
   const [backboneOverride, setBackboneOverride] = useState('');
   const [headOverride, setHeadOverride] = useState('');
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
@@ -53,6 +55,18 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   // Derived, never seeded: the first installed backbone until the user picks another.
   const backboneId = backboneOverride || installed[0]?.id || '';
+
+  useEffect(() => {
+    const controller = new AbortController();
+    listAnnotators(controller.signal)
+      .then((found) => {
+        if (!controller.signal.aborted) setAnnotators(found);
+      })
+      .catch(() => {
+        /* the mask mode falls back to the ungated default */
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -80,6 +94,13 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       });
     return () => controller.abort();
   }, []);
+
+  // Only annotators whose models are actually downloaded. SAM 3 is 3.2 GB behind a
+  // manual approval, so it appears here the moment it is installed and not before —
+  // the catalogue in the admin tab is where a user goes to get it.
+  const readyAnnotators = annotators.filter((annotator) => annotator.ready);
+  const annotatorId =
+    annotatorOverride || readyAnnotators[0]?.id || GROUNDED_SAM;
 
   const eligible = heads.filter(
     (head) => head.render_hint === 'boxes' && head.backbone_id === backboneId,
@@ -121,7 +142,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                     kind: 'masks' as const,
                     datasetId: resolvedId,
                     folder: folder.trim(),
-                    annotatorId: GROUNDED_SAM,
+                    annotatorId,
                     concept: concept.trim(),
                     scoreThreshold: threshold,
                   },
@@ -191,6 +212,21 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
       {mode === 'masks' && (
         <div className="genpanel__group">
+          {readyAnnotators.length > 1 && (
+            <label className="genpanel__field">
+              <span>Annotator</span>
+              <select
+                value={annotatorId}
+                onChange={(event) => setAnnotatorOverride(event.target.value)}
+              >
+                {readyAnnotators.map((annotator) => (
+                  <option key={annotator.id} value={annotator.id}>
+                    {annotator.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label className="genpanel__field">
             <span>Concept</span>
             <input
@@ -203,8 +239,9 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
           {/* Outside the label on purpose: text inside a <label> joins the field's
               accessible name, so this paragraph would be read out with every focus. */}
           <p className="genpanel__hint">
-            Grounding DINO finds each phrase and SAM 2.1 turns it into a mask. Nothing here
-            is gated — no token, no account.
+            {annotatorId === GROUNDED_SAM
+              ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask. Nothing here is gated — no token, no account.'
+              : (annotators.find((a) => a.id === annotatorId)?.description ?? '')}
           </p>
         </div>
       )}

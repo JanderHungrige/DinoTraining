@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from app.ml.registry import MODELS, all_models, get_model, licence_url
 
 
@@ -78,3 +80,54 @@ class TestLicenceUrl:
         gated = [spec for spec in all_models() if spec.gated]
         urls = {licence_url(spec) for spec in gated}
         assert len(urls) == len(gated)
+
+
+class TestNothingIsBundledOrAutoDownloaded:
+    """Weights are never shipped in the installer and never fetched behind the user.
+
+    The catalogue totals ~8 GB and SAM 3 alone is 3.2 GB, so an implicit download is the
+    difference between a 30 MB install and an unusable one. Every loader must refuse
+    rather than fetch, and the only place that may fetch is the admin-triggered job.
+    """
+
+    def test_only_the_download_manager_may_fetch(self) -> None:
+        import pathlib
+
+        root = pathlib.Path(__file__).resolve().parents[1] / "app"
+        offenders = [
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*.py")
+            if "snapshot_download" in path.read_text(encoding="utf-8")
+            and path.name != "downloads.py"
+            # paths.py only mentions it in a comment about what it writes.
+            and "snapshot_download(" in path.read_text(encoding="utf-8")
+        ]
+        assert offenders == [], f"implicit download reachable from: {offenders}"
+
+    def test_every_loader_refuses_a_missing_model(
+        self, tmp_path: object, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.core.config import get_settings
+        from app.ml.backbone import load_backbone
+        from app.ml.detector import load_detector
+        from app.ml.errors import ModelNotInstalledError
+        from app.ml.segmenter import load_segmenter
+
+        monkeypatch.setenv("DINO_MODEL_CACHE_DIR", str(tmp_path))
+        get_settings.cache_clear()
+        try:
+            for load, model_id in (
+                (load_detector, "grounding-dino-tiny"),
+                (load_segmenter, "sam2.1-hiera-small"),
+                (load_segmenter, "sam3"),
+                (load_backbone, "dinov2-small"),
+            ):
+                with pytest.raises(ModelNotInstalledError):
+                    load(model_id)
+        finally:
+            get_settings.cache_clear()
+
+    def test_the_catalogue_reports_what_a_full_install_would_cost(self) -> None:
+        """A sanity bound, so a mis-typed size cannot quietly claim 30 GB or 30 MB."""
+        total_gb = sum(spec.approx_size_mb for spec in all_models()) / 1024
+        assert 5 < total_gb < 12, f"catalogue total looks wrong: {total_gb:.1f} GB"

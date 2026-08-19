@@ -192,16 +192,38 @@ class TestErrors:
         assert response.status_code == 404
 
     def test_a_catalogued_but_unbuilt_annotator_is_501_not_404(
-        self, client: TestClient, tmp_path: Path
+        self, client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """SAM 3 is a real id the user can see listed; 404 would suggest a typo."""
+        """A real, listed id that cannot run yet must not read as "no such thing".
+
+        Both catalogue entries are implemented now, so the unbuilt case is simulated —
+        but the mapping still has to hold for the next annotator added.
+        """
+        from app.ml.annotators.build import AnnotatorUnavailableError
+
+        def unavailable(_id: str) -> None:
+            raise AnnotatorUnavailableError("not built yet")
+
+        monkeypatch.setattr("app.api.v1.generate.build_annotator", unavailable)
         image = write_image(tmp_path / "a.png")
+
         response = client.post(
             "/api/v1/generate/masks",
             json={"image_path": image, "concept": "x", "annotator_id": "sam3"},
         )
         assert response.status_code == 501
-        assert "Grounded SAM" in response.json()["error"]["message"]
+
+    def test_sam3_without_its_weights_is_409_not_501(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        """Implemented but not downloaded is a different answer from not implemented."""
+        image = write_image(tmp_path / "a.png")
+        response = client.post(
+            "/api/v1/generate/masks",
+            json={"image_path": image, "concept": "a bolt", "annotator_id": "sam3"},
+        )
+        assert response.status_code == 409
+        assert "Admin tab" in response.json()["error"]["message"]
 
     def test_a_missing_model_is_409_with_what_to_download(
         self, client: TestClient, tmp_path: Path

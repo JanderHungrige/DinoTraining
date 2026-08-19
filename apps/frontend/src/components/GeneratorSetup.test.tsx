@@ -12,6 +12,11 @@ vi.mock('../api/headInstances', async () => {
   return { ...actual, listHeadInstances: vi.fn() };
 });
 
+vi.mock('../api/annotators', async () => {
+  const actual = await vi.importActual<typeof import('../api/annotators')>('../api/annotators');
+  return { ...actual, listAnnotators: vi.fn() };
+});
+
 vi.mock('../api/datasets', async () => {
   const actual = await vi.importActual<typeof import('../api/datasets')>('../api/datasets');
   return { ...actual, listDatasets: vi.fn(), createDataset: vi.fn() };
@@ -27,6 +32,7 @@ vi.mock('../hooks/useTrainerOptions', async () => {
 const headsApi = await import('../api/headInstances');
 const options = await import('../hooks/useTrainerOptions');
 const datasetsApi = await import('../api/datasets');
+const annotatorsApi = await import('../api/annotators');
 
 const DETECTOR: HeadInstanceInfo = {
   id: 'h1',
@@ -72,6 +78,9 @@ beforeEach(() => {
     { id: 'd1', name: 'Bolts', counts: { images: 3 } } as never,
   ]);
   vi.mocked(datasetsApi.createDataset).mockResolvedValue({ id: 'new-1' } as never);
+  vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+    { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
+  ]);
   vi.mocked(options.useTrainerOptions).mockReturnValue(trainerOptions());
 });
 
@@ -229,6 +238,72 @@ describe('GeneratorSetup', () => {
     resolve([DETECTOR]);
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: /Bolt finder/ })).toBeInTheDocument(),
+    );
+  });
+});
+
+describe('GeneratorSetup — annotator choice', () => {
+  it('hides the annotator picker when only one is installed', async () => {
+    const user = userEvent.setup();
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    expect(screen.queryByLabelText(/^annotator$/i)).not.toBeInTheDocument();
+  });
+
+  it('offers SAM 3 once it is installed', async () => {
+    // Not before: 3.2 GB behind a manual approval, and the admin tab is where it is got.
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
+      { id: 'sam3', name: 'SAM 3', ready: true, description: 'Concept-prompted.' } as never,
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    const picker = await screen.findByLabelText(/^annotator$/i);
+    expect([...picker.querySelectorAll('option')].map((o) => o.value)).toEqual([
+      'grounded-sam',
+      'sam3',
+    ]);
+  });
+
+  it('does not offer an annotator whose models are not downloaded', async () => {
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
+      { id: 'sam3', name: 'SAM 3', ready: false } as never,
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    expect(screen.queryByLabelText(/^annotator$/i)).not.toBeInTheDocument();
+  });
+
+  it('starts with the chosen annotator', async () => {
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
+      { id: 'sam3', name: 'SAM 3', ready: true } as never,
+    ]);
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'sam3');
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.type(screen.getByLabelText(/^concept$/i), 'a bolt');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'masks', annotatorId: 'sam3' }),
+      ),
     );
   });
 });

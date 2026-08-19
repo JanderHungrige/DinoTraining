@@ -16,6 +16,7 @@ from collections.abc import Callable
 from app.ml.annotators.base import MaskAnnotator
 from app.ml.annotators.grounded_sam import GroundedSamAnnotator
 from app.ml.annotators.registry import GROUNDED_SAM, SAM3, get_annotator
+from app.ml.annotators.sam3 import Sam3Annotator
 
 
 class AnnotatorUnavailableError(RuntimeError):
@@ -24,6 +25,7 @@ class AnnotatorUnavailableError(RuntimeError):
 
 _BUILDERS: dict[str, Callable[[], MaskAnnotator]] = {
     GROUNDED_SAM: GroundedSamAnnotator,
+    SAM3: Sam3Annotator,
 }
 
 
@@ -42,11 +44,6 @@ def build_annotator(annotator_id: str) -> MaskAnnotator:
     if builder is None:
         raise AnnotatorUnavailableError(
             f"{annotator_id} is in the catalogue but cannot be run yet."
-            + (
-                " SAM 3 support is still being built; Grounded SAM does the same job today."
-                if annotator_id == SAM3
-                else ""
-            )
         )
     return builder()
 

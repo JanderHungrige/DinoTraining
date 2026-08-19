@@ -179,9 +179,20 @@ class TestBuilder:
         with pytest.raises(LookupError):
             build_annotator("not-an-annotator")
 
-    def test_a_catalogued_but_unbuilt_annotator_is_distinguished(self) -> None:
-        """Two different answers: a caller mistake, and a feature that has not shipped."""
-        with pytest.raises(AnnotatorUnavailableError, match="Grounded SAM"):
+    def test_sam3_is_implemented(self) -> None:
+        assert build_annotator(SAM3).annotator_id == SAM3
+
+    def test_a_catalogued_but_unbuilt_annotator_is_distinguished(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Two different answers: a caller mistake, and a feature that has not shipped.
+
+        Every catalogue entry is implemented today, so the unbuilt case is simulated. The
+        distinction still has to hold — the next annotator added will be catalogued before
+        it is built, exactly as SAM 3 was.
+        """
+        monkeypatch.setattr("app.ml.annotators.build._BUILDERS", {})
+        with pytest.raises(AnnotatorUnavailableError, match="cannot be run yet"):
             build_annotator(SAM3)
 
     def test_the_implemented_set_is_a_subset_of_the_catalogue(self) -> None:
