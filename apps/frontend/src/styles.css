@@ -400,18 +400,27 @@ body {
   cursor: pointer;
 }
 
+/* --verdict, not currentColor. The tag used to build its background from
+   `color-mix(currentColor …)`, but it also sets its own near-black `color` — and
+   currentColor resolves against the element's *own* computed colour, so the mix was
+   near-black on near-black. It looked fine only because the tag was legible against
+   whatever sat behind it in dark mode; in light mode the label vanished entirely.
+   A custom property inherits, so the tag can read the verdict from its button. */
 .canvas__box--positive {
-  border-color: #4ade80;
+  --verdict: #4ade80;
+  border-color: var(--verdict);
   background: rgb(74 222 128 / 12%);
 }
 
 .canvas__box--negative {
-  border-color: #f87171;
+  --verdict: #f87171;
+  border-color: var(--verdict);
   background: rgb(248 113 113 / 12%);
 }
 
 .canvas__box--unclear {
-  border-color: #fbbf24;
+  --verdict: #fbbf24;
+  border-color: var(--verdict);
   border-style: dashed;
   background: rgb(251 191 36 / 12%);
 }
@@ -427,7 +436,7 @@ body {
   left: -2px;
   padding: 0.05rem 0.35rem;
   border-radius: 3px;
-  background: color-mix(in srgb, currentColor 85%, #000);
+  background: var(--verdict, #4ade80);
   color: #06121f;
   font-size: 0.68rem;
   font-weight: 700;
@@ -1121,6 +1130,10 @@ body {
   /* The map is data upsampled from a coarse patch grid; smoothing it invents boundaries
      that the model did not predict. */
   image-rendering: pixelated;
+  /* Decorative in both consumers: the viewer has nothing to click, and mask review puts
+     a real button over each mask. Without this the map would swallow those clicks if the
+     paint order ever changed. */
+  pointer-events: none;
 }
 
 .overlay__boxes {
@@ -1472,4 +1485,55 @@ body {
   max-width: 68ch;
   color: var(--text-dim);
   font-size: 0.875rem;
+}
+
+/* --- Wave 4: mask review (28-mask-review-ui) --- */
+
+/* The hit target sits over the mask, which is already tinted by verdict — so the fill is
+   dropped here and only the outline remains. Reusing .canvas__box--<label> keeps one
+   colour definition for boxes and masks. */
+.canvas__box--mask {
+  background: transparent;
+  border-style: dashed;
+}
+
+.canvas__box--mask.canvas__box--selected {
+  border-style: solid;
+}
+
+.genpanel__modes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.genpanel__modes legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.genpanel__mode {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.genpanel__group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.genpanel__hint {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.45;
 }

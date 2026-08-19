@@ -1,41 +1,60 @@
 /**
- * The dataset-generator session: image list, current index, proposed boxes, review state.
+ * The dataset-generator session: image list, current index, proposals, review state.
  *
- * Mirrors `useAnnotationSession`'s shape so the two review surfaces stay recognisable, but
- * it is a separate hook rather than a parameter on that one: the Studio proposes from a
- * *text prompt* and this proposes from a *trained head*, and folding both into one hook
- * would mean every caller carries the union of two configs and half of it is always null.
+ * Two ways to propose, and the config is a **discriminated union** rather than one object
+ * with half its fields null. An expert head needs a backbone and an instance; a mask
+ * annotator needs a concept and an annotator id, and neither set is meaningful to the
+ * other. A single flat shape would make every reader check which half is populated.
  *
- * There is no save here on purpose — writing reviewed proposals back is feature 7. A
- * disabled Save button would be worse than none: it reads as broken rather than absent.
+ * There is no save here on purpose — writing reviewed proposals back is feature 8. A
+ * disabled Save button would read as broken rather than absent.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listFolderImages } from '../api/annotate';
 import { ApiError } from '../api/client';
-import { proposeWithExpertHead, toCanvasBoxes } from '../api/generate';
-import type { CanvasBox } from '../types/annotation';
+import {
+  proposeMasks,
+  proposeWithExpertHead,
+  toCanvasBoxes,
+  toReviewMasks,
+} from '../api/generate';
+import type { CanvasBox, ReviewMask } from '../types/annotation';
 
-export interface GeneratorConfig {
+export interface ExpertConfig {
+  readonly kind: 'expert';
   readonly folder: string;
   readonly backboneId: string;
   readonly instanceId: string;
   readonly scoreThreshold: number;
 }
 
+export interface MaskConfig {
+  readonly kind: 'masks';
+  readonly folder: string;
+  readonly annotatorId: string;
+  readonly concept: string;
+  readonly scoreThreshold: number;
+}
+
+export type GeneratorConfig = ExpertConfig | MaskConfig;
+
 export interface GeneratorSession {
   readonly images: readonly string[];
   readonly index: number;
   readonly currentImage: string | null;
   readonly boxes: readonly CanvasBox[];
+  readonly masks: readonly ReviewMask[];
   readonly imageSize: { width: number; height: number } | null;
-  readonly headName: string | null;
-  readonly headSummary: string | null;
+  /** What produced the current proposals — a head's name, or an annotator's. */
+  readonly producerName: string | null;
+  readonly producerDetail: string | null;
   readonly loading: boolean;
   readonly proposing: boolean;
   readonly error: string | null;
   readonly setBoxes: (boxes: CanvasBox[]) => void;
+  readonly setMasks: (masks: ReviewMask[]) => void;
   readonly reportImageSize: (width: number, height: number) => void;
   readonly propose: () => Promise<void>;
   readonly next: () => void;
@@ -52,14 +71,15 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   const [images, setImages] = useState<readonly string[]>([]);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxes] = useState<readonly CanvasBox[]>([]);
+  const [masks, setMasks] = useState<readonly ReviewMask[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
-  const [headName, setHeadName] = useState<string | null>(null);
-  const [headSummary, setHeadSummary] = useState<string | null>(null);
+  const [producerName, setProducerName] = useState<string | null>(null);
+  const [producerDetail, setProducerDetail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [proposing, setProposing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Guards a late response from a previous image overwriting the current one's boxes.
+  // Guards a late response from a previous image overwriting the current one's review.
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -77,6 +97,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         setImages(found);
         setIndex(0);
         setBoxes([]);
+        setMasks([]);
         setImageSize(null);
       })
       .catch((caught: unknown) => {
@@ -99,22 +120,38 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setProposing(true);
     setError(null);
     try {
-      const response = await proposeWithExpertHead({
-        imagePath: currentImage,
-        backboneId: config.backboneId,
-        instanceId: config.instanceId,
-        scoreThreshold: config.scoreThreshold,
-      });
-      // A response for an image the user has already navigated away from must not land.
-      if (ticket !== requestId.current) return;
+      if (config.kind === 'expert') {
+        const response = await proposeWithExpertHead({
+          imagePath: currentImage,
+          backboneId: config.backboneId,
+          instanceId: config.instanceId,
+          scoreThreshold: config.scoreThreshold,
+        });
+        if (ticket !== requestId.current) return;
 
-      setBoxes(toCanvasBoxes(response));
-      setImageSize({ width: response.width, height: response.height });
-      setHeadName(response.head_name);
-      setHeadSummary(response.head_summary);
+        setBoxes(toCanvasBoxes(response));
+        setImageSize({ width: response.width, height: response.height });
+        setProducerName(response.head_name);
+        setProducerDetail(response.head_summary);
+      } else {
+        const response = await proposeMasks({
+          imagePath: currentImage,
+          concept: config.concept,
+          annotatorId: config.annotatorId,
+          threshold: config.scoreThreshold,
+        });
+        // A response for an image the user has already navigated away from must not land:
+        // its masks are in that image's coordinate space and would look plausible here.
+        if (ticket !== requestId.current) return;
+
+        setMasks(toReviewMasks(response));
+        setImageSize({ width: response.width, height: response.height });
+        setProducerName(response.annotator_name);
+        setProducerDetail(`${response.masks.length} mask(s) for “${config.concept}”`);
+      }
     } catch (caught) {
       if (ticket === requestId.current) {
-        setError(describe(caught, 'The head could not propose boxes for this image.'));
+        setError(describe(caught, 'Nothing could be proposed for this image.'));
       }
     } finally {
       if (ticket === requestId.current) setProposing(false);
@@ -129,6 +166,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         const next = current + delta;
         if (next < 0 || next >= images.length) return current;
         setBoxes([]);
+        setMasks([]);
         setImageSize(null);
         return next;
       });
@@ -145,13 +183,15 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     index,
     currentImage,
     boxes,
+    masks,
     imageSize,
-    headName,
-    headSummary,
+    producerName,
+    producerDetail,
     loading,
     proposing,
     error,
     setBoxes,
+    setMasks,
     reportImageSize,
     propose,
     next: () => move(1),

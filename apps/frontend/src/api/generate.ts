@@ -8,7 +8,7 @@
  */
 
 import { apiFetch } from './client';
-import type { CanvasBox, Label, Provenance } from '../types/annotation';
+import type { CanvasBox, Label, Provenance, ReviewMask } from '../types/annotation';
 
 export interface ExpertProposalResponse {
   readonly image_path: string;
@@ -82,5 +82,88 @@ export function toCanvasBoxes(response: ExpertProposalResponse): CanvasBox[] {
     h: box.h,
     ...(box.score !== null ? { score: box.score } : {}),
     ...(box.prompt ? { text: box.prompt } : {}),
+  }));
+}
+
+
+// --- masks ------------------------------------------------------------------------
+
+export interface ProposedMaskDto {
+  readonly label: Label;
+  readonly provenance: Provenance;
+  readonly rle: { readonly size: readonly [number, number]; readonly counts: readonly number[] };
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly score: number;
+  readonly concept: string;
+  /** Preview only — base64 PNG, 0 background / 255 object. */
+  readonly mask_png: string;
+}
+
+export interface MaskProposalResponse {
+  readonly image_path: string;
+  readonly width: number;
+  readonly height: number;
+  readonly device: string;
+  readonly annotator_id: string;
+  readonly annotator_name: string;
+  readonly masks: readonly ProposedMaskDto[];
+}
+
+function isMaskProposal(value: unknown): value is MaskProposalResponse {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['image_path'] === 'string' &&
+    typeof value['width'] === 'number' &&
+    typeof value['annotator_id'] === 'string' &&
+    Array.isArray(value['masks'])
+  );
+}
+
+export interface MaskProposalRequest {
+  readonly imagePath: string;
+  readonly concept: string;
+  readonly annotatorId: string;
+  readonly threshold: number;
+}
+
+export async function proposeMasks(
+  request: MaskProposalRequest,
+  signal?: AbortSignal,
+): Promise<MaskProposalResponse> {
+  return apiFetch('/generate/masks', isMaskProposal, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      image_path: request.imagePath,
+      concept: request.concept,
+      annotator_id: request.annotatorId,
+      threshold: request.threshold,
+    }),
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/**
+ * Proposals to review masks.
+ *
+ * The RLE is deliberately *not* carried into the review type: it is what gets stored, the
+ * PNG is what gets drawn, and mixing them would tempt a component into decoding one to
+ * render the other. The writer re-reads the RLE from the response it saves.
+ */
+export function toReviewMasks(response: MaskProposalResponse): ReviewMask[] {
+  return response.masks.map((mask, index) => ({
+    id: `mask-${index}`,
+    label: mask.label,
+    provenance: mask.provenance,
+    maskPng: mask.mask_png,
+    x: mask.x,
+    y: mask.y,
+    w: mask.w,
+    h: mask.h,
+    score: mask.score,
+    concept: mask.concept,
   }));
 }

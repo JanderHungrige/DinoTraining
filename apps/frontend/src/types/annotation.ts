@@ -45,3 +45,30 @@ export function nextLabel(label: Label): Label {
   const index = LABELS.indexOf(label);
   return LABELS[(index + 1) % LABELS.length] ?? 'positive';
 }
+
+/**
+ * A mask as the review surface holds it. `id` is client-side only.
+ *
+ * Verdict-only by design: the three labels are the same three a box carries, so one
+ * dataset format and one set of counters serve both. There is deliberately no geometry
+ * to edit — SAM's masks are good enough that a verdict is usually the whole review, and
+ * a brush would be a much larger surface for a much smaller gain.
+ *
+ * `x/y/w/h` is the mask's own bounding box in natural pixels, derived server-side. It is
+ * the *hit target*: mask pixels are an awkward thing to click or focus, and the box gives
+ * a real focusable control — and therefore keyboard operation — for free.
+ */
+export interface ReviewMask {
+  readonly id: string;
+  readonly label: Label;
+  readonly provenance: Provenance;
+  /** Base64 PNG, no data: prefix. 0 = background, 255 = this object. Preview only. */
+  readonly maskPng: string;
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly score?: number;
+  /** The phrase that produced it — shown beside each mask during review. */
+  readonly concept?: string;
+}

@@ -4,6 +4,7 @@ import { useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
+import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import {
   useGeneratorSession,
@@ -40,9 +41,10 @@ export function DatasetGeneratorTab(): JSX.Element {
         </button>
       </div>
 
-      {session.headSummary && (
+      {session.producerName && (
         <p className="studio__lead">
-          Proposing with <strong>{session.headName}</strong> — {session.headSummary}
+          Proposing with <strong>{session.producerName}</strong>
+          {session.producerDetail ? ` — ${session.producerDetail}` : ''}
         </p>
       )}
 
@@ -80,17 +82,33 @@ export function DatasetGeneratorTab(): JSX.Element {
             }
           />
 
+          {/* Which review surface is a property of the config, not of what happens to
+              be in state: an empty mask list must still show the mask canvas, or "found
+              nothing" would silently render the box canvas instead. */}
           {imageSize ? (
-            <AnnotationCanvas
-              imageUrl={imageUrl(currentImage)}
-              naturalWidth={imageSize.width}
-              naturalHeight={imageSize.height}
-              boxes={session.boxes}
-              selectedId={selectedId}
-              onBoxesChange={session.setBoxes}
-              onSelect={setSelectedId}
-              disabled={session.proposing}
-            />
+            config.kind === 'masks' ? (
+              <MaskReviewCanvas
+                imageUrl={imageUrl(currentImage)}
+                naturalWidth={imageSize.width}
+                naturalHeight={imageSize.height}
+                masks={session.masks}
+                selectedId={selectedId}
+                onMasksChange={session.setMasks}
+                onSelect={setSelectedId}
+                disabled={session.proposing}
+              />
+            ) : (
+              <AnnotationCanvas
+                imageUrl={imageUrl(currentImage)}
+                naturalWidth={imageSize.width}
+                naturalHeight={imageSize.height}
+                boxes={session.boxes}
+                selectedId={selectedId}
+                onBoxesChange={session.setBoxes}
+                onSelect={setSelectedId}
+                disabled={session.proposing}
+              />
+            )
           ) : (
             <p role="status">Loading image…</p>
           )}
@@ -102,7 +120,11 @@ export function DatasetGeneratorTab(): JSX.Element {
               disabled={session.proposing}
               onClick={() => void session.propose()}
             >
-              {session.proposing ? 'Proposing…' : 'Propose boxes'}
+              {session.proposing
+                ? 'Proposing…'
+                : config.kind === 'masks'
+                  ? 'Propose masks'
+                  : 'Propose boxes'}
             </button>
             <span className="studio__spacer" />
             <button
@@ -126,8 +148,8 @@ export function DatasetGeneratorTab(): JSX.Element {
           {/* Saving arrives with feature 7. A disabled Save button here would read as
               broken rather than not-yet-built. */}
           <p className="studio__note">
-            Reviewed boxes are not saved yet — writing them back to a dataset is the next
-            feature in this wave.
+            Reviewed annotations are not saved yet — writing them back to a dataset is the
+            next feature in this wave.
           </p>
         </>
       )}

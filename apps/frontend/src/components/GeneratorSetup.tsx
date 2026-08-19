@@ -14,6 +14,7 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
+import { GROUNDED_SAM } from '../api/annotators';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
 export interface GeneratorSetupProps {
@@ -22,8 +23,12 @@ export interface GeneratorSetupProps {
 
 const DEFAULT_THRESHOLD = 0.3;
 
+type Mode = 'expert' | 'masks';
+
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
+  const [mode, setMode] = useState<Mode>('expert');
+  const [concept, setConcept] = useState('');
   const [backboneOverride, setBackboneOverride] = useState('');
   const [headOverride, setHeadOverride] = useState('');
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
@@ -57,7 +62,11 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   );
   const instanceId = headOverride || eligible[0]?.id || '';
 
-  const ready = folder.trim().length > 0 && backboneId !== '' && instanceId !== '';
+  const ready =
+    folder.trim().length > 0 &&
+    (mode === 'expert'
+      ? backboneId !== '' && instanceId !== ''
+      : concept.trim().length > 0);
 
   return (
     <form
@@ -65,14 +74,47 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       onSubmit={(event) => {
         event.preventDefault();
         if (!ready) return;
-        onStart({
-          folder: folder.trim(),
-          backboneId,
-          instanceId,
-          scoreThreshold: threshold,
-        });
+        onStart(
+          mode === 'expert'
+            ? {
+                kind: 'expert',
+                folder: folder.trim(),
+                backboneId,
+                instanceId,
+                scoreThreshold: threshold,
+              }
+            : {
+                kind: 'masks',
+                folder: folder.trim(),
+                annotatorId: GROUNDED_SAM,
+                concept: concept.trim(),
+                scoreThreshold: threshold,
+              },
+        );
       }}
     >
+      <fieldset className="genpanel__modes">
+        <legend>What proposes the annotations</legend>
+        <label className="genpanel__mode">
+          <input
+            type="radio"
+            name="generator-mode"
+            checked={mode === 'expert'}
+            onChange={() => setMode('expert')}
+          />
+          <span>A head you trained — proposes boxes</span>
+        </label>
+        <label className="genpanel__mode">
+          <input
+            type="radio"
+            name="generator-mode"
+            checked={mode === 'masks'}
+            onChange={() => setMode('masks')}
+          />
+          <span>Grounded SAM — type a concept, get masks</span>
+        </label>
+      </fieldset>
+
       <label className="genpanel__field">
         <span>Image folder</span>
         <input
@@ -83,6 +125,27 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         />
       </label>
 
+      {mode === 'masks' && (
+        <div className="genpanel__group">
+          <label className="genpanel__field">
+            <span>Concept</span>
+            <input
+              type="text"
+              value={concept}
+              placeholder="a bolt. a nut."
+              onChange={(event) => setConcept(event.target.value)}
+            />
+          </label>
+          {/* Outside the label on purpose: text inside a <label> joins the field's
+              accessible name, so this paragraph would be read out with every focus. */}
+          <p className="genpanel__hint">
+            Grounding DINO finds each phrase and SAM 2.1 turns it into a mask. Nothing here
+            is gated — no token, no account.
+          </p>
+        </div>
+      )}
+
+      {mode === 'expert' && (
       <label className="genpanel__field">
         <span>Backbone</span>
         <select
@@ -103,13 +166,17 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         </select>
       </label>
 
-      <ExpertHeadPicker
-        heads={heads}
-        backboneId={backboneId}
-        selectedId={instanceId}
-        onSelect={setHeadOverride}
-        loading={loadingHeads}
-      />
+      )}
+
+      {mode === 'expert' && (
+        <ExpertHeadPicker
+          heads={heads}
+          backboneId={backboneId}
+          selectedId={instanceId}
+          onSelect={setHeadOverride}
+          loading={loadingHeads}
+        />
+      )}
 
       <label className="genpanel__field">
         <span>Score threshold — {threshold.toFixed(2)}</span>

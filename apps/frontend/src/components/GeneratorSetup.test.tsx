@@ -68,6 +68,45 @@ beforeEach(() => {
 afterEach(() => vi.clearAllMocks());
 
 describe('GeneratorSetup', () => {
+  it('offers the ungated mask path without any head', async () => {
+    // Grounded SAM needs no trained head at all, so it must be reachable even on an
+    // install where nothing can propose boxes.
+    const user = userEvent.setup();
+    vi.mocked(headsApi.listHeadInstances).mockResolvedValue([]);
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('status');
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.type(screen.getByLabelText(/^concept$/i), 'a bolt');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    expect(onStart).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'masks', concept: 'a bolt' }),
+    );
+  });
+
+  it('will not start the mask path without a concept', async () => {
+    const user = userEvent.setup();
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+
+    expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
+  });
+
+  it('hides the head picker in mask mode', async () => {
+    const user = userEvent.setup();
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    expect(screen.queryByRole('radio', { name: /Bolt finder/ })).not.toBeInTheDocument();
+  });
+
   it('offers only installed backbones', async () => {
     render(<GeneratorSetup onStart={vi.fn()} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
@@ -120,7 +159,9 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={vi.fn()} />);
 
     expect(await screen.findByRole('status')).toHaveTextContent(/Head Trainer/);
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    // Scoped to the head radios: the mode switch is also a radio group, and an
+    // unscoped query would pass for the wrong reason once anything else is added.
+    expect(screen.queryByRole('radio', { name: /Segmenter/ })).not.toBeInTheDocument();
   });
 
   it('cannot start when no head is eligible', async () => {
