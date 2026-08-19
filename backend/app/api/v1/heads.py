@@ -12,10 +12,22 @@ from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.ml.heads.instances import HeadInstance, HeadInstanceKind
+from app.ml.heads.registry import RenderHint, get_head_type
 from app.ml.heads.store import HeadInstanceNotFoundError, HeadInstanceStore
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+#: What an instance whose head type is no longer in the registry reports. A community
+#: import can outlive a type; claiming it draws boxes would put it in an annotator picker
+#: that then fails at run time, so it reports the one hint nothing dispatches on.
+UNKNOWN_RENDER_HINT: RenderHint = "labels"
+
+
+def _render_hint(head_type_id: str) -> RenderHint:
+    spec = get_head_type(head_type_id)
+    return spec.render_hint if spec is not None else UNKNOWN_RENDER_HINT
 
 
 class HeadInstanceInfo(BaseModel):
@@ -25,6 +37,11 @@ class HeadInstanceInfo(BaseModel):
     kind: HeadInstanceKind
     head_type_id: str
     task: str
+    #: What this head's output can be drawn as, from the head-type registry. Exposed so a
+    #: picker asks "can this annotate boxes?" of the authoritative field instead of
+    #: inferring it from `task` — the same reason `components/overlays/` dispatches on the
+    #: render hint and a `task ===` comparison there is a defect.
+    render_hint: RenderHint
     backbone_id: str
     backbone_family: str
     embed_dim: int
@@ -60,6 +77,7 @@ def describe_instance(instance: HeadInstance) -> HeadInstanceInfo:
         kind=instance.kind,
         head_type_id=instance.head_type_id,
         task=instance.task,
+        render_hint=_render_hint(instance.head_type_id),
         backbone_id=instance.backbone_id,
         backbone_family=instance.backbone_family,
         embed_dim=instance.embed_dim,

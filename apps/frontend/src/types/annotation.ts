@@ -7,7 +7,17 @@
  */
 
 export type Label = 'positive' | 'negative' | 'unclear';
-export type Provenance = 'grounding-dino' | 'hand-drawn';
+/**
+ * Who proposed a box. Mirrors PROVENANCE_VALUES in backend/app/datasets/schema.py, where
+ * it also lives in a SQLite CHECK constraint — so a value added there needs a migration
+ * *and* an entry here. Wave 4 added the last three.
+ */
+export type Provenance =
+  | 'grounding-dino'
+  | 'hand-drawn'
+  | 'expert-head'
+  | 'sam3'
+  | 'grounded-sam';
 
 export const LABELS: readonly Label[] = Object.freeze(['positive', 'negative', 'unclear']);
 

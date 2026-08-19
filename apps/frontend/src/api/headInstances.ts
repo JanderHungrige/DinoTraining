@@ -7,7 +7,7 @@
  */
 
 import { apiFetch } from './client';
-import type { HeadTask } from './heads';
+import type { HeadTask, RenderHint } from './heads';
 
 export type HeadInstanceKind = 'pretrained-default' | 'community' | 'trained-here';
 
@@ -25,6 +25,11 @@ export interface HeadInstanceInfo {
   readonly kind: HeadInstanceKind;
   readonly head_type_id: string;
   readonly task: HeadTask;
+  /**
+   * What this head's output can be drawn as. Ask this, never `task`, when deciding
+   * whether a head can do something — the same rule `components/overlays/` follows.
+   */
+  readonly render_hint: RenderHint;
   readonly backbone_id: string;
   readonly backbone_family: string;
   readonly embed_dim: number;

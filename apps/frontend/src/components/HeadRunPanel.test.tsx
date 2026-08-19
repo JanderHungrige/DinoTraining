@@ -20,6 +20,7 @@ function head(overrides: Partial<HeadInstanceInfo> = {}): HeadInstanceInfo {
     kind: 'pretrained-default',
     head_type_id: 'linear-segmenter',
     task: 'segmentation',
+    render_hint: 'masks',
     backbone_id: 'dinov2-small',
     backbone_family: 'dinov2',
     embed_dim: 384,

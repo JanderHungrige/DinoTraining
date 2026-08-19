@@ -1396,3 +1396,80 @@ body {
 .tokenpanel__ack input[disabled] {
   cursor: default;
 }
+
+/* --- Wave 4: Dataset Generator setup (26-generator-review-ui) --- */
+
+.genpanel {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.genpanel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.genpanel__field input[type='text'],
+.genpanel__field select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.genpanel__heads {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.genpanel__heads legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* Grid, not flex: the meta column wraps under the name on a narrow window instead of
+   squeezing a summary that is the whole point of the row. */
+.genpanel__head {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.genpanel__headname {
+  font-weight: 600;
+}
+
+.genpanel__headmeta {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.genpanel__empty {
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.studio__note {
+  margin: 0.75rem 0 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}

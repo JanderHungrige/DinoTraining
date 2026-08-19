@@ -1,0 +1,167 @@
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { HeadInstanceInfo } from '../api/headInstances';
+import { GeneratorSetup } from './GeneratorSetup';
+
+vi.mock('../api/headInstances', async () => {
+  const actual = await vi.importActual<typeof import('../api/headInstances')>(
+    '../api/headInstances',
+  );
+  return { ...actual, listHeadInstances: vi.fn() };
+});
+
+vi.mock('../hooks/useTrainerOptions', async () => {
+  const actual = await vi.importActual<typeof import('../hooks/useTrainerOptions')>(
+    '../hooks/useTrainerOptions',
+  );
+  return { ...actual, useTrainerOptions: vi.fn() };
+});
+
+const headsApi = await import('../api/headInstances');
+const options = await import('../hooks/useTrainerOptions');
+
+const DETECTOR: HeadInstanceInfo = {
+  id: 'h1',
+  name: 'Bolt finder',
+  summary: 'Object detection · 2 classes',
+  kind: 'trained-here',
+  head_type_id: 'dense-detector',
+  task: 'detection',
+  render_hint: 'boxes',
+  backbone_id: 'dinov2-small',
+  backbone_family: 'dinov2',
+  embed_dim: 384,
+  num_classes: 2,
+  class_names: [],
+  dataset_ids: [],
+  metrics: {},
+  primary_metric: null,
+  primary_metric_value: null,
+  epochs_trained: 1,
+  best_epoch: null,
+  source_repo: null,
+  created_at: '2026-08-19T00:00:00+00:00',
+};
+
+function trainerOptions(overrides: Record<string, unknown> = {}) {
+  return {
+    datasets: [],
+    backbones: [
+      { id: 'dinov2-small', installed: true },
+      { id: 'dinov2-base', installed: false },
+    ],
+    headTypes: [],
+    loading: false,
+    error: null,
+    refresh: vi.fn(),
+    ...overrides,
+  } as unknown as ReturnType<typeof options.useTrainerOptions>;
+}
+
+beforeEach(() => {
+  vi.mocked(headsApi.listHeadInstances).mockResolvedValue([DETECTOR]);
+  vi.mocked(options.useTrainerOptions).mockReturnValue(trainerOptions());
+});
+
+afterEach(() => vi.clearAllMocks());
+
+describe('GeneratorSetup', () => {
+  it('offers only installed backbones', async () => {
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    const values = screen.getAllByRole('option').map((o) => (o as HTMLOptionElement).value);
+    expect(values).toEqual(['dinov2-small']);
+  });
+
+  it('keeps Start disabled until a folder is typed', async () => {
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
+  });
+
+  it('enables Start once every field has an effective value', async () => {
+    const user = userEvent.setup();
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    expect(screen.getByRole('button', { name: /start generating/i })).toBeEnabled();
+  });
+
+  it('starts with the derived defaults without the user touching them', async () => {
+    // The CLAUDE.md trap: seeding state from async lists leaves it at '' while the
+    // controls render their first option anyway, so Start submits empty ids — or stays
+    // disabled forever. Nothing here is touched except the folder.
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    expect(onStart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        folder: '/photos',
+        backboneId: 'dinov2-small',
+        instanceId: 'h1',
+      }),
+    );
+  });
+
+  it('does not offer a head that cannot produce boxes', async () => {
+    vi.mocked(headsApi.listHeadInstances).mockResolvedValue([
+      { ...DETECTOR, id: 'seg', name: 'Segmenter', render_hint: 'masks' },
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/Head Trainer/);
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+  });
+
+  it('cannot start when no head is eligible', async () => {
+    const user = userEvent.setup();
+    vi.mocked(headsApi.listHeadInstances).mockResolvedValue([]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('status');
+
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
+  });
+
+  it('passes the chosen threshold through', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    expect(onStart).toHaveBeenCalledWith(
+      expect.objectContaining({ scoreThreshold: expect.any(Number) }),
+    );
+  });
+
+  it('survives heads arriving after the first render', async () => {
+    // The sequence a real load produces: render with nothing, then data lands.
+    let resolve: (value: HeadInstanceInfo[]) => void = () => {};
+    vi.mocked(headsApi.listHeadInstances).mockReturnValue(
+      new Promise((r) => {
+        resolve = r;
+      }),
+    );
+
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    expect(screen.getByRole('status')).toHaveTextContent(/Loading heads/);
+
+    resolve([DETECTOR]);
+    await waitFor(() =>
+      expect(screen.getByRole('radio', { name: /Bolt finder/ })).toBeInTheDocument(),
+    );
+  });
+});
