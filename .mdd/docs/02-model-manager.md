@@ -61,6 +61,7 @@ known_issues:
   - "downloaded_bytes/total_bytes are inflated (observed ~2x) because huggingface_hub creates nested byte-unit tqdm bars per file. The ratio the UI renders is correct and bounded 0-100%; the absolute byte figures should not be trusted for anything but the percentage. Revisit if HF exposes a stable per-file progress hook."
   - "Download jobs live in process memory: restarting the backend loses job history. Intentional (HF's cache resumes the transfer), but the UI shows no in-flight download after a restart until the user retries."
   - "No cancel for an in-flight download; snapshot_download has no cooperative cancellation. Add when the trainer needs job cancellation in Wave 2." 
+  - "FIXED 2026-08-19 (Wave 4): snapshot_download fetched the whole repo, including the pickle duplicate of the weights (pytorch_model.bin, *.pt) that this project never loads — the torch.load carve-out is narrow and covers digest-pinned catalogue bytes only. Every model therefore used roughly twice its catalogue estimate: grounding-dino-tiny 1.3 GB against a 690 MB claim, dinov2-small 168 MB against 88 MB, sam2.1-hiera-small 352 MB against 184 MB. Distinct from the tqdm inflation above, which is about reported progress rather than bytes actually fetched. Now excluded via PICKLE_PATTERNS in app/ml/downloads.py, and every catalogue size re-measured from the HF API (safetensors only). Pickles downloaded before the fix are still on disk and must be removed by hand."
 sister_projects: []
 ---
 

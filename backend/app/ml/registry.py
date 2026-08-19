@@ -42,7 +42,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="detector",
         family="grounding-dino",
         gated=False,
-        approx_size_mb=690,
+        approx_size_mb=658,
         description="Open-vocabulary detector for box proposals. Fast; start here.",
     ),
     ModelSpec(
@@ -51,7 +51,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="detector",
         family="grounding-dino",
         gated=False,
-        approx_size_mb=1740,
+        approx_size_mb=891,
         description="Larger open-vocabulary detector. Better recall, slower.",
     ),
     ModelSpec(
@@ -60,7 +60,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov2",
         gated=False,
-        approx_size_mb=88,
+        approx_size_mb=84,
         description="Smallest DINOv2 backbone. Good for quick head experiments.",
     ),
     ModelSpec(
@@ -78,7 +78,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov2",
         gated=False,
-        approx_size_mb=1200,
+        approx_size_mb=1161,
         description="Large DINOv2 backbone. Stronger features, more memory.",
     ),
     ModelSpec(
@@ -87,7 +87,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov3",
         gated=True,
-        approx_size_mb=350,
+        approx_size_mb=327,
         description="DINOv3 ViT-B/16. Gated — accept the licence on HuggingFace first.",
         licence="DINOv3 License (Meta, custom)",
     ),
@@ -97,7 +97,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="backbone",
         family="dinov3",
         gated=True,
-        approx_size_mb=1200,
+        approx_size_mb=1156,
         description="DINOv3 ViT-L/16. Gated — accept the licence on HuggingFace first.",
         licence="DINOv3 License (Meta, custom)",
     ),
@@ -107,7 +107,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="segmenter",
         family="sam2",
         gated=False,
-        approx_size_mb=184,
+        approx_size_mb=176,
         description=(
             "Segment Anything 2.1. Turns boxes into masks. Ungated and Apache-2.0 — "
             "with Grounding DINO it gives text-prompted masks and needs no account."
@@ -119,7 +119,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         kind="segmenter",
         family="sam3",
         gated=True,
-        approx_size_mb=3440,
+        approx_size_mb=3285,
         description=(
             "Segment Anything 3. Prompts on a text concept directly and returns masks "
             "and boxes. Needs your own HuggingFace token AND an approved access request."
