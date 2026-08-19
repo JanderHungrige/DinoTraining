@@ -1,7 +1,7 @@
 /**
  * The picker is a text field first and a native dialog second.
  *
- * Under Tauri the dialog plugin gives a real picker; in the `web` dev mode and in Wave 6
+ * Under Tauri the dialog plugin gives a real picker; in the `web` dev mode and in Wave 9
  * there is none, so the field must stay usable on its own — the same rule
  * `SessionSetup` established in Wave 1.
  */

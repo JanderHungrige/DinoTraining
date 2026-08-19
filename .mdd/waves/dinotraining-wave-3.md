@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-2
 demo_state: "User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only; live video is deferred."
 created: 2026-08-14
-hash: f8d7ee29
+hash: 1fefbd03
 ---
 
 # Wave 3: Inference Viewer
@@ -36,7 +36,7 @@ note below.
 - **`video-stream-source` is replaced by `image-input-source`**, not simply removed. The
   wave still needs an input-source feature; it just loads files rather than frames.
 - **Open Product Questions gate waived.** Two questions remain unchecked in the initiative
-  — code-signing/notarization (Wave 5) and first hyperscaler (Wave 6). Both are explicitly
+  — code-signing/notarization (Wave 8) and first hyperscaler (Wave 9). Both are explicitly
   scoped to later waves and cannot influence an inference viewer's architecture. Waived
   deliberately on 2026-08-18 rather than skipped; recorded here so the next `plan-wave`
   does not rediscover it as an open question.

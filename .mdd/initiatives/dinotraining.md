@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 6
-hash: a5ac5ab3
+version: 7
+hash: a5cf2f38
 created: 2026-08-14
 ---
 
@@ -117,10 +117,11 @@ as a swappable job runner so hyperscaler GPUs can be added later.
       viewer, and none of it is needed to demonstrate the backbone → head → render path or
       same-task comparison. Wave 3 ships still images (single + folder); `image-input-source`
       establishes an input contract a video source can later satisfy without changing the
-      viewer. Proposed home is **Wave 4**, where the Dataset Generator already ingests new
-      imagery and frames are just another source — to be confirmed when Wave 4 is planned.
-- [ ] Code-signing / notarization for macOS + Windows installers (Wave 5).
-- [ ] Which hyperscaler(s) to support first for the website (Wave 6).
+      viewer. Wave 4 was proposed as its home; **that proposal was withdrawn on 2026-08-18**
+      — Wave 4 is dataset-generator only. Video is unassigned and tracked in
+      `.mdd/BACKLOG.md` until a wave claims it.
+- [ ] Code-signing / notarization for macOS + Windows installers (Wave 8).
+- [ ] Which hyperscaler(s) to support first for the website (Wave 9).
 
 ## Waves
 
@@ -129,6 +130,9 @@ as a swappable job runner so hyperscaler GPUs can be added later.
 | Wave 1 | waves/dinotraining-wave-1.md | User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab. | complete |
 | Wave 2 | waves/dinotraining-wave-2.md | User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training. | complete |
 | Wave 3 | waves/dinotraining-wave-3.md | User loads a single image or a folder, selects a backbone plus one or more head instances (default, community or self-trained), and sees original vs. annotated results side-by-side — including several heads on the same task compared against one input. Still images only. | complete |
-| Wave 4 | waves/dinotraining-wave-4.md | User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app. | planned |
-| Wave 5 | waves/dinotraining-wave-5.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | planned |
-| Wave 6 | waves/dinotraining-wave-6.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
+| Wave 4 | waves/dinotraining-wave-4.md | User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app. | planned |
+| Wave 5 | waves/dinotraining-wave-5.md | In the Annotation Studio the user picks a trained backbone + head instead of writing a Grounding DINO prompt, and the expert model proposes boxes they refine by hand — the same head picker, reading identically, in both the Studio and the Inference Viewer. | planned |
+| Wave 6 | waves/dinotraining-wave-6.md | The user downloads Depth Anything 3 from the admin panel and runs it in the Inference Viewer beside the DINOv2 heads, comparing a foundation depth model against a trained one on the same image — with every catalogue entry stating its licence. | planned |
+| Wave 7 | waves/dinotraining-wave-7.md | Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window. | planned |
+| Wave 8 | waves/dinotraining-wave-8.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | planned |
+| Wave 9 | waves/dinotraining-wave-9.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

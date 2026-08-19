@@ -1,7 +1,7 @@
 /**
  * The native file dialogs, in one place.
  *
- * Only present inside the Tauri webview. In the `web` dev mode — and in Wave 6 — there is
+ * Only present inside the Tauri webview. In the `web` dev mode — and in Wave 9 — there is
  * no dialog at all, so every caller must stay usable without one: the path field is
  * always editable and the browse buttons are what disappear, never the field.
  *

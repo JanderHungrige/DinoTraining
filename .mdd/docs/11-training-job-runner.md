@@ -36,7 +36,7 @@ path: Training/Runner
 integration_contracts:
   - function: JobRunner protocol
     when: any code that starts, polls or cancels training
-    why: Wave 6 swaps in a hyperscaler runner; callers must never touch LocalJobRunner directly
+    why: Wave 9 swaps in a hyperscaler runner; callers must never touch LocalJobRunner directly
   - function: loss_for(spec) / metrics_for(spec) / decode_for(spec)
     when: computing loss, metrics, or decoding raw head output
     why: all three are keyed by head type, so the loop never branches on task
@@ -69,7 +69,7 @@ sister_projects: []
 
 Trains a head against a frozen backbone: reads Wave 1 datasets, derives targets,
 runs the loop, tracks metrics, applies early stopping and keeps the best weights.
-Execution is behind a **pluggable runner interface** so Wave 6 can add a hyperscaler
+Execution is behind a **pluggable runner interface** so Wave 9 can add a hyperscaler
 runner without touching any caller.
 
 ## Architecture

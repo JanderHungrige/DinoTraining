@@ -7,7 +7,7 @@ status: complete
 depends_on: none
 demo_state: "User picks a local image folder, types a prompt, sees Grounding DINO boxes, marks/draws boxes as pos/neg/unclear, and the app saves a structured dataset with a live counter — after downloading models from the admin tab."
 created: 2026-08-14
-hash: 195a771c
+hash: 0307ee67
 ---
 
 # Wave 1: App Shell, Annotation Studio & Model Admin
@@ -65,4 +65,4 @@ A counter shows images processed and per-label counts.
 - Dataset format decision: COCO JSON export + native sidecar vs. YOLO — must be trivially
   consumable by the Wave 2 trainer.
 - Tauri sidecar packaging of a Python/PyTorch environment (PyInstaller/embedded venv) —
-  spike early since it affects Wave 5.
+  spike early since it affects Wave 8.

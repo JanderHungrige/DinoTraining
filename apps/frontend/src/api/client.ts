@@ -15,7 +15,7 @@ import {
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:8756';
 
-/** Overridable for the Wave 6 website build, where the backend is not on loopback. */
+/** Overridable for the Wave 9 website build, where the backend is not on loopback. */
 export const API_BASE_URL: string = import.meta.env['VITE_DINO_API_URL'] ?? DEFAULT_BASE_URL;
 
 export const API_PREFIX = '/api/v1';

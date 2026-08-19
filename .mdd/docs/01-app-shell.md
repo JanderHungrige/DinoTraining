@@ -77,12 +77,12 @@ satisfies_contracts: []
 security_read_sites: []
 known_issues:
   - "npm 10.9 crashes resolving vitest 4's optional-peer graph (arborist `edgesOut` null); frontend installs require --legacy-peer-deps. Fix by upgrading npm/Node rather than pinning vitest down."
-  - "Node 23.1 is non-LTS; jsdom's whatwg-url wants ^22.14 || >=24 and logs EBADENGINE. Tests pass, but move to Node 24 LTS before Wave 5 packaging."
+  - "Node 23.1 is non-LTS; jsdom's whatwg-url wants ^22.14 || >=24 and logs EBADENGINE. Tests pass, but move to Node 24 LTS before Wave 8 packaging."
   - "TypeScript pinned to 5.9.3 while 7.x is npm `latest`. Deliberate for foundation stability; revisit once the vite/vitest toolchain has TS7 mileage."
-  - "App icons in apps/desktop/src-tauri/icons/ are generated placeholders. Replace with real artwork before Wave 5 (installers, code-signing)."
-  - "Sidecar runs from backend/.venv in dev only; packaged-binary resolution is deliberately deferred to Wave 5 (see sidecar::SidecarConfig::for_development)."
-  - "A SIGKILL'd shell still orphans the sidecar — no signal handler can catch SIGKILL. ensure_port_free() reports it on the next launch with the kill command to run. Revisit in Wave 5 if packaging gives a supervisor."
-  - "Windows has no signal handler yet (install_signal_handlers is a no-op off unix); wire Ctrl-C handling during Wave 5 packaging."
+  - "App icons in apps/desktop/src-tauri/icons/ are generated placeholders. Replace with real artwork before Wave 8 (installers, code-signing)."
+  - "Sidecar runs from backend/.venv in dev only; packaged-binary resolution is deliberately deferred to Wave 8 (see sidecar::SidecarConfig::for_development)."
+  - "A SIGKILL'd shell still orphans the sidecar — no signal handler can catch SIGKILL. ensure_port_free() reports it on the next launch with the kill command to run. Revisit in Wave 8 if packaging gives a supervisor."
+  - "Windows has no signal handler yet (install_signal_handlers is a no-op off unix); wire Ctrl-C handling during Wave 8 packaging."
 sister_projects: []
 ---
 
@@ -112,7 +112,7 @@ a typed `/api/v1` client, a health-check handshake proving the sidecar is alive,
 ```
 
 Three processes in dev (`tauri dev`): Vite dev server, the FastAPI sidecar, and the Tauri
-window. In production (Wave 5) the sidecar becomes a bundled binary; nothing above the
+window. In production (Wave 8) the sidecar becomes a bundled binary; nothing above the
 `sidecar.rs` boundary changes.
 
 **Layer responsibilities**
@@ -194,7 +194,7 @@ None — this is the wave's root feature. Everything else in Wave 1 depends on i
 
 The sidecar binds **loopback only** (`127.0.0.1`), never `0.0.0.0` — it is an in-process
 implementation detail of a desktop app, not a network service. No auth is therefore
-required in Wave 1, and this is the assumption that must be revisited in Wave 6 (website),
+required in Wave 1, and this is the assumption that must be revisited in Wave 9 (website),
 where the same FastAPI core becomes genuinely remote.
 
 `HF_TOKEN` is read from `.env` into settings and is never logged, never echoed by any

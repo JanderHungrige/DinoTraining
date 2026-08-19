@@ -2,7 +2,7 @@
  * Pick the input: one image, or a folder of them.
  *
  * A text field first, a native dialog second. Under Tauri the dialog plugin gives real
- * pickers; in the `web` dev mode and in Wave 6 there is none, so the field is always
+ * pickers; in the `web` dev mode and in Wave 9 there is none, so the field is always
  * editable and it is the browse buttons that disappear — the rule Wave 1's
  * `SessionSetup` established.
  */

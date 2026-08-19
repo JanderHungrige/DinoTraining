@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-1
 demo_state: "User selects datasets, a head type (classification / detection / segmentation, plus any default or community head compatible with their backbone) and a training config with good defaults, starts training on the local device against a frozen backbone, watches live loss/metrics, and gets a saved head instance recording what task and datasets it was trained on. Pretrained default heads for classification, segmentation and depth are downloadable and usable without any training."
 created: 2026-08-14
-hash: e57cf2b7
+hash: c96f1e8a
 ---
 
 # Wave 2: Head Trainer
@@ -110,7 +110,7 @@ segmentation and depth useful before the app can train them.
 - Training config with good defaults: split method, save-best-only, epochs, lr, batch,
   early stopping, augmentation on/off.
 - Job runner interface (local now) designed so a remote/hyperscaler runner drops in later
-  (Wave 6).
+  (Wave 9).
 - Live metrics streamed to the UI (WebSocket/SSE) with loss + the metric set the head's
   registry entry declares (acc / mAP / mIoU / …) — the stream must not hardcode metric names.
 - **Head-instance provenance is a hard requirement, not a nice-to-have.** Every registered

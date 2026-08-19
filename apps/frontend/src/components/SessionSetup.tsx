@@ -2,7 +2,7 @@
  * Session setup: pick a folder, pick or create a dataset, write a prompt.
  *
  * The folder is a text field with an optional native picker. Under Tauri the dialog
- * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 6) there is
+ * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 9) there is
  * none, so the field is always editable rather than being disabled without one.
  */
 

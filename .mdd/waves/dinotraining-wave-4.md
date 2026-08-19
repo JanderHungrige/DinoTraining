@@ -1,16 +1,16 @@
 ---
 id: dinotraining-wave-4
-title: "Wave 4: Dataset Generator (SAM + Expert-Head Auto-Annotation)"
+title: "Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)"
 initiative: dinotraining
 initiative_version: 5
 status: planned
 depends_on: dinotraining-wave-3
-demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
+demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: 06e8aaa4
+hash: ff217673
 ---
 
-# Wave 4: Dataset Generator (SAM + Expert-Head Auto-Annotation)
+# Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
 
 ## Demo-State
 
@@ -20,7 +20,7 @@ the Annotation Studio (mark **positive / negative / unclear**, adjust or add box
 and the reviewed results are saved back into the dataset store in the training format — ready
 to train the next head. This closes the annotate→train→generate data flywheel.
 
-This wave also brings **SAM (Segment Anything)** in as a second foundation annotator
+This wave also brings **SAM 3 (Segment Anything with Concepts)** in as a second foundation annotator
 alongside Grounding DINO: it proposes segmentation masks the user reviews and saves as
 training targets. That is what finally makes the segmentation head trainable in-app —
 until this wave lands, segmentation trains only on user-brought mask datasets.
@@ -47,7 +47,7 @@ until this wave lands, segmentation trains only on user-brought mask datasets.
 - **Expert-head selection uses the same Wave 2 head-instance descriptor as Wave 3** — one
   shared head-picker contract across both tabs, listing task, provenance kind, datasets,
   classes and metrics. Review UX adapts to the head's render hint (box vs. mask review).
-- **sam-mask-annotator:** SAM as a second foundation annotator beside Grounding DINO, managed
+- **sam-mask-annotator:** SAM 3 as a second foundation annotator beside Grounding DINO, managed
   by the same model manager (download, cache, remove). Supports the useful prompting modes —
   point/box prompt and automatic mask generation — and can take Grounding DINO boxes as its
   prompts, so an existing Wave 1 box dataset can be lifted into masks rather than
@@ -64,3 +64,22 @@ until this wave lands, segmentation trains only on user-brought mask datasets.
 
 - Confidence/uncertainty signals worth surfacing for review prioritisation.
 - Dataset versioning so generated data is traceable to the producing model.
+
+## Model choice confirmed 2026-08-19
+
+**SAM 3**, not SAM 1/2. Released 2025-11-19 (SAM 3.1 followed); it is *concept-prompted* —
+a text concept returns masks **and** boxes — which makes it a far better annotator than its
+predecessors and puts it in the same conversation as Grounding DINO rather than merely
+beside it.
+
+Two things to settle when this wave is planned in detail:
+
+- **Licence.** SAM 3 ships under Meta's custom *SAM License* — permissive enough to
+  download, run locally, modify and build on, but **not** MIT/Apache and carrying extra
+  conditions. Weights are never bundled in the installer, which softens it, but the
+  catalogue entry must state the licence and the admin panel must show it. Read the licence
+  before Wave 8 packaging, not after.
+- **Whether SAM 3.1 supersedes SAM 3** for this use.
+
+Depth Anything 3 is *not* part of this wave — it is Wave 6, which surfaces it in the
+Inference Viewer where no new labelling tools are needed.

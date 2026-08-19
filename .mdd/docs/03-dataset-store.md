@@ -59,7 +59,7 @@ satisfies_contracts:
 security_read_sites: []
 known_issues:
   - "DatasetStore.list_all() runs one counts() query per dataset (N+1). Fine for the tens of datasets Wave 1 expects; fold into a single GROUP BY if the list ever gets slow."
-  - "The SQLite index cannot yet be rebuilt from dataset.json — the manifest is the stated source of truth but no rebuild path exists. Write one before Wave 5 ships to users."
+  - "The SQLite index cannot yet be rebuilt from dataset.json — the manifest is the stated source of truth but no rebuild path exists. Write one before Wave 8 ships to users."
   - "copy_images with two source files of the same basename collides in images/; the second is silently skipped as already-present. Hash or namespace the filename when the dataset generator (Wave 4) starts pulling from many folders." 
 sister_projects: []
 ---

@@ -101,7 +101,7 @@ def free_disk_bytes(path: Path) -> int:
     while not probe.exists() and probe != probe.parent:
         probe = probe.parent
     usage = os.statvfs(probe) if hasattr(os, "statvfs") else None
-    if usage is None:  # pragma: no cover - Windows path, exercised in Wave 5
+    if usage is None:  # pragma: no cover - Windows path, exercised in Wave 8
         import shutil
 
         return shutil.disk_usage(probe).free
