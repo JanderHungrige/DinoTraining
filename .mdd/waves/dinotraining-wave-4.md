@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: 9fe1c71a
+hash: b22d015b
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -116,7 +116,7 @@ features. Not a rejection — a sequencing call.
 | 3 | hf-token-settings | [24](../docs/24-hf-token-settings.md) | complete | — |
 | 4 | expert-annotator | [25](../docs/25-expert-annotator.md) | complete | — |
 | 5 | generator-review-ui | [26](../docs/26-generator-review-ui.md) | complete | expert-annotator |
-| 6 | grounded-sam-annotator | — | planned | mask-dataset-store, mask-annotator-registry |
+| 6 | grounded-sam-annotator | [27](../docs/27-grounded-sam-annotator.md) | complete | mask-dataset-store, mask-annotator-registry |
 | 7 | mask-review-ui | — | planned | grounded-sam-annotator, generator-review-ui |
 | 8 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui, mask-review-ui |
 | 9 | sam3-annotator | — | planned | mask-annotator-registry, hf-token-settings |
