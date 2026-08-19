@@ -8,34 +8,17 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from httpx import AsyncClient
 
-from app.core.config import get_settings
-from app.datasets.db import reset_connection
-from app.main import create_app
+from tests.datasets_api_testkit import dataset_client, make_dataset
 
 
 @pytest.fixture
 async def client(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> AsyncGenerator[AsyncClient, None]:
-    monkeypatch.setenv("DINO_DATA_DIR", str(tmp_path))
-    get_settings.cache_clear()
-    reset_connection()
-
-    transport = ASGITransport(app=create_app())
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
-
-    reset_connection()
-
-
-async def make_dataset(client: AsyncClient, **kwargs: Any) -> dict[str, Any]:
-    payload = {"name": "Cats", **kwargs}
-    response = await client.post("/api/v1/datasets", json=payload)
-    assert response.status_code == 201
-    body: dict[str, Any] = response.json()
-    return body
+    async for c in dataset_client(tmp_path, monkeypatch):
+        yield c
 
 
 def annotation(*labels: str, path: str = "/images/a.jpg") -> dict[str, Any]:
@@ -94,6 +77,9 @@ class TestAnnotations:
         assert counts == {
             "images": 1,
             "boxes": 3,
+            # Wave 4 added masks to the counter payload. Boxes and masks are separate
+            # tallies; the verdict counters below span both.
+            "masks": 0,
             "positive": 1,
             "negative": 1,
             "unclear": 1,

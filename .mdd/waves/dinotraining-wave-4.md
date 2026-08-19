@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: bb60dd7b
+hash: dbc5770f
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -78,16 +78,26 @@ features. Not a rejection — a sequencing call.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | mask-dataset-store | — | planned | — |
+| 1 | mask-dataset-store | [22](../docs/22-mask-dataset-store.md) | complete | — |
 | 2 | sam3-model-entry | — | planned | — |
 | 3 | expert-annotator | — | planned | — |
 | 4 | sam-mask-annotator | — | planned | mask-dataset-store, sam3-model-entry |
 | 5 | generator-review-ui | — | planned | expert-annotator |
 | 6 | mask-review-ui | — | planned | sam-mask-annotator, generator-review-ui |
-| 7 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui, mask-review-ui |
+| 7 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui |
 
-Features 1–3 are independent and can be built in any order; 1 and 2 are pure backend and are
-the safest place to start. The box path (1, 3, 5, 7) is demonstrable without SAM 3 access.
+**Build order: 1 → 2 → 3 → 5 → 7 → 4 → 6.**
+
+Corrected 2026-08-19 during `plan-execute`. Feature 7 was originally declared to depend on
+`mask-review-ui` (6), which would have made the whole wave wait on Meta's SAM 3 access
+approval and contradicted this doc's own claim that the box path ships first. Feature 7's
+real build dependencies are the store (1) and the box review UI (5); its mask-writing branch
+cannot be *exercised* until 6 lands, but that is a co-change relation, not a build order.
+Verify the mask round-trip when 6 completes.
+
+The reordering puts both SAM-3-gated features (4, 6) last, so **five of seven features can be
+built and demonstrated while the access request is pending**. Features 1–3 are mutually
+independent; 1 and 2 are pure backend and the safest start.
 
 ### Feature notes
 
