@@ -22,13 +22,33 @@ class TestRegistry:
         """The registry lookup is what turns a traversal attempt into a 404."""
         assert get_model("../../etc/passwd") is None
 
-    def test_only_dinov3_is_gated(self) -> None:
+    def test_gated_models_are_exactly_the_custom_licensed_ones(self) -> None:
+        """Was `test_only_dinov3_is_gated` until SAM 3 joined it.
+
+        The invariant is not "which ids" but that gating and a non-permissive licence go
+        together — an Apache-2.0 entry behind a gate would be a catalogue mistake.
+        """
         gated = {spec.id for spec in all_models() if spec.gated}
-        assert gated == {"dinov3-vitb16", "dinov3-vitl16"}
+        assert gated == {"dinov3-vitb16", "dinov3-vitl16", "sam3"}
+        for spec in all_models():
+            if spec.gated:
+                assert spec.licence != "Apache-2.0", f"{spec.id} is gated but Apache-2.0"
+            else:
+                assert spec.licence == "Apache-2.0", f"{spec.id} is open but not Apache-2.0"
+
+    def test_only_sam3_needs_a_manual_access_request(self) -> None:
+        needing = {spec.id for spec in all_models() if spec.requires_access_request}
+        assert needing == {"sam3"}
+
+    def test_anything_needing_approval_is_also_gated(self) -> None:
+        """An access request without a gate is incoherent, and would skip the token check."""
+        for spec in all_models():
+            if spec.requires_access_request:
+                assert spec.gated
 
     def test_every_family_has_an_entry(self) -> None:
         families = {spec.family for spec in all_models()}
-        assert families == {"grounding-dino", "dinov2", "dinov3"}
+        assert families == {"grounding-dino", "dinov2", "dinov3", "sam2", "sam3"}
 
     def test_specs_are_immutable(self) -> None:
         """The catalogue is not user-editable; a frozen dataclass enforces that."""

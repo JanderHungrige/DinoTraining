@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: 6352a866
+hash: 08e7b039
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -112,7 +112,7 @@ features. Not a rejection — a sequencing call.
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
 | 1 | mask-dataset-store | [22](../docs/22-mask-dataset-store.md) | complete | — |
-| 2 | mask-annotator-registry | — | planned | — |
+| 2 | mask-annotator-registry | [23](../docs/23-mask-annotator-registry.md) | complete | — |
 | 3 | hf-token-settings | — | planned | — |
 | 4 | expert-annotator | — | planned | — |
 | 5 | generator-review-ui | — | planned | expert-annotator |
@@ -141,7 +141,10 @@ declaring its model requirements, licence, whether it is gated, and its download
 registry entries for `facebook/sam2.1-hiera-small` and `facebook/sam3` land here too. No
 `if annotator == "sam3"` anywhere downstream — that is a defect, exactly as `task ===` is in
 `components/overlays/`.
-⚠️ `backend/app/ml/registry.py` is at **293 lines**. Split before adding entries.
+✅ **Correction (2026-08-19):** an earlier draft warned that `backend/app/ml/registry.py`
+was at 293 lines and needed splitting. It is at **115** and has room. The 293-line file is
+`backend/app/ml/heads/registry.py` — the *head* registry, which this feature does not
+touch. The handoff named "registry.py" without a path and the ambiguity propagated.
 
 **3. hf-token-settings** — a field in the admin tab where the user pastes their own
 HuggingFace token, plus an explicit checkbox acknowledging Meta's SAM License with a link to

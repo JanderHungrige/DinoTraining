@@ -22,7 +22,14 @@ from app.core.paths import (
     resolve_model_dir,
 )
 from app.ml.downloads import DownloadJob, get_download_manager
-from app.ml.registry import ModelSpec, all_models, get_model, licence_url
+from app.ml.registry import (
+    ModelFamily,
+    ModelKind,
+    ModelSpec,
+    all_models,
+    get_model,
+    licence_url,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -33,11 +40,18 @@ _BYTES_PER_MB = 1024 * 1024
 class ModelInfo(BaseModel):
     id: str
     repo_id: str
-    kind: Literal["detector", "backbone"]
-    family: Literal["grounding-dino", "dinov2", "dinov3"]
+    # Imported from the registry, never re-declared. A local copy of these literals is how
+    # adding a model family 500s this endpoint and blanks the admin tab: the catalogue and
+    # its response schema drift, and nothing fails until a new entry is served.
+    kind: ModelKind
+    family: ModelFamily
     gated: bool
     approx_size_mb: int
     description: str
+    licence: str
+    licence_url: str
+    #: True when a token alone is not enough and access must also be granted. SAM 3 only.
+    requires_access_request: bool
     installed: bool
     size_on_disk_mb: int
     available: bool = Field(description="False when a gated model has no token.")
@@ -83,17 +97,33 @@ def _describe(spec: ModelSpec) -> ModelInfo:
         gated=spec.gated,
         approx_size_mb=spec.approx_size_mb,
         description=spec.description,
+        licence=spec.licence,
+        licence_url=licence_url(spec),
+        requires_access_request=spec.requires_access_request,
         installed=installed,
         size_on_disk_mb=directory_size_bytes(directory) // _BYTES_PER_MB,
         available=available,
-        unavailable_reason=(
-            None
-            if available
-            else (
-                f"Gated model. Accept the licence at {licence_url(spec)}, "
-                "then set HF_TOKEN in .env."
-            )
-        ),
+        unavailable_reason=None if available else _unavailable_reason(spec),
+    )
+
+
+def _unavailable_reason(spec: ModelSpec) -> str:
+    """Why a gated model cannot be downloaded yet — in the user's next action.
+
+    Two different gates, and saying the wrong one is the most confusing failure this app
+    can produce. DINOv3 opens the moment its terms are accepted. SAM 3 additionally needs a
+    request a human at Meta approves, so a valid token still returns 403 until then — and
+    "set HF_TOKEN" would be advice the user has already followed.
+    """
+    if spec.requires_access_request:
+        return (
+            f"Gated model with manual approval. Request access at {licence_url(spec)} "
+            f"and accept the {spec.licence}, then add your HuggingFace token below. "
+            "Access is granted by a person, so it is not immediate."
+        )
+    return (
+        f"Gated model. Accept the {spec.licence} at {licence_url(spec)}, "
+        "then add your HuggingFace token below."
     )
 
 

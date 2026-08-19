@@ -14,7 +14,9 @@ Label = Literal["positive", "negative", "unclear"]
 #: Who proposed this annotation. `expert-head` and `sam3` arrived with Wave 4.
 #: Adding a value here is only half the change — it also lives in a SQLite CHECK
 #: constraint, so it needs a migration step. See `app/datasets/migrations.py`.
-Provenance = Literal["grounding-dino", "hand-drawn", "expert-head", "sam3"]
+Provenance = Literal[
+    "grounding-dino", "hand-drawn", "expert-head", "sam3", "grounded-sam"
+]
 
 LABELS: tuple[Label, ...] = ("positive", "negative", "unclear")
 

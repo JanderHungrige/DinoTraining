@@ -10,8 +10,15 @@ The failure mode is the dangerous kind: every test builds a fresh database and p
 a real install — which is the only place an *old* table exists — raises ``IntegrityError`` at
 runtime. ``test_migrations.py`` therefore starts from a frozen copy of the historical DDL.
 
-``PRAGMA user_version`` is the version marker. The previous ``SCHEMA_VERSION`` constant in
-``db.py`` was never read by anything; it recorded an intention that was not implemented.
+``PRAGMA user_version`` is the version marker. The ``SCHEMA_VERSION`` constant that used to
+sit in ``db.py`` was never read by anything; it recorded an intention that was not
+implemented.
+
+**Steps decide for themselves whether they have work to do, by inspecting the DDL SQLite
+actually stored.** They do not trust the version stamp and they do not probe for the
+existence of some other table: ``get_connection`` applies ``schema.py`` *before* calling
+here, so any "does table X exist" signal is already true by the time the runner is consulted.
+A probe like that silently skips the migration for every real install. That happened once.
 """
 
 from __future__ import annotations
@@ -24,48 +31,64 @@ from app.datasets.schema import (
     BOXES_TABLE,
     MASK_INDEXES,
     MASKS_TABLE,
+    PROVENANCE_TABLES,
     PROVENANCE_VALUES,
 )
 
 logger = logging.getLogger(__name__)
 
-#: Bump this with every new step below.
-LATEST_VERSION = 3
+#: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam.
+LATEST_VERSION = 4
 
-# Columns carried across the v3 boxes rebuild, in a fixed order so the INSERT..SELECT cannot
-# silently transpose two same-typed columns if the schema is ever reordered.
-_BOX_COLUMNS = "image_id, label, provenance, prompt, score, x, y, w, h"
+# Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
+# silently transpose two same-typed columns if a schema is ever reordered.
+_CARRIED_COLUMNS: dict[str, str] = {
+    "boxes": "image_id, label, provenance, prompt, score, x, y, w, h",
+    "masks": (
+        "image_id, label, provenance, prompt, score,"
+        " rle_counts, rle_height, rle_width, x, y, w, h"
+    ),
+}
+
+_TABLE_DDL: dict[str, str] = {"boxes": BOXES_TABLE, "masks": MASKS_TABLE}
+_TABLE_INDEXES: dict[str, str] = {"boxes": BOX_INDEXES, "masks": MASK_INDEXES}
 
 
 def run_migrations(connection: sqlite3.Connection) -> int:
     """Bring ``connection`` up to ``LATEST_VERSION``. Returns the resulting version.
 
-    Idempotent: a database already at the latest version is left untouched, including its
-    rowids — a re-run must not churn the table.
+    Idempotent: a database already at the latest shape is left untouched, including its
+    rowids — a re-run must not churn a table.
     """
-    version = _current_version(connection)
+    if _current_version(connection) >= LATEST_VERSION:
+        return LATEST_VERSION
 
-    if version >= LATEST_VERSION:
-        return version
+    missing = [t for t in PROVENANCE_TABLES if _stored_ddl(connection, t) is None]
+    stale = [t for t in PROVENANCE_TABLES if _provenance_is_stale(connection, t)]
 
-    # Each step decides for itself whether it has work to do, by inspecting the schema that
-    # is actually on disk rather than trusting the version stamp. This matters because
-    # ``get_connection`` applies schema.py *before* calling here: any probe based on "does
-    # table X exist" is already true by the time this runs, and would skip every migration.
-    if _boxes_needs_rebuild(connection):
-        logger.info("Migrating dataset schema to version %d", LATEST_VERSION)
-        _migrate_to_v3(connection)
+    if missing or stale:
+        logger.info(
+            "Migrating dataset schema to version %d%s%s",
+            LATEST_VERSION,
+            f" (creating {', '.join(missing)})" if missing else "",
+            f" (rebuilding {', '.join(stale)})" if stale else "",
+        )
+        # Creating is separate from rebuilding so that run_migrations is correct on its own,
+        # not only when schema.py happened to run first. Production does both; a caller
+        # migrating a bare legacy database does not.
+        for table in missing:
+            _create_table(connection, table)
+        for table in stale:
+            _rebuild_table(connection, table)
 
     _stamp(connection, LATEST_VERSION)
     return LATEST_VERSION
 
 
-def _execute_each(connection: sqlite3.Connection, *scripts: str) -> None:
-    """Run each statement separately, keeping the caller's transaction open."""
-    for script in scripts:
-        for statement in script.split(";"):
-            if statement.strip():
-                connection.execute(statement)
+def _create_table(connection: sqlite3.Connection, table: str) -> None:
+    """Create a provenance table that does not exist yet, with its indexes."""
+    _execute_each(connection, _TABLE_DDL[table], _TABLE_INDEXES[table])
+    connection.commit()
 
 
 def _current_version(connection: sqlite3.Connection) -> int:
@@ -78,51 +101,57 @@ def _stamp(connection: sqlite3.Connection, version: int) -> None:
     connection.commit()
 
 
-def _boxes_needs_rebuild(connection: sqlite3.Connection) -> bool:
-    """True when ``boxes`` is still carrying a narrower provenance CHECK than the current one.
-
-    Read from ``sqlite_master`` — the DDL SQLite actually stored — rather than inferred from
-    a version stamp or the presence of some other table. That is the only signal that cannot
-    be made stale by the order in which schema creation and migration run.
-    """
+def _stored_ddl(connection: sqlite3.Connection, table: str) -> str | None:
     row = connection.execute(
-        "SELECT sql FROM sqlite_master WHERE type='table' AND name='boxes'"
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name=?", (table,)
     ).fetchone()
-    if row is None or row[0] is None:
-        return False  # no boxes table yet; schema.py will create it at the current shape
+    return None if row is None or row[0] is None else str(row[0])
 
-    ddl = str(row[0])
+
+def _provenance_is_stale(connection: sqlite3.Connection, table: str) -> bool:
+    """True when ``table``'s stored provenance CHECK is missing a current value.
+
+    Reading the DDL SQLite kept is the only signal that cannot be made stale by the order in
+    which schema creation and migration run.
+    """
+    ddl = _stored_ddl(connection, table)
+    if ddl is None:
+        return False  # not created yet; schema.py will create it at the current shape
     return any(value not in ddl for value in PROVENANCE_VALUES)
 
 
-def _migrate_to_v3(connection: sqlite3.Connection) -> None:
-    """Widen ``boxes.provenance`` and add the ``masks`` table.
+def _rebuild_table(connection: sqlite3.Connection, table: str) -> None:
+    """Recreate one table at the current shape, carrying every row across.
 
-    SQLite cannot alter a CHECK constraint, so ``boxes`` is rebuilt: create the new shape,
-    copy every row, drop the old table, rename. Foreign keys must be off across the drop or
-    the child rows are cascaded away with the table being replaced — and that PRAGMA is a
-    no-op inside a transaction, so it is toggled outside one.
+    SQLite cannot alter a CHECK constraint, so the table is rebuilt: create the new shape,
+    copy, drop, rename, recreate indexes. Foreign keys must be off across the drop or the
+    child rows are cascaded away with the table being replaced — and that PRAGMA is a no-op
+    inside a transaction, so it is toggled outside one.
     """
+    columns = _CARRIED_COLUMNS[table]
+    scratch = f"{table}_migrated"
+
     had_foreign_keys = bool(connection.execute("PRAGMA foreign_keys").fetchone()[0])
     connection.commit()
     connection.execute("PRAGMA foreign_keys = OFF")
 
     try:
         connection.execute("BEGIN")
-        connection.execute(BOXES_TABLE.replace("IF NOT EXISTS boxes", "boxes_migrated"))
         connection.execute(
-            f"INSERT INTO boxes_migrated ({_BOX_COLUMNS}) SELECT {_BOX_COLUMNS} FROM boxes"
+            _TABLE_DDL[table].replace(f"IF NOT EXISTS {table}", scratch)
         )
-        connection.execute("DROP TABLE boxes")
-        connection.execute("ALTER TABLE boxes_migrated RENAME TO boxes")
+        connection.execute(
+            f"INSERT INTO {scratch} ({columns}) SELECT {columns} FROM {table}"  # noqa: S608
+        )
+        connection.execute(f"DROP TABLE {table}")
+        connection.execute(f"ALTER TABLE {scratch} RENAME TO {table}")
         # Indexes belong to the dropped table and do not survive the rename.
-        # executescript() would COMMIT the open transaction, so the statements are run
-        # individually instead.
-        _execute_each(connection, BOX_INDEXES, MASKS_TABLE, MASK_INDEXES)
+        # executescript() would COMMIT the open transaction, so statements are run singly.
+        _execute_each(connection, _TABLE_INDEXES[table])
         connection.commit()
     except Exception:
         connection.rollback()
-        logger.exception("Dataset schema migration to v3 failed; database left at v2")
+        logger.exception("Rebuilding %s failed; database left at its previous shape", table)
         raise
     finally:
         if had_foreign_keys:
@@ -133,5 +162,13 @@ def _migrate_to_v3(connection: sqlite3.Connection) -> None:
         # A rebuild that loses a REFERENCES clause leaves orphans that only surface much
         # later, as rows that refuse to cascade. Fail here instead.
         raise RuntimeError(
-            f"Migration to v3 left {len(violations)} foreign key violation(s) behind"
+            f"Rebuilding {table} left {len(violations)} foreign key violation(s) behind"
         )
+
+
+def _execute_each(connection: sqlite3.Connection, *scripts: str) -> None:
+    """Run each statement separately, keeping the caller's transaction open."""
+    for script in scripts:
+        for statement in script.split(";"):
+            if statement.strip():
+                connection.execute(statement)

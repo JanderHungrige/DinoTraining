@@ -10,7 +10,21 @@ from __future__ import annotations
 
 #: Every provenance an annotation can carry. Grows as new annotators arrive; each addition
 #: needs a migration, because it lives in a CHECK constraint.
-PROVENANCE_VALUES = ("grounding-dino", "hand-drawn", "expert-head", "sam3")
+PROVENANCE_VALUES = (
+    "grounding-dino",
+    "hand-drawn",
+    "expert-head",
+    "sam3",
+    # The ungated Grounding DINO + SAM 2.1 path. Recording one of its masks as `sam3`
+    # would be false, and "which masks came from the ungated annotator" is a real
+    # question when comparing the two. See `23-mask-annotator-registry`.
+    "grounded-sam",
+)
+
+#: Tables carrying a provenance CHECK. The migration runner rebuilds any of them whose
+#: stored DDL is missing a current value, so adding an annotator costs one entry above
+#: and no migration code.
+PROVENANCE_TABLES = ("boxes", "masks")
 
 _PROVENANCE_CHECK = ", ".join(f"'{value}'" for value in PROVENANCE_VALUES)
 
