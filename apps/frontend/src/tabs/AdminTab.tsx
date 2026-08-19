@@ -5,10 +5,17 @@ import type { JSX } from 'react';
 import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
 import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
 import { ModelCard } from '../components/ModelCard';
+import { TokenPanel } from '../components/TokenPanel';
 import { useModels } from '../hooks/useModels';
 import { useTrainerOptions } from '../hooks/useTrainerOptions';
 
-const FAMILY_ORDER: readonly ModelFamily[] = ['grounding-dino', 'dinov2', 'dinov3'];
+const FAMILY_ORDER: readonly ModelFamily[] = [
+  'grounding-dino',
+  'dinov2',
+  'dinov3',
+  'sam2',
+  'sam3',
+];
 
 function SystemPanel({
   device,
@@ -66,6 +73,8 @@ export function AdminTab(): JSX.Element {
           freeDiskMb={system.free_disk_mb}
         />
       )}
+
+      <TokenPanel />
 
       {error && (
         <p className="admin__error" role="alert">

@@ -20,8 +20,20 @@ from app.core.config import Settings, get_settings  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
-def _isolate_settings(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
-    """Tests must not inherit the developer's local .env or exported secrets."""
+def _isolate_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
+) -> Iterator[None]:
+    """Tests must not inherit the developer's local .env or exported secrets.
+
+    Deleting the environment variables is not sufficient on its own: ``get_settings()``
+    also reads a ``.env`` file, and pydantic-settings reads it whatever the environment
+    says. ``DINO_ENV_FILE`` is therefore pointed at a path that does not exist, so the file
+    layer contributes nothing. Before this, the suite was accidentally safe only because
+    the resolved path was wrong and no file was found there.
+    """
+    monkeypatch.setenv(
+        "DINO_ENV_FILE", str(tmp_path_factory.mktemp("env") / "absent.env")
+    )
     for key in (
         "HF_TOKEN",
         "DINO_MODEL_CACHE_DIR",

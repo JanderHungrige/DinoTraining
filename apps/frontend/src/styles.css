@@ -1259,3 +1259,140 @@ body {
   font-size: 0.78rem;
   color: var(--accent);
 }
+
+/* --- Wave 4: HuggingFace token & licence acknowledgements (24-hf-token-settings) --- */
+
+.tokenpanel {
+  margin: 0 0 1.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.tokenpanel__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.tokenpanel__intro,
+.tokenpanel__hint {
+  margin: 0 0 0.75rem;
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.tokenpanel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 34rem;
+  margin: 0 0 0.5rem;
+}
+
+.tokenpanel__field input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.tokenpanel__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.tokenpanel__state {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.tokenpanel__ok {
+  margin: 0 0 0.5rem;
+  color: var(--accent, #00e5cc);
+}
+
+.tokenpanel__error {
+  margin: 0 0 0.5rem;
+  color: var(--danger, #ff6b6b);
+}
+
+.tokenpanel__subtitle {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.tokenpanel__licences {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tokenpanel__licence {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+/* Gap, not margins: the run-together "dinov3-vitb16DINOv3 License" was the symptom. */
+.tokenpanel__licence-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.4rem;
+}
+
+.tokenpanel__licence-name {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.tokenpanel__badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--warning-bg, #4a3a1a);
+  color: var(--warning, #ffaa00);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tokenpanel__explain {
+  margin: 0 0 0.6rem;
+  max-width: 74ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.tokenpanel__licence-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.tokenpanel__ack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.tokenpanel__ack input[disabled] {
+  cursor: default;
+}

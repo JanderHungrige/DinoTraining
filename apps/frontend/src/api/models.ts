@@ -9,13 +9,17 @@ import { apiFetch } from './client';
 import type { Device } from './types';
 
 export type ModelKind = 'detector' | 'backbone';
-export type ModelFamily = 'grounding-dino' | 'dinov2' | 'dinov3';
+export type ModelFamily = 'grounding-dino' | 'dinov2' | 'dinov3' | 'sam2' | 'sam3';
 export type JobState = 'pending' | 'downloading' | 'complete' | 'failed';
 
+// Record<ModelFamily, string> rather than a partial map: adding a family to the type
+// without a label here is a compile error, not a section that quietly fails to render.
 export const FAMILY_LABELS: Readonly<Record<ModelFamily, string>> = Object.freeze({
   'grounding-dino': 'Grounding DINO — open-vocabulary detection',
   dinov2: 'DINOv2 — backbones',
   dinov3: 'DINOv3 — backbones (gated)',
+  sam2: 'SAM 2.1 — segmentation (open)',
+  sam3: 'SAM 3 — segmentation (gated, your own token)',
 });
 
 export interface ModelInfo {
@@ -26,6 +30,10 @@ export interface ModelInfo {
   readonly gated: boolean;
   readonly approx_size_mb: number;
   readonly description: string;
+  readonly licence: string;
+  readonly licence_url: string;
+  /** True when a token alone is not enough and Meta must also grant access. SAM 3 only. */
+  readonly requires_access_request: boolean;
   readonly installed: boolean;
   readonly size_on_disk_mb: number;
   readonly available: boolean;
