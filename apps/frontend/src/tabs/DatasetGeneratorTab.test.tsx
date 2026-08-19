@@ -18,6 +18,11 @@ vi.mock('../api/headInstances', async () => {
   );
   return { ...actual, listHeadInstances: vi.fn() };
 });
+vi.mock('../api/datasets', async () => {
+  const actual = await vi.importActual<typeof import('../api/datasets')>('../api/datasets');
+  return { ...actual, listDatasets: vi.fn(), createDataset: vi.fn(), saveImageMasks: vi.fn() };
+});
+
 vi.mock('../hooks/useTrainerOptions', async () => {
   const actual = await vi.importActual<typeof import('../hooks/useTrainerOptions')>(
     '../hooks/useTrainerOptions',
@@ -29,6 +34,7 @@ const annotate = await import('../api/annotate');
 const generate = await import('../api/generate');
 const headsApi = await import('../api/headInstances');
 const options = await import('../hooks/useTrainerOptions');
+const datasetsApi = await import('../api/datasets');
 
 const MASK_RESPONSE = {
   image_path: '/photos/a.png',
@@ -48,6 +54,7 @@ const MASK_RESPONSE = {
       h: 50,
       score: 0.88,
       concept: 'a red circle',
+      producer: { id: 'grounded-sam', label: 'Grounded SAM', concept: 'a red circle' },
       mask_png: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
     },
   ],
@@ -59,6 +66,12 @@ beforeEach(() => {
   vi.mocked(annotate.listFolderImages).mockResolvedValue(['/photos/a.png']);
   vi.mocked(generate.proposeMasks).mockResolvedValue(MASK_RESPONSE);
   vi.mocked(headsApi.listHeadInstances).mockResolvedValue([]);
+  vi.mocked(datasetsApi.listDatasets).mockResolvedValue([
+    { id: 'd1', name: 'Bolts', counts: { images: 0 } } as never,
+  ]);
+  vi.mocked(datasetsApi.saveImageMasks).mockResolvedValue({
+    images: 1, boxes: 0, masks: 1, positive: 1, negative: 0, unclear: 0,
+  });
   vi.mocked(options.useTrainerOptions).mockReturnValue({
     datasets: [],
     backbones: [{ id: 'dinov2-small', installed: true }],
@@ -71,13 +84,20 @@ beforeEach(() => {
     MockInstance<(...args: unknown[]) => void>;
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  // clearAllMocks as well as restoreAllMocks: restore undoes spies, but leaves the call
+  // history of vi.fn() mocks intact, so `mock.calls[0]` silently belongs to an earlier
+  // test. That is exactly how this file first "proved" the reviewer's verdict was lost.
+  vi.clearAllMocks();
+  vi.restoreAllMocks();
+});
 
 async function startMaskSession(): Promise<void> {
   const user = userEvent.setup();
   render(<DatasetGeneratorTab />);
   await screen.findByRole('status');
 
+  await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
   await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
   await user.type(screen.getByLabelText(/image folder/i), '/photos');
   await user.type(screen.getByLabelText(/^concept$/i), 'a red circle');
@@ -122,9 +142,50 @@ describe('DatasetGeneratorTab', () => {
     await waitFor(() => expect(screen.getByText(/Grounded SAM/)).toBeInTheDocument());
   });
 
-  it('says saving is not built yet rather than showing a dead button', async () => {
+  it('cannot save before anything has been proposed', async () => {
     await startMaskSession();
-    expect(screen.queryByRole('button', { name: /^save$/i })).not.toBeInTheDocument();
-    expect(screen.getByText(/not saved yet/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /save to dataset/i })).toBeDisabled();
+  });
+
+  it('saves reviewed masks into the chosen dataset', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /propose masks/i }));
+    await screen.findByRole('button', { name: /Positive mask/ });
+
+    await user.click(screen.getByRole('button', { name: /save to dataset/i }));
+
+    await waitFor(() => expect(datasetsApi.saveImageMasks).toHaveBeenCalled());
+    const [datasetId] = vi.mocked(datasetsApi.saveImageMasks).mock.calls[0]!;
+    expect(datasetId).toBe('d1');
+  });
+
+  it('saves the reviewer verdict, not the proposed one', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /propose masks/i }));
+
+    // Cycle the mask from positive to negative before saving.
+    await user.click(await screen.findByRole('button', { name: /Positive mask/ }));
+    // Confirm the cycle actually landed before blaming the save path.
+    await screen.findByRole('button', { name: /Negative mask/ });
+    await user.click(screen.getByRole('button', { name: /save to dataset/i }));
+
+    await waitFor(() => expect(datasetsApi.saveImageMasks).toHaveBeenCalled());
+    const reviewed = vi.mocked(datasetsApi.saveImageMasks).mock.calls[0]![2];
+    expect(reviewed[0]?.label).toBe('negative');
+  });
+
+  it('clears the unsaved marker once written', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /propose masks/i }));
+    await screen.findByRole('button', { name: /Positive mask/ });
+    expect(screen.getByText(/unsaved changes/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /save to dataset/i }));
+    await waitFor(() =>
+      expect(screen.queryByText(/unsaved changes/i)).not.toBeInTheDocument(),
+    );
   });
 });

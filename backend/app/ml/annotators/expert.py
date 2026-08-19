@@ -18,7 +18,7 @@ import logging
 from PIL import Image
 
 from app.core.config import Settings, get_settings
-from app.datasets.models import Box
+from app.datasets.models import Box, Producer
 from app.ml.heads.registry import RenderHint
 from app.ml.inference.compose import run_heads
 from app.ml.inference.engine import DEFAULT_SCORE_THRESHOLD
@@ -69,6 +69,12 @@ def propose_boxes(
         )
 
     detections = prediction.detections()
+    # Captured now, not resolved later: the head may be deleted and this annotation must
+    # still be able to say what produced it.
+    producer = Producer(
+        id=prediction.instance_id,
+        label=f"{prediction.head_name} · {prediction.summary}",
+    )
     logger.info(
         "%s proposed %d box(es) on %s", prediction.head_name, len(detections), backbone_id
     )
@@ -86,6 +92,7 @@ def propose_boxes(
             # box was proposed as".
             prompt=class_name,
             score=score,
+            producer=producer,
         )
         for box, score, class_name in detections
     ]

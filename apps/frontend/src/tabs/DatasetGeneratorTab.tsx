@@ -4,6 +4,7 @@ import { useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
+import { CounterBar } from '../components/CounterBar';
 import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import {
@@ -40,6 +41,13 @@ export function DatasetGeneratorTab(): JSX.Element {
           Change setup
         </button>
       </div>
+
+      <CounterBar
+        counts={session.counts}
+        imageIndex={session.index}
+        imageTotal={session.images.length}
+        dirty={session.dirty}
+      />
 
       {session.producerName && (
         <p className="studio__lead">
@@ -126,6 +134,14 @@ export function DatasetGeneratorTab(): JSX.Element {
                   ? 'Propose masks'
                   : 'Propose boxes'}
             </button>
+            <button
+              type="button"
+              className="btn"
+              disabled={session.saving || session.proposing || !session.dirty}
+              onClick={() => void session.save()}
+            >
+              {session.saving ? 'Saving…' : 'Save to dataset'}
+            </button>
             <span className="studio__spacer" />
             <button
               type="button"
@@ -145,12 +161,6 @@ export function DatasetGeneratorTab(): JSX.Element {
             </button>
           </div>
 
-          {/* Saving arrives with feature 7. A disabled Save button here would read as
-              broken rather than not-yet-built. */}
-          <p className="studio__note">
-            Reviewed annotations are not saved yet — writing them back to a dataset is the
-            next feature in this wave.
-          </p>
         </>
       )}
     </section>

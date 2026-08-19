@@ -33,6 +33,11 @@ export function CounterBar({
       <span className="counters__item">
         Saved images <strong>{counts.images}</strong>
       </span>
+      {counts.masks > 0 && (
+        <span className="counters__item">
+          Masks <strong>{counts.masks}</strong>
+        </span>
+      )}
       <span className="counters__item counters__item--positive">
         Positive <strong>{counts.positive}</strong>
       </span>

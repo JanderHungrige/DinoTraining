@@ -26,6 +26,14 @@ PROVENANCE_VALUES = (
 #: and no migration code.
 PROVENANCE_TABLES = ("boxes", "masks")
 
+#: Nullable columns the runner adds with ALTER TABLE when they are missing. Unlike a
+#: CHECK constraint, SQLite *can* add a column in place, so these need no rebuild —
+#: a different kind of change, and cheaper.
+ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    "boxes": {"producer": "TEXT"},
+    "masks": {"producer": "TEXT"},
+}
+
 _PROVENANCE_CHECK = ", ".join(f"'{value}'" for value in PROVENANCE_VALUES)
 
 BOXES_TABLE = f"""
@@ -36,6 +44,11 @@ CREATE TABLE IF NOT EXISTS boxes (
     provenance TEXT NOT NULL CHECK (provenance IN ({_PROVENANCE_CHECK})),
     prompt     TEXT,
     score      REAL,
+    -- JSON snapshot of what produced this annotation: the head instance or the mask
+    -- annotator, with a human label captured at write time. A snapshot rather than a
+    -- foreign key, because the head may be deleted and the provenance must outlive it.
+    -- NULL for anything a person drew or Wave 1 produced. See `29-generated-dataset-writer`.
+    producer   TEXT,
     x          REAL NOT NULL,
     y          REAL NOT NULL,
     w          REAL NOT NULL CHECK (w > 0),
@@ -54,6 +67,11 @@ CREATE TABLE IF NOT EXISTS masks (
     provenance TEXT NOT NULL CHECK (provenance IN ({_PROVENANCE_CHECK})),
     prompt     TEXT,
     score      REAL,
+    -- JSON snapshot of what produced this annotation: the head instance or the mask
+    -- annotator, with a human label captured at write time. A snapshot rather than a
+    -- foreign key, because the head may be deleted and the provenance must outlive it.
+    -- NULL for anything a person drew or Wave 1 produced. See `29-generated-dataset-writer`.
+    producer   TEXT,
     rle_counts TEXT NOT NULL,
     rle_height INTEGER NOT NULL CHECK (rle_height > 0),
     rle_width  INTEGER NOT NULL CHECK (rle_width > 0),

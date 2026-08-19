@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: 77b8cce2
+hash: 30f7b9f8
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -118,7 +118,7 @@ features. Not a rejection — a sequencing call.
 | 5 | generator-review-ui | [26](../docs/26-generator-review-ui.md) | complete | expert-annotator |
 | 6 | grounded-sam-annotator | [27](../docs/27-grounded-sam-annotator.md) | complete | mask-dataset-store, mask-annotator-registry |
 | 7 | mask-review-ui | [28](../docs/28-mask-review-ui.md) | complete | grounded-sam-annotator, generator-review-ui |
-| 8 | generated-dataset-writer | — | planned | mask-dataset-store, generator-review-ui, mask-review-ui |
+| 8 | generated-dataset-writer | [29](../docs/29-generated-dataset-writer.md) | complete | mask-dataset-store, generator-review-ui |
 | 9 | sam3-annotator | — | planned | mask-annotator-registry, hf-token-settings |
 
 **Build order: 1 ✅ → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9.**
@@ -206,10 +206,12 @@ tab offers it and the user triggers it once they have a token and approval.
 - **Does a `negative` verdict mean anything for a segmentation target?** A rejected box is a
   hard negative; a rejected mask is more likely just "not a target". Decide before feature 6
   whether rejected masks are stored at all, or only counted.
-- **How far dataset versioning goes.** Feature 7 records the producing model per annotation.
-  Whether a generated dataset also needs a parent-dataset link and a generation timestamp —
-  i.e. a lineage chain — is unresolved and affects the manifest `version: 2` schema, so settle
-  it during feature 1 rather than after.
+- ~~**How far dataset versioning goes.**~~ **Answered 2026-08-19 in feature 8, later than
+  this item asked for.** Per-annotation provenance: a `producer` JSON snapshot on `boxes`
+  and `masks` (migration v5). Chosen over per-dataset lineage because a dataset can mix
+  producers, and because a snapshot outlives a deleted head. Dataset lineage — parent link
+  and generation timestamp — was considered and deliberately not built; it only earns its
+  keep once datasets are routinely generated from other datasets. Recorded in doc 29.
 - **Does Grounded SAM need its own provenance value?** The store currently records `sam3`.
   A mask produced by Grounding DINO + SAM 2.1 is not from SAM 3, so either the value widens
   to `grounded-sam` (another migration — cheap now that the runner exists) or provenance

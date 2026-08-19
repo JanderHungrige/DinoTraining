@@ -16,6 +16,7 @@ const generate = await import('../api/generate');
 
 const CONFIG: GeneratorConfig = {
   kind: 'expert',
+  datasetId: 'd1',
   folder: '/photos',
   backboneId: 'dinov2-small',
   instanceId: 'h1',
@@ -40,6 +41,7 @@ function proposal(overrides: Partial<ExpertProposalResponse> = {}): ExpertPropos
         h: 40,
         prompt: 'bolt',
         score: 0.8,
+        producer: { id: 'h1', label: 'Bolt finder · Object detection · 2 classes' },
       },
     ],
     ...overrides,

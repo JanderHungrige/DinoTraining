@@ -15,6 +15,7 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { GROUNDED_SAM } from '../api/annotators';
+import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
 export interface GeneratorSetupProps {
@@ -23,12 +24,23 @@ export interface GeneratorSetupProps {
 
 const DEFAULT_THRESHOLD = 0.3;
 
+/** An existing dataset id, or a freshly created one. Resolved before the session starts. */
+async function resolveDataset(datasetId: string, newName: string): Promise<string> {
+  if (datasetId) return datasetId;
+  const created = await createDataset(newName.trim(), null, false);
+  return created.id;
+}
+
 type Mode = 'expert' | 'masks';
 
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
   const [mode, setMode] = useState<Mode>('expert');
   const [concept, setConcept] = useState('');
+  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
+  const [datasetOverride, setDatasetOverride] = useState('');
+  const [newName, setNewName] = useState('');
+  const [starting, setStarting] = useState(false);
   const [backboneOverride, setBackboneOverride] = useState('');
   const [headOverride, setHeadOverride] = useState('');
   const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
@@ -41,6 +53,18 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   // Derived, never seeded: the first installed backbone until the user picks another.
   const backboneId = backboneOverride || installed[0]?.id || '';
+
+  useEffect(() => {
+    const controller = new AbortController();
+    listDatasets(controller.signal)
+      .then((found) => {
+        if (!controller.signal.aborted) setDatasets(found);
+      })
+      .catch(() => {
+        /* the form still allows creating a new one */
+      });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,7 +86,13 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   );
   const instanceId = headOverride || eligible[0]?.id || '';
 
+  // '' means "create a new one", which is a valid choice — so readiness depends on the
+  // name field instead, not on the select having a value.
+  const datasetId = datasetOverride;
+  const datasetReady = datasetId !== '' || newName.trim().length > 0;
+
   const ready =
+    datasetReady &&
     folder.trim().length > 0 &&
     (mode === 'expert'
       ? backboneId !== '' && instanceId !== ''
@@ -73,26 +103,60 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       className="genpanel"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!ready) return;
-        onStart(
-          mode === 'expert'
-            ? {
-                kind: 'expert',
-                folder: folder.trim(),
-                backboneId,
-                instanceId,
-                scoreThreshold: threshold,
-              }
-            : {
-                kind: 'masks',
-                folder: folder.trim(),
-                annotatorId: GROUNDED_SAM,
-                concept: concept.trim(),
-                scoreThreshold: threshold,
-              },
-        );
+        if (!ready || starting) return;
+        setStarting(true);
+        void resolveDataset(datasetId, newName)
+          .then((resolvedId) =>
+            onStart(
+              mode === 'expert'
+                ? {
+                    kind: 'expert' as const,
+                    datasetId: resolvedId,
+                    folder: folder.trim(),
+                    backboneId,
+                    instanceId,
+                    scoreThreshold: threshold,
+                  }
+                : {
+                    kind: 'masks' as const,
+                    datasetId: resolvedId,
+                    folder: folder.trim(),
+                    annotatorId: GROUNDED_SAM,
+                    concept: concept.trim(),
+                    scoreThreshold: threshold,
+                  },
+            ),
+          )
+          .finally(() => setStarting(false));
       }}
     >
+      <label className="genpanel__field">
+        <span>Save into</span>
+        <select
+          value={datasetId}
+          onChange={(event) => setDatasetOverride(event.target.value)}
+        >
+          <option value="">Create a new dataset…</option>
+          {datasets.map((dataset) => (
+            <option key={dataset.id} value={dataset.id}>
+              {dataset.name} ({dataset.counts.images} images)
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {datasetId === '' && (
+        <label className="genpanel__field">
+          <span>New dataset name</span>
+          <input
+            type="text"
+            value={newName}
+            placeholder="Bolts, round two"
+            onChange={(event) => setNewName(event.target.value)}
+          />
+        </label>
+      )}
+
       <fieldset className="genpanel__modes">
         <legend>What proposes the annotations</legend>
         <label className="genpanel__mode">
@@ -196,8 +260,8 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         </p>
       )}
 
-      <button type="submit" className="btn btn--primary" disabled={!ready}>
-        Start generating
+      <button type="submit" className="btn btn--primary" disabled={!ready || starting}>
+        {starting ? 'Starting…' : 'Start generating'}
       </button>
     </form>
   );

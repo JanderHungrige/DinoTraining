@@ -12,6 +12,11 @@ vi.mock('../api/headInstances', async () => {
   return { ...actual, listHeadInstances: vi.fn() };
 });
 
+vi.mock('../api/datasets', async () => {
+  const actual = await vi.importActual<typeof import('../api/datasets')>('../api/datasets');
+  return { ...actual, listDatasets: vi.fn(), createDataset: vi.fn() };
+});
+
 vi.mock('../hooks/useTrainerOptions', async () => {
   const actual = await vi.importActual<typeof import('../hooks/useTrainerOptions')>(
     '../hooks/useTrainerOptions',
@@ -21,6 +26,7 @@ vi.mock('../hooks/useTrainerOptions', async () => {
 
 const headsApi = await import('../api/headInstances');
 const options = await import('../hooks/useTrainerOptions');
+const datasetsApi = await import('../api/datasets');
 
 const DETECTOR: HeadInstanceInfo = {
   id: 'h1',
@@ -62,6 +68,10 @@ function trainerOptions(overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.mocked(headsApi.listHeadInstances).mockResolvedValue([DETECTOR]);
+  vi.mocked(datasetsApi.listDatasets).mockResolvedValue([
+    { id: 'd1', name: 'Bolts', counts: { images: 3 } } as never,
+  ]);
+  vi.mocked(datasetsApi.createDataset).mockResolvedValue({ id: 'new-1' } as never);
   vi.mocked(options.useTrainerOptions).mockReturnValue(trainerOptions());
 });
 
@@ -78,12 +88,15 @@ describe('GeneratorSetup', () => {
     await screen.findByRole('status');
 
     await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
     await user.type(screen.getByLabelText(/^concept$/i), 'a bolt');
     await user.click(screen.getByRole('button', { name: /start generating/i }));
 
-    expect(onStart).toHaveBeenCalledWith(
-      expect.objectContaining({ kind: 'masks', concept: 'a bolt' }),
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'masks', concept: 'a bolt', datasetId: 'd1' }),
+      ),
     );
   });
 
@@ -93,6 +106,7 @@ describe('GeneratorSetup', () => {
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
     await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
 
     expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
@@ -111,7 +125,10 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={vi.fn()} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
-    const values = screen.getAllByRole('option').map((o) => (o as HTMLOptionElement).value);
+    // Scoped to the backbone select: the form has a dataset select too, and an
+    // unscoped option query would silently start asserting about the wrong control.
+    const backbone = screen.getByLabelText(/^backbone$/i);
+    const values = [...backbone.querySelectorAll('option')].map((o) => o.value);
     expect(values).toEqual(['dinov2-small']);
   });
 
@@ -127,6 +144,7 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={vi.fn()} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
     expect(screen.getByRole('button', { name: /start generating/i })).toBeEnabled();
   });
@@ -140,15 +158,19 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={onStart} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
     await user.click(screen.getByRole('button', { name: /start generating/i }));
 
-    expect(onStart).toHaveBeenCalledWith(
-      expect.objectContaining({
-        folder: '/photos',
-        backboneId: 'dinov2-small',
-        instanceId: 'h1',
-      }),
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          folder: '/photos',
+          backboneId: 'dinov2-small',
+          instanceId: 'h1',
+          datasetId: 'd1',
+        }),
+      ),
     );
   });
 
@@ -170,6 +192,7 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={vi.fn()} />);
     await screen.findByRole('status');
 
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
     expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
   });
@@ -180,11 +203,14 @@ describe('GeneratorSetup', () => {
     render(<GeneratorSetup onStart={onStart} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
     await user.type(screen.getByLabelText(/image folder/i), '/photos');
     await user.click(screen.getByRole('button', { name: /start generating/i }));
 
-    expect(onStart).toHaveBeenCalledWith(
-      expect.objectContaining({ scoreThreshold: expect.any(Number) }),
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({ scoreThreshold: expect.any(Number) }),
+      ),
     );
   });
 

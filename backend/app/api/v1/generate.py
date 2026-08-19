@@ -17,14 +17,14 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
-from app.datasets.models import Box, Label, MaskRle, Provenance
+from app.datasets.models import Box, Label, MaskRle, Producer, Provenance
 from app.datasets.rle import rle_decode
 from app.ml import images as image_io
 from app.ml.annotators.base import MaskProposal
 from app.ml.annotators.build import AnnotatorUnavailableError, build_annotator
 from app.ml.annotators.expert import HeadCannotAnnotateError, propose_boxes
 from app.ml.annotators.grounded_sam import PROVENANCE
-from app.ml.annotators.registry import GROUNDED_SAM, get_annotator
+from app.ml.annotators.registry import GROUNDED_SAM, AnnotatorSpec, get_annotator
 from app.ml.detector import DEFAULT_BOX_THRESHOLD
 from app.ml.errors import ModelNotInstalledError
 from app.ml.heads.store import HeadInstanceNotFoundError, HeadInstanceStore
@@ -135,6 +135,8 @@ class ProposedMask(BaseModel):
     h: float
     score: float
     concept: str
+    #: What produced it, captured at proposal time and saved back unchanged.
+    producer: Producer
     #: Preview only. Dense pixels travel as base64 PNG, never nested JSON — the Wave 3
     #: rule, measured there at 12.5 MB against 17 KB.
     mask_png: str
@@ -199,11 +201,11 @@ async def propose_masks(request: MaskProposalRequest) -> MaskProposalResponse:
         device=settings.resolved_device,
         annotator_id=spec.id,
         annotator_name=spec.name,
-        masks=[_to_proposed_mask(proposal) for proposal in proposals],
+        masks=[_to_proposed_mask(proposal, spec) for proposal in proposals],
     )
 
 
-def _to_proposed_mask(proposal: MaskProposal) -> ProposedMask:
+def _to_proposed_mask(proposal: MaskProposal, spec: AnnotatorSpec) -> ProposedMask:
     mask = rle_decode(proposal.counts, proposal.size)
     return ProposedMask(
         provenance=PROVENANCE,
@@ -214,6 +216,7 @@ def _to_proposed_mask(proposal: MaskProposal) -> ProposedMask:
         h=proposal.box[3],
         score=proposal.score,
         concept=proposal.concept,
+        producer=Producer(id=spec.id, label=spec.name, concept=proposal.concept),
         # 0/255 rather than 0/1: a boolean mask rendered as a PNG would be invisible.
         mask_png=encode_png((mask.astype("uint8")) * 255),
     )

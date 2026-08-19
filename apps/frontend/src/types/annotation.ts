@@ -27,6 +27,19 @@ export const LABEL_TITLES: Readonly<Record<Label, string>> = Object.freeze({
   unclear: 'Unclear',
 });
 
+/**
+ * What produced an annotation, captured when it was proposed.
+ *
+ * A snapshot rather than a reference: the head may be deleted and the provenance has to
+ * outlive it. Carried through review untouched and saved back exactly as received —
+ * nothing in the UI composes or edits one.
+ */
+export interface Producer {
+  readonly id: string;
+  readonly label: string;
+  readonly concept?: string;
+}
+
 /** A box as the canvas holds it. `id` is client-side only. */
 export interface CanvasBox {
   readonly id: string;
@@ -38,6 +51,7 @@ export interface CanvasBox {
   readonly h: number;
   readonly score?: number;
   readonly text?: string;
+  readonly producer?: Producer;
 }
 
 /** Click cycles rather than opening a menu — the same call, hundreds of times. */
@@ -71,4 +85,5 @@ export interface ReviewMask {
   readonly score?: number;
   /** The phrase that produced it — shown beside each mask during review. */
   readonly concept?: string;
+  readonly producer?: Producer;
 }

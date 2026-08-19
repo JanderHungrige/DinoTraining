@@ -8,7 +8,7 @@
  */
 
 import { apiFetch } from './client';
-import type { CanvasBox, Label, Provenance, ReviewMask } from '../types/annotation';
+import type { CanvasBox, Label, Producer, Provenance, ReviewMask } from '../types/annotation';
 
 export interface ExpertProposalResponse {
   readonly image_path: string;
@@ -28,6 +28,7 @@ export interface ExpertProposalResponse {
     readonly h: number;
     readonly prompt: string | null;
     readonly score: number | null;
+    readonly producer: Producer | null;
   }[];
 }
 
@@ -82,6 +83,7 @@ export function toCanvasBoxes(response: ExpertProposalResponse): CanvasBox[] {
     h: box.h,
     ...(box.score !== null ? { score: box.score } : {}),
     ...(box.prompt ? { text: box.prompt } : {}),
+    ...(box.producer ? { producer: box.producer } : {}),
   }));
 }
 
@@ -98,6 +100,7 @@ export interface ProposedMaskDto {
   readonly h: number;
   readonly score: number;
   readonly concept: string;
+  readonly producer: Producer;
   /** Preview only — base64 PNG, 0 background / 255 object. */
   readonly mask_png: string;
 }
@@ -151,7 +154,8 @@ export async function proposeMasks(
  *
  * The RLE is deliberately *not* carried into the review type: it is what gets stored, the
  * PNG is what gets drawn, and mixing them would tempt a component into decoding one to
- * render the other. The writer re-reads the RLE from the response it saves.
+ * render the other. `saveReviewedMasks` pairs the reviewed verdicts back to the response
+ * by index, so the RLE never has to travel through the canvas.
  */
 export function toReviewMasks(response: MaskProposalResponse): ReviewMask[] {
   return response.masks.map((mask, index) => ({
@@ -165,5 +169,6 @@ export function toReviewMasks(response: MaskProposalResponse): ReviewMask[] {
     h: mask.h,
     score: mask.score,
     concept: mask.concept,
+    producer: mask.producer,
   }));
 }

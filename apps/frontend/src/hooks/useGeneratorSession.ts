@@ -14,16 +14,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listFolderImages } from '../api/annotate';
 import { ApiError } from '../api/client';
+import { EMPTY_COUNTS, saveImageBoxes, saveImageMasks, type DatasetCounts } from '../api/datasets';
 import {
   proposeMasks,
   proposeWithExpertHead,
   toCanvasBoxes,
   toReviewMasks,
+  type MaskProposalResponse,
 } from '../api/generate';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 export interface ExpertConfig {
   readonly kind: 'expert';
+  readonly datasetId: string;
   readonly folder: string;
   readonly backboneId: string;
   readonly instanceId: string;
@@ -32,6 +35,7 @@ export interface ExpertConfig {
 
 export interface MaskConfig {
   readonly kind: 'masks';
+  readonly datasetId: string;
   readonly folder: string;
   readonly annotatorId: string;
   readonly concept: string;
@@ -52,11 +56,16 @@ export interface GeneratorSession {
   readonly producerDetail: string | null;
   readonly loading: boolean;
   readonly proposing: boolean;
+  readonly saving: boolean;
+  /** True when there is something reviewed that has not been written yet. */
+  readonly dirty: boolean;
+  readonly counts: DatasetCounts;
   readonly error: string | null;
   readonly setBoxes: (boxes: CanvasBox[]) => void;
   readonly setMasks: (masks: ReviewMask[]) => void;
   readonly reportImageSize: (width: number, height: number) => void;
   readonly propose: () => Promise<void>;
+  readonly save: () => Promise<void>;
   readonly next: () => void;
   readonly previous: () => void;
   readonly canGoNext: boolean;
@@ -65,6 +74,19 @@ export interface GeneratorSession {
 
 function describe(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
+}
+
+async function saveMasks(
+  datasetId: string,
+  proposal: MaskProposalResponse | null,
+  reviewed: readonly ReviewMask[],
+): Promise<DatasetCounts> {
+  if (!proposal) {
+    // Reachable by pressing Save before proposing anything. Refusing beats inventing an
+    // empty proposal, which would wipe whatever the image already had stored.
+    throw new Error('Propose masks before saving.');
+  }
+  return saveImageMasks(datasetId, proposal, reviewed);
 }
 
 export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSession {
@@ -77,7 +99,14 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   const [producerDetail, setProducerDetail] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [proposing, setProposing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [counts, setCounts] = useState<DatasetCounts>(EMPTY_COUNTS);
   const [error, setError] = useState<string | null>(null);
+
+  // The mask proposal is kept whole because saving needs the RLE, which deliberately
+  // never enters the review type. Verdicts are paired back to it by index.
+  const lastMaskProposal = useRef<MaskProposalResponse | null>(null);
 
   // Guards a late response from a previous image overwriting the current one's review.
   const requestId = useRef(0);
@@ -133,6 +162,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         setImageSize({ width: response.width, height: response.height });
         setProducerName(response.head_name);
         setProducerDetail(response.head_summary);
+        setDirty(response.boxes.length > 0);
       } else {
         const response = await proposeMasks({
           imagePath: currentImage,
@@ -144,9 +174,11 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         // its masks are in that image's coordinate space and would look plausible here.
         if (ticket !== requestId.current) return;
 
+        lastMaskProposal.current = response;
         setMasks(toReviewMasks(response));
         setImageSize({ width: response.width, height: response.height });
         setProducerName(response.annotator_name);
+        setDirty(response.masks.length > 0);
         setProducerDetail(`${response.masks.length} mask(s) for “${config.concept}”`);
       }
     } catch (caught) {
@@ -158,6 +190,29 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     }
   }, [config, currentImage]);
 
+  const save = useCallback(async (): Promise<void> => {
+    if (!config || !currentImage || !imageSize) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const next =
+        config.kind === 'masks'
+          ? await saveMasks(config.datasetId, lastMaskProposal.current, masks)
+          : await saveImageBoxes(
+              config.datasetId,
+              { path: currentImage, width: imageSize.width, height: imageSize.height },
+              boxes,
+            );
+      setCounts(next);
+      setDirty(false);
+    } catch (caught) {
+      setError(describe(caught, 'Could not save to the dataset.'));
+    } finally {
+      setSaving(false);
+    }
+  }, [config, currentImage, imageSize, boxes, masks]);
+
   const move = useCallback(
     (delta: number) => {
       // Invalidates any proposal still in flight for the image being left.
@@ -168,6 +223,8 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         setBoxes([]);
         setMasks([]);
         setImageSize(null);
+        setDirty(false);
+        lastMaskProposal.current = null;
         return next;
       });
     },
@@ -189,11 +246,15 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     producerDetail,
     loading,
     proposing,
+    saving,
+    dirty,
+    counts,
     error,
     setBoxes,
     setMasks,
     reportImageSize,
     propose,
+    save,
     next: () => move(1),
     previous: () => move(-1),
     canGoNext: index < images.length - 1,
