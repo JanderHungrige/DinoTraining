@@ -29,6 +29,20 @@ rather than a path, precisely so a frame source can satisfy it without the viewe
 Inference Viewer) or after Wave 9 (a webcam in a browser is a different capture path from a
 webcam in Tauri, and Wave 9 already forces that split).
 
+### Active-learning hints for review prioritisation
+
+Surface low-confidence or disagreeing predictions first, so a reviewer working a large folder
+spends their attention where the model is least sure.
+
+Drafted as an optional Wave 4 feature and **dropped from it on 2026-08-19**: it prioritises
+the order of a review loop that has to exist before it can be prioritised, and Wave 4 already
+grew to seven features once mask storage needed its own split. Not a rejection — sequencing.
+
+**Candidate home:** any wave after 4, once the generator has been used on a folder big enough
+to make ordering matter. The signal it needs — a per-prediction score — is already carried on
+`Box.score` and in the Wave 3 `Prediction` payload, so nothing has to be built to keep the
+option open.
+
 ### SAM 3 in the Annotation Studio
 
 Wave 4 brings SAM 3 in for the **Dataset Generator**, where reviewing masks is the point.
@@ -75,6 +89,12 @@ Recorded so it is not re-proposed from scratch.
 
 - Per-variant licences for Depth Anything 3, and the full Meta SAM License text. Both are
   Wave 8 packaging constraints and both are decided in the waves that introduce them.
-- Whether SAM 3.1 supersedes SAM 3 for this use.
+- ~~Whether SAM 3.1 supersedes SAM 3 for this use.~~ **Answered 2026-08-19: no.** SAM 3.1
+  (2026-03-27) adds only Object Multiplex — ~2× *video* throughput — and has **no HuggingFace
+  `transformers` integration**, unlike `facebook/sam3` which ships `Sam3Processor`/`Sam3Model`.
+  Taking 3.1 would add a second model-loading path for a benefit no current wave uses.
+  Reconsider only if video is picked up. Recorded in the Wave 4 doc.
 - Exact model sizes, so the admin panel's disk warnings stay honest (~14 GB free here).
+  **SAM 3 measured 2026-08-19: ~0.9B params, F32 ≈ 3.6 GB**, and the repo is *gated* —
+  per-repo access approval on top of a token, which DINOv3 does not require.
 - Whether #2 asks for anything `HeadRunPanel` does not already do.

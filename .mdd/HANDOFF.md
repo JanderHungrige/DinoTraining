@@ -20,25 +20,26 @@ do not read it for current state.
 **Nothing is blocked on Jan.** The last session's open items — merge, demo-state
 confirmation, job-folder cleanup, and where video lands — are all resolved.
 
-**Next: Wave 4, Dataset Generator.** It has a wave doc but has not been through
-`/mdd plan-wave` in detail. Start with:
+**Next: Wave 4, Dataset Generator — now planned in detail (2026-08-19).** Seven features,
+decisions recorded in `.mdd/waves/dinotraining-wave-4.md`. Start building with:
 
 ```
-/mdd plan-wave dinotraining-wave-4
+/mdd plan-execute dinotraining-wave-4
 ```
 
-⚠️ **That command will hard-stop on the open-questions gate.** Two items in the initiative
-are unchecked:
+The open-questions gate was **waived, not answered** — the two unchecked items are Wave 8
+(code-signing) and Wave 9 (hyperscaler) and cannot influence a dataset generator. The waiver
+is written into the wave doc; do not answer them just to clear a gate.
 
-```
-- [ ] Code-signing / notarization for macOS + Windows installers   (Wave 8)
-- [ ] Which hyperscaler(s) to support first for the website         (Wave 9)
-```
+⚠️ **One thing is blocked on Jan:** `facebook/sam3` is a **gated** HuggingFace repo needing
+per-repo access approval plus acceptance of Meta's SAM License — a step beyond DINOv3, which
+only needs a token. Request it now. Features 4 (`sam-mask-annotator`) and 6 (`mask-review-ui`)
+cannot be demonstrated until it is granted; the box half of the wave (features 1, 3, 5, 7) is
+unblocked and should ship first. Weights are ~3.6 GB against ~14 GB free.
 
-**Waive them deliberately, exactly as Wave 3 did**, and say so in the wave doc. Both are
-scoped to Waves 8 and 9 and cannot influence a dataset generator. Do not answer them just
-to clear the gate — a guessed answer to "which hyperscaler" becomes an architectural
-commitment nobody made.
+**Start with features 1 and 2** — both pure backend, independent, and both require a file
+split before a line of feature code (`store.py` 286 lines, `registry.py` 293, against the
+300-line hook).
 
 ## The nine waves
 
