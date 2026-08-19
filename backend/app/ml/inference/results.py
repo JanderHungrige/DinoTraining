@@ -77,6 +77,29 @@ class Prediction:
             return []
         return [(float(b[0]), float(b[1]), float(b[2]), float(b[3])) for b in raw]
 
+    def detections(self) -> list[tuple[Box, float, str]]:
+        """Boxes with their score and class name, as ``(box, score, name)``.
+
+        The three payload arrays are read positionally and are only meaningful together —
+        ``boxes_payload`` drops a zero-area box from all three at once precisely so they
+        stay aligned. Zipping them here, once, is what stops a consumer pairing box *i*
+        with score *j*. Wave 4's annotator needs all three; the viewer needs only the box,
+        which is why :attr:`boxes` still exists.
+        """
+        boxes = self.boxes
+        raw_scores = self.payload.get("scores")
+        raw_classes = self.payload.get("classes")
+        scores = raw_scores if isinstance(raw_scores, list) else []
+        classes = raw_classes if isinstance(raw_classes, list) else []
+        if len(scores) != len(boxes) or len(classes) != len(boxes):
+            # Not a recoverable state: it means the payload was built by something other
+            # than boxes_payload, and guessing an alignment would silently mislabel.
+            return []
+        return [
+            (box, float(score), self.class_name(int(index)))
+            for box, score, index in zip(boxes, scores, classes, strict=True)
+        ]
+
     @property
     def mask_classes(self) -> set[int]:
         """Distinct class indices present in a predicted mask."""
