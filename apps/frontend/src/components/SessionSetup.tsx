@@ -1,5 +1,12 @@
 /**
- * Session setup: pick a folder, pick or create a dataset, write a prompt.
+ * Session setup: pick a folder, pick or create a dataset, then choose **what proposes** —
+ * a text prompt for Grounding DINO, or a head you trained (doc 33).
+ *
+ * The two modes are **exclusive**, and the form shows only the fields of the chosen one.
+ * Hiding the prompt is not enough on its own: the user has to be able to see which mode
+ * they are in, because the two produce differently-sourced proposals that land in the same
+ * canvas. The radio group is the answer, and the union in `SessionConfig` is what stops a
+ * caller from constructing both at once.
  *
  * The folder is a text field with an optional native picker. Under Tauri the dialog
  * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 9) there is
@@ -10,8 +17,13 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { DEFAULT_BOX_THRESHOLD, DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
+import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { hasNativeDialog, pickFolder } from '../lib/dialog';
+import { ExpertHeadPicker } from './ExpertHeadPicker';
+
+/** Matches the Dataset Generator's default, and the only backbone a head can be run on. */
+const BACKBONE_ID = 'dinov2-small';
 
 export interface SessionSetupProps {
   readonly onStart: (config: SessionConfig) => void;
@@ -20,7 +32,14 @@ export interface SessionSetupProps {
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
+  const [mode, setMode] = useState<'prompt' | 'head'>('prompt');
   const [prompt, setPrompt] = useState('');
+  const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
+  const [loadingHeads, setLoadingHeads] = useState(true);
+  // Only the user's override is stored; the effective head falls back to the first
+  // compatible one. Seeding useState from an async fetch leaves it '' forever — the
+  // form looks filled in and the submit button never enables. See CLAUDE.md.
+  const [headOverride, setHeadOverride] = useState('');
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const [datasetId, setDatasetId] = useState('');
   const [newName, setNewName] = useState('');
@@ -33,11 +52,26 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     void listDatasets()
       .then(setDatasets)
       .catch(() => setError('Could not load datasets.'));
+    void listHeadInstances()
+      .then(setHeads)
+      .catch(() => setHeads([]))
+      .finally(() => setLoadingHeads(false));
   }, []);
+
+  // Derived, never seeded into state — the fetch resolves after the first render.
+  const annotatable = heads.filter(
+    (head) => head.render_hint === 'boxes' && head.backbone_id === BACKBONE_ID,
+  );
+  const selectedHead = headOverride || annotatable[0]?.id || '';
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
     setError(null);
+
+    if (mode === 'head' && !selectedHead) {
+      setError('No head can propose boxes yet — train a detection head first.');
+      return;
+    }
 
     let targetId = datasetId;
     if (!targetId) {
@@ -59,9 +93,20 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     onStart({
       folder: folder.trim(),
       datasetId: targetId,
-      prompt: prompt.trim(),
-      boxThreshold,
-      textThreshold: DEFAULT_TEXT_THRESHOLD,
+      source:
+        mode === 'head'
+          ? {
+              kind: 'head',
+              backboneId: BACKBONE_ID,
+              instanceId: selectedHead,
+              scoreThreshold: boxThreshold,
+            }
+          : {
+              kind: 'prompt',
+              prompt: prompt.trim(),
+              boxThreshold,
+              textThreshold: DEFAULT_TEXT_THRESHOLD,
+            },
     });
   };
 
@@ -123,21 +168,60 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         )}
       </div>
 
-      <div className="setup__row">
-        <label className="setup__field setup__field--grow" htmlFor="prompt">
-          Prompt
+      <fieldset className="setup__modes">
+        <legend>What proposes the boxes</legend>
+        <label>
           <input
-            id="prompt"
-            type="text"
-            value={prompt}
-            placeholder="a cat. a dog."
-            required
-            onChange={(event) => setPrompt(event.target.value)}
+            type="radio"
+            name="studio-mode"
+            value="prompt"
+            checked={mode === 'prompt'}
+            onChange={() => setMode('prompt')}
           />
+          <span>Grounding DINO — describe what you are looking for</span>
         </label>
+        <label>
+          <input
+            type="radio"
+            name="studio-mode"
+            value="head"
+            checked={mode === 'head'}
+            onChange={() => setMode('head')}
+          />
+          <span>A head you trained — proposes boxes for its own classes</span>
+        </label>
+      </fieldset>
+
+      {mode === 'head' && (
+        <ExpertHeadPicker
+          heads={heads}
+          backboneId={BACKBONE_ID}
+          selectedId={selectedHead}
+          onSelect={setHeadOverride}
+          loading={loadingHeads}
+          legend="Annotate with"
+          groupName="studio-head"
+        />
+      )}
+
+      <div className="setup__row">
+        {mode === 'prompt' && (
+          <label className="setup__field setup__field--grow" htmlFor="prompt">
+            Prompt
+            <input
+              id="prompt"
+              type="text"
+              value={prompt}
+              placeholder="a cat. a dog."
+              required
+              onChange={(event) => setPrompt(event.target.value)}
+            />
+          </label>
+        )}
 
         <label className="setup__field" htmlFor="boxthreshold">
-          Box threshold <span className="setup__value">{boxThreshold.toFixed(2)}</span>
+          {mode === 'head' ? 'Score threshold' : 'Box threshold'}{' '}
+          <span className="setup__value">{boxThreshold.toFixed(2)}</span>
           <input
             id="boxthreshold"
             type="range"

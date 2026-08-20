@@ -8,16 +8,40 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listFolderImages, proposeBoxes, toCanvasBoxes } from '../api/annotate';
+import {
+  proposeWithExpertHead,
+  toCanvasBoxes as expertBoxes,
+} from '../api/generate';
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, saveImageBoxes, type DatasetCounts } from '../api/datasets';
 import type { CanvasBox } from '../types/annotation';
 
+/**
+ * What proposes the boxes.
+ *
+ * A **discriminated union, not optional fields**, because the two modes are exclusive by
+ * decision (Wave 5): choosing a head replaces the prompt rather than joining it. Optional
+ * fields would make "a prompt *and* a head" representable, and every consumer would then
+ * have to decide what that means — which is how a rule stops being a rule.
+ */
+export type ProposalSource =
+  | {
+      readonly kind: 'prompt';
+      readonly prompt: string;
+      readonly boxThreshold: number;
+      readonly textThreshold: number;
+    }
+  | {
+      readonly kind: 'head';
+      readonly backboneId: string;
+      readonly instanceId: string;
+      readonly scoreThreshold: number;
+    };
+
 export interface SessionConfig {
   readonly folder: string;
   readonly datasetId: string;
-  readonly prompt: string;
-  readonly boxThreshold: number;
-  readonly textThreshold: number;
+  readonly source: ProposalSource;
 }
 
 export interface AnnotationSession {
@@ -108,24 +132,50 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
 
   const propose = useCallback(async (): Promise<void> => {
     if (!config || !currentImage) return;
+    const { source } = config;
     setProposing(true);
     try {
-      const response = await proposeBoxes({
-        imagePath: currentImage,
-        prompt: config.prompt,
-        boxThreshold: config.boxThreshold,
-        textThreshold: config.textThreshold,
-      });
+      // Both branches return proposals already in *source* pixel coordinates and already
+      // carrying their own provenance, so nothing downstream branches on mode again.
+      const proposed =
+        source.kind === 'head'
+          ? await proposeWithExpertHead({
+              imagePath: currentImage,
+              backboneId: source.backboneId,
+              instanceId: source.instanceId,
+              scoreThreshold: source.scoreThreshold,
+            }).then((response) => ({
+              boxes: expertBoxes(response),
+              width: response.width,
+              height: response.height,
+            }))
+          : await proposeBoxes({
+              imagePath: currentImage,
+              prompt: source.prompt,
+              boxThreshold: source.boxThreshold,
+              textThreshold: source.textThreshold,
+            }).then((response) => ({
+              boxes: toCanvasBoxes(response),
+              width: response.width,
+              height: response.height,
+            }));
       if (!mounted.current) return;
 
       // Hand-drawn boxes survive a re-run: they are work the model cannot reproduce.
       const handDrawn = stateRef.current.boxes.filter((box) => box.provenance === 'hand-drawn');
-      setBoxesState([...toCanvasBoxes(response), ...handDrawn]);
-      setImageSize({ width: response.width, height: response.height });
+      setBoxesState([...proposed.boxes, ...handDrawn]);
+      setImageSize({ width: proposed.width, height: proposed.height });
       setDirty(true);
       setError(null);
     } catch (cause) {
-      if (mounted.current) setError(describe(cause, 'Could not run the detector.'));
+      if (mounted.current) {
+        setError(
+          describe(
+            cause,
+            source.kind === 'head' ? 'Could not run that head.' : 'Could not run the detector.',
+          ),
+        );
+      }
     } finally {
       if (mounted.current) setProposing(false);
     }
@@ -142,7 +192,15 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
         // negative example, and skipping it would silently drop it from the dataset.
         const fresh = await saveImageBoxes(
           config.datasetId,
-          { path: imagePath, width: size.width, height: size.height, prompt: config.prompt },
+          {
+            path: imagePath,
+            width: size.width,
+            height: size.height,
+            // Head mode has no phrase to record. Each box carries its own class instead,
+            // which `saveImageBoxes` sends as `prompt` — so the image-level fallback in
+            // `replace_image_boxes` is neither needed nor a lie here. See doc 31.
+            prompt: config.source.kind === 'prompt' ? config.source.prompt : null,
+          },
           stateRef.current.boxes,
         );
         if (!mounted.current) return false;
