@@ -29,16 +29,14 @@ else in the wave already works **without** it, via Grounded SAM.
 see "The demo-state question" below. It is your call, and it is the only reason the wave
 doc still says `status: planned`.
 
-**3. Two housekeeping items, both optional.**
+**3. One housekeeping item left.** Two datasets from my verification runs are in your real
+store: `Wave4 mask smoke` and `Generated bolts`. Delete them from the app when convenient —
+I left them because removing data from your store is your call.
 
-- Two datasets from my verification runs are in your real store: `Wave4 mask smoke` and
-  `Generated bolts`. Delete them from the app when convenient — I left them because
-  removing data from your store is your call.
-- **~920 MB of dead pickles** predate the download fix and can be removed by hand:
-  ```bash
-  cd "$HOME/Library/Application Support/DinoTraining/models" && rm */pytorch_model.bin */*.pt
-  ```
-  Worth doing: the volume is at **98% (12 GB free)**, and SAM 3 wants 3.2 GB of it.
+*(The ~920 MB of dead pickles was cleared on 2026-08-19. Each had a matching
+`model.safetensors` beside it; all three models were re-loaded afterwards and Grounded SAM
+returned byte-identical results, so they were confirmed dead weight rather than assumed.
+The model cache is now 918 MB and the volume is back to **15 GB free, 97% used**.)*
 
 ---
 
@@ -268,6 +266,7 @@ cycles, every doc has a `path`.
   default heads. **Grounded SAM is ready to run.**
 - Not installed: `dinov2-base/large`, `grounding-dino-base`, both DINOv3, **`sam3`**.
 - Database at **schema v5**. Two verification datasets present (see "Waiting on Jan").
-- **12 GB free, 98% used.** Clearing the dead pickles recovers ~920 MB.
+- **15 GB free, 97% used**, after clearing 920 MB of redundant pickles. The model cache
+  is 918 MB and now holds safetensors only. SAM 3 needs 3.2 GB of what remains.
 - Branches `feat/dinotraining-wave-2` and `feat/dinotraining-wave-3` are merged but still
   exist locally and on origin. Cleanup was offered in two sessions and not requested.
