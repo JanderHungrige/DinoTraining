@@ -15,6 +15,7 @@ const MODEL: ModelInfo = {
   licence: 'Apache-2.0',
   licence_url: 'https://huggingface.co/facebook/dinov2-base',
   requires_access_request: false,
+  non_commercial: false,
   installed: false,
   size_on_disk_mb: 0,
   available: true,

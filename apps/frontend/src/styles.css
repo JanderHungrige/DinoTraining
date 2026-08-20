@@ -499,6 +499,13 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* A licence that forbids commercial use. Warning-coloured rather than neutral: it is a
+   constraint on what the user can do with the result, not a neutral fact about the file. */
+.badge--noncommercial {
+  background: var(--warn-bg, #6b4b00);
+  color: var(--warn-fg, #ffd77a);
+}
+
 /* Shown while heads can be chosen but there is nothing yet to run them on. */
 .studio__hint {
   margin: 0;

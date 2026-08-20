@@ -67,6 +67,26 @@ the residual variance rather than promise exactness.
 **Candidate home:** any wave touching the trainer. Not urgent until someone compares two
 runs and believes the difference.
 
+### Depth Anything 3, when it is loadable
+
+Added 2026-08-20, deferred out of Wave 6 the day the wave started. DA3 is the better depth
+model and its **Base** variant is Apache-2.0 (V2's Base is CC BY-NC), so it is worth having.
+It is not takeable today:
+
+- `config.json` is not a transformers config — no `architectures`, no `model_type`, just a
+  custom `__object__` pointing at `depth_anything_3.model.da3.DepthAnything3Net`.
+- The `depth-anything-3` package requires **`numpy<2`**; this environment runs numpy 2.5.2
+  under torch 2.13. It also pulls `open3d`, `evo`, `e3nn`, a pinned `moviepy==1.0.3` and a
+  second `fastapi`.
+
+Wave 6 shipped **Depth Anything V2 Small** (95 MB, Apache-2.0, transformers-native) instead,
+on the same reasoning that chose SAM 3 over SAM 3.1.
+
+**Revisit when** `transformers` gains a DA3 architecture — at which point it is a catalogue
+entry plus a `build_foundation` case and nothing else, because doc 36 put the contract in
+place. The hand-written-loader alternative was considered and rejected: reimplementing
+`DepthAnything3Net` against a bespoke config format forks from upstream on every release.
+
 ### SAM 3 in the Annotation Studio
 
 Wave 4 brings SAM 3 in for the **Dataset Generator**, where reviewing masks is the point.

@@ -131,3 +131,46 @@ class TestNothingIsBundledOrAutoDownloaded:
         """A sanity bound, so a mis-typed size cannot quietly claim 30 GB or 30 MB."""
         total_gb = sum(spec.approx_size_mb for spec in all_models()) / 1024
         assert 5 < total_gb < 12, f"catalogue total looks wrong: {total_gb:.1f} GB"
+
+
+class TestLicensingIsStatedPerEntry:
+    """Doc 35. Wave 8 cannot redistribute a non-commercial model, and the person deciding
+    to download one has to be told *before* the download, not after."""
+
+    def test_every_spec_names_a_licence(self) -> None:
+        from app.ml.registry import all_models
+
+        unnamed = [spec.id for spec in all_models() if not spec.licence.strip()]
+        assert unnamed == []
+
+    def test_non_commercial_is_explicit_not_inferred(self) -> None:
+        """The flag is authoritative; the licence string is prose.
+
+        Deriving it by looking for "NC" in the text is the same defect as reading a head's
+        capability off its `task` label — it works until something is worded differently,
+        and it fails silently in the permissive direction. This test states the intent so a
+        later refactor to substring-matching has to argue with it.
+        """
+        from app.ml.registry import ModelSpec
+
+        spec = ModelSpec(
+            id="x",
+            repo_id="r/x",
+            kind="backbone",
+            family="dinov2",
+            gated=False,
+            approx_size_mb=1,
+            description="d",
+            licence="Some Licence That Never Says En Cee",
+            non_commercial=True,
+        )
+        assert spec.non_commercial is True
+
+    def test_permissive_entries_default_to_commercial_use(self) -> None:
+        from app.ml.registry import get_model
+
+        spec = get_model("dinov2-small")
+        assert spec is not None
+        assert spec.licence == "Apache-2.0"
+        assert spec.non_commercial is False
+

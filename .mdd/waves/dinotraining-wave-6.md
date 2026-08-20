@@ -3,11 +3,11 @@ id: dinotraining-wave-6
 title: "Wave 6: Foundation Model Breadth (Depth Anything 3)"
 initiative: dinotraining
 initiative_version: 7
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-5
 demo_state: "The user downloads Depth Anything 3 from the admin panel and runs it in the Inference Viewer beside the DINOv2 heads, comparing a foundation depth model against a trained one on the same image — with every catalogue entry stating its licence."
 created: 2026-08-19
-hash: 04cd602e
+hash: 637a9c28
 ---
 
 # Wave 6: Foundation Model Breadth (Depth Anything 3)
@@ -63,6 +63,67 @@ rather than being discovered during packaging.
 - **foundation-model-in-viewer** — DA3 appears in the Inference Viewer's picker and renders
   through the existing `depth-map` render hint. If it needs a *new* hint, that is the
   registry working as designed: add the entry, add the renderer, touch nothing else.
+
+## Scoping settled 2026-08-20 (before execution)
+
+### Depth Anything 3 is not loadable here — shipping V2 instead
+
+Measured, not assumed:
+
+- **DA3 has no `transformers` integration.** Its `config.json` is not a transformers config
+  at all — no `architectures`, no `model_type`, just a custom `__object__` block pointing at
+  `depth_anything_3.model.da3.DepthAnything3Net`. `AutoModel` cannot open it.
+- **The `depth-anything-3` package requires `numpy<2`.** This environment runs **numpy
+  2.5.2** with torch 2.13 and transformers 5.15. Installing it downgrades numpy under a
+  torch that expects 2.x. It also pulls `open3d`, `evo`, `e3nn`, a pinned
+  `moviepy==1.0.3`, and a **second `fastapi`** into an app that already has one.
+
+This is the SAM 3 / SAM 3.1 decision again — *"taking 3.1 would add a second model-loading
+path for a benefit no current wave uses"* — and it resolves the same way, except that here
+the integrated option is the older model. **Depth Anything V2 Small** ships instead: 95 MB,
+Apache-2.0, `DepthAnythingForDepthEstimation`, zero new dependencies. Confirmed with Jan
+2026-08-20.
+
+**The licence table in the plan above is wrong in an instructive direction.** It warned that
+the *large* variant is CC BY-NC. True for both families — but the per-family split differs,
+and V2 is the *stricter* one:
+
+| variant | DA3 | Depth Anything V2 |
+|---|---|---|
+| Small | 131 MB, Apache-2.0 | **95 MB, Apache-2.0** |
+| Base | 516 MB, **Apache-2.0** | CC BY-NC 4.0 |
+| Large | CC BY-NC 4.0 | CC BY-NC 4.0 |
+
+So only V2-**Small** is distributable, which makes feature 2 load-bearing rather than
+tidy-up: the catalogue must state a licence per entry or Wave 8 inherits the problem.
+
+DA3 is recorded in `.mdd/BACKLOG.md` — revisit if it gains transformers support.
+
+### How a foundation model joins a backbone+head registry — answered
+
+The plan flagged this as the wave's main design question. It is settled by what the code
+already does: `run_heads` (doc 18) caches **one backbone forward** and fans it out to N
+heads sharing a `PassKey`. Depth Anything V2 is a *self-contained* predictor — its own
+DINOv2 variant, its own DPT head, its own preprocessing — so it cannot share that pass at
+all. Registering it as a `HeadInstance` whose backbone is itself would put a branch in the
+one module that deliberately never branches.
+
+It therefore gets **its own contract**, keyed by id, exactly mirroring Wave 4's
+`MaskAnnotator`: one `FoundationModel` protocol, and `build_foundation` as the only place
+an id maps to an implementation. Both produce a `Prediction` carrying a `render_hint`, so
+the viewer and the overlay registry need no new concepts — which is the registry working as
+designed.
+
+### Features, revised
+
+| # | Doc | Feature | Depends on |
+|---|---|---|---|
+| 1 | 35 | model-licence-surfacing | — |
+| 2 | 36 | depth-foundation-model | — |
+| 3 | 37 | foundation-model-in-viewer | 36 |
+
+Licence surfacing moves first: it is independent, it is a Wave 8 prerequisite, and the
+model it guards arrives in the very next feature.
 
 ## Open Research
 

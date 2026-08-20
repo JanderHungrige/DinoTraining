@@ -10,8 +10,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
-ModelKind = Literal["detector", "backbone", "segmenter"]
-ModelFamily = Literal["grounding-dino", "dinov2", "dinov3", "sam2", "sam3"]
+ModelKind = Literal["detector", "backbone", "segmenter", "depth-estimator"]
+ModelFamily = Literal[
+    "grounding-dino", "dinov2", "dinov3", "sam2", "sam3", "depth-anything"
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -33,6 +35,13 @@ class ModelSpec:
     #: 403 there means "ask for access", not "bad token". Conflating the two produces the
     #: single most confusing error this app can show.
     requires_access_request: bool = False
+    #: True when the licence forbids commercial use. **Explicit, never inferred from the
+    #: licence string.** Substring-matching "NC" would be the same defect as reading a
+    #: head's capability off its `task` label: it works until a licence is worded
+    #: differently, and it fails silently in the direction that matters. This is a Wave 8
+    #: packaging constraint surfaced early — an installable app cannot redistribute a
+    #: non-commercial model, and the user deciding to download one should be told first.
+    non_commercial: bool = False
 
 
 _SPECS: tuple[ModelSpec, ...] = (
