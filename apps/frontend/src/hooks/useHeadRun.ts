@@ -1,5 +1,11 @@
 /**
- * Choosing heads and running them over the current image.
+ * Choosing heads — and foundation models — and running them over the current image.
+ *
+ * A **foundation model** (doc 37) predicts on its own: no backbone, no head, no shared
+ * pass. It is therefore selected separately and run separately, and the two result sets are
+ * merged into one `ComposedResult`. Merging rather than keeping two lists is the point of
+ * the wave: the viewer's panes, the overlay registry and the compare layout already work
+ * off `Prediction[]` and must not learn that some predictions came from elsewhere.
  *
  * The backbone is **derived from the selection** rather than picked separately. A head
  * only runs against the backbone it was registered for (doc 18 refuses the request
@@ -12,12 +18,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import type { HeadTask } from '../api/heads';
+import { listFoundations, runFoundation, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { runHeads, type ComposedResult } from '../api/inference';
 
 export interface HeadRunState {
   readonly heads: readonly HeadInstanceInfo[];
   readonly selected: readonly string[];
+  /** Self-contained models, offered alongside the heads. Installed ones only. */
+  readonly foundations: readonly FoundationInfo[];
+  readonly selectedFoundations: readonly string[];
+  readonly toggleFoundation: (foundationId: string) => void;
   /** Fixed by the first selected head; null when nothing is selected. */
   readonly backboneId: string | null;
   /** Narrows the offered list. Same-task comparison is this filter, not a mode. */
@@ -43,6 +54,8 @@ function describe(cause: unknown, fallback: string): string {
 export function useHeadRun(): HeadRunState {
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [selected, setSelected] = useState<readonly string[]>([]);
+  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
+  const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
   const [result, setResult] = useState<ComposedResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
@@ -63,6 +76,24 @@ export function useHeadRun(): HeadRunState {
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoadingHeads(false);
+      });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void listFoundations(controller.signal)
+      .then((found) => {
+        if (controller.signal.aborted) return;
+        // Only installed ones are offered here. The admin panel is where a model is
+        // downloaded; listing an absent one in the runner would offer an action whose
+        // only outcome is a 409 telling you to go somewhere else.
+        setFoundations(found.filter((entry) => entry.installed));
+      })
+      .catch(() => {
+        // Non-fatal: heads still run. A foundation model failing to list must not take
+        // the whole panel down with it.
+        if (!controller.signal.aborted) setFoundations([]);
       });
     return () => controller.abort();
   }, []);
@@ -96,6 +127,15 @@ export function useHeadRun(): HeadRunState {
     [backboneId],
   );
 
+  const toggleFoundation = useCallback((foundationId: string): void => {
+    setSelectedFoundations((current) =>
+      current.includes(foundationId)
+        ? current.filter((id) => id !== foundationId)
+        : [...current, foundationId],
+    );
+    setResult(null);
+  }, []);
+
   const toggle = useCallback((instanceId: string): void => {
     setSelected((current) =>
       current.includes(instanceId)
@@ -108,13 +148,18 @@ export function useHeadRun(): HeadRunState {
 
   const clear = useCallback((): void => {
     setSelected([]);
+    setSelectedFoundations([]);
     setResult(null);
     setError(null);
   }, []);
 
   const run = useCallback(
     async (imagePath: string): Promise<void> => {
-      if (selected.length === 0 || !backboneId) return;
+      // A foundation-only run is legitimate — it needs no backbone at all. Requiring one
+      // here is what would make "compare a foundation model against nothing" impossible,
+      // and it is also the most likely first thing a user does after installing one.
+      const hasHeads = selected.length > 0 && backboneId !== null;
+      if (!hasHeads && selectedFoundations.length === 0) return;
 
       // Clicking Run twice, or switching image mid-run, must not race two responses
       // into the same pane — the slower one would win and show the wrong image's result.
@@ -125,26 +170,49 @@ export function useHeadRun(): HeadRunState {
       setRunning(true);
       setError(null);
       try {
-        const composed = await runHeads(
-          { imagePath, backboneId, instanceIds: selected },
-          controller.signal,
-        );
+        // Started together rather than in sequence: they share nothing, so serialising
+        // them would add the depth model's second onto the heads' for no reason.
+        const [composed, foundationResults] = await Promise.all([
+          hasHeads && backboneId
+            ? runHeads({ imagePath, backboneId, instanceIds: selected }, controller.signal)
+            : Promise.resolve(null),
+          Promise.all(
+            selectedFoundations.map((foundationId) =>
+              runFoundation({ imagePath, foundationId }, controller.signal),
+            ),
+          ),
+        ]);
         if (controller.signal.aborted) return;
-        setResult(composed);
+
+        setResult({
+          predictions: [...(composed?.predictions ?? []), ...foundationResults],
+          // Foundation models run their own forward; they are not backbone passes and
+          // are deliberately not counted as such, or the "two framings, seven heads"
+          // number stops meaning what doc 18 measured.
+          passes: composed?.passes ?? 0,
+          elapsed_ms: Math.max(
+            composed?.elapsed_ms ?? 0,
+            ...foundationResults.map((prediction) => prediction.elapsed_ms),
+            0,
+          ),
+        });
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setError(describe(cause, 'Could not run those heads.'));
+        setError(describe(cause, 'Could not run that selection.'));
         setResult(null);
       } finally {
         if (!controller.signal.aborted) setRunning(false);
       }
     },
-    [selected, backboneId],
+    [selected, backboneId, selectedFoundations],
   );
 
   return {
     heads,
     selected,
+    foundations,
+    selectedFoundations,
+    toggleFoundation,
     backboneId,
     taskFilter,
     selectedTask,

@@ -47,6 +47,9 @@ function runState(): HeadRunState {
   return {
     heads: [HEAD],
     selected: [],
+    foundations: [],
+    selectedFoundations: [],
+    toggleFoundation: vi.fn(),
     running: false,
     loadingHeads: false,
     backboneId: 'dinov2-small',
