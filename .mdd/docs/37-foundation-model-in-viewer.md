@@ -4,7 +4,7 @@ title: Foundation Model in the Viewer — Compared Against What You Trained
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-6
-wave_status: in_progress
+wave_status: complete
 depends_on: [19-side-by-side-viewer, 34-inference-picker-upfront, 36-depth-foundation-model]
 relates: [18-multi-head-compose, 20-inference-overlay-render]
 source_files:

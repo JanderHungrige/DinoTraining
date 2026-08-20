@@ -4,7 +4,7 @@ title: Depth Foundation Model — One Model, One Prediction, No Head
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-6
-wave_status: in_progress
+wave_status: complete
 depends_on: [02-model-manager, 16-inference-engine, 35-model-licence-surfacing]
 relates: [20-inference-overlay-render, 23-mask-annotator-registry, 37-foundation-model-in-viewer]
 source_files:

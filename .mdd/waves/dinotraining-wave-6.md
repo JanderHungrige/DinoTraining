@@ -3,11 +3,11 @@ id: dinotraining-wave-6
 title: "Wave 6: Foundation Model Breadth (Depth Anything 3)"
 initiative: dinotraining
 initiative_version: 7
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-5
 demo_state: "The user downloads Depth Anything 3 from the admin panel and runs it in the Inference Viewer beside the DINOv2 heads, comparing a foundation depth model against a trained one on the same image — with every catalogue entry stating its licence."
 created: 2026-08-19
-hash: 637a9c28
+hash: e87a2c2c
 ---
 
 # Wave 6: Foundation Model Breadth (Depth Anything 3)
@@ -63,6 +63,34 @@ rather than being discovered during packaging.
 - **foundation-model-in-viewer** — DA3 appears in the Inference Viewer's picker and renders
   through the existing `depth-map` render hint. If it needs a *new* hint, that is the
   registry working as designed: add the entry, add the renderer, touch nothing else.
+
+## Demonstrated — marked complete 2026-08-20
+
+All three features built and driven in the running app against real weights.
+
+**The download** (doc 35 + 36): Depth Anything V2 Small pulled through the app's own admin
+endpoint — **94 MB on disk against a 95 MB estimate** — with its licence stated on the card
+before the download, and the two CC BY-NC variants badged non-commercial.
+
+**The comparison** (doc 37): **DINOv2 linear depth (NYUd)** and **Depth Anything V2 (small)**
+selected together over a chess photograph. Both endpoints fired concurrently, three panes
+rendered, and the header read `1 backbone pass · 439 ms` — one, not two, because a
+foundation model runs its own forward and is deliberately not counted as a shared pass.
+
+The comparison is stark, which is the point of putting them side by side: the linear probe
+on a 37×37 patch grid is coarse and noisy, while the foundation model resolves the board as
+a clean receding plane with the single piece standing on it. Standalone, the depth map came
+back at source resolution (640×640, range 0.759–6.888) in 873 ms on MPS.
+
+**Two bugs found by running it**, neither reachable from a unit test — recorded in doc 36:
+`.to(settings.device)` used the raw setting, which defaults to the string `"auto"` that
+torch rejects; and a missing image returned **500**, because `FileNotFoundError` is an
+`OSError` and slipped past both the `LookupError` clause and the `ValueError` backstop that
+were supposed to make that impossible.
+
+**Depth Anything 3 is not what shipped** — see below. That substitution is the wave's one
+substantive deviation from its plan and it was confirmed with Jan before any code was
+written.
 
 ## Scoping settled 2026-08-20 (before execution)
 

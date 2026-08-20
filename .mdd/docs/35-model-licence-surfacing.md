@@ -4,7 +4,7 @@ title: Model Licence Surfacing — Say It Before the Download, Not After
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-6
-wave_status: in_progress
+wave_status: complete
 depends_on: [02-model-manager]
 relates: [15-head-catalog-import, 24-hf-token-settings, 36-depth-foundation-model]
 source_files:
