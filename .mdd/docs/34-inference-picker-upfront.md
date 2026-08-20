@@ -4,7 +4,7 @@ title: Inference Picker Upfront — Choose Heads Before There Is an Image
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [19-side-by-side-viewer, 32-shared-head-picker]
 relates: [17-image-input-source, 18-multi-head-compose]
 source_files:

@@ -4,7 +4,7 @@ title: Studio Head Annotator — Annotate With What You Trained
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [06-annotation-workflow, 25-expert-annotator, 32-shared-head-picker]
 relates: [05-annotation-canvas, 29-generated-dataset-writer, 31-external-dataset-import]
 source_files:

@@ -4,7 +4,7 @@ title: Shared Head Picker — One Control, Two Tabs, One Reading
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [12-head-instance-registry, 26-generator-review-ui]
 relates: [19-side-by-side-viewer, 33-studio-head-annotator]
 source_files:

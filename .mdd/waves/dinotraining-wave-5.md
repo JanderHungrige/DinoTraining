@@ -3,11 +3,11 @@ id: dinotraining-wave-5
 title: "Wave 5: Annotate With Your Own Models"
 initiative: dinotraining
 initiative_version: 7
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-4
 demo_state: "In the Annotation Studio the user picks a trained backbone + head instead of writing a Grounding DINO prompt, and the expert model proposes boxes they refine by hand — the same head picker, reading identically, in both the Studio and the Inference Viewer."
 created: 2026-08-19
-hash: d351fd66
+hash: ce7cff0a
 ---
 
 # Wave 5: Annotate With Your Own Models
@@ -57,6 +57,38 @@ can become an annotation without a second conversion.
   selection and disables incompatible heads. Confirm with Jan what is actually missing —
   choosing before an image is loaded? persisting the choice across images? — rather than
   rebuilding a working control from a one-line description.
+
+## Demonstrated — marked complete 2026-08-20
+
+All three features built and driven in the running app against real weights.
+
+**The Studio half** (doc 33): Annotation Studio → "A head you trained" → thermal detector →
+41-image held-out folder → **Run head** → one proposal at 0.32 → Save → stored as
+`expert-head | person | 0.32` with a NULL image-level prompt. The flywheel now closes in
+the Studio, not only in the Dataset Generator.
+
+**The Viewer half** (doc 34): 10 heads offered and selectable with **nothing loaded**, Run
+disabled with a status line naming what is missing; after loading a folder the selection
+survived, the hint cleared and Run enabled.
+
+### One deliberate divergence from the demo-state as written — read this
+
+The demo-state says *"the same head picker — same control, same wording, same provenance —
+serves both the Studio and the Inference Viewer."* **The control is not shared, and should
+not be.** The Inference Viewer's panel is a *multi-select built for comparison*; the Studio
+and Generator want exactly one head. Sharing one component across both would force compare
+semantics into two tabs with no use for them, and would undo the decision Wave 4 recorded
+in `ExpertHeadPicker`'s own docstring. The drafted sentence is in tension with Wave 3's
+comparison feature, and this wave resolved it in Wave 3's favour.
+
+What *is* shared is the part the demo-state actually cares about, and it is now shared
+literally rather than by convention: **`describeHead` composes a head's one-line
+description in one function**, called by both controls, over `summary` as the backend wrote
+it and never a filename. `headReading.test.tsx` renders both and asserts they agree.
+
+So: same wording, same provenance, same reading — two controls, because comparison and
+annotation are different interactions. If you disagree, the picker swap is the change, and
+this note is where the reasoning lives.
 
 ## Scoping settled 2026-08-20 (before execution)
 

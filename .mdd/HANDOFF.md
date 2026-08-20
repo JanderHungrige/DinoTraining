@@ -4,8 +4,8 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-20, after doc 31 (external dataset import) unblocked Wave 4's
-expert-head demo-state.
+**Last updated:** 2026-08-20, after **Wave 5** was built and demonstrated. Wave 4 is
+complete; doc 31 unblocked its expert-head half earlier the same day.
 
 ---
 
@@ -15,12 +15,28 @@ expert-head demo-state.
 **Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
 Doc 30 is `complete`. There is nothing left waiting on you here.
 
-**2. Merge Wave 4 — it is marked complete.** Both demo-state halves are demonstrated, so
-the wave doc now says `status: complete` (flipped 2026-08-20 on your "continue with the
-whole project"). **Merging is still yours**: `feat/dinotraining-wave-4` is 4 commits ahead
-of `dev`, and `feat/external-dataset-import` sits on top of it with 5 more. If you disagree
-with the flip it is a one-line revert in `.mdd/waves/dinotraining-wave-4.md` plus a hash
-recompute.
+**2. Merge three branches. Waves 4 and 5 are both marked complete.** Merging is still
+yours, and they stack in this order:
+
+```
+dev
+ └─ feat/dinotraining-wave-4        4 commits   Wave 4 features 6-9
+     └─ feat/external-dataset-import 5 commits   doc 31 + the NMS and prompt fixes
+         └─ feat/dinotraining-wave-5 4 commits   docs 32-34
+```
+
+Both flips were made on your "continue with the whole project". Each is a one-line revert
+in the wave doc plus a hash recompute if you disagree.
+
+**⚠️ One judgement call in Wave 5 worth your eye.** Its demo-state as drafted says *"the
+same head picker … serves both the Studio and the Inference Viewer"*. I did **not** do
+that, deliberately: the Viewer's panel is a multi-select built for comparison, the Studio
+and Generator want one head, and forcing one component across both would undo a decision
+Wave 4 recorded. What is shared instead is the *description* — `describeHead`, one
+function, asserted identical across both controls by a test. The full reasoning is in
+`.mdd/waves/dinotraining-wave-5.md` under "One deliberate divergence". If you want the
+literal reading, swapping the Viewer to the single-select picker is the change, and it
+costs you head comparison.
 
 **3. Housekeeping — now six datasets and three heads.** Still in your real store from
 verification runs: `Wave4 mask smoke`, `Generated bolts`, and four thermal scratch datasets
@@ -39,13 +55,19 @@ The model cache is now 918 MB and the volume is back to **15 GB free, 97% used**
 
 ## Where the project stands
 
-**Waves 1–3 merged to `dev`. Wave 4 is built and pushed but not merged.**
+**Waves 1–3 merged to `dev`. Waves 4 and 5 are complete, pushed, and not merged.**
 
 ```
-dev                       ba3c663   (features 1–5 of Wave 4 are already on it — see below)
-feat/dinotraining-wave-4  e6e1deb   4 commits ahead of dev
-922 backend tests · 287 frontend tests · ruff, mypy, tsc all clean
+dev                            (features 1–5 of Wave 4 are already on it — see below)
+feat/dinotraining-wave-4       Wave 4 features 6–9
+feat/external-dataset-import   doc 31, the NMS fix, the lost-class fix
+feat/dinotraining-wave-5       docs 32–34
+922 backend tests · 319 frontend tests · ruff, mypy, tsc all clean
 ```
+
+**Wave 5 in one line:** the Annotation Studio can now annotate with a head you trained
+instead of a Grounding DINO phrase, which closes the flywheel in the Studio and not only in
+the Dataset Generator.
 
 ⚠️ **`dev` already contains Wave 4 features 1–5.** You merged the branch mid-wave on
 2026-08-19 (`e110752`) and left the checkout on `dev`, and I then committed feature 5
