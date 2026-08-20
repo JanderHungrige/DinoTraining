@@ -1438,7 +1438,7 @@ body {
   font-family: inherit;
 }
 
-.genpanel__heads {
+.headpick {
   display: grid;
   gap: 0.4rem;
   margin: 0;
@@ -1447,7 +1447,7 @@ body {
   border-radius: 6px;
 }
 
-.genpanel__heads legend {
+.headpick legend {
   padding: 0 0.35rem;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -1457,7 +1457,7 @@ body {
 
 /* Grid, not flex: the meta column wraps under the name on a narrow window instead of
    squeezing a summary that is the whole point of the row. */
-.genpanel__head {
+.headpick__option {
   display: grid;
   grid-template-columns: auto auto 1fr;
   align-items: baseline;
@@ -1465,16 +1465,16 @@ body {
   cursor: pointer;
 }
 
-.genpanel__headname {
+.headpick__name {
   font-weight: 600;
 }
 
-.genpanel__headmeta {
+.headpick__meta {
   color: var(--text-dim);
   font-size: 0.875rem;
 }
 
-.genpanel__empty {
+.headpick__empty {
   max-width: 68ch;
   color: var(--text-dim);
   line-height: 1.5;

@@ -115,4 +115,36 @@ describe('ExpertHeadPicker', () => {
     renderPicker([], { loading: true });
     expect(screen.getByRole('status')).toHaveTextContent(/Loading heads/);
   });
+
+  describe('sharing it between two tabs (doc 32)', () => {
+    it('defaults to the Generator wording it shipped with', () => {
+      renderPicker([head()]);
+      expect(screen.getByRole('group', { name: 'Expert head' })).toBeInTheDocument();
+    });
+
+    it("takes the calling tab's legend", () => {
+      renderPicker([head()], { legend: 'Annotate with' });
+      expect(screen.getByRole('group', { name: 'Annotate with' })).toBeInTheDocument();
+    });
+
+    it('takes a radio group name, so two pickers on one page cannot fight', () => {
+      // Radios sharing a `name` form one group: selecting in the second silently clears
+      // the first. Nothing renders two today; this is what makes it safe when something does.
+      renderPicker([head()], { groupName: 'studio-head' });
+      expect(screen.getByRole('radio')).toHaveAttribute('name', 'studio-head');
+    });
+
+    it('names the radio group `expert-head` when the caller says nothing', () => {
+      renderPicker([head()]);
+      expect(screen.getByRole('radio')).toHaveAttribute('name', 'expert-head');
+    });
+
+    it('still refuses a head whose render_hint is not boxes, whatever the legend says', () => {
+      // The rule that confines the Studio to box heads. `task` is deliberately left as
+      // `detection` so a filter written against the wrong field would pass this.
+      renderPicker([head({ render_hint: 'masks' })], { legend: 'Annotate with' });
+      expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent(/No installed head can propose boxes/);
+    });
+  });
 });

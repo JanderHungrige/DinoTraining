@@ -3,11 +3,11 @@ id: dinotraining-wave-5
 title: "Wave 5: Annotate With Your Own Models"
 initiative: dinotraining
 initiative_version: 7
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-4
 demo_state: "In the Annotation Studio the user picks a trained backbone + head instead of writing a Grounding DINO prompt, and the expert model proposes boxes they refine by hand — the same head picker, reading identically, in both the Studio and the Inference Viewer."
 created: 2026-08-19
-hash: 42738429
+hash: d351fd66
 ---
 
 # Wave 5: Annotate With Your Own Models
@@ -57,6 +57,41 @@ can become an annotation without a second conversion.
   selection and disables incompatible heads. Confirm with Jan what is actually missing —
   choosing before an image is loaded? persisting the choice across images? — rather than
   rebuilding a working control from a one-line description.
+
+## Scoping settled 2026-08-20 (before execution)
+
+The draft above was written before Wave 4 shipped. Three corrections, made against what
+actually exists rather than against the one-line descriptions:
+
+**1. The shared control is `ExpertHeadPicker`, not `HeadRunPanel`.** The draft says promote
+`HeadRunPanel`. Wave 4 already built `components/ExpertHeadPicker.tsx` and its docstring
+argues explicitly against exactly that promotion: `HeadRunPanel` is a **multi-select built
+for comparison** — several heads, several result panes — and both the Generator and the
+Studio want *one* head writing into one dataset. Promoting it would force compare semantics
+into two tabs with no use for them. So feature 1 becomes: make `ExpertHeadPicker` the shared
+component (Studio + Generator), leaving `HeadRunPanel` as the Inference Viewer's comparison
+control. What is shared is what must not drift — `name` + `summary`, never a filename, and
+filtering on `render_hint`, never on `task`.
+
+**2. `inference-picker-upfront` is real, and small.** `HeadRunPanel` renders behind
+`{current && …}` in `InferenceViewerTab.tsx`, so heads genuinely cannot be chosen until an
+image or folder has loaded. The fix is lifting the panel out of that guard and holding the
+selection across image changes — not rebuilding a working control.
+
+**3. Feature 2 is the wave.** Everything else is plumbing around it.
+
+### Open questions — answered by Jan, 2026-08-20
+
+- **Only `render_hint === 'boxes'` heads may be picked in the Studio.** A segmentation or
+  depth head has no refine tool there to correct into, and the Studio's whole promise is
+  hand-refinement; offering a head whose output can only be accepted or rejected would
+  quietly break that promise in one mode. Wave 4's verdict-only mask review stays in the
+  Dataset Generator, where reviewing *is* the task.
+- **Head mode and prompt mode are exclusive.** Choosing a head replaces the prompt field
+  rather than joining it: one provenance per proposal, one review pass, and the mode is
+  unambiguous on screen. Running both was considered — it would show what your head misses
+  against Grounding DINO — and rejected for this wave because it doubles the review load and
+  needs a near-duplicate rule between two sources that nothing else needs.
 
 ## Open Research
 
