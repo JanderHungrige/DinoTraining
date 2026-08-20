@@ -15,11 +15,12 @@ expert-head demo-state.
 **Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
 Doc 30 is `complete`. There is nothing left waiting on you here.
 
-**2. Decide whether Wave 4 counts as complete — the blocker is gone.** Both halves of the
-demo-state are now demonstrable. The expert-head half needed a trained detector, and there
-are three, trained on imported HuggingFace datasets (doc 31, branch
-`feat/external-dataset-import`, pushed). I still have *not* flipped the wave: it is your
-call and the wave doc still says `status: planned`.
+**2. Merge Wave 4 — it is marked complete.** Both demo-state halves are demonstrated, so
+the wave doc now says `status: complete` (flipped 2026-08-20 on your "continue with the
+whole project"). **Merging is still yours**: `feat/dinotraining-wave-4` is 4 commits ahead
+of `dev`, and `feat/external-dataset-import` sits on top of it with 5 more. If you disagree
+with the flip it is a one-line revert in `.mdd/waves/dinotraining-wave-4.md` plus a hash
+recompute.
 
 **3. Housekeeping — now six datasets and three heads.** Still in your real store from
 verification runs: `Wave4 mask smoke`, `Generated bolts`, and four thermal scratch datasets

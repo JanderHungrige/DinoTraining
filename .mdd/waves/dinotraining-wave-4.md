@@ -3,11 +3,11 @@ id: dinotraining-wave-4
 title: "Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)"
 initiative: dinotraining
 initiative_version: 7
-status: planned
+status: complete
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: 42e9f034
+hash: 93ffe075
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -26,6 +26,32 @@ reviews and saves as training targets. That is what finally makes the segmentati
 trainable in-app — until this wave lands, segmentation trains only on user-brought mask
 datasets.
 *(Not complete until this can be manually demonstrated.)*
+
+### Both halves demonstrated — marked complete 2026-08-20
+
+**Mask half** (2026-08-19): Grounded SAM — concept in, masks out, reviewed, saved, exported
+to COCO — against real Grounding DINO + SAM 2.1 on MPS. Better than written, in fact: it
+needs no gated model at all. SAM 3 verified the same day against real weights.
+
+**Expert-head half** (2026-08-20): held up not by a defect but by there being **no
+pretrained detection head in existence** to install — DINOv2 publishes classification,
+segmentation and depth only. The unblock was therefore to *train* one, which needed a box
+dataset the app could not yet accept. `31-external-dataset-import` closed that gap, and
+three detectors were trained on ungated HuggingFace datasets over frozen `dinov2-small`:
+
+| dataset | images | classes | map | map_50 |
+|---|---|---|---|---|
+| thermal-dogs-and-people | 203 | 2 | 0.404 | 0.590 |
+| blood-cell-object-detection | 364 | 3 | 0.387 | 0.610 |
+| chess-pieces | 289 | 13 | 0.525 | 0.748 |
+
+Demonstrated in the browser end to end: Dataset Generator → "A head you trained" → thermal
+head → propose → 20 boxes over the two people in a held-out thermal frame → save → 20 rows
+stored as `expert-head` / `person`, each carrying a producer snapshot naming the head
+instance. Running it also surfaced two defects in code this wave depends on — the missing
+NMS (doc 16) and generated boxes losing their class (doc 29) — both fixed and pinned.
+
+`31-external-dataset-import` is a **tenth doc for this wave**, built after the other nine.
 
 ## Nothing is blocked (revised 2026-08-19)
 

@@ -4,7 +4,7 @@ title: External Dataset Import — A Third-Party COCO Dataset, Honestly Labelled
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-4
-wave_status: planned
+wave_status: complete
 depends_on: [03-dataset-store, 22-mask-dataset-store]
 relates: [11-training-job-runner, 25-expert-annotator, 29-generated-dataset-writer]
 source_files:
@@ -45,7 +45,7 @@ known_issues:
   - "Import is API-only — no frontend surface. The Annotation Studio has no \"import a dataset\" control yet."
   - "`iscrowd` is ignored; a crowd box imports as an ordinary positive. COCO `segmentation` polygons are ignored too, so an imported dataset trains detection only."
   - "`POST /training/jobs` accepts an unknown `dataset_id` and fails **asynchronously** with \"No positive boxes found in the selected datasets\" instead of rejecting it at submit. Honest and non-destructive — no head is created — but a typo costs a round trip through the job runner rather than a 422."
-  - "Training is not reproducible run to run. `split_seed` fixes the *split*, but nothing seeds weight init or shuffling: two runs of an identical config on the blood dataset gave map 0.404 and 0.387. Fine for a demo, wrong for comparing two configurations, which is exactly what the Head Trainer invites."
+  - "Training is not reproducible run to run. `split_seed` fixes the *split*, but nothing seeds weight init or shuffling: two runs of an identical config on the blood dataset gave map 0.4042 and 0.3872. Fine for a demo, wrong for comparing two configurations, which is exactly what the Head Trainer invites. **Backlogged 2026-08-20** — see `.mdd/BACKLOG.md`, \"Reproducible training runs\"."
   - "The Dataset Generator\'s default score threshold of 0.30 is tuned for Grounding DINO, not for a freshly trained head. At 0.30 the thermal detector proposes ~20 boxes over two people; the top two are correct and the rest are low-confidence false positives. A per-head default, or a threshold seeded from the head\'s own metrics, would make the first run read far better."
 sister_projects: []
 ---
