@@ -9,11 +9,14 @@ depends_on: [12-head-instance-registry, 26-generator-review-ui]
 relates: [19-side-by-side-viewer, 33-studio-head-annotator]
 source_files:
   - apps/frontend/src/components/ExpertHeadPicker.tsx
+  - apps/frontend/src/components/HeadRunPanel.tsx
+  - apps/frontend/src/api/headInstances.ts
   - apps/frontend/src/styles.css
 routes: []
 models: []
 test_files:
   - apps/frontend/src/components/ExpertHeadPicker.test.tsx
+  - apps/frontend/src/components/headReading.test.tsx
 data_flow: reads-existing
 last_synced: 2026-08-20
 status: complete
@@ -65,7 +68,13 @@ HeadRunPanel      ─────▶  Inference Viewer    multi-select, comparis
    also what confines the Studio to box heads: a segmentation or depth head has no refine
    tool there to correct into, and the Studio's promise is hand-refinement.
 2. **A head is presented as `name` + `summary`, never a filename** — doc 12's contract, of
-   which this is now the fourth consumer.
+   which this is now the fourth consumer. The one-line description lives in **one function**,
+   `describeHead` in `api/headInstances.ts`. Keeping two *controls* is deliberate;
+   keeping two *descriptions* was not — the same template was written out byte for byte in
+   both components, so a single edit would have made the Inference Viewer and the Studio
+   disagree about the same head with nothing failing. `headReading.test.tsx` renders both
+   over one head and asserts they agree, rather than checking each against a literal, which
+   would stay green if both drifted together.
 3. **`legend` is a prop.** The Generator picks *what proposes*; the Studio picks *what
    annotates*. Same control, different sentence.
 4. **`groupName` is a prop.** Radios sharing a `name` form one group, so two pickers on one

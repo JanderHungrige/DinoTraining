@@ -13,7 +13,7 @@
 
 import { useMemo, type JSX } from 'react';
 
-import { KIND_LABELS, groupByTask, type HeadInstanceInfo } from '../api/headInstances';
+import { describeHead, groupByTask } from '../api/headInstances';
 import type { HeadTask } from '../api/heads';
 import type { HeadRunState } from '../hooks/useHeadRun';
 
@@ -61,9 +61,6 @@ export function HeadRunPanel({
       </p>
     );
   }
-
-  const describeHead = (head: HeadInstanceInfo): string =>
-    `${KIND_LABELS[head.kind]} · ${head.summary}`;
 
   const sameTaskCount = state.selectedTask
     ? selected.filter((id) => heads.find((h) => h.id === id)?.task === state.selectedTask).length

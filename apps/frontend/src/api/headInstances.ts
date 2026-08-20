@@ -46,6 +46,21 @@ export interface HeadInstanceInfo {
   readonly created_at: string;
 }
 
+/**
+ * The one-line description of a head, composed identically wherever a head is offered.
+ *
+ * Doc 12's contract is that a head **reads the same in every tab**, from `summary` as the
+ * backend composed it and never from a filename. Wave 5 made that literal: the Inference
+ * Viewer's multi-select panel and the single-select picker used by the Studio and the
+ * Dataset Generator are different *controls* — comparison genuinely needs many, annotation
+ * genuinely needs one — but they must not be different *descriptions*. This string was
+ * written out twice, byte for byte, in two components; one edit would have made them
+ * disagree with nothing failing.
+ */
+export function describeHead(head: HeadInstanceInfo): string {
+  return `${KIND_LABELS[head.kind]} · ${head.summary}`;
+}
+
 export interface DeleteHeadResult {
   readonly id: string;
   readonly removed: boolean;

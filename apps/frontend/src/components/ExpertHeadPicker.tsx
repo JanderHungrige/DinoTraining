@@ -25,7 +25,7 @@
 
 import { useMemo, type JSX } from 'react';
 
-import { KIND_LABELS, type HeadInstanceInfo } from '../api/headInstances';
+import { describeHead, type HeadInstanceInfo } from '../api/headInstances';
 
 export interface ExpertHeadPickerProps {
   readonly heads: readonly HeadInstanceInfo[];
@@ -97,9 +97,7 @@ export function ExpertHeadPicker({
             onChange={() => onSelect(head.id)}
           />
           <span className="headpick__name">{head.name}</span>
-          <span className="headpick__meta">
-            {KIND_LABELS[head.kind]} · {head.summary}
-          </span>
+          <span className="headpick__meta">{describeHead(head)}</span>
         </label>
       ))}
     </fieldset>
