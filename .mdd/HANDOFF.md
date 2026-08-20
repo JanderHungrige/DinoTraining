@@ -10,20 +10,26 @@ do not read it for current state.
 
 ## Waiting on Jan
 
-**1. SAM 3 access — the one reminder to act on.** Nothing is blocked *behind* it; this is
-the only outstanding external dependency in the whole wave.
+**1. SAM 3 — access granted, token in, download started 2026-08-19.** This was the wave's
+only external dependency and it is now resolved. Meta approved the repo, the token is saved
+in `/Users/jwh/Code/DinoTraining/.env` (hint `••••orMX`), and all three gated models report
+`available`. The download was at 133 MB of ~3.2 GB when this was written.
 
-- Request access at <https://huggingface.co/facebook/sam3> and accept Meta's **SAM License**.
-  Approval is granted **by a person**, so it is not immediate.
-- Create a *read* token at <https://huggingface.co/settings/tokens>.
-- Paste it into **Admin / Models → HuggingFace access**. It writes to `.env` at `0600`,
-  is never logged or returned, and takes effect without a restart.
-- Then download SAM 3 from the admin tab — **3.2 GB**, and yours to trigger. Nothing
-  downloads it for you.
+**So the next session's job is Phase 7b for doc 30** — see the runnable recipe below. That
+is the last open item in the wave.
 
-When that lands, the only work left is **Phase 7b for doc 30** — run SAM 3 once against
-real weights and confirm the output shapes. No re-implementation is expected. Everything
-else in the wave already works **without** it, via Grounded SAM.
+⚠️ **`available=True` only means a token exists.** It does not prove the token is scoped to
+`facebook/sam3`; only the download itself proves that. If the job failed after this was
+written, the message says which: *"has not been granted yet… granted by a person"* means the
+approval is not live, *"Accept the licence… check the token"* means the token is wrong or
+its fine-grained repo list is missing `facebook/sam3`.
+
+Check where it got to:
+
+```bash
+curl -s http://127.0.0.1:8756/api/v1/annotators/sam3        # ready=true when complete
+du -sh "$HOME/Library/Application Support/DinoTraining/models/sam3"
+```
 
 **2. Decide whether Wave 4 counts as complete.** I have deliberately *not* flipped it —
 see "The demo-state question" below. It is your call, and it is the only reason the wave
@@ -242,6 +248,44 @@ Everything from Wave 3's handoff still holds. New this wave:
 bodies. It was stale by nine docs at the end of this wave. Current state: **30 docs, 69
 dependency edges, 47 shared source files, zero warnings** — no broken `depends_on`, no
 cycles, every doc has a `path`.
+
+## Phase 7b for doc 30 — the one job left
+
+Everything is written and stub-tested; what is missing is **one real run**. Doc 27 is why
+that matters: SAM 2 taught two lessons a stub cannot, and both were found by measuring the
+real model rather than reading its docs.
+
+**What to check, in order of how likely it is to be wrong:**
+
+1. **Mask shape.** `_to_proposals` in `app/ml/annotators/sam3.py` squeezes a singleton
+   candidate axis if it sees one, because SAM 2 returns `(N, 1, H, W)`. If SAM 3 returns
+   `(N, H, W)` the squeeze is a no-op and all is well — but confirm which it is rather than
+   trusting the guard covers both.
+2. **Device.** Mask tensors must survive `_to_numpy` (`detach().cpu().numpy()`). This is
+   bug class #1 and it 500'd a whole Wave 3 feature. It runs on MPS here.
+3. **Score alignment.** `scores[index]` is paired positionally with `masks[index]`. If
+   post-processing ever reorders or filters one and not the other, every mask gets the
+   wrong confidence and looks entirely plausible.
+4. **`target_sizes` order.** Passed as `(height, width)`. Inverting it on a non-square image
+   produces masks that decode at the wrong size and fail the store's validation.
+
+**Run both annotators over the same image** — Grounded SAM's numbers are already known-good,
+so any disagreement in shape, size or coordinate convention shows up immediately instead of
+being taken on trust. For each proposal assert `rle_decode(counts, size).shape ==
+(image.height, image.width)` and `sum(counts) == height * width`, then print concept, score,
+area and bbox and compare the two annotators side by side. A synthetic scene with two
+distinct coloured shapes works well; Grounded SAM returned 31,417 px for a circle whose true
+area is 31,416.
+
+**Then drive it through the UI**, because the API alone will not catch a payload the
+frontend cannot render: Dataset Generator -> mask mode -> the annotator picker should now
+show **two** entries (it hides itself when only one is ready) -> pick SAM 3 -> propose ->
+review -> save.
+
+**When it passes**, in doc 30: drop the `known_issues` entry, set `status: complete` and
+`phase: all`, and update the wave table row. If the shapes differ from what was assumed,
+that is a normal fix in `_to_proposals` — the contract and the tests around it hold either
+way.
 
 ## Known issues — good first tasks
 
