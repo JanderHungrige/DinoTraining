@@ -19,6 +19,11 @@ PROVENANCE_VALUES = (
     # would be false, and "which masks came from the ungated annotator" is a real
     # question when comparing the two. See `23-mask-annotator-registry`.
     "grounded-sam",
+    # A dataset someone else published, imported wholesale. The five values above each
+    # name a *producer* that ran here — a person, a detector, a head, an annotator — and
+    # none of them is true of a third-party dataset. Recording one would make the
+    # producer snapshot a fiction. See `31-external-dataset-import`.
+    "imported",
 )
 
 #: Tables carrying a provenance CHECK. The migration runner rebuilds any of them whose

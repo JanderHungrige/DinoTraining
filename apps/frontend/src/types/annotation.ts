@@ -17,7 +17,9 @@ export type Provenance =
   | 'hand-drawn'
   | 'expert-head'
   | 'sam3'
-  | 'grounded-sam';
+  | 'grounded-sam'
+  // A dataset this project did not produce, imported wholesale. See `31-external-dataset-import`.
+  | 'imported';
 
 export const LABELS: readonly Label[] = Object.freeze(['positive', 'negative', 'unclear']);
 
