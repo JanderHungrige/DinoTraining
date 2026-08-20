@@ -24,19 +24,41 @@ class TestRegistry:
         """The registry lookup is what turns a traversal attempt into a 404."""
         assert get_model("../../etc/passwd") is None
 
-    def test_gated_models_are_exactly_the_custom_licensed_ones(self) -> None:
-        """Was `test_only_dinov3_is_gated` until SAM 3 joined it.
+    def test_a_gated_model_never_carries_a_permissive_licence(self) -> None:
+        """Was `test_only_dinov3_is_gated`, then a stricter both-ways version.
 
-        The invariant is not "which ids" but that gating and a non-permissive licence go
-        together — an Apache-2.0 entry behind a gate would be a catalogue mistake.
+        The both-ways form asserted that an **ungated** entry is always Apache-2.0, and
+        Wave 6 proved that false: Depth Anything V2 Base and Large are ungated *and*
+        CC BY-NC 4.0. Anyone can download them; almost nobody may ship what they produce.
+        That is exactly the belief doc 35 exists to correct, so the test that encoded it
+        has been narrowed to the direction that is actually an invariant — a gate implies
+        terms to accept, and an Apache-2.0 entry behind one would be a catalogue mistake.
         """
         gated = {spec.id for spec in all_models() if spec.gated}
         assert gated == {"dinov3-vitb16", "dinov3-vitl16", "sam3"}
         for spec in all_models():
             if spec.gated:
                 assert spec.licence != "Apache-2.0", f"{spec.id} is gated but Apache-2.0"
-            else:
-                assert spec.licence == "Apache-2.0", f"{spec.id} is open but not Apache-2.0"
+
+    def test_gating_and_licensing_are_independent(self) -> None:
+        """The pairing the previous test wrongly ruled out, pinned as real.
+
+        If this ever holds no entries again, the catalogue has quietly gone back to
+        "downloadable means usable" and doc 35's badge stops being reachable.
+        """
+        open_but_restricted = [
+            spec.id for spec in all_models() if not spec.gated and spec.non_commercial
+        ]
+        assert open_but_restricted, "no ungated non-commercial entry — doc 35 is untested"
+
+    def test_a_non_apache_licence_is_flagged_or_gated(self) -> None:
+        """Nothing may be quietly restrictive: an entry is either gated (terms shown at
+        download) or flagged non-commercial (badged in the card), never neither."""
+        for spec in all_models():
+            if spec.licence != "Apache-2.0":
+                assert spec.gated or spec.non_commercial, (
+                    f"{spec.id} is {spec.licence} but neither gated nor flagged"
+                )
 
     def test_only_sam3_needs_a_manual_access_request(self) -> None:
         needing = {spec.id for spec in all_models() if spec.requires_access_request}
@@ -50,7 +72,14 @@ class TestRegistry:
 
     def test_every_family_has_an_entry(self) -> None:
         families = {spec.family for spec in all_models()}
-        assert families == {"grounding-dino", "dinov2", "dinov3", "sam2", "sam3"}
+        assert families == {
+            "grounding-dino",
+            "dinov2",
+            "dinov3",
+            "sam2",
+            "sam3",
+            "depth-anything",
+        }
 
     def test_specs_are_immutable(self) -> None:
         """The catalogue is not user-editable; a frozen dataclass enforces that."""
@@ -107,14 +136,18 @@ class TestNothingIsBundledOrAutoDownloaded:
     def test_every_loader_refuses_a_missing_model(
         self, tmp_path: object, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        from PIL import Image
+
         from app.core.config import get_settings
         from app.ml.backbone import load_backbone
         from app.ml.detector import load_detector
         from app.ml.errors import ModelNotInstalledError
+        from app.ml.foundation.build import build_foundation, reset_cache
         from app.ml.segmenter import load_segmenter
 
         monkeypatch.setenv("DINO_MODEL_CACHE_DIR", str(tmp_path))
         get_settings.cache_clear()
+        reset_cache()
         try:
             for load, model_id in (
                 (load_detector, "grounding-dino-tiny"),
@@ -124,8 +157,16 @@ class TestNothingIsBundledOrAutoDownloaded:
             ):
                 with pytest.raises(ModelNotInstalledError):
                     load(model_id)
+
+            # Doc 36's loader is bound by the same rule. It refuses at `predict`, because
+            # that is when it would otherwise reach `from_pretrained` and the network —
+            # constructing it is deliberately cheap and touches no disk.
+            model = build_foundation("depth-anything-v2-small")
+            with pytest.raises(ModelNotInstalledError):
+                model.predict(Image.new("RGB", (8, 8)))
         finally:
             get_settings.cache_clear()
+            reset_cache()
 
     def test_the_catalogue_reports_what_a_full_install_would_cost(self) -> None:
         """A sanity bound, so a mis-typed size cannot quietly claim 30 GB or 30 MB."""

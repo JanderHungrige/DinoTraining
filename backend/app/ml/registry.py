@@ -110,6 +110,49 @@ _SPECS: tuple[ModelSpec, ...] = (
         description="DINOv3 ViT-L/16. Gated — accept the licence on HuggingFace first.",
         licence="DINOv3 License (Meta, custom)",
     ),
+    # --- foundation depth (doc 36) -----------------------------------------------
+    # Depth Anything **V2**, not V3. V3 has no `transformers` integration — its config is
+    # a bespoke `__object__` block, and its pip package pins `numpy<2` against this
+    # environment's 2.5.2. Same reasoning that took SAM 3 over SAM 3.1: a second
+    # model-loading path is not worth a benefit no wave uses. See the Wave 6 doc.
+    #
+    # Only **Small** is Apache-2.0. Base and Large are CC BY-NC 4.0, which is precisely
+    # why doc 35 had to land first — an installable app cannot redistribute them, and the
+    # person downloading one is told before the download rather than after.
+    ModelSpec(
+        id="depth-anything-v2-small",
+        repo_id="depth-anything/Depth-Anything-V2-Small-hf",
+        kind="depth-estimator",
+        family="depth-anything",
+        gated=False,
+        approx_size_mb=95,
+        description=(
+            "Monocular depth from a single image. Self-contained — it brings its own "
+            "backbone, so it runs beside a trained depth head rather than sharing one."
+        ),
+    ),
+    ModelSpec(
+        id="depth-anything-v2-base",
+        repo_id="depth-anything/Depth-Anything-V2-Base-hf",
+        kind="depth-estimator",
+        family="depth-anything",
+        gated=False,
+        approx_size_mb=371,
+        description="Larger Depth Anything V2. Sharper depth, non-commercial licence.",
+        licence="CC BY-NC 4.0",
+        non_commercial=True,
+    ),
+    ModelSpec(
+        id="depth-anything-v2-large",
+        repo_id="depth-anything/Depth-Anything-V2-Large-hf",
+        kind="depth-estimator",
+        family="depth-anything",
+        gated=False,
+        approx_size_mb=1250,
+        description="Largest Depth Anything V2. Best quality, non-commercial licence.",
+        licence="CC BY-NC 4.0",
+        non_commercial=True,
+    ),
     ModelSpec(
         id="sam2.1-hiera-small",
         repo_id="facebook/sam2.1-hiera-small",
