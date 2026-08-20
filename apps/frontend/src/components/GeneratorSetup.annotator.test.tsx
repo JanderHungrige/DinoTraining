@@ -149,4 +149,26 @@ describe('GeneratorSetup — annotator choice', () => {
       ),
     );
   });
+
+  it('tells the user SAM 3 takes one concept at a time', async () => {
+    // Verified against real weights: "a red circle. a blue square." given to SAM 3 as one
+    // prompt returns a single mask at score 0.372, while the same two phrases run
+    // separately score 0.977 and 0.968. Grounded SAM handles the joined form correctly,
+    // so the guidance has to differ per annotator or it is wrong for one of them.
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
+      { id: 'sam3', name: 'SAM 3', ready: true } as never,
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt. a nut.');
+    expect(screen.getByText(/several phrases separated by full stops/i)).toBeInTheDocument();
+
+    await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'sam3');
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt');
+    expect(screen.getByText(/one concept at a time/i)).toBeInTheDocument();
+  });
 });

@@ -86,6 +86,8 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const annotatorId =
     annotatorOverride || readyAnnotators[0]?.id || GROUNDED_SAM;
 
+  const isGroundedSam = annotatorId === GROUNDED_SAM;
+
   const eligible = heads.filter(
     (head) => head.render_hint === 'boxes' && head.backbone_id === backboneId,
   );
@@ -193,16 +195,16 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
             <input
               type="text"
               value={concept}
-              placeholder="a bolt. a nut."
+              placeholder={isGroundedSam ? 'a bolt. a nut.' : 'a bolt'}
               onChange={(event) => setConcept(event.target.value)}
             />
           </label>
           {/* Outside the label on purpose: text inside a <label> joins the field's
               accessible name, so this paragraph would be read out with every focus. */}
           <p className="genpanel__hint">
-            {annotatorId === GROUNDED_SAM
-              ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask. Nothing here is gated — no token, no account.'
-              : (annotators.find((a) => a.id === annotatorId)?.description ?? '')}
+            {isGroundedSam
+              ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
+              : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
           </p>
         </div>
       )}

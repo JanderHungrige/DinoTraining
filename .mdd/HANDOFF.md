@@ -10,26 +10,9 @@ do not read it for current state.
 
 ## Waiting on Jan
 
-**1. SAM 3 — access granted, token in, download started 2026-08-19.** This was the wave's
-only external dependency and it is now resolved. Meta approved the repo, the token is saved
-in `/Users/jwh/Code/DinoTraining/.env` (hint `••••orMX`), and all three gated models report
-`available`. The download was at 133 MB of ~3.2 GB when this was written.
-
-**So the next session's job is Phase 7b for doc 30** — see the runnable recipe below. That
-is the last open item in the wave.
-
-⚠️ **`available=True` only means a token exists.** It does not prove the token is scoped to
-`facebook/sam3`; only the download itself proves that. If the job failed after this was
-written, the message says which: *"has not been granted yet… granted by a person"* means the
-approval is not live, *"Accept the licence… check the token"* means the token is wrong or
-its fine-grained repo list is missing `facebook/sam3`.
-
-Check where it got to:
-
-```bash
-curl -s http://127.0.0.1:8756/api/v1/annotators/sam3        # ready=true when complete
-du -sh "$HOME/Library/Application Support/DinoTraining/models/sam3"
-```
+**1. SAM 3 is done.** Approved, downloaded (3.2 GB, safetensors only, zero pickles) and
+**Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
+Doc 30 is `complete`. There is nothing left waiting on you here.
 
 **2. Decide whether Wave 4 counts as complete.** I have deliberately *not* flipped it —
 see "The demo-state question" below. It is your call, and it is the only reason the wave
@@ -74,7 +57,7 @@ four commits is an ordinary fast-forwardable merge.
 | 6 | grounded-sam-annotator | 27 | ✅ verified end to end, real weights |
 | 7 | mask-review-ui | 28 | ✅ verified end to end, real weights |
 | 8 | generated-dataset-writer | 29 | ✅ verified end to end, real database |
-| 9 | sam3-annotator | 30 | ⚠️ **code + stubbed tests only** — awaiting your download |
+| 9 | sam3-annotator | 30 | ✅ verified end to end, real weights |
 
 ## The demo-state question — read before flipping the wave
 
@@ -249,43 +232,29 @@ bodies. It was stale by nine docs at the end of this wave. Current state: **30 d
 dependency edges, 47 shared source files, zero warnings** — no broken `depends_on`, no
 cycles, every doc has a `path`.
 
-## Phase 7b for doc 30 — the one job left
+## SAM 3 — what the real run showed
 
-Everything is written and stub-tested; what is missing is **one real run**. Doc 27 is why
-that matters: SAM 2 taught two lessons a stub cannot, and both were found by measuring the
-real model rather than reading its docs.
+Every risk the stub could not cover came back clean: mask shape (the singleton-axis squeeze
+was a harmless no-op), the device hop off MPS, positional score alignment, and
+`target_sizes` order on a non-square image. The API shape introspected from `transformers`
+5.15 was correct, so **no code changed**.
 
-**What to check, in order of how likely it is to be wrong:**
+| concept | score | mask area | true area |
+|---|---|---|---|
+| `a red circle` | **0.977** | 31,434 | 31,416 |
+| `a blue square` | **0.968** | 32,250 | 32,400 |
+| `a unicorn` | — | *nothing* | does not hallucinate |
 
-1. **Mask shape.** `_to_proposals` in `app/ml/annotators/sam3.py` squeezes a singleton
-   candidate axis if it sees one, because SAM 2 returns `(N, 1, H, W)`. If SAM 3 returns
-   `(N, H, W)` the squeeze is a no-op and all is well — but confirm which it is rather than
-   trusting the guard covers both.
-2. **Device.** Mask tensors must survive `_to_numpy` (`detach().cpu().numpy()`). This is
-   bug class #1 and it 500'd a whole Wave 3 feature. It runs on MPS here.
-3. **Score alignment.** `scores[index]` is paired positionally with `masks[index]`. If
-   post-processing ever reorders or filters one and not the other, every mask gets the
-   wrong confidence and looks entirely plausible.
-4. **`target_sizes` order.** Passed as `(height, width)`. Inverting it on a non-square image
-   produces masks that decode at the wrong size and fail the store's validation.
+SAM 3 scores higher than Grounded SAM on the same image (0.977 against 0.883) — the quality
+difference the licence buys.
 
-**Run both annotators over the same image** — Grounded SAM's numbers are already known-good,
-so any disagreement in shape, size or coordinate convention shows up immediately instead of
-being taken on trust. For each proposal assert `rle_decode(counts, size).shape ==
-(image.height, image.width)` and `sum(counts) == height * width`, then print concept, score,
-area and bbox and compare the two annotators side by side. A synthetic scene with two
-distinct coloured shapes works well; Grounded SAM returned 31,417 px for a circle whose true
-area is 31,416.
-
-**Then drive it through the UI**, because the API alone will not catch a payload the
-frontend cannot render: Dataset Generator -> mask mode -> the annotator picker should now
-show **two** entries (it hides itself when only one is ready) -> pick SAM 3 -> propose ->
-review -> save.
-
-**When it passes**, in doc 30: drop the `known_issues` entry, set `status: complete` and
-`phase: all`, and update the wave table row. If the shapes differ from what was assumed,
-that is a normal fix in `_to_proposals` — the contract and the tests around it hold either
-way.
+**One real finding, now the top item in doc 30's `known_issues`:** SAM 3 takes **one concept
+per call**. Given `"a red circle. a blue square."` it returns a single mask at score
+**0.372**, against 0.977 and 0.968 for the same phrases run separately. Grounded SAM handles
+the joined form natively because Grounding DINO reports which phrase matched each box. The
+concept field now shows a different placeholder and hint per annotator — but the prompt is
+**not** split automatically. Doing that, and calling SAM 3 once per phrase, would make the
+two annotators behave identically and is the obvious next improvement.
 
 ## Known issues — good first tasks
 
@@ -306,11 +275,11 @@ way.
 
 ## State of the machine
 
-- Installed: `dinov2-small`, `grounding-dino-tiny`, `sam2.1-hiera-small`, plus the three
-  default heads. **Grounded SAM is ready to run.**
-- Not installed: `dinov2-base/large`, `grounding-dino-base`, both DINOv3, **`sam3`**.
+- Installed: `dinov2-small`, `grounding-dino-tiny`, `sam2.1-hiera-small`, **`sam3`**, plus
+  the three default heads. **Both mask annotators are ready to run.**
+- Not installed: `dinov2-base/large`, `grounding-dino-base`, both DINOv3.
 - Database at **schema v5**. Two verification datasets present (see "Waiting on Jan").
-- **15 GB free, 97% used**, after clearing 920 MB of redundant pickles. The model cache
-  is 918 MB and now holds safetensors only. SAM 3 needs 3.2 GB of what remains.
+- **12 GB free, 98% used** — SAM 3's 3.2 GB landed after the 920 MB pickle clear-out. The
+  model cache is 4.1 GB, safetensors only.
 - Branches `feat/dinotraining-wave-2` and `feat/dinotraining-wave-3` are merged but still
   exist locally and on origin. Cleanup was offered in two sessions and not requested.

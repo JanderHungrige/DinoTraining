@@ -20,17 +20,18 @@ test_files:
   - backend/tests/test_download_patterns.py
   - backend/tests/test_registry.py
   - apps/frontend/src/components/GeneratorSetup.test.tsx
+  - apps/frontend/src/components/GeneratorSetup.annotator.test.tsx
 data_flow: reads-existing
 last_synced: 2026-08-19
-status: in_progress
-phase: integration-pending
+status: complete
+phase: all
 mdd_version: 11
 tags: [sam3, gated-models, concept-prompt, mask-annotator, licensing]
 path: Dataset Generator/Proposals
 integration_contracts: []
 satisfies_contracts: []
 known_issues:
-  - "NOT VERIFIED AGAINST REAL WEIGHTS. facebook/sam3 needs Meta's manual approval and is 3.2 GB, which is the user's download to make. The API shape is taken from the installed transformers 5.15 (Sam3Processor(images=, text=) and post_process_instance_segmentation returning scores/boxes/masks) and the pipeline is covered by stubbed tests. What a stub cannot prove is exactly what SAM 2 taught in doc 27: the true output shapes, and whether mask tensors arrive on the model's device. _to_numpy covers the second; the first needs one real run. Resume at Phase 7b when access is granted — no re-implementation should be needed."
+  - "SAM 3 takes ONE concept per call. A multi-phrase prompt like 'a red circle. a blue square.' is read as a single long concept: verified against real weights it returned one mask at score 0.372, against 0.977 and 0.968 when the same two phrases were run separately. Grounded SAM handles the joined form correctly because Grounding DINO reports which phrase matched each box. The generator's concept field now shows different placeholder and guidance per annotator, but the prompt is NOT split automatically — running one concept at a time is the user's job. Splitting a multi-phrase prompt and calling SAM 3 once per phrase would make the two annotators behave identically and is the obvious next improvement."
 security_read_sites: []
 ---
 
@@ -44,19 +45,27 @@ That is the whole difference from Grounded SAM, which composes two models to rea
 contract — and it is why both satisfy one interface rather than the caller knowing which it
 has.
 
-## Status: written, stubbed, not yet run
+## Verified against real weights — 2026-08-19
 
-This feature is deliberately marked `in_progress` / `integration-pending` rather than
-complete. Everything is implemented and covered by tests, and one thing is missing: a run
-against the real checkpoint.
+Meta granted access, the 3.2 GB download completed, and Phase 7b ran. **No code changed** —
+the API shape introspected from `transformers` 5.15 was correct, the singleton-axis squeeze
+was a harmless no-op, and `_to_numpy` carried the mask tensors off MPS without complaint.
 
-Doc 27 is why that distinction matters. SAM 2 taught two lessons a stub cannot teach —
-the exact batching shape, and that mask tensors come back on the model's device where
-`.numpy()` raises. Both were found by *measuring the real model before writing the code*.
-For SAM 3 that was not possible: the repo is gated behind manual approval. Claiming
-"complete" would be claiming a verification that has not happened.
+All four risks the stub could not cover came back clean: mask shape, device hop, positional
+score alignment, and `target_sizes` order on a non-square image (every proposal decoded at
+640x480 with run lengths summing exactly to the frame).
 
-**Resume at Phase 7b when access is granted.** No re-implementation is expected.
+Accuracy on a synthetic scene:
+
+| concept | score | mask area | true area | error |
+|---|---|---|---|---|
+| `a red circle` | **0.977** | 31,434 | π·100² = 31,416 | 0.06% |
+| `a blue square` | **0.968** | 32,250 | 180² = 32,400 | 0.5% |
+| `circle` | 0.974 | 31,539 | — | bare noun works |
+| `a unicorn` | — | *nothing* | — | does not hallucinate |
+
+SAM 3 scores noticeably higher than Grounded SAM on the same image (0.977 against 0.883),
+which is the quality difference the licence buys.
 
 ## What the API shape is based on
 
@@ -72,8 +81,8 @@ Sam3Processor.post_process_instance_segmentation(outputs, threshold, mask_thresh
          masks   (num_instances, height, width) binary
 ```
 
-The library's own docstring carries a worked example, which is what makes this stronger
-than a guess — but it is still not a run.
+The library's own docstring carries a worked example, which made this stronger than a
+guess — and the Phase 7b run above confirmed every part of it. No code changed as a result.
 
 ## Nothing here downloads anything
 
@@ -127,9 +136,11 @@ manual-approval notice already on the card from `23-mask-annotator-registry` and
 
 ## Differences from Grounded SAM worth knowing
 
-- **One concept per call.** Grounding DINO reports which phrase matched each box, so
-  Grounded SAM can store a per-mask concept from a prompt like `"a cat. a dog."`. SAM 3
-  takes one concept, so every mask in a call carries it.
+- **One concept per call, and it matters more than it sounds.** Grounding DINO reports
+  which phrase matched each box, so Grounded SAM handles `"a cat. a dog."` natively. Given
+  the same string SAM 3 reads it as one long concept: measured, **one mask at score 0.372**
+  against **0.977 and 0.968** for the phrases run separately. The generator's concept field
+  therefore shows a different placeholder and hint per annotator.
 - **Score is the model's own.** Grounded SAM multiplies the detector's concept match by
   SAM's mask IoU because it has two numbers; SAM 3 has one.
 - **No box conversion.** There is no detector stage, so the xywh↔xyxy round trip that
@@ -137,7 +148,8 @@ manual-approval notice already on the card from `23-mask-annotator-registry` and
 
 ## Known Issues
 
-See frontmatter: not verified against real weights.
+See frontmatter: SAM 3 takes one concept per call, and a multi-phrase prompt degrades badly.
+The UI now warns per annotator; splitting the prompt automatically is the next improvement.
 
 ## Bugs
 
