@@ -499,6 +499,13 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Shown while heads can be chosen but there is nothing yet to run them on. */
+.studio__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
 .studio__actions {
   display: flex;
   align-items: center;

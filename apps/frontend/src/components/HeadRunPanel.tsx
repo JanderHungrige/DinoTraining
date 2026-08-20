@@ -20,12 +20,26 @@ import type { HeadRunState } from '../hooks/useHeadRun';
 export interface HeadRunPanelProps {
   readonly state: HeadRunState;
   readonly onRun: () => void;
+  /** Makes the whole panel inert — nothing can be chosen or run. */
   readonly disabled?: boolean;
+  /**
+   * Blocks only the Run button, leaving the selection live.
+   *
+   * Separate from `disabled` because doc 34 renders this panel before an image exists:
+   * "there is nothing to run on" must not also mean "you may not choose". Folding the two
+   * together made the whole panel inert and quietly defeated moving it out of the guard.
+   */
+  readonly runDisabled?: boolean;
 }
 
 const ALL_TASKS = '' as const;
 
-export function HeadRunPanel({ state, onRun, disabled = false }: HeadRunPanelProps): JSX.Element {
+export function HeadRunPanel({
+  state,
+  onRun,
+  disabled = false,
+  runDisabled = false,
+}: HeadRunPanelProps): JSX.Element {
   const { heads, selected, running, loadingHeads, backboneId, taskFilter } = state;
 
   // Grouping is doc 12's `groupByTask`, not a second implementation: the tasks offered
@@ -113,7 +127,7 @@ export function HeadRunPanel({ state, onRun, disabled = false }: HeadRunPanelPro
           type="button"
           className="btn btn--primary"
           onClick={onRun}
-          disabled={disabled || running || selected.length === 0}
+          disabled={disabled || runDisabled || running || selected.length === 0}
         >
           {running
             ? 'Running…'
