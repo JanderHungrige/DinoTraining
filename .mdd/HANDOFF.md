@@ -4,7 +4,8 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-19, after Wave 4's nine features were built.
+**Last updated:** 2026-08-20, after doc 31 (external dataset import) unblocked Wave 4's
+expert-head demo-state.
 
 ---
 
@@ -14,13 +15,19 @@ do not read it for current state.
 **Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
 Doc 30 is `complete`. There is nothing left waiting on you here.
 
-**2. Decide whether Wave 4 counts as complete.** I have deliberately *not* flipped it —
-see "The demo-state question" below. It is your call, and it is the only reason the wave
-doc still says `status: planned`.
+**2. Decide whether Wave 4 counts as complete — the blocker is gone.** Both halves of the
+demo-state are now demonstrable. The expert-head half needed a trained detector, and there
+are three, trained on imported HuggingFace datasets (doc 31, branch
+`feat/external-dataset-import`, pushed). I still have *not* flipped the wave: it is your
+call and the wave doc still says `status: planned`.
 
-**3. One housekeeping item left.** Two datasets from my verification runs are in your real
-store: `Wave4 mask smoke` and `Generated bolts`. Delete them from the app when convenient —
-I left them because removing data from your store is your call.
+**3. Housekeeping — now six datasets and three heads.** Still in your real store from
+verification runs: `Wave4 mask smoke`, `Generated bolts`, and four thermal scratch datasets
+(`Thermal flywheel check`, two × `Thermal from expert head`, `Thermal, auto-proposed` — two
+of them empty). Also **three obsolete detection heads** trained before the NMS fix
+(map 0.263 / 0.207 / 0.425), superseded by the three after it (0.404 / 0.387 / 0.525).
+Deleting from your store is your call, so I left all of it. The three *imported* datasets
+(Thermal dogs and people, Blood cells, Chess pieces) are the deliverable — keep those.
 
 *(The ~920 MB of dead pickles was cleared on 2026-08-19. Each had a matching
 `model.safetensors` beside it; all three models were re-loaded afterwards and Grounded SAM
@@ -36,7 +43,7 @@ The model cache is now 918 MB and the volume is back to **15 GB free, 97% used**
 ```
 dev                       ba3c663   (features 1–5 of Wave 4 are already on it — see below)
 feat/dinotraining-wave-4  e6e1deb   4 commits ahead of dev
-871 backend tests · 279 frontend tests · ruff, mypy, tsc all clean
+922 backend tests · 287 frontend tests · ruff, mypy, tsc all clean
 ```
 
 ⚠️ **`dev` already contains Wave 4 features 1–5.** You merged the branch mid-wave on
@@ -71,10 +78,11 @@ The wave's demo-state has **two halves**, and they are in different states:
 **Grounded SAM**, which needs no gated model at all. Concept in, masks out, reviewed,
 saved, exported to COCO. Verified against real Grounding DINO + SAM 2.1 on MPS.
 
-**The expert-head half cannot be demonstrated on any machine today**, and not because of a
-defect. DINOv2 publishes linear heads for classification, segmentation and depth only —
-**there is no pretrained detection head to install**, and the initiative records that
-detection stays train-your-own. So the Dataset Generator correctly shows:
+**The expert-head half is now demonstrated too** (2026-08-20). DINOv2 still publishes no
+pretrained detection head — that part was never going to change — so the unblock was to
+*train* one. Doc 31 imports third-party COCO datasets, and three detectors were trained on
+frozen `dinov2-small` and driven through the Dataset Generator end to end. Before that
+work, the Dataset Generator correctly showed:
 
 > *No installed head can propose boxes. Classification, segmentation and depth heads run in
 > the Inference Viewer; only a detection head can be reviewed as boxes — train one in the
@@ -264,8 +272,16 @@ two annotators behave identically and is the obvious next improvement.
 - **Vitest reports 2 pre-existing unhandled errors** from Wave 3's `SideBySideViewer` —
   jsdom lacks Pointer Capture. Harmless but vitest warns they "might cause false positive
   tests". A two-line stub in the test setup fixes it.
-- **No pretrained detection head exists**, which is what blocks the expert-head demo-state.
-  Training one through Wave 2 is the unblock.
+- **No pretrained detection head exists** — no longer a blocker. Doc 31 imports a
+  third-party COCO dataset and Wave 2 trains a detector on it in under a minute on MPS.
+  Recipe: `POST /api/v1/datasets/import/coco` with `{name, directory, copy_images}`, then
+  `POST /api/v1/training/jobs` with `dense-detector` + `dinov2-small`.
+- **Training is not reproducible run to run.** `split_seed` fixes the split; nothing seeds
+  weight init or shuffling. Two runs of an identical config gave map 0.404 and 0.387 — fine
+  for a demo, wrong for comparing two configurations, which is what the Head Trainer invites.
+- **The generator's default score threshold (0.30) is tuned for Grounding DINO**, not for a
+  freshly trained head. The thermal detector proposes ~20 boxes over two people at 0.30; the
+  top two are right. A per-head default would make the first run read far better.
 - **Mask editing is deliberately absent** — review is verdict-only. A brush or polygon
   editor is a later wave and was not needed to close the flywheel.
 - **Dataset lineage** (parent link, generation timestamp) was considered in doc 29 and
@@ -278,7 +294,8 @@ two annotators behave identically and is the obvious next improvement.
 - Installed: `dinov2-small`, `grounding-dino-tiny`, `sam2.1-hiera-small`, **`sam3`**, plus
   the three default heads. **Both mask annotators are ready to run.**
 - Not installed: `dinov2-base/large`, `grounding-dino-base`, both DINOv3.
-- Database at **schema v5**. Two verification datasets present (see "Waiting on Jan").
+- Database at **schema v6** (`imported` provenance). Nine datasets present — three imported,
+  four scratch, two from Wave 4 (see "Waiting on Jan").
 - **12 GB free, 98% used** — SAM 3's 3.2 GB landed after the 920 MB pickle clear-out. The
   model cache is 4.1 GB, safetensors only.
 - Branches `feat/dinotraining-wave-2` and `feat/dinotraining-wave-3` are merged but still
