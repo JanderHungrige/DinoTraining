@@ -8,6 +8,11 @@ wave_status: in_progress
 depends_on: [41-rf-detr-detector, 11-training-job-runner, 12-head-instance-registry]
 relates: [42-foundation-boxes-everywhere, 43-detection-localisation, 31-external-dataset-import]
 source_files:
+  - apps/frontend/src/components/FinetunePanel.tsx
+  - apps/frontend/src/hooks/useFinetune.ts
+  - apps/frontend/src/api/foundation.ts
+  - apps/frontend/src/tabs/HeadTrainerTab.tsx
+  - apps/frontend/src/styles.css
   - backend/app/ml/foundation/finetune.py
   - backend/app/ml/foundation/finetune_runner.py
   - backend/app/ml/foundation/instances.py
@@ -23,6 +28,7 @@ routes:
 models: []
 test_files:
   - backend/tests/test_finetune.py
+  - apps/frontend/src/components/FinetunePanel.test.tsx
 data_flow: greenfield
 last_synced: 2026-08-20
 status: complete
@@ -35,7 +41,8 @@ satisfies_contracts: []
 security_read_sites:
   - backend/app/ml/foundation/instances.py (instance ids build filesystem paths)
 known_issues:
-  - "**No frontend.** The whole feature is API-only: there is no button to start a fine-tune, watch it, or name the result. A fine-tuned model *does* appear in every picker as soon as it exists, because doc 42 lists foundation models, so the loop is usable once a run has been started by other means."
+  - "The panel polls every 3s rather than streaming. The Head Trainer streams because its epochs land in seconds and a dropped update is visible; a fine-tune epoch takes tens of seconds. Fine, but it means a finished run can sit up to 3s before it says so."
+  - "Only *catalogue* detectors can be fine-tuned — an existing fine-tune is filtered out of \"Start from\". Re-tuning a fine-tune compounds its drift from the COCO weights it began at, and the user almost certainly means \"start over from the base\". If iterative refinement is ever wanted, this is the filter to revisit."
   - "**115 MB per fine-tune.** `save_pretrained` writes the whole model. Saving only the 6.9M trained parameters would be a quarter the size and would need a bespoke loader that reassembles them onto a base checkpoint; `from_pretrained` on a complete directory is the path transformers supports."
   - "Batch size 1 in practice — the loop feeds one image at a time. `FinetuneConfig.batch_size` exists and is ignored, which is worse than not existing; batching needs the processor's padding path and a collate function."
   - "No early stopping and no learning-rate schedule. The run does exactly `epochs` passes and keeps the best. Fine for six epochs on a few hundred images; wasteful for longer runs."
@@ -156,9 +163,32 @@ request for the base detector got the fine-tune — a result that reads as plaus
 than as a bug. `build_foundation` grew a `fresh` flag that neither reads nor writes the
 cache, and two tests pin it.
 
+## The panel
+
+Lives in the **Head Trainer**, because that is where training lives — but says plainly that
+it is a different kind of training. Three things it does deliberately:
+
+1. **It warns that this is minutes, not seconds.** The Head Trainer sits directly above it
+   and finishes in seconds; someone expecting the same and getting six minutes concludes it
+   has hung.
+2. **It shows the frozen/trainable split** the API returns — `23.3M frozen · 6.9M training` —
+   rather than repeating the claim in prose. A freeze that silently did nothing looks
+   exactly like a slow success, and this is the one place that can tell.
+3. **Stopping keeps the best model**, and the button says so. The runner saves on every
+   improvement, so "Stop, keep best" is a true description rather than a reassurance.
+
+The form locks while a run is going, so the config on screen cannot drift from the job it
+describes. When the run finishes the panel says where the result went, and that sentence is
+true without further work: doc 42 already taught all three tabs to offer foundation
+detectors.
+
+**Verified from the UI on 2026-08-20** — filled the form, pressed Fine-tune, watched it poll
+to `complete · epoch 2/2 · best map 0.797`, and then found *"Studio thermal detector —
+fine-tuned from rf-detr-nano · 2 classes"* in the Annotation Studio's detector list.
+
 ## Known Issues
 
-See frontmatter — in particular that there is no UI for this yet.
+See frontmatter.
 
 ## Bugs
 

@@ -152,3 +152,73 @@ export function foundationCanvasBoxes(
     ...(box.producer ? { producer: box.producer } : {}),
   }));
 }
+
+// --- fine-tuning (doc 44) ------------------------------------------------------------
+
+export interface FinetuneEpoch {
+  readonly epoch: number;
+  readonly train_loss: number;
+  readonly metrics: Record<string, number>;
+}
+
+export interface FinetuneJob {
+  readonly job_id: string;
+  readonly state: 'pending' | 'running' | 'complete' | 'failed' | 'cancelled';
+  readonly epoch: number;
+  readonly total_epochs: number;
+  readonly best_metric: number | null;
+  readonly class_names: readonly string[];
+  /** Proof the backbone was actually frozen — a silent no-op looks like a slow success. */
+  readonly frozen_parameters: number;
+  readonly trainable_parameters: number;
+  readonly message: string;
+  readonly instance_id: string | null;
+  readonly history: readonly FinetuneEpoch[];
+}
+
+function isFinetuneJob(value: unknown): value is FinetuneJob {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['job_id'] === 'string' &&
+    typeof value['state'] === 'string' &&
+    typeof value['total_epochs'] === 'number' &&
+    Array.isArray(value['history'])
+  );
+}
+
+export interface StartFinetuneOptions {
+  readonly foundationId: string;
+  readonly datasetIds: readonly string[];
+  readonly name: string;
+  readonly epochs: number;
+  readonly learningRate: number;
+}
+
+export function startFinetune(options: StartFinetuneOptions): Promise<FinetuneJob> {
+  return apiFetch('/foundation/finetune', isFinetuneJob, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      foundation_id: options.foundationId,
+      dataset_ids: options.datasetIds,
+      name: options.name,
+      epochs: options.epochs,
+      learning_rate: options.learningRate,
+    }),
+  });
+}
+
+export function readFinetune(jobId: string, signal?: AbortSignal): Promise<FinetuneJob> {
+  return apiFetch(
+    `/foundation/finetune/${encodeURIComponent(jobId)}`,
+    isFinetuneJob,
+    signal ? { signal } : undefined,
+  );
+}
+
+export function cancelFinetune(jobId: string): Promise<FinetuneJob> {
+  return apiFetch(`/foundation/finetune/${encodeURIComponent(jobId)}/cancel`, isFinetuneJob, {
+    method: 'POST',
+  });
+}
+

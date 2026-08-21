@@ -517,6 +517,49 @@ body {
   border-radius: 8px;
 }
 
+/* --- Fine-tuning a detector (doc 44) ---------------------------------------------- */
+.finetune {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 46rem;
+}
+
+.finetune__actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.finetune__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.finetune__stats {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* The frozen/trainable split, shown rather than asserted: a freeze that silently did
+   nothing looks exactly like a slow success. */
+.finetune__frozen {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.finetune__saved {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
 /* Guidance under a form field. Dim and small: it is help, not a warning. */
 .fieldhint {
   margin: -0.3rem 0 0;
