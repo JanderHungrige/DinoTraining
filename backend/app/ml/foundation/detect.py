@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import time
+from pathlib import Path
 
 import torch
 from PIL import Image
@@ -51,11 +52,22 @@ class RfDetrModel:
         """The *resolved* device. `Settings.device` defaults to "auto", which torch rejects."""
         return str(self._settings.resolved_device)
 
+    def _weights_dir(self) -> Path:
+        """A fine-tuned model carries its own directory; a catalogue entry resolves one.
+
+        `resolve_model_dir` is still the only way a *catalogue* path is built — doc 02's
+        rule — and a fine-tuned instance's directory came from the instance store, which
+        confines it the same way.
+        """
+        if self._spec.weights_dir is not None:
+            return self._spec.weights_dir
+        return resolve_model_dir(self._spec.model_id, self._settings)
+
     def _load(self) -> tuple[object, torch.nn.Module]:
         if self._processor is not None and self._model is not None:
             return self._processor, self._model
 
-        directory = resolve_model_dir(self._spec.model_id, self._settings)
+        directory = self._weights_dir()
         if not is_installed(directory):
             raise ModelNotInstalledError(self._spec.model_id)
 
@@ -70,8 +82,12 @@ class RfDetrModel:
         # Read the class names off the checkpoint rather than shipping a parallel list.
         # Wave 3 left the ImageNet classifier rendering "class 416" instead of a name
         # precisely because its names lived somewhere the loader did not look.
+        # A fine-tuned model's classes are the user's, recorded at save time; a catalogue
+        # model's are COCO's, recorded in its config.
+        if self._spec.class_names:
+            self._class_names = self._spec.class_names
         id2label = getattr(model.config, "id2label", None) or {}
-        if id2label:
+        if id2label and not self._class_names:
             self._class_names = tuple(
                 str(id2label.get(index, f"class {index}"))
                 for index in range(max(int(k) for k in id2label) + 1)
@@ -79,6 +95,42 @@ class RfDetrModel:
 
         self._processor, self._model = processor, model
         return processor, model
+
+    def retarget(self, num_classes: int, class_names: tuple[str, ...] = ()) -> None:
+        """Re-open the classifier for a different set of classes (doc 44).
+
+        Reloaded through `from_pretrained(..., ignore_mismatched_sizes=True)` rather than by
+        swapping the final layer by hand: that is the sanctioned path, it keeps every other
+        weight exactly as it was, and it fails loudly if the checkpoint and the requested
+        shape disagree in a way that is *not* just the class count.
+
+        The COCO head is discarded on purpose. Its 91 classes are not the user's, and
+        keeping them would mean a detector that answers `cake` on a chessboard even after
+        being shown what a chess piece is.
+        """
+        directory = self._weights_dir()
+        if not is_installed(directory):
+            raise ModelNotInstalledError(self._spec.model_id)
+
+        from transformers import AutoImageProcessor, AutoModelForObjectDetection
+
+        self._processor = AutoImageProcessor.from_pretrained(str(directory))  # type: ignore[no-untyped-call]
+        model = AutoModelForObjectDetection.from_pretrained(
+            str(directory), num_labels=num_classes, ignore_mismatched_sizes=True
+        )
+        self._model = model.to(self.device)
+        self._class_names = class_names or tuple(f"class {i}" for i in range(num_classes))
+
+    @property
+    def model(self) -> torch.nn.Module:
+        """The loaded module. Loads on first access, as `predict` does."""
+        _, model = self._load()
+        return model
+
+    @property
+    def processor(self) -> object:
+        processor, _ = self._load()
+        return processor
 
     @property
     def class_names(self) -> tuple[str, ...]:

@@ -16,6 +16,7 @@ worked around.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.ml.heads.registry import RenderHint
 
@@ -32,6 +33,12 @@ class FoundationSpec:
     description: str
     task: str
     render_hint: RenderHint
+    #: Where the weights live, when they are *not* a catalogue download — a fine-tuned
+    #: model saved under the instance store (doc 44). `None` means "resolve `model_id`
+    #: through the model cache", which is every built-in entry.
+    weights_dir: Path | None = None
+    #: Classes this model predicts, when they are the user's rather than COCO's.
+    class_names: tuple[str, ...] = ()
 
 
 _SPECS: tuple[FoundationSpec, ...] = (
