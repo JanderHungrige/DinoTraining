@@ -64,6 +64,7 @@ export const DETECTOR = {
   non_commercial: false,
   installed: true,
   approx_size_mb: 116,
+  takes_concept: false,
 };
 
 export const DEPTH = { ...DETECTOR, id: 'depth-anything-v2-small', title: 'Depth Anything V2', render_hint: 'depth-map', task: 'depth' };

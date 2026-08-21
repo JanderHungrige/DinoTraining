@@ -102,6 +102,7 @@ describe('proposing with a general detector (doc 42)', () => {
     non_commercial: false,
     installed: true,
     approx_size_mb: 116,
+    takes_concept: false,
   };
 
   it('offers it, and it leads the list', async () => {

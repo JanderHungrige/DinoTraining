@@ -33,6 +33,14 @@ class FoundationProposalRequest(BaseModel):
     image_path: str = Field(min_length=1)
     foundation_id: str = Field(min_length=1)
     score_threshold: float = Field(default=FOUNDATION_THRESHOLD, ge=0.0, le=1.0)
+    concept: str = Field(
+        default="",
+        max_length=500,
+        description=(
+            "Required by a concept segmenter, ignored by a detector. Grounded SAM's "
+            "box half is reviewable here; its masks belong in the Inference Viewer."
+        ),
+    )
 
 
 class FoundationProposalResponse(BaseModel):
@@ -70,7 +78,11 @@ async def propose_with_foundation(
     settings = get_settings()
     try:
         boxes = propose_foundation_boxes(
-            image, request.foundation_id, settings, request.score_threshold
+            image,
+            request.foundation_id,
+            settings,
+            request.score_threshold,
+            request.concept,
         )
     except FoundationCannotAnnotateError as exc:
         # A coherent request the app is in the wrong state for — a depth model cannot be

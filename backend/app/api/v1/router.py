@@ -14,6 +14,7 @@ from app.api.v1 import (
     backbones,
     datasets,
     foundation,
+    foundation_finetune,
     generate,
     generate_foundation,
     head_catalog,
@@ -38,6 +39,7 @@ api_router.include_router(heads.router, tags=["heads"])
 api_router.include_router(head_catalog.router, tags=["heads"])
 api_router.include_router(inference.router, tags=["inference"])
 api_router.include_router(foundation.router, tags=["foundation"])
+api_router.include_router(foundation_finetune.router, tags=["foundation"])
 api_router.include_router(training.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(settings.router, tags=["settings"])

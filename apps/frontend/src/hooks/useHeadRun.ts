@@ -36,6 +36,11 @@ export interface HeadRunState {
   readonly foundations: readonly FoundationInfo[];
   readonly selectedFoundations: readonly string[];
   readonly toggleFoundation: (foundationId: string) => void;
+  /** What a concept segmenter should look for (doc 45). One field for all of them:
+   *  two concept models selected at once with *different* concepts is a nicety this
+   *  surface does not need, and per-model state to express it. */
+  readonly concept: string;
+  readonly setConcept: (concept: string) => void;
   /** Fixed by the first selected head; null when nothing is selected. */
   readonly backboneId: string | null;
   /** Narrows the offered list. Same-task comparison is this filter, not a mode. */
@@ -63,6 +68,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
+  const [concept, setConcept] = useState('');
   const [result, setResult] = useState<ComposedResult | null>(null);
   /** Which image `result` describes. Null whenever there is no result. */
   const [resultPath, setResultPath] = useState<string | null>(null);
@@ -188,7 +194,10 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
             : Promise.resolve(null),
           Promise.all(
             selectedFoundations.map((foundationId) =>
-              runFoundation({ imagePath, foundationId }, controller.signal),
+              runFoundation(
+                { imagePath, foundationId, ...(concept ? { concept } : {}) },
+                controller.signal,
+              ),
             ),
           ),
         ]);
@@ -228,6 +237,8 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     heads,
     selected,
     foundations,
+    concept,
+    setConcept,
     selectedFoundations,
     toggleFoundation,
     backboneId,

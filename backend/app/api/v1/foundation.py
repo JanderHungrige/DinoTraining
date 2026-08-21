@@ -10,19 +10,25 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
+from PIL import Image
 from pydantic import BaseModel, Field
 
 from app.api.v1.inference import PredictionResponse, describe
 from app.core.paths import is_installed, resolve_model_dir
+from app.ml.annotators.registry import get_annotator
 from app.ml.errors import ModelNotInstalledError
-from app.ml.foundation.build import FoundationUnavailableError, build_foundation
+from app.ml.foundation.build import (
+    FoundationImplementation,
+    FoundationUnavailableError,
+    build_foundation,
+)
+from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
-from app.ml.foundation.finetune import FinetuneConfig
-from app.ml.foundation.finetune_runner import get_finetune_runner
 from app.ml.foundation.instances import FoundationInstance, FoundationInstanceStore
-from app.ml.foundation.registry import all_foundations, get_foundation
+from app.ml.foundation.registry import FoundationSpec, all_foundations, get_foundation
 from app.ml.images import ImageReadError, read_image
+from app.ml.inference.results import Prediction
 from app.ml.registry import get_model
 
 logger = logging.getLogger(__name__)
@@ -44,6 +50,9 @@ class FoundationInfo(BaseModel):
     non_commercial: bool
     installed: bool
     approx_size_mb: int
+    #: True when this model needs a text concept before it predicts anything (doc 45).
+    #: The picker shows a concept field for these and hides it for everything else.
+    takes_concept: bool = False
 
 
 class FoundationListResponse(BaseModel):
@@ -59,12 +68,39 @@ class FoundationRunRequest(BaseModel):
         le=1.0,
         description="Detection only; a depth model has nothing to threshold.",
     )
+    concept: str = Field(
+        default="",
+        max_length=500,
+        description=(
+            "What to segment, for a concept-prompted model. Ignored by the others — an "
+            "RF-DETR predicts its 91 COCO classes whatever you type at it."
+        ),
+    )
+
+
+def _run(
+    model: FoundationImplementation, image: Image.Image, request: FoundationRunRequest
+) -> Prediction:
+    """The one place that asks *what kind* of model this is.
+
+    Not an id→implementation map — `build_foundation` remains the only one of those — but a
+    capability check: a detector takes a score threshold, a concept segmenter takes a
+    concept as well, and a depth map has nothing to threshold. A uniform signature would
+    mean two of the three accepting an argument they ignore.
+    """
+    if isinstance(model, ConceptSegmenter):
+        return model.predict(image, request.concept, request.score_threshold)
+    if isinstance(model, RfDetrModel):
+        return model.predict(image, request.score_threshold)
+    return model.predict(image)
 
 
 def _describe(spec_id: str) -> FoundationInfo:
     spec = get_foundation(spec_id)
     if spec is None:  # pragma: no cover - callers iterate the registry
         raise FoundationUnavailableError(spec_id)
+    if spec.annotator_id is not None:
+        return _describe_pipeline(spec, spec.annotator_id)
     model = get_model(spec.model_id)
     if model is None:
         # A foundation spec naming a model the catalogue does not have is a packaging
@@ -81,116 +117,33 @@ def _describe(spec_id: str) -> FoundationInfo:
         non_commercial=model.non_commercial,
         installed=is_installed(resolve_model_dir(spec.model_id)),
         approx_size_mb=model.approx_size_mb,
+        takes_concept=spec.takes_concept,
     )
 
 
-class FinetuneRequest(BaseModel):
-    foundation_id: str = Field(min_length=1)
-    dataset_ids: list[str] = Field(min_length=1)
-    name: str = Field(min_length=1, max_length=200)
-    epochs: int = Field(default=10, ge=1, le=200)
-    learning_rate: float = Field(default=1e-4, gt=0, le=1.0)
-    val_fraction: float = Field(default=0.2, ge=0.0, lt=1.0)
-
-
-class FinetuneEpochInfo(BaseModel):
-    epoch: int
-    train_loss: float
-    metrics: dict[str, float]
-
-
-class FinetuneJobInfo(BaseModel):
-    job_id: str
-    state: str
-    epoch: int
-    total_epochs: int
-    best_metric: float | None
-    class_names: list[str]
-    #: Proof the backbone was actually frozen. A silent no-op here looks exactly like a
-    #: slow success, so the split is reported rather than only logged.
-    frozen_parameters: int
-    trainable_parameters: int
-    message: str
-    instance_id: str | None
-    history: list[FinetuneEpochInfo]
-
-
-def _describe_job(job: object) -> FinetuneJobInfo:
-    return FinetuneJobInfo(
-        job_id=job.job_id,  # type: ignore[attr-defined]
-        state=job.state,  # type: ignore[attr-defined]
-        epoch=job.epoch,  # type: ignore[attr-defined]
-        total_epochs=job.total_epochs,  # type: ignore[attr-defined]
-        best_metric=job.best_metric,  # type: ignore[attr-defined]
-        class_names=list(job.class_names),  # type: ignore[attr-defined]
-        frozen_parameters=job.frozen_parameters,  # type: ignore[attr-defined]
-        trainable_parameters=job.trainable_parameters,  # type: ignore[attr-defined]
-        message=job.message,  # type: ignore[attr-defined]
-        instance_id=job.instance_id,  # type: ignore[attr-defined]
-        history=[
-            FinetuneEpochInfo(epoch=e.epoch, train_loss=e.train_loss, metrics=e.metrics)
-            for e in job.history  # type: ignore[attr-defined]
-        ],
+def _describe_pipeline(spec: FoundationSpec, annotator_id: str) -> FoundationInfo:
+    """A concept segmenter chains several checkpoints, so `model_id` answers neither
+    "is it installed?" nor "what does it cost?" — **every** model in the chain must be
+    present, and the download is their sum. The strictest licence in the chain governs,
+    for the same reason a chain is only as permissive as its least permissive link."""
+    annotator = get_annotator(annotator_id)
+    if annotator is None:  # pragma: no cover - packaging error, not user input
+        raise RuntimeError(f"{spec.id} names unknown annotator {annotator_id}")
+    models = annotator.models
+    return FoundationInfo(
+        id=spec.id,
+        title=spec.title,
+        description=spec.description,
+        task=spec.task,
+        render_hint=spec.render_hint,
+        model_id=spec.model_id,
+        licence=annotator.licence,
+        non_commercial=any(model.non_commercial for model in models),
+        installed=all(is_installed(resolve_model_dir(m.id)) for m in models),
+        approx_size_mb=annotator.approx_size_mb,
+        takes_concept=True,
     )
 
-
-@router.post(
-    "/foundation/finetune",
-    response_model=FinetuneJobInfo,
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="Fine-tune a detector on your own datasets",
-)
-async def start_finetune(request: FinetuneRequest) -> FinetuneJobInfo:
-    """Freeze the DINOv2 backbone, train the projector and decoder.
-
-    Accepted rather than created: the run takes minutes, so the caller polls. Everything
-    that can be wrong about the *request* is rejected here; everything that can go wrong
-    during the run lands on the job.
-    """
-    try:
-        config = FinetuneConfig(
-            foundation_id=request.foundation_id,
-            dataset_ids=tuple(request.dataset_ids),
-            name=request.name,
-            epochs=request.epochs,
-            learning_rate=request.learning_rate,
-            val_fraction=request.val_fraction,
-        )
-    except ValueError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from None
-
-    if get_foundation(request.foundation_id) is None:
-        raise HTTPException(
-            status_code=404, detail=f"Unknown foundation model: {request.foundation_id}"
-        )
-
-    return _describe_job(get_finetune_runner().submit(config))
-
-
-@router.get(
-    "/foundation/finetune/{job_id}",
-    response_model=FinetuneJobInfo,
-    summary="Progress of one fine-tune",
-)
-async def read_finetune(job_id: str) -> FinetuneJobInfo:
-    job = get_finetune_runner().get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Unknown job: {job_id}")
-    return _describe_job(job)
-
-
-@router.post(
-    "/foundation/finetune/{job_id}/cancel",
-    response_model=FinetuneJobInfo,
-    summary="Stop a fine-tune, keeping its best epoch",
-)
-async def cancel_finetune(job_id: str) -> FinetuneJobInfo:
-    runner = get_finetune_runner()
-    job = runner.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=f"Unknown job: {job_id}")
-    runner.cancel(job_id)
-    return _describe_job(job)
 
 
 @router.get(
@@ -262,11 +215,7 @@ async def predict(request: FoundationRunRequest) -> PredictionResponse:
         # map — `build_foundation` remains the only one of those — but a capability check:
         # a detector takes a score threshold and a depth map has nothing to threshold, so
         # a uniform signature would mean one of them accepting an argument it ignores.
-        prediction = (
-            model.predict(image, request.score_threshold)
-            if isinstance(model, RfDetrModel)
-            else model.predict(image)
-        )
+        prediction = _run(model, image, request)
     except ModelNotInstalledError as exc:
         raise HTTPException(
             status_code=409,

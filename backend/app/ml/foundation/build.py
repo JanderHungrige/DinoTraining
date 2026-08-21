@@ -14,6 +14,7 @@ import logging
 
 from app.core.config import Settings
 from app.core.paths import PathConfinementError
+from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.depth import DepthAnythingModel
 from app.ml.foundation.detect import RfDetrModel
 from app.ml.foundation.registry import FoundationSpec, get_foundation
@@ -21,7 +22,7 @@ from app.ml.foundation.registry import FoundationSpec, get_foundation
 #: Every foundation implementation. A union rather than a Protocol: they share `predict`
 #: but not its signature — the detector takes a score threshold and the depth model has
 #: nothing to threshold — and a Protocol wide enough to cover both would describe neither.
-FoundationImplementation = DepthAnythingModel | RfDetrModel
+FoundationImplementation = ConceptSegmenter | DepthAnythingModel | RfDetrModel
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +96,10 @@ def _trained_spec(
 def _implementation(
     spec: FoundationSpec, settings: Settings | None
 ) -> FoundationImplementation:
+    # Checked before `task`, because a concept-prompted pipeline is not one checkpoint
+    # and its id would otherwise fall through to "no implementation".
+    if spec.annotator_id is not None:
+        return ConceptSegmenter(spec, settings)
     if spec.task == "depth":
         return DepthAnythingModel(spec, settings)
     if spec.task == "detection":

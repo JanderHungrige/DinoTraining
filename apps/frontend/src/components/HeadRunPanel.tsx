@@ -64,6 +64,11 @@ export function HeadRunPanel({
 
   // Counted together: a foundation model is as much "a thing you chose to run" as a head,
   // and a Run button that stays dead after ticking one would read as broken.
+  // Derived from what is *selected*, not what is listed, so the field appears with the
+  // checkbox and disappears with it rather than sitting there through a depth-only run.
+  const conceptNeeded = state.foundations.some(
+    (entry) => entry.takes_concept && state.selectedFoundations.includes(entry.id),
+  );
   const totalSelected = selected.length + state.selectedFoundations.length;
   const nothingSelected = totalSelected === 0;
   const runLabel = `Run ${totalSelected || ''} model${totalSelected === 1 ? '' : 's'}`;
@@ -147,6 +152,23 @@ export function HeadRunPanel({
               </span>
             </label>
           ))}
+
+          {conceptNeeded && (
+            <label className="runpanel__concept">
+              <span>What to find</span>
+              <input
+                type="text"
+                value={state.concept}
+                disabled={disabled}
+                placeholder="cat. dog. traffic light."
+                onChange={(event) => state.setConcept(event.target.value)}
+              />
+              <span className="runpanel__headmeta">
+                Concept models segment only what you name. Separate several with full
+                stops.
+              </span>
+            </label>
+          )}
         </fieldset>
       )}
 

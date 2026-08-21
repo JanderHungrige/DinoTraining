@@ -13,7 +13,7 @@
 
 import type { JSX } from 'react';
 
-import type { FoundationInfo } from '../api/foundation';
+import { proposesBoxes, type FoundationInfo } from '../api/foundation';
 
 export interface FoundationPickerProps {
   readonly foundations: readonly FoundationInfo[];
@@ -23,6 +23,10 @@ export interface FoundationPickerProps {
   readonly disabled?: boolean;
   readonly legend?: string;
   readonly groupName?: string;
+  /** Current concept, for a model that needs one. Omit both this and `onConceptChange`
+   *  on a surface that has its own prompt field — the Generator already does. */
+  readonly concept?: string;
+  readonly onConceptChange?: (concept: string) => void;
 }
 
 export function FoundationPicker({
@@ -33,11 +37,18 @@ export function FoundationPicker({
   disabled = false,
   legend = 'Detector',
   groupName = 'foundation-model',
+  concept,
+  onConceptChange,
 }: FoundationPickerProps): JSX.Element {
-  // `render_hint`, never `task` — the same authoritative field doc 20 dispatches on. A
-  // depth model is a foundation model too, and it cannot be reviewed as boxes.
-  const annotatable = foundations.filter((entry) => entry.render_hint === 'boxes');
+  // One shared rule, in `foundation.ts`, rather than `render_hint === 'boxes'` inline. A
+  // concept segmenter reports `masks` — that is what the *viewer* draws — but Grounding
+  // DINO found boxes on the way there, so this surface can review them. Depth cannot be.
+  const annotatable = foundations.filter(proposesBoxes);
   const installed = annotatable.filter((entry) => entry.installed);
+  const selected = installed.find((entry) => entry.id === selectedId);
+  // Only rendered when this surface offered to own the field. The Generator has its own
+  // prompt box, and two inputs for one string is how they drift apart.
+  const needsConcept = selected?.takes_concept === true && onConceptChange !== undefined;
 
   if (loading) return <p role="status">Loading detectors…</p>;
 
@@ -81,6 +92,23 @@ export function FoundationPicker({
           </span>
         </label>
       ))}
+
+      {needsConcept && (
+        <label className="headpick__concept">
+          <span>What to find</span>
+          <input
+            type="text"
+            value={concept ?? ''}
+            disabled={disabled}
+            placeholder="cat. dog. traffic light."
+            onChange={(event) => onConceptChange(event.target.value)}
+          />
+          <span className="headpick__meta">
+            {selected?.title} finds only what you name here. Separate several with
+            full stops.
+          </span>
+        </label>
+      )}
     </fieldset>
   );
 }

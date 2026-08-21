@@ -25,6 +25,7 @@ const BASE: FoundationInfo = {
   non_commercial: false,
   installed: true,
   approx_size_mb: 116,
+  takes_concept: false,
 };
 
 /** A model the user already fine-tuned: installed, but not a base to start from. */
@@ -34,6 +35,7 @@ const TUNED: FoundationInfo = {
   title: 'Thermal RF-DETR',
   description: 'fine-tuned from rf-detr-nano · 2 classes · map 0.800',
   approx_size_mb: 0,
+  takes_concept: false,
 };
 
 const DEPTH: FoundationInfo = {

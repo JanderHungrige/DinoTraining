@@ -39,6 +39,16 @@ class FoundationSpec:
     weights_dir: Path | None = None
     #: Classes this model predicts, when they are the user's rather than COCO's.
     class_names: tuple[str, ...] = ()
+    #: Set when this entry is a **concept-prompted** pipeline from `annotators/registry.py`
+    #: rather than a single checkpoint (doc 45). It takes a text concept, and its install
+    #: state and licence come from the several models the pipeline chains together, so
+    #: `model_id` alone cannot answer either question.
+    annotator_id: str | None = None
+
+    @property
+    def takes_concept(self) -> bool:
+        """True when this model needs a text prompt to predict anything at all."""
+        return self.annotator_id is not None
 
 
 _SPECS: tuple[FoundationSpec, ...] = (
@@ -66,6 +76,29 @@ _SPECS: tuple[FoundationSpec, ...] = (
         description="Largest RF-DETR offered here. Best accuracy, highest latency.",
         task="detection",
         render_hint="boxes",
+    ),
+    # --- concept-prompted segmentation (doc 45) -----------------------------------
+    # These were reachable only from the Dataset Generator, as `MaskAnnotator`s. They are
+    # foundation models by every definition this project uses — self-contained, needing no
+    # trained head — so they are listed as ones, and the Inference Viewer and the Annotation
+    # Studio get them without either learning a new concept.
+    FoundationSpec(
+        id="grounded-sam",
+        model_id="grounding-dino-tiny",
+        annotator_id="grounded-sam",
+        title="Grounded SAM (Grounding DINO + SAM 2.1)",
+        description="Segments whatever you name. Type a concept; no training.",
+        task="segmentation",
+        render_hint="masks",
+    ),
+    FoundationSpec(
+        id="sam3",
+        model_id="sam3",
+        annotator_id="sam3",
+        title="SAM 3",
+        description="Concept segmentation in one model. Gated; needs an access request.",
+        task="segmentation",
+        render_hint="masks",
     ),
     # --- monocular depth (doc 36) ------------------------------------------------
     FoundationSpec(

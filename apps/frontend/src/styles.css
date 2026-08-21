@@ -1731,3 +1731,31 @@ body {
   font-size: 0.85rem;
   line-height: 1.45;
 }
+
+/* --- Concept field (doc 45) ---
+   Grounded SAM finds only what it is told to find, so the field sits *inside* the model
+   list rather than beside it: it belongs to the model that needs it, and a user who
+   selects RF-DETR should never see it at all. Indented so it reads as a consequence of
+   the option above it. */
+
+.headpick__concept,
+.runpanel__concept {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  padding-left: 1.4rem;
+  font-size: 0.875rem;
+}
+
+.headpick__concept input[type='text'],
+.runpanel__concept input[type='text'] {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  /* Paired with `--bg`, never a hardcoded hex: the two flip together with the theme, and
+     a fallback colour on a themed background is how a 1.9:1 contrast bug ships. */
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}

@@ -46,6 +46,9 @@ export type ProposalSource =
       readonly kind: 'foundation';
       readonly foundationId: string;
       readonly scoreThreshold: number;
+      /** What to segment, for a concept-prompted model (doc 45). Empty for a detector,
+       *  which predicts its own classes whatever is typed at it. */
+      readonly concept?: string;
     };
 
 export interface SessionConfig {
@@ -153,6 +156,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
               imagePath: currentImage,
               foundationId: source.foundationId,
               scoreThreshold: source.scoreThreshold,
+              ...(source.concept ? { concept: source.concept } : {}),
             }).then((response) => ({
               boxes: foundationCanvasBoxes(response),
               width: response.width,

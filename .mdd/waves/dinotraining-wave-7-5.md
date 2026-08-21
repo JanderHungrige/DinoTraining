@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: 096e8840
+hash: f9f64ba0
 ---
 
 # Wave 7.5: General Object Detection
@@ -109,7 +109,9 @@ without detectron2 or a pickle.
 | 2 | 42 | foundation-boxes-everywhere | 41 |
 | 3 | 43 | multi-scale-detector | — |
 | 4 | 44 | finetune-rf-detr | 41 |
-| 5 | 45 | general-detection-head | 43 |
+| 5 | ~~45~~ | ~~general-detection-head~~ — **scrapped 2026-08-21** | — |
+| 6 | 45 | concept-segmentation-everywhere | 42 |
+| 7 | 46 | generator-folder-picker | 40 |
 
 - **rf-detr-detector** — RF-DETR as a catalogue entry and a `FoundationModel` (doc 36's
   contract), rendering through the existing `boxes` render hint.
@@ -122,20 +124,28 @@ without detectron2 or a pickle.
   as a named model with provenance. Not a `HeadInstance`: that type assumes
   `backbone_id` + head weights composed through `run_heads`' shared pass, and RF-DETR's
   decoder needs the projector's multi-scale features. It is a *trainable foundation model*.
-- **general-detection-head** — train `dense-detector` on COCO val2017 (5k images, ~780 MB,
-  natively in doc 31's importable format) so a general OD **head** exists.
-  **Expectations are set honestly in the doc: this will be modest** — 80 classes on 5k
-  images over a frozen backbone lands far below COCO state of the art. Its value is that it
-  exists, proves the training path on general data, and gives the tabs a default. Anyone
-  wanting a *good* general detector uses RF-DETR from feature 1.
+- ~~**general-detection-head**~~ — **scrapped by Jan on 2026-08-21.** The plan already
+  conceded the case (*"this will be modest… its value is that it exists"*), and feature 4
+  removed the last reason to want it: a fine-tuned RF-DETR reaches mAP 0.800 where the
+  trained head reaches 0.587. A deliberately mediocre second general detector is not worth
+  5,000 images of training. The slot went to feature 6.
+- **concept-segmentation-everywhere** — Grounded SAM and SAM 3 were `MaskAnnotator`s
+  reachable only from the Generator, but they are foundation models by doc 36's own
+  definition: self-contained, no backbone, no trained head. Registered as ones, they reach
+  the Inference Viewer (as masks) and the Annotation Studio (as boxes) — giving the Studio a
+  **text-prompted** box proposer, which is the one thing RF-DETR cannot be.
+- **generator-folder-picker** — the Dataset Generator had no native picker at all, beside two
+  tabs that did. Extracted rather than copied a third time, because "an image means its
+  folder" is a rule a fourth copy would get wrong.
 
-## Open questions
+## Open questions — answered
 
-- **Where a fine-tuned RF-DETR is listed.** Beside head instances is what the user asked
-  for, but it is not a head. Either the head list grows a notion of "trained thing that is
-  not a head", or foundation models get their own instance registry mirroring doc 12.
-- **Whether fine-tuning belongs in the Head Trainer tab** or somewhere else. It is minutes
-  rather than seconds, which the Trainer's live-metrics UX was not built around.
+- **Where a fine-tuned RF-DETR is listed.** Its own instance registry
+  (`FoundationInstanceStore`), mirroring doc 12, resolved by `build_foundation` like any
+  catalogue id — so all three tabs list it with no further work.
+- **Whether fine-tuning belongs in the Head Trainer tab.** Yes, but saying plainly that it
+  is a different kind of training: the panel warns it is minutes rather than seconds, and
+  polls rather than streaming.
 
 ## Explicitly not in scope
 

@@ -39,6 +39,7 @@ export const FOUNDATION = {
   non_commercial: false,
   installed: true,
   approx_size_mb: 95,
+  takes_concept: false,
 };
 
 export function prediction(id: string, name: string) {

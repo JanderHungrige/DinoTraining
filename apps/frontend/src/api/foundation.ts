@@ -22,6 +22,19 @@ export interface FoundationInfo {
   readonly non_commercial: boolean;
   readonly installed: boolean;
   readonly approx_size_mb: number;
+  /** True when the model needs a text concept before it predicts anything (doc 45).
+   *  Grounded SAM segments whatever you name; RF-DETR ignores whatever you type. */
+  readonly takes_concept: boolean;
+}
+
+/** Can this model's output be reviewed as boxes?
+ *
+ *  `render_hint` alone stopped answering this at doc 45. A concept segmenter reports
+ *  `masks` — that is what the viewer draws — but Grounding DINO found boxes on the way
+ *  there, so the Studio can review them. Depth still cannot be, and that is the whole
+ *  point of keeping the rule in one exported place rather than inline in two pickers. */
+export function proposesBoxes(entry: FoundationInfo): boolean {
+  return entry.render_hint === 'boxes' || entry.takes_concept;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,6 +71,8 @@ export async function listFoundations(signal?: AbortSignal): Promise<FoundationI
 export interface RunFoundationOptions {
   readonly imagePath: string;
   readonly foundationId: string;
+  /** Ignored by every model whose `takes_concept` is false. */
+  readonly concept?: string;
 }
 
 export function runFoundation(
@@ -70,6 +85,7 @@ export function runFoundation(
     body: JSON.stringify({
       image_path: options.imagePath,
       foundation_id: options.foundationId,
+      ...(options.concept ? { concept: options.concept } : {}),
     }),
     ...(signal ? { signal } : {}),
   });
@@ -114,6 +130,9 @@ export interface ProposeFoundationOptions {
   readonly imagePath: string;
   readonly foundationId: string;
   readonly scoreThreshold?: number;
+  /** Required by a concept segmenter; the backend refuses an empty one rather than
+   *  returning nothing, because nothing-found and nothing-asked look identical. */
+  readonly concept?: string;
 }
 
 export function proposeWithFoundation(
@@ -129,6 +148,7 @@ export function proposeWithFoundation(
       ...(options.scoreThreshold !== undefined
         ? { score_threshold: options.scoreThreshold }
         : {}),
+      ...(options.concept ? { concept: options.concept } : {}),
     }),
     ...(signal ? { signal } : {}),
   });
