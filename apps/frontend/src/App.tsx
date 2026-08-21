@@ -7,10 +7,13 @@ import { AnnotationStudioTab } from './tabs/AnnotationStudioTab';
 import { DatasetGeneratorTab } from './tabs/DatasetGeneratorTab';
 import { HeadTrainerTab } from './tabs/HeadTrainerTab';
 import { InferenceViewerTab } from './tabs/InferenceViewerTab';
+import { IntroTab } from './tabs/IntroTab';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 
-function renderTab(tab: TabId): JSX.Element {
+function renderTab(tab: TabId, onNavigate: (next: TabId) => void): JSX.Element {
   switch (tab) {
+    case 'intro':
+      return <IntroTab onNavigate={onNavigate} />;
     case 'studio':
       return <AnnotationStudioTab />;
     case 'trainer':
@@ -45,7 +48,7 @@ export function App(): JSX.Element {
         aria-labelledby={`tab-${activeTab}`}
         tabIndex={0}
       >
-        {renderTab(activeTab)}
+        {renderTab(activeTab, setActiveTab)}
       </main>
     </div>
   );

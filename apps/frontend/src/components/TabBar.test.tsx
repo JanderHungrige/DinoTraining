@@ -5,6 +5,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { TABS, type TabId } from '../tabs/tabs';
 import { TabBar } from './TabBar';
 
+/** Derived, never hardcoded: Wave 7 added a sixth tab at the front and two tests that
+ *  named 'studio' and 'admin' broke, though the wrapping behaviour was still correct.
+ *  They were asserting which tab is first rather than that wrapping works. */
+const FIRST_TAB = TABS[0]!;
+const LAST_TAB = TABS[TABS.length - 1]!;
+
 function renderTabBar(activeTab: TabId = 'studio') {
   const onTabChange = vi.fn<(tab: TabId) => void>();
   render(<TabBar activeTab={activeTab} onTabChange={onTabChange} />);
@@ -76,12 +82,12 @@ describe('TabBar', () => {
 
   it('wraps from the first tab to the last on ArrowLeft', async () => {
     const user = userEvent.setup();
-    const { onTabChange } = renderTabBar('studio');
+    const { onTabChange } = renderTabBar(FIRST_TAB.id);
 
-    screen.getByRole('tab', { name: 'Annotation Studio' }).focus();
+    screen.getByRole('tab', { name: FIRST_TAB.label }).focus();
     await user.keyboard('{ArrowLeft}');
 
-    expect(onTabChange).toHaveBeenCalledExactlyOnceWith('admin');
+    expect(onTabChange).toHaveBeenCalledExactlyOnceWith(LAST_TAB.id);
   });
 
   it('jumps to the first and last tab with Home and End', async () => {
@@ -90,10 +96,10 @@ describe('TabBar', () => {
 
     screen.getByRole('tab', { name: 'Inference Viewer' }).focus();
     await user.keyboard('{End}');
-    expect(onTabChange).toHaveBeenLastCalledWith('admin');
+    expect(onTabChange).toHaveBeenLastCalledWith(LAST_TAB.id);
 
     await user.keyboard('{Home}');
-    expect(onTabChange).toHaveBeenLastCalledWith('studio');
+    expect(onTabChange).toHaveBeenLastCalledWith(FIRST_TAB.id);
   });
 
   it('ignores unrelated keys', async () => {

@@ -501,9 +501,125 @@ body {
 
 /* A licence that forbids commercial use. Warning-coloured rather than neutral: it is a
    constraint on what the user can do with the result, not a neutral fact about the file. */
+/* Follows `.badge--gated`'s formula rather than inventing colours: a translucent wash of
+   a palette variable, with the same variable as the text. Both flip with the colour scheme,
+   so this cannot go dark-on-dark the way a hardcoded pair can. */
 .badge--noncommercial {
-  background: var(--warn-bg, #6b4b00);
-  color: var(--warn-fg, #ffd77a);
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+/* --- Intro tab (doc 38) ------------------------------------------------------------
+   Reading text, not a control surface: a measure cap so lines stay readable, and more
+   air between blocks than the dense panels elsewhere use. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 62ch;
+}
+
+.intro__lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.intro__heading {
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+}
+
+.intro__note {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.intro__stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.intro__stage {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+}
+
+.intro__stagehead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* `--bg` on `--accent`, not a hand-picked pair. The first version used a `--accent-dim`
+   that does not exist, so its fallback painted #15803d on #14532d — contrast 1.9, the digit
+   invisible. That is doc 05's Wave 1 bug exactly. Both variables here flip together with
+   the colour scheme, which is what makes the pairing safe rather than lucky. */
+.intro__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex: none;
+}
+
+.intro__stagetitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.intro__go {
+  margin-left: auto;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.intro__what,
+.intro__why {
+  margin: 0.45rem 0 0;
+  line-height: 1.6;
+}
+
+.intro__why {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.intro__concepts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intro__term {
+  font-weight: 600;
+}
+
+.intro__body {
+  margin: 0.3rem 0 0;
+  line-height: 1.65;
+}
+
+.intro__limits {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  line-height: 1.55;
 }
 
 /* Shown while heads can be chosen but there is nothing yet to run them on. */
@@ -1387,11 +1503,15 @@ body {
   font-size: 0.875rem;
 }
 
+/* `--warning` and `--warning-bg` were never defined, so these fallbacks always applied —
+   readable, but hardcoded dark and so unable to follow the light scheme. Same latent shape
+   as doc 05's Wave 1 contrast bug, caught while fixing a fresh instance of it in doc 38.
+   `--pending` is the palette's warning colour and flips with the scheme. */
 .tokenpanel__badge {
   padding: 0.05rem 0.4rem;
   border-radius: 999px;
-  background: var(--warning-bg, #4a3a1a);
-  color: var(--warning, #ffaa00);
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;

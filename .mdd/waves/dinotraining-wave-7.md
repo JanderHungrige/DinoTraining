@@ -3,11 +3,11 @@ id: dinotraining-wave-7
 title: "Wave 7: Onboarding & Input Polish"
 initiative: dinotraining
 initiative_version: 7
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-6
 demo_state: "Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window."
 created: 2026-08-19
-hash: d0e77abb
+hash: 1ba0edce
 ---
 
 # Wave 7: Onboarding & Input Polish
@@ -52,6 +52,47 @@ reaches people who have never seen it and cannot ask the person who built it.
   Must cover **which mode the user is in**, since by this wave a prompt is one of three
   possibilities (Grounding DINO text, a trained head with no prompt, a SAM 3 concept).
 - **drag-and-drop-input** — feeds doc 17's existing input contract rather than a second one.
+
+## Scoping settled 2026-08-20 (before execution)
+
+The wave doc said **"decide before building"** for the drag-and-drop question. All three
+open items were put to Jan and answered.
+
+### Drag-and-drop is Tauri-only; the browser keeps the picker
+
+Measured against the installed `@tauri-apps/api` 2.11.1: `getCurrentWebview()
+.onDragDropEvent()` yields `{type: 'drop', paths: string[]}` — **real filesystem paths**,
+which feed doc 17's existing contract with no conversion and no second contract. It also
+emits `enter`/`leave`, so the drop target can show honest hover state.
+
+The browser gives `File` objects with no path. Rather than add an upload endpoint — a
+second input contract, the one doc 17 deliberately avoided, plus a temp-file lifecycle to
+own — the drop zone is simply **not offered** where it cannot work. That is the pattern
+`hasNativeDialog` already sets: the browse buttons disappear, the path field never does.
+If browser input is ever wanted it belongs in Wave 9, where server-side files are already
+part of the deal.
+
+### The intro is a sixth tab, not an overlay
+
+Discoverable forever and never in the way. The wave doc's own objection to an overlay — seen
+once, then an obstacle — is the deciding argument, and a tab is also the cheapest thing to
+keep correct as Waves 8 and 9 change the app. No first-run banner: it would need persisted
+"have I seen this" state, which has no home here yet.
+
+### The intro explains, it does not execute
+
+"Try this on a sample image" was considered and declined. It needs a sample image in the
+installer, a guard for when no model is downloaded, and it goes stale every time a tab
+changes — which is precisely what Waves 8 and 9 will do. Prose that names the right tab
+stays correct for free.
+
+### Features, revised
+
+| # | Doc | Feature | Depends on |
+|---|---|---|---|
+| 1 | 38 | intro-tab | — |
+| 2 | 39 | prompt-guidance | — |
+| 3 | 40 | drag-and-drop-input | — |
 
 ## Open Research
 
