@@ -14,6 +14,7 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
+import { FieldHint } from './FieldHint';
 import {
   GeneratorDestination,
   destinationReady,
@@ -196,16 +197,17 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
               type="text"
               value={concept}
               placeholder={isGroundedSam ? 'a bolt. a nut.' : 'a bolt'}
+              aria-describedby="concept-hint"
               onChange={(event) => setConcept(event.target.value)}
             />
           </label>
-          {/* Outside the label on purpose: text inside a <label> joins the field's
-              accessible name, so this paragraph would be read out with every focus. */}
-          <p className="genpanel__hint">
+          {/* `FieldHint` renders outside the label, which is the rule this used to state
+              inline — see doc 39 for why it matters to a screen reader. */}
+          <FieldHint id="concept-hint">
             {isGroundedSam
               ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
               : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
-          </p>
+          </FieldHint>
         </div>
       )}
 

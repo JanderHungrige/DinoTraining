@@ -509,6 +509,15 @@ body {
   color: var(--danger);
 }
 
+/* Guidance under a form field. Dim and small: it is help, not a warning. */
+.fieldhint {
+  margin: -0.3rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 66ch;
+}
+
 /* --- Intro tab (doc 38) ------------------------------------------------------------
    Reading text, not a control surface: a measure cap so lines stay readable, and more
    air between blocks than the dense panels elsewhere use. */

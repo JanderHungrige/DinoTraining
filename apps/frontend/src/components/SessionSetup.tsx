@@ -21,6 +21,8 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { hasNativeDialog, pickFolder } from '../lib/dialog';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
+import { FieldHint } from './FieldHint';
+import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
 
 /** Matches the Dataset Generator's default, and the only backbone a head can be run on. */
 const BACKBONE_ID = 'dinov2-small';
@@ -193,6 +195,12 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       </fieldset>
 
       {mode === 'head' && (
+        <FieldHint id="studio-mode-hint">
+          {headModeHint(annotatable.find((head) => head.id === selectedHead)?.class_names ?? [])}
+        </FieldHint>
+      )}
+
+      {mode === 'head' && (
         <ExpertHeadPicker
           heads={heads}
           backboneId={BACKBONE_ID}
@@ -213,6 +221,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
               type="text"
               value={prompt}
               placeholder="a cat. a dog."
+              aria-describedby="prompt-hint"
               required
               onChange={(event) => setPrompt(event.target.value)}
             />
@@ -233,6 +242,8 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
           />
         </label>
       </div>
+
+      {mode === 'prompt' && <FieldHint id="prompt-hint">{GROUNDING_DINO_HINT}</FieldHint>}
 
       {error && (
         <p className="admin__error" role="alert">

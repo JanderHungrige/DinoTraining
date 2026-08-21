@@ -223,3 +223,37 @@ describe('the head selection is derived, not seeded', () => {
     expect(onStart.mock.calls[0]?.[0].source.instanceId).toBe('detector');
   });
 });
+
+describe('telling you which prompt you are looking at (doc 39)', () => {
+  it('explains Grounding DINO syntax in prompt mode', async () => {
+    await setup();
+    expect(screen.getByText(/a bolt\. a nut\. a washer\./)).toBeInTheDocument();
+  });
+
+  it('associates the hint with the field rather than burying it in the label', () => {
+    // Inside a <label> the paragraph would join the field's accessible name and be read
+    // out on every focus. `aria-describedby` is announced once, on demand.
+    render(<SessionSetup onStart={vi.fn()} />);
+    expect(screen.getByLabelText(/Prompt/)).toHaveAttribute('aria-describedby', 'prompt-hint');
+  });
+
+  it('replaces the syntax hint with the head explanation in head mode', async () => {
+    const { user } = await setup();
+
+    await user.click(screen.getByRole('radio', { name: /head you trained/ }));
+
+    expect(screen.queryByText(/a bolt\. a nut\. a washer\./)).not.toBeInTheDocument();
+    expect(await screen.findByText(/No prompt here/)).toBeInTheDocument();
+  });
+
+  it("names the selected head's own classes", async () => {
+    // The question a missing field raises is "so what will it look for?" — answering it
+    // is the difference between explaining an absence and just noting one.
+    const { user } = await setup([head({ class_names: ['dog', 'person'] })]);
+
+    await user.click(screen.getByRole('radio', { name: /head you trained/ }));
+
+    expect(await screen.findByText(/dog, person/)).toBeInTheDocument();
+  });
+});
+
