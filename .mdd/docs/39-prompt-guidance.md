@@ -4,7 +4,7 @@ title: Prompt Guidance — Which Prompt Is This, and How Do I Write It
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7
-wave_status: in_progress
+wave_status: complete
 depends_on: [06-annotation-workflow, 33-studio-head-annotator]
 relates: [04-grounding-dino-annotator, 26-generator-review-ui, 38-intro-tab]
 source_files:

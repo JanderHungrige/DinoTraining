@@ -4,7 +4,7 @@ title: Intro Tab — What This Is, For Someone Who Has Never Seen It
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7
-wave_status: in_progress
+wave_status: complete
 depends_on: [01-app-shell]
 relates: [39-prompt-guidance, 07-backbone-feature-extractor, 08-head-registry]
 source_files:

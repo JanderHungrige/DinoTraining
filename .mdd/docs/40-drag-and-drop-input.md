@@ -4,7 +4,7 @@ title: Drag-and-Drop Input — Desktop Only, Because Only There Is There a Path
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7
-wave_status: in_progress
+wave_status: complete
 depends_on: [17-image-input-source, 06-annotation-workflow]
 relates: [26-generator-review-ui, 19-side-by-side-viewer, 39-prompt-guidance]
 source_files:

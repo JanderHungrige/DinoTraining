@@ -3,11 +3,11 @@ id: dinotraining-wave-7
 title: "Wave 7: Onboarding & Input Polish"
 initiative: dinotraining
 initiative_version: 7
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-6
 demo_state: "Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window."
 created: 2026-08-19
-hash: 1ba0edce
+hash: 679f53a8
 ---
 
 # Wave 7: Onboarding & Input Polish
@@ -52,6 +52,26 @@ reaches people who have never seen it and cannot ask the person who built it.
   Must cover **which mode the user is in**, since by this wave a prompt is one of three
   possibilities (Grounding DINO text, a trained head with no prompt, a SAM 3 concept).
 - **drag-and-drop-input** — feeds doc 17's existing input contract rather than a second one.
+
+## Demonstrated — marked complete 2026-08-20, with one gap named
+
+**Intro tab** (doc 38): "Start here" leads the tab bar, five stages with working "Open …"
+buttons, checked in **both colour schemes**. Found and fixed a real contrast bug of doc 05's
+exact shape — a step number painted `#15803d` on `#14532d`, **contrast 1.9**, because the
+style used a `--accent-dim` variable that does not exist and fell back to a hardcoded pair.
+Now `4.68` light / `10.39` dark. The same check turned up two more instances of invented
+variables, both fixed.
+
+**Prompt guidance** (doc 39): prompt mode shows Grounding DINO's syntax with
+`aria-describedby`; head mode drops the field and the syntax hint together and names the
+head's own classes — verified against the chess head, which correctly rendered
+*"bishop, black-bishop, black-king, black-knight and 9 more"*.
+
+**Drag-and-drop** (doc 40): ⚠️ **the desktop drop is not exercised.** The browser branch was
+verified — no affordance offered, nothing else affected — and the types check against the
+real `DragDropEvent`, with thirteen cases pinning `folderOf`. But performing an actual drag
+onto the Tauri window needs a human, and nothing available in this session can do or observe
+it. **This is the one thing in Wave 7 that wants a manual look.**
 
 ## Scoping settled 2026-08-20 (before execution)
 
