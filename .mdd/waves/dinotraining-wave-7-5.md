@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: f3c0e342
+hash: 2eecd707
 ---
 
 # Wave 7.5: General Object Detection
@@ -114,6 +114,7 @@ without detectron2 or a pickle.
 | 7 | 46 | generator-folder-picker | 40 |
 | 8 | 47 | box-review-list | 42 |
 | 9 | 48 | dataset-format-guide | 31 |
+| 10 | 49 | osdar23-rail | 31, 43, 44 |
 
 - **rf-detr-detector** — RF-DETR as a catalogue entry and a `FoundationModel` (doc 36's
   contract), rendering through the existing `boxes` render hint.
@@ -139,6 +140,10 @@ without detectron2 or a pickle.
 - **generator-folder-picker** — the Dataset Generator had no native picker at all, beside two
   tabs that did. Extracted rather than copied a third time, because "an image means its
   folder" is a rule a fourth copy would get wrong.
+- **osdar23-rail** — a real rail dataset (ASAM OpenLABEL, 9.84 GB per subsequence) imported
+  and trained on. Needed two new capabilities: an OpenLABEL reader, and **tiling**, without
+  which the 10.7 px objects arrive at the model as 1.9 px and nothing can be learned.
+  Also the wave's most useful negative result: a random split leaks badly on video.
 - **dataset-format-guide** — an info button in the Head Trainer explaining exactly what a
   dataset must look like to import, so the user can download one from anywhere and save it
   correctly. The claims are pinned by *backend* tests, because nothing in the frontend can
