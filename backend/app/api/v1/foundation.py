@@ -15,13 +15,14 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from app.api.v1.inference import PredictionResponse, describe
-from app.core.paths import is_installed, resolve_model_dir
+from app.core.paths import PathConfinementError, is_installed, resolve_model_dir
 from app.ml.annotators.registry import get_annotator
 from app.ml.errors import ModelNotInstalledError
 from app.ml.foundation.build import (
     FoundationImplementation,
     FoundationUnavailableError,
     build_foundation,
+    forget_foundation,
 )
 from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
@@ -144,6 +145,31 @@ def _describe_pipeline(spec: FoundationSpec, annotator_id: str) -> FoundationInf
         takes_concept=True,
     )
 
+
+
+@router.delete(
+    "/foundation/instances/{instance_id}",
+    summary="Delete a fine-tuned model",
+)
+async def delete_instance(instance_id: str) -> dict[str, bool | str]:
+    """Remove one fine-tuned model and its weights (doc 51).
+
+    Only an instance, never a catalogue entry: those are downloads managed in Admin /
+    Models, and deleting `rf-detr-nano` here would silently disagree with what that tab
+    says is installed. An unknown id is a 404 rather than a silent success, because "it
+    was already gone" and "you deleted the wrong thing" must not look the same.
+
+    The cached implementation is dropped too. Without that, a model whose weights have just
+    been deleted keeps answering from memory until the process restarts.
+    """
+    try:
+        removed = FoundationInstanceStore().delete(instance_id)
+    except PathConfinementError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"No fine-tuned model {instance_id}")
+    forget_foundation(instance_id)
+    return {"deleted": True, "instance_id": instance_id}
 
 
 @router.get(

@@ -2016,3 +2016,235 @@ body {
   /* Scrolls inside itself; the page must never scroll sideways because of a code block. */
   overflow-x: auto;
 }
+
+/* --- Library (doc 51) ---
+   A list to skim, not a table to read: three columns of fixed meaning, and the delete
+   control last because it is the rarest thing here and the most expensive to hit. */
+
+.library {
+  display: grid;
+  gap: 1rem;
+  max-width: 72rem;
+}
+
+.library__title {
+  margin: 0;
+}
+
+.library__lead {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+.library__section {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.library__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.library__count {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.library__empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.library__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library__row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 5px;
+  background: var(--bg);
+}
+
+/* One column on narrow windows: four columns at 400px reads as a broken table. */
+@media (max-width: 48rem) {
+  .library__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
+}
+
+.library__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.library__detail,
+.library__meta {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.library__confirm {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+/* --- Image source (doc 50) --- */
+
+.srcfield {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.srcfield__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.875rem;
+}
+
+.srcfield__legend {
+  padding: 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.srcfield__hint {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* --- Prescan (doc 53) ---
+   Collapsed by default: it answers a question most sessions never ask, and an always-open
+   panel of controls above the image is a tax on the common case. */
+
+.prescan {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.prescan--open {
+  justify-items: stretch;
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.prescan__lead {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.prescan__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.prescan__field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 16rem;
+  font-size: 0.85rem;
+}
+
+.prescan__field input[type='text'] {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.prescan__hint {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.prescan__value {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.prescan__progress,
+.prescan__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.prescan__progress progress {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.prescan__result {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.prescan__result p {
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.prescan__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}

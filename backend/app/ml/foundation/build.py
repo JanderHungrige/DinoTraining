@@ -65,6 +65,16 @@ def build_foundation(
     return model
 
 
+def forget_foundation(foundation_id: str) -> bool:
+    """Drop one cached implementation. Returns whether anything was cached.
+
+    Deleting a fine-tuned model's weights does not unload it: `build_foundation` keeps
+    implementations for the life of the process, so without this the model keeps answering
+    from memory after its files are gone — with results that look entirely normal.
+    """
+    return _CACHE.pop(foundation_id, None) is not None
+
+
 def _trained_spec(
     foundation_id: str, settings: Settings | None
 ) -> FoundationSpec | None:
@@ -114,6 +124,7 @@ def reset_cache() -> None:
 
 __all__ = [
     "FoundationImplementation",
+    "forget_foundation",
     "FoundationUnavailableError",
     "build_foundation",
     "reset_cache",

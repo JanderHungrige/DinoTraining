@@ -242,3 +242,19 @@ export function cancelFinetune(jobId: string): Promise<FinetuneJob> {
   });
 }
 
+
+
+/** Delete a fine-tuned model (doc 51).
+ *
+ *  Only an instance, never a catalogue entry — those are downloads managed in Admin /
+ *  Models, and the backend answers 404 for one rather than pretending to remove it. */
+export async function deleteFoundationInstance(
+  instanceId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await apiFetch(
+    `/foundation/instances/${encodeURIComponent(instanceId)}`,
+    (value): value is unknown => value !== undefined,
+    { method: 'DELETE', ...(signal ? { signal } : {}) },
+  );
+}
