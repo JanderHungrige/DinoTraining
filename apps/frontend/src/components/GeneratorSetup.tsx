@@ -15,6 +15,10 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
+import { FoundationPicker } from './FoundationPicker';
+import { GeneratorModePicker, type GeneratorMode } from './GeneratorModePicker';
+import { MaskSourceFields } from './MaskSourceFields';
+import { listFoundations, type FoundationInfo } from '../api/foundation';
 import { folderOf } from '../lib/dragDrop';
 import { useFileDrop } from '../hooks/useFileDrop';
 import {
@@ -31,11 +35,16 @@ export interface GeneratorSetupProps {
 
 const DEFAULT_THRESHOLD = 0.3;
 
-type Mode = 'expert' | 'masks';
-
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
-  const [mode, setMode] = useState<Mode>('expert');
+  // The default is unchanged. A general detector leads the *list*, which is where
+  // discoverability lives, but selecting it by default would drop someone who has trained
+  // heads and no detector installed onto an empty state telling them to visit Admin.
+  // Deriving the default from what is installed would mean seeding state from an async
+  // fetch, which is this project's most-repeated bug. See doc 42's known issues.
+  const [mode, setMode] = useState<GeneratorMode>('expert');
+  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
+  const [detectorOverride, setDetectorOverride] = useState('');
   const [concept, setConcept] = useState('');
   const drop = useFileDrop((paths) => {
     const first = paths[0];
@@ -73,6 +82,17 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   useEffect(() => {
     const controller = new AbortController();
+    // Non-fatal: the other two modes still work if the catalogue is unhappy.
+    listFoundations(controller.signal)
+      .then((found) => {
+        if (!controller.signal.aborted) setFoundations(found);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
     listHeadInstances({}, controller.signal)
       .then((found) => {
         if (!controller.signal.aborted) setHeads(found);
@@ -85,6 +105,14 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       });
     return () => controller.abort();
   }, []);
+
+  // Derived, never seeded from an async fetch — the rule this project keeps relearning.
+  // `render_hint`, not `task`: a depth model is a foundation model too and cannot be
+  // reviewed as boxes.
+  const usableDetectors = foundations.filter(
+    (entry) => entry.render_hint === 'boxes' && entry.installed,
+  );
+  const selectedDetector = detectorOverride || usableDetectors[0]?.id || '';
 
   // Only annotators whose models are actually downloaded. SAM 3 is 3.2 GB behind a
   // manual approval, so it appears here the moment it is installed and not before —
@@ -105,9 +133,11 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const ready =
     destinationReady(datasetId, newName) &&
     folder.trim().length > 0 &&
-    (mode === 'expert'
-      ? backboneId !== '' && instanceId !== ''
-      : concept.trim().length > 0);
+    (mode === 'foundation'
+      ? selectedDetector !== ''
+      : mode === 'expert'
+        ? backboneId !== '' && instanceId !== ''
+        : concept.trim().length > 0);
 
   return (
     <form
@@ -119,7 +149,15 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         void resolveDataset(datasetId, newName)
           .then((resolvedId) =>
             onStart(
-              mode === 'expert'
+              mode === 'foundation'
+                ? {
+                    kind: 'foundation' as const,
+                    datasetId: resolvedId,
+                    folder: folder.trim(),
+                    foundationId: selectedDetector,
+                    scoreThreshold: threshold,
+                  }
+                : mode === 'expert'
                 ? {
                     kind: 'expert' as const,
                     datasetId: resolvedId,
@@ -148,27 +186,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         onNameChange={setNewName}
       />
 
-      <fieldset className="genpanel__modes">
-        <legend>What proposes the annotations</legend>
-        <label className="genpanel__mode">
-          <input
-            type="radio"
-            name="generator-mode"
-            checked={mode === 'expert'}
-            onChange={() => setMode('expert')}
-          />
-          <span>A head you trained — proposes boxes</span>
-        </label>
-        <label className="genpanel__mode">
-          <input
-            type="radio"
-            name="generator-mode"
-            checked={mode === 'masks'}
-            onChange={() => setMode('masks')}
-          />
-          <span>Grounded SAM — type a concept, get masks</span>
-        </label>
-      </fieldset>
+      <GeneratorModePicker mode={mode} onChange={setMode} />
 
       <label className="genpanel__field">
         <span>{drop.dropping ? 'Drop to use that folder' : 'Image folder'}</span>
@@ -186,64 +204,46 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         </FieldHint>
       )}
 
-      {mode === 'masks' && (
-        <div className="genpanel__group">
-          {readyAnnotators.length > 1 && (
-            <label className="genpanel__field">
-              <span>Annotator</span>
-              <select
-                value={annotatorId}
-                onChange={(event) => setAnnotatorOverride(event.target.value)}
-              >
-                {readyAnnotators.map((annotator) => (
-                  <option key={annotator.id} value={annotator.id}>
-                    {annotator.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <label className="genpanel__field">
-            <span>Concept</span>
-            <input
-              type="text"
-              value={concept}
-              placeholder={isGroundedSam ? 'a bolt. a nut.' : 'a bolt'}
-              aria-describedby="concept-hint"
-              onChange={(event) => setConcept(event.target.value)}
-            />
-          </label>
-          {/* `FieldHint` renders outside the label, which is the rule this used to state
-              inline — see doc 39 for why it matters to a screen reader. */}
-          <FieldHint id="concept-hint">
-            {isGroundedSam
-              ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
-              : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
-          </FieldHint>
-        </div>
-      )}
+      <MaskSourceFields
+        mode={mode}
+        annotators={readyAnnotators}
+        annotatorId={annotatorId}
+        onAnnotatorChange={setAnnotatorOverride}
+        concept={concept}
+        onConceptChange={setConcept}
+        isGroundedSam={isGroundedSam}
+      />
 
       {mode === 'expert' && (
-      <label className="genpanel__field">
-        <span>Backbone</span>
-        <select
-          value={backboneId}
-          disabled={loadingBackbones || installed.length === 0}
-          onChange={(event) => {
-            setBackboneOverride(event.target.value);
-            // The head list is filtered by backbone, so a stale override would keep a
-            // head selected that the new backbone cannot run.
-            setHeadOverride('');
-          }}
-        >
-          {installed.map((backbone) => (
-            <option key={backbone.id} value={backbone.id}>
-              {backbone.id}
-            </option>
-          ))}
-        </select>
-      </label>
+        <label className="genpanel__field">
+          <span>Backbone</span>
+          <select
+            value={backboneId}
+            disabled={loadingBackbones || installed.length === 0}
+            onChange={(event) => {
+              setBackboneOverride(event.target.value);
+              // The head list is filtered by backbone, so a stale override would keep a
+              // head selected that the new backbone cannot run.
+              setHeadOverride('');
+            }}
+          >
+            {installed.map((backbone) => (
+              <option key={backbone.id} value={backbone.id}>
+                {backbone.id}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
+      {mode === 'foundation' && (
+        <FoundationPicker
+          foundations={foundations}
+          selectedId={selectedDetector}
+          onSelect={setDetectorOverride}
+          legend="Detector"
+          groupName="generator-detector"
+        />
       )}
 
       {mode === 'expert' && (

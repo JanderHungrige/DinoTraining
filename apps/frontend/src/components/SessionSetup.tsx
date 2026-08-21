@@ -17,6 +17,7 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { DEFAULT_BOX_THRESHOLD, DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
+import { listFoundations, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { hasNativeDialog, pickFolder } from '../lib/dialog';
@@ -24,6 +25,8 @@ import { folderOf } from '../lib/dragDrop';
 import { useFileDrop } from '../hooks/useFileDrop';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
+import { FoundationPicker } from './FoundationPicker';
+import { ProposalModePicker, type ProposalMode } from './ProposalModePicker';
 import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
 
 /** Matches the Dataset Generator's default, and the only backbone a head can be run on. */
@@ -42,7 +45,9 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     const first = paths[0];
     if (first) setFolder(folderOf(first));
   });
-  const [mode, setMode] = useState<'prompt' | 'head'>('prompt');
+  const [mode, setMode] = useState<ProposalMode>('prompt');
+  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
+  const [foundationOverride, setFoundationOverride] = useState('');
   const [prompt, setPrompt] = useState('');
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [loadingHeads, setLoadingHeads] = useState(true);
@@ -66,6 +71,10 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       .then(setHeads)
       .catch(() => setHeads([]))
       .finally(() => setLoadingHeads(false));
+    // Non-fatal: the other two modes still work if the catalogue is unhappy.
+    void listFoundations()
+      .then(setFoundations)
+      .catch(() => setFoundations([]));
   }, []);
 
   // Derived, never seeded into state — the fetch resolves after the first render.
@@ -73,6 +82,11 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     (head) => head.render_hint === 'boxes' && head.backbone_id === BACKBONE_ID,
   );
   const selectedHead = headOverride || annotatable[0]?.id || '';
+  // Derived, never seeded — the same rule, for the same reason.
+  const usableDetectors = foundations.filter(
+    (entry) => entry.render_hint === 'boxes' && entry.installed,
+  );
+  const selectedDetector = foundationOverride || usableDetectors[0]?.id || '';
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
@@ -80,6 +94,11 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
     if (mode === 'head' && !selectedHead) {
       setError('No head can propose boxes yet — train a detection head first.');
+      return;
+    }
+
+    if (mode === 'foundation' && !selectedDetector) {
+      setError('No general detector is installed — get one in Admin / Models.');
       return;
     }
 
@@ -104,7 +123,13 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       folder: folder.trim(),
       datasetId: targetId,
       source:
-        mode === 'head'
+        mode === 'foundation'
+          ? {
+              kind: 'foundation',
+              foundationId: selectedDetector,
+              scoreThreshold: boxThreshold,
+            }
+          : mode === 'head'
           ? {
               kind: 'head',
               backboneId: BACKBONE_ID,
@@ -183,34 +208,22 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         )}
       </div>
 
-      <fieldset className="setup__modes">
-        <legend>What proposes the boxes</legend>
-        <label>
-          <input
-            type="radio"
-            name="studio-mode"
-            value="prompt"
-            checked={mode === 'prompt'}
-            onChange={() => setMode('prompt')}
-          />
-          <span>Grounding DINO — describe what you are looking for</span>
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="studio-mode"
-            value="head"
-            checked={mode === 'head'}
-            onChange={() => setMode('head')}
-          />
-          <span>A head you trained — proposes boxes for its own classes</span>
-        </label>
-      </fieldset>
+      <ProposalModePicker mode={mode} onChange={setMode} />
 
       {mode === 'head' && (
         <FieldHint id="studio-mode-hint">
           {headModeHint(annotatable.find((head) => head.id === selectedHead)?.class_names ?? [])}
         </FieldHint>
+      )}
+
+      {mode === 'foundation' && (
+        <FoundationPicker
+          foundations={foundations}
+          selectedId={selectedDetector}
+          onSelect={setFoundationOverride}
+          legend="Detector"
+          groupName="studio-detector"
+        />
       )}
 
       {mode === 'head' && (
@@ -242,7 +255,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         )}
 
         <label className="setup__field" htmlFor="boxthreshold">
-          {mode === 'head' ? 'Score threshold' : 'Box threshold'}{' '}
+          {mode === 'prompt' ? 'Box threshold' : 'Score threshold'}{' '}
           <span className="setup__value">{boxThreshold.toFixed(2)}</span>
           <input
             id="boxthreshold"

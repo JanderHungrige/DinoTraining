@@ -22,6 +22,10 @@ import {
   toReviewMasks,
   type MaskProposalResponse,
 } from '../api/generate';
+import {
+  foundationCanvasBoxes,
+  proposeWithFoundation,
+} from '../api/foundation';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 export interface ExpertConfig {
@@ -42,7 +46,16 @@ export interface MaskConfig {
   readonly scoreThreshold: number;
 }
 
-export type GeneratorConfig = ExpertConfig | MaskConfig;
+export interface FoundationConfig {
+  readonly kind: 'foundation';
+  readonly datasetId: string;
+  readonly folder: string;
+  /** Catalogue id of an installed detector. No backbone: it brings its own. */
+  readonly foundationId: string;
+  readonly scoreThreshold: number;
+}
+
+export type GeneratorConfig = ExpertConfig | MaskConfig | FoundationConfig;
 
 export interface GeneratorSession {
   readonly images: readonly string[];
@@ -149,7 +162,20 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setProposing(true);
     setError(null);
     try {
-      if (config.kind === 'expert') {
+      if (config.kind === 'foundation') {
+        const response = await proposeWithFoundation({
+          imagePath: currentImage,
+          foundationId: config.foundationId,
+          scoreThreshold: config.scoreThreshold,
+        });
+        if (ticket !== requestId.current) return;
+
+        setBoxes(foundationCanvasBoxes(response));
+        setImageSize({ width: response.width, height: response.height });
+        setProducerName(response.model_name);
+        setProducerDetail(response.model_summary);
+        setDirty(response.boxes.length > 0);
+      } else if (config.kind === 'expert') {
         const response = await proposeWithExpertHead({
           imagePath: currentImage,
           backboneId: config.backboneId,

@@ -8,6 +8,7 @@
 
 import { apiFetch } from './client';
 import { isPrediction, type Prediction } from './inference';
+import type { CanvasBox } from '../types/annotation';
 
 export interface FoundationInfo {
   readonly id: string;
@@ -72,4 +73,82 @@ export function runFoundation(
     }),
     ...(signal ? { signal } : {}),
   });
+}
+
+// --- proposals (doc 42) -------------------------------------------------------------
+//
+// Deliberately the same shape the expert route returns, because the review surface should
+// consume one shape rather than learn which kind of model produced a box.
+
+export interface FoundationProposalResponse {
+  readonly image_path: string;
+  readonly width: number;
+  readonly height: number;
+  readonly device: string;
+  readonly model_name: string;
+  readonly model_summary: string;
+  readonly boxes: readonly {
+    readonly label: CanvasBox['label'];
+    readonly provenance: CanvasBox['provenance'];
+    readonly x: number;
+    readonly y: number;
+    readonly w: number;
+    readonly h: number;
+    readonly score: number | null;
+    readonly prompt: string | null;
+    readonly producer: CanvasBox['producer'] | null;
+  }[];
+}
+
+function isFoundationProposal(value: unknown): value is FoundationProposalResponse {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['width'] === 'number' &&
+    typeof value['height'] === 'number' &&
+    typeof value['model_name'] === 'string' &&
+    Array.isArray(value['boxes'])
+  );
+}
+
+export interface ProposeFoundationOptions {
+  readonly imagePath: string;
+  readonly foundationId: string;
+  readonly scoreThreshold?: number;
+}
+
+export function proposeWithFoundation(
+  options: ProposeFoundationOptions,
+  signal?: AbortSignal,
+): Promise<FoundationProposalResponse> {
+  return apiFetch('/generate/foundation', isFoundationProposal, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      image_path: options.imagePath,
+      foundation_id: options.foundationId,
+      ...(options.scoreThreshold !== undefined
+        ? { score_threshold: options.scoreThreshold }
+        : {}),
+    }),
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/** Same mapping the expert route gets: the class rides as `text` and is renamed to
+ *  `prompt` on save (doc 31). */
+export function foundationCanvasBoxes(
+  response: FoundationProposalResponse,
+): CanvasBox[] {
+  return response.boxes.map((box, index) => ({
+    id: `foundation-${index}`,
+    label: box.label,
+    provenance: box.provenance,
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
+    ...(box.score !== null ? { score: box.score } : {}),
+    ...(box.prompt ? { text: box.prompt } : {}),
+    ...(box.producer ? { producer: box.producer } : {}),
+  }));
 }

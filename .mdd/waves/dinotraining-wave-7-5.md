@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: 28810a6e
+hash: 096e8840
 ---
 
 # Wave 7.5: General Object Detection
@@ -70,9 +70,25 @@ Jan asked. The measured numbers answer it — the three detectors trained in doc
 | blood | 0.610 | 0.154 | −0.46 |
 | chess | 0.748 | **0.065** | **−0.68** |
 
-The head **finds** objects and **localises them badly**. That is not a capacity problem
-that a second stage fixes; it is resolution. `dense-detector` regresses from a single 37×37
-patch grid — at 644 px input each cell is ~14 px, predicting chess pieces of ~50×88 px.
+The head **finds** objects and **localises them badly**. That is not a capacity problem a
+second stage fixes. Three specific causes, found by reading the code on 2026-08-20:
+
+1. **One coarse scale.** `DENSE_SIZE` is 448 and the patch is 14, so every box is regressed
+   from a single **32×32 grid of 14 px cells**, at every object size.
+2. **Centerness is trained as a binary mask.** `assign_detection_targets` sets
+   `centerness_target = positive_flat.float()` — 1 inside a box, 0 outside. That is the
+   same information the class head already carries, so `sigmoid(class) × sigmoid(centerness)`
+   ranks a badly-placed box exactly as highly as a well-placed one. Real FCOS centerness is
+   the *continuous* `sqrt(min(l,r)/max(l,r) · min(t,b)/max(t,b))`, which is what makes it a
+   localisation-quality signal. `decode.py`'s docstring already claims it "suppresses cells
+   near a box edge" — the training target does not teach that.
+3. **L1 box loss, not IoU.** `0.05 * l1_loss` on ltrb pixel distances optimises something
+   other than the metric being reported. A 5 px error counts the same on a 20 px object as
+   on a 200 px one, and the `0.05` is a hand-tuned scale fudge that a scale-invariant GIoU
+   loss would not need.
+
+**mAP@75 is precisely the metric all three of these degrade**, which is why the gap widens
+as objects get smaller and more numerous.
 
 Faster R-CNN would also add an RPN, anchors, ROI-align and proposal sampling: **more
 parameters to fit on 200 images**, converging slower, against a head chosen precisely

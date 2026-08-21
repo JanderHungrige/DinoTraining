@@ -19,7 +19,10 @@ export type Provenance =
   | 'sam3'
   | 'grounded-sam'
   // A dataset this project did not produce, imported wholesale. See `31-external-dataset-import`.
-  | 'imported';
+  | 'imported'
+  // A self-contained foundation model — the *kind*, not the model. `producer` names which
+  // one, exactly as it does for `expert-head`. See `42-foundation-boxes-everywhere`.
+  | 'foundation-model';
 
 export const LABELS: readonly Label[] = Object.freeze(['positive', 'negative', 'unclear']);
 

@@ -31,7 +31,8 @@ export function AnnotationStudioTab(): JSX.Element {
   const { currentImage, imageSize } = session;
   // The label names the mode, so the button is not the only thing on screen that knows
   // which one is running — the setup form's radios are behind "Change folder" by now.
-  const headMode = config.source.kind === 'head';
+  // A prompt is the only source you *write*; the other two you pick and run.
+  const runLabel = config.source.kind === 'prompt' ? 'Run prompt' : 'Run model';
 
   return (
     <section className="studio">
@@ -98,7 +99,7 @@ export function AnnotationStudioTab(): JSX.Element {
               disabled={session.proposing || session.busy}
               onClick={() => void session.propose()}
             >
-              {session.proposing ? 'Detecting…' : headMode ? 'Run head' : 'Run prompt'}
+              {session.proposing ? 'Detecting…' : runLabel}
             </button>
             <button
               type="button"

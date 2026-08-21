@@ -16,7 +16,13 @@ Label = Literal["positive", "negative", "unclear"]
 #: Adding a value here is only half the change — it also lives in a SQLite CHECK
 #: constraint, so it needs a migration step. See `app/datasets/migrations.py`.
 Provenance = Literal[
-    "grounding-dino", "hand-drawn", "expert-head", "sam3", "grounded-sam", "imported"
+    "grounding-dino",
+    "hand-drawn",
+    "expert-head",
+    "sam3",
+    "grounded-sam",
+    "imported",
+    "foundation-model",
 ]
 
 LABELS: tuple[Label, ...] = ("positive", "negative", "unclear")

@@ -11,92 +11,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { FOUNDATION, HEAD, IMAGE, fetchMock, json, route } from './headRun.testkit';
 import { useHeadRun } from './useHeadRun';
-
-const fetchMock = vi.fn<typeof fetch>();
-
-const HEAD = {
-  id: 'h1',
-  name: 'Depth probe',
-  summary: 'Depth · trained on 1 dataset',
-  kind: 'trained-here',
-  head_type_id: 'linear-depth',
-  task: 'depth',
-  render_hint: 'depth-map',
-  backbone_id: 'dinov2-small',
-  backbone_family: 'dinov2',
-  embed_dim: 384,
-  num_classes: 0,
-  class_names: [],
-  dataset_ids: ['d1'],
-  metrics: {},
-  primary_metric: null,
-  primary_metric_value: null,
-  epochs_trained: 3,
-  best_epoch: 2,
-  source_repo: null,
-  created_at: '2026-08-20T00:00:00Z',
-};
-
-const FOUNDATION = {
-  id: 'depth-anything-v2-small',
-  title: 'Depth Anything V2 (small)',
-  description: 'Monocular depth.',
-  task: 'depth',
-  render_hint: 'depth-map',
-  model_id: 'depth-anything-v2-small',
-  licence: 'Apache-2.0',
-  non_commercial: false,
-  installed: true,
-  approx_size_mb: 95,
-};
-
-function prediction(id: string, name: string) {
-  return {
-    instance_id: id,
-    head_name: name,
-    head_type_id: id,
-    task: 'depth',
-    render_hint: 'depth-map',
-    class_names: [],
-    payload: { depth_png: 'x', min: 0, max: 1, height: 4, width: 4 },
-    grid: [0, 0],
-    elapsed_ms: 10,
-  };
-}
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-interface Routes {
-  foundations?: readonly unknown[];
-  foundationStatus?: number;
-}
-
-function route({ foundations = [FOUNDATION], foundationStatus = 200 }: Routes = {}): void {
-  fetchMock.mockImplementation((input: unknown) => {
-    const url = String(input);
-    if (url.includes('/foundation/predict')) {
-      return Promise.resolve(
-        foundationStatus === 200
-          ? json(prediction('depth-anything-v2-small', 'Depth Anything V2 (small)'))
-          : json({ error: { code: 'conflict', message: 'not installed' } }, foundationStatus),
-      );
-    }
-    if (url.includes('/foundation')) return Promise.resolve(json({ foundations }));
-    if (url.includes('/heads')) return Promise.resolve(json({ heads: [HEAD] }));
-    if (url.includes('/inference/compose')) {
-      return Promise.resolve(
-        json({ predictions: [prediction('h1', 'Depth probe')], passes: 1, elapsed_ms: 50 }),
-      );
-    }
-    return Promise.resolve(json({}));
-  });
-}
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
@@ -108,8 +24,6 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
 });
-
-const IMAGE = '/pics/a.jpg';
 
 async function ready(path: string = IMAGE) {
   const { result } = renderHook(() => useHeadRun(path));
@@ -241,83 +155,3 @@ describe('running them', () => {
     expect(result.current.result).toBeNull();
   });
 });
-
-describe('a result belongs to the image it came from', () => {
-  /**
-   * The bug Jan hit: run a detector on the first image of a folder, page to the next, and
-   * the *first* image's boxes are still drawn — over every later image. The prediction
-   * never expired, it just stopped being true. Present since Wave 3 for trained heads too;
-   * only visible once someone runs a model and then pages through a folder.
-   */
-  it('does not show image one\'s boxes over image two', async () => {
-    route();
-    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
-      initialProps: { path: '/pics/a.jpg' },
-    });
-    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
-
-    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
-    await act(async () => {
-      await result.current.run('/pics/a.jpg');
-    });
-    expect(result.current.result?.predictions).toHaveLength(1);
-
-    rerender({ path: '/pics/b.jpg' });
-
-    expect(result.current.result).toBeNull();
-  });
-
-  it('shows it again when you page back to that image', async () => {
-    // Why the gate is derived rather than cleared on navigation: the result is still a
-    // true statement about image one, so returning to image one should show it.
-    route();
-    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
-      initialProps: { path: '/pics/a.jpg' },
-    });
-    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
-
-    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
-    await act(async () => {
-      await result.current.run('/pics/a.jpg');
-    });
-
-    rerender({ path: '/pics/b.jpg' });
-    expect(result.current.result).toBeNull();
-
-    rerender({ path: '/pics/a.jpg' });
-    expect(result.current.result?.predictions).toHaveLength(1);
-  });
-
-  it('does not show a response that lands after the user has moved on', async () => {
-    // The same gate covers the race for free: a slow response for image one arrives while
-    // image two is on screen, and simply does not appear.
-    route();
-    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
-      initialProps: { path: '/pics/a.jpg' },
-    });
-    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
-
-    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
-    const pending = result.current.run('/pics/a.jpg');
-    rerender({ path: '/pics/b.jpg' });
-    await act(async () => {
-      await pending;
-    });
-
-    expect(result.current.result).toBeNull();
-  });
-
-  it('shows nothing when no image is on screen', async () => {
-    route();
-    const { result } = renderHook(() => useHeadRun(null));
-    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
-
-    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
-    await act(async () => {
-      await result.current.run('/pics/a.jpg');
-    });
-
-    expect(result.current.result).toBeNull();
-  });
-});
-

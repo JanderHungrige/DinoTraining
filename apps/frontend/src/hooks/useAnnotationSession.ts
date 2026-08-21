@@ -9,6 +9,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { listFolderImages, proposeBoxes, toCanvasBoxes } from '../api/annotate';
 import {
+  foundationCanvasBoxes,
+  proposeWithFoundation,
+} from '../api/foundation';
+import {
   proposeWithExpertHead,
   toCanvasBoxes as expertBoxes,
 } from '../api/generate';
@@ -35,6 +39,12 @@ export type ProposalSource =
       readonly kind: 'head';
       readonly backboneId: string;
       readonly instanceId: string;
+      readonly scoreThreshold: number;
+    }
+  | {
+      // A general detector — no backbone to name and nothing trained. Doc 42.
+      readonly kind: 'foundation';
+      readonly foundationId: string;
       readonly scoreThreshold: number;
     };
 
@@ -138,7 +148,17 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
       // Both branches return proposals already in *source* pixel coordinates and already
       // carrying their own provenance, so nothing downstream branches on mode again.
       const proposed =
-        source.kind === 'head'
+        source.kind === 'foundation'
+          ? await proposeWithFoundation({
+              imagePath: currentImage,
+              foundationId: source.foundationId,
+              scoreThreshold: source.scoreThreshold,
+            }).then((response) => ({
+              boxes: foundationCanvasBoxes(response),
+              width: response.width,
+              height: response.height,
+            }))
+          : source.kind === 'head'
           ? await proposeWithExpertHead({
               imagePath: currentImage,
               backboneId: source.backboneId,
@@ -172,7 +192,11 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
         setError(
           describe(
             cause,
-            source.kind === 'head' ? 'Could not run that head.' : 'Could not run the detector.',
+            source.kind === 'head'
+              ? 'Could not run that head.'
+              : source.kind === 'foundation'
+                ? 'Could not run that detector.'
+                : 'Could not run the detector.',
           ),
         );
       }
