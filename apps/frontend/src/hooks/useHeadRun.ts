@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import type { HeadTask } from '../api/heads';
+import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { listFoundations, runFoundation, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { runHeads, type ComposedResult } from '../api/inference';
@@ -45,6 +46,12 @@ export interface HeadRunState {
   readonly backboneId: string | null;
   /** Narrows the offered list. Same-task comparison is this filter, not a mode. */
   readonly taskFilter: HeadTask | null;
+  /** Show only heads trained on this dataset (doc 52). Null means all. */
+  readonly datasetFilter: string | null;
+  /** Every dataset any installed head was trained on, id -> name, for the picker.
+   *  Built from the datasets that actually appear, so a filter can never offer a
+   *  choice that matches nothing. */
+  readonly trainedOn: readonly { readonly id: string; readonly name: string }[];
   /** The task the current selection is on, when they all share one. */
   readonly selectedTask: HeadTask | null;
   readonly running: boolean;
@@ -53,6 +60,7 @@ export interface HeadRunState {
   readonly loadingHeads: boolean;
   readonly toggle: (instanceId: string) => void;
   readonly setTaskFilter: (task: HeadTask | null) => void;
+  readonly setDatasetFilter: (datasetId: string | null) => void;
   readonly clear: () => void;
   readonly run: (imagePath: string) => Promise<void>;
   /** True when this head cannot join the current selection — different backbone. */
@@ -76,6 +84,8 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
   const [running, setRunning] = useState(false);
   const [loadingHeads, setLoadingHeads] = useState(true);
   const [taskFilter, setTaskFilterState] = useState<HeadTask | null>(null);
+  const [datasetFilter, setDatasetFilterState] = useState<string | null>(null);
+  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
 
   const inFlight = useRef<AbortController | null>(null);
 
@@ -128,6 +138,28 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     // for, it just is not a *comparison*.
     return tasks.size === 1 ? [...tasks][0] ?? null : null;
   }, [heads, selected]);
+
+  // Names only — the filter matches on `dataset_ids`, which every head already carries.
+  // Its own effect rather than the heads' one: a dataset list that fails to load should
+  // cost the filter, not the panel.
+  useEffect(() => {
+    const controller = new AbortController();
+    void listDatasets(controller.signal)
+      .then(setDatasets)
+      .catch(() => setDatasets([]));
+    return () => controller.abort();
+  }, []);
+
+  const trainedOn = useMemo(() => {
+    const used = new Set(heads.flatMap((head) => head.dataset_ids));
+    return datasets
+      .filter((dataset) => used.has(dataset.id))
+      .map((dataset) => ({ id: dataset.id, name: dataset.name }));
+  }, [heads, datasets]);
+
+  const setDatasetFilter = useCallback((datasetId: string | null): void => {
+    setDatasetFilterState(datasetId);
+  }, []);
 
   const setTaskFilter = useCallback((task: HeadTask | null): void => {
     setTaskFilterState(task);
@@ -243,6 +275,8 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     toggleFoundation,
     backboneId,
     taskFilter,
+    datasetFilter,
+    trainedOn,
     selectedTask,
     running,
     result: resultForCurrentImage,
@@ -250,6 +284,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     loadingHeads,
     toggle,
     setTaskFilter,
+    setDatasetFilter,
     clear,
     run,
     isIncompatible,
