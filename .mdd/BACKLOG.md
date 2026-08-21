@@ -87,7 +87,24 @@ entry plus a `build_foundation` case and nothing else, because doc 36 put the co
 place. The hand-written-loader alternative was considered and rejected: reimplementing
 `DepthAnything3Net` against a bespoke config format forks from upstream on every release.
 
-### SAM 3 in the Annotation Studio
+### Ultralytics-derived detectors — an AGPL decision, not a technical one
+
+Added 2026-08-20 while scoping Wave 7.5. Jan proposed YOLOv11/v12 and
+`Sompote/DINOV3-YOLOV12`. Both are technically fine and both are **AGPL-3.0**, inherited
+from Ultralytics (confirmed on PyPI: `ultralytics` is AGPL-3.0).
+
+That is a strong copyleft licence. This project is billed as a sharable, installable desktop
+app, so distributing it with AGPL code linked in obliges releasing **the whole app** under
+AGPL. That is a decision to take deliberately, and **Wave 8 (Packaging) is where it belongs**
+— doc 35's licence surfacing exists so exactly this is not discovered during packaging.
+
+Also noted: `itsprakhar/Yolo-DinoV2` ships **no pretrained weights** ("Pretrained weights are
+not available"), so it could not have provided a default detector regardless of licence.
+
+**If the answer is no**, the Apache-2.0 substitutes are already in `transformers`:
+**RF-DETR** (taken in Wave 7.5) and **RT-DETRv2** (`PekingU/rtdetr_v2_r18vd`).
+
+### Depth Anything 3, when it is loadable
 
 Wave 4 brings SAM 3 in for the **Dataset Generator**, where reviewing masks is the point.
 Using it in the *Annotation Studio* needs a mask-drawing and refining tool that does not

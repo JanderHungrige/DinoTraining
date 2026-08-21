@@ -35,6 +35,32 @@ class FoundationSpec:
 
 
 _SPECS: tuple[FoundationSpec, ...] = (
+    # --- general object detection (doc 41) ---------------------------------------
+    FoundationSpec(
+        id="rf-detr-nano",
+        model_id="rf-detr-nano",
+        title="RF-DETR (nano)",
+        description="General object detection, 91 COCO classes. No prompt, no training.",
+        task="detection",
+        render_hint="boxes",
+    ),
+    FoundationSpec(
+        id="rf-detr-small",
+        model_id="rf-detr-small",
+        title="RF-DETR (small)",
+        description="Larger RF-DETR. Better on small and crowded objects.",
+        task="detection",
+        render_hint="boxes",
+    ),
+    FoundationSpec(
+        id="rf-detr-base",
+        model_id="rf-detr-base",
+        title="RF-DETR (base)",
+        description="Largest RF-DETR offered here. Best accuracy, highest latency.",
+        task="detection",
+        render_hint="boxes",
+    ),
+    # --- monocular depth (doc 36) ------------------------------------------------
     FoundationSpec(
         id="depth-anything-v2-small",
         model_id="depth-anything-v2-small",

@@ -72,7 +72,19 @@ class TestListing:
     async def test_it_carries_the_render_hint_the_viewer_dispatches_on(
         self, client: AsyncClient
     ) -> None:
-        assert all(entry["render_hint"] == "depth-map" for entry in await _listing(client))
+        """Was `== "depth-map"` for every entry, which was true only while depth was the
+        one kind of foundation model. Doc 41 added detectors, so the invariant is that a
+        hint is declared and is one the overlay registry can draw — not which one."""
+        hints = {entry["render_hint"] for entry in await _listing(client)}
+        assert hints <= {"labels", "boxes", "masks", "depth-map"}
+        assert {"boxes", "depth-map"} <= hints, "both kinds should be offered"
+
+    async def test_a_detector_and_a_depth_model_are_both_offered(
+        self, client: AsyncClient
+    ) -> None:
+        by_id = {entry["id"]: entry for entry in await _listing(client)}
+        assert by_id["rf-detr-nano"]["render_hint"] == "boxes"
+        assert by_id["depth-anything-v2-small"]["render_hint"] == "depth-map"
 
     async def test_it_states_the_download_size(self, client: AsyncClient) -> None:
         assert all(entry["approx_size_mb"] > 0 for entry in await _listing(client))

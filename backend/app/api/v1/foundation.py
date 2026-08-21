@@ -17,6 +17,7 @@ from app.api.v1.inference import PredictionResponse, describe
 from app.core.paths import is_installed, resolve_model_dir
 from app.ml.errors import ModelNotInstalledError
 from app.ml.foundation.build import FoundationUnavailableError, build_foundation
+from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
 from app.ml.foundation.registry import all_foundations, get_foundation
 from app.ml.images import ImageReadError, read_image
 from app.ml.registry import get_model
@@ -49,6 +50,12 @@ class FoundationListResponse(BaseModel):
 class FoundationRunRequest(BaseModel):
     image_path: str = Field(min_length=1)
     foundation_id: str = Field(min_length=1)
+    score_threshold: float = Field(
+        default=DEFAULT_SCORE_THRESHOLD,
+        ge=0.0,
+        le=1.0,
+        description="Detection only; a depth model has nothing to threshold.",
+    )
 
 
 def _describe(spec_id: str) -> FoundationInfo:
@@ -113,7 +120,15 @@ async def predict(request: FoundationRunRequest) -> PredictionResponse:
 
     try:
         model = build_foundation(request.foundation_id)
-        prediction = model.predict(image)
+        # The one place that asks *what kind* of model this is. Not an id→implementation
+        # map — `build_foundation` remains the only one of those — but a capability check:
+        # a detector takes a score threshold and a depth map has nothing to threshold, so
+        # a uniform signature would mean one of them accepting an argument it ignores.
+        prediction = (
+            model.predict(image, request.score_threshold)
+            if isinstance(model, RfDetrModel)
+            else model.predict(image)
+        )
     except ModelNotInstalledError as exc:
         raise HTTPException(
             status_code=409,

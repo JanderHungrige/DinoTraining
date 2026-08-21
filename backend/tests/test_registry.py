@@ -79,6 +79,7 @@ class TestRegistry:
             "sam2",
             "sam3",
             "depth-anything",
+            "rf-detr",
         }
 
     def test_specs_are_immutable(self) -> None:

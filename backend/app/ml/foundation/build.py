@@ -14,7 +14,13 @@ import logging
 
 from app.core.config import Settings
 from app.ml.foundation.depth import DepthAnythingModel
+from app.ml.foundation.detect import RfDetrModel
 from app.ml.foundation.registry import FoundationSpec, get_foundation
+
+#: Every foundation implementation. A union rather than a Protocol: they share `predict`
+#: but not its signature — the detector takes a score threshold and the depth model has
+#: nothing to threshold — and a Protocol wide enough to cover both would describe neither.
+FoundationImplementation = DepthAnythingModel | RfDetrModel
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +29,12 @@ class FoundationUnavailableError(LookupError):
     """No implementation is registered for that id."""
 
 
-_CACHE: dict[str, DepthAnythingModel] = {}
+_CACHE: dict[str, FoundationImplementation] = {}
 
 
 def build_foundation(
     foundation_id: str, settings: Settings | None = None
-) -> DepthAnythingModel:
+) -> FoundationImplementation:
     """Return the implementation for ``foundation_id``, loading it at most once."""
     spec = get_foundation(foundation_id)
     if spec is None:
@@ -45,9 +51,11 @@ def build_foundation(
 
 def _implementation(
     spec: FoundationSpec, settings: Settings | None
-) -> DepthAnythingModel:
+) -> FoundationImplementation:
     if spec.task == "depth":
         return DepthAnythingModel(spec, settings)
+    if spec.task == "detection":
+        return RfDetrModel(spec, settings)
     raise FoundationUnavailableError(f"No implementation for task {spec.task}")
 
 
@@ -56,4 +64,9 @@ def reset_cache() -> None:
     _CACHE.clear()
 
 
-__all__ = ["FoundationUnavailableError", "build_foundation", "reset_cache"]
+__all__ = [
+    "FoundationImplementation",
+    "FoundationUnavailableError",
+    "build_foundation",
+    "reset_cache",
+]

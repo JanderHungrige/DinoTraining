@@ -12,7 +12,7 @@ from typing import Literal
 
 ModelKind = Literal["detector", "backbone", "segmenter", "depth-estimator"]
 ModelFamily = Literal[
-    "grounding-dino", "dinov2", "dinov3", "sam2", "sam3", "depth-anything"
+    "grounding-dino", "dinov2", "dinov3", "sam2", "sam3", "depth-anything", "rf-detr"
 ]
 
 
@@ -110,6 +110,45 @@ _SPECS: tuple[ModelSpec, ...] = (
         description="DINOv3 ViT-L/16. Gated — accept the licence on HuggingFace first.",
         licence="DINOv3 License (Meta, custom)",
     ),
+    # --- general object detection (doc 41) ------------------------------------------
+    # RF-DETR: a DINOv2 backbone, a C2f projector and a shallow 2-layer deformable DETR
+    # decoder. Chosen over the DINOv2+ViTDet checkpoint (detectron2 and a bare .pth, which
+    # this project refuses) and over both YOLO routes (AGPL-3.0, parked for Wave 8).
+    #
+    # Its backbone being a DINOv2 is not incidental: "freeze the backbone, train what sits
+    # on top" — the rule this whole project is built on — applies to it unchanged, which is
+    # what makes doc 44's fine-tuning a continuation rather than an exception.
+    ModelSpec(
+        id="rf-detr-nano",
+        repo_id="Roboflow/rf-detr-nano",
+        kind="detector",
+        family="rf-detr",
+        gated=False,
+        approx_size_mb=116,
+        description=(
+            "General object detector, COCO-pretrained on 91 classes. Needs no prompt and "
+            "no training — start here for boxes."
+        ),
+    ),
+    ModelSpec(
+        id="rf-detr-small",
+        repo_id="Roboflow/rf-detr-small",
+        kind="detector",
+        family="rf-detr",
+        gated=False,
+        approx_size_mb=123,
+        description="Larger RF-DETR. Slower, better on small and crowded objects.",
+    ),
+    ModelSpec(
+        id="rf-detr-base",
+        repo_id="Roboflow/rf-detr-base",
+        kind="detector",
+        family="rf-detr",
+        gated=False,
+        approx_size_mb=123,
+        description="Largest RF-DETR offered here. Best accuracy, highest latency.",
+    ),
+
     # --- foundation depth (doc 36) -----------------------------------------------
     # Depth Anything **V2**, not V3. V3 has no `transformers` integration — its config is
     # a bespoke `__object__` block, and its pip package pins `numpy<2` against this
