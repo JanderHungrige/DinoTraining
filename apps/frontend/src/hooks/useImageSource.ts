@@ -10,13 +10,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
-import { resolveSource, type ImageSource, type SourceItem } from '../api/inference';
+import { listDatasetImages } from '../api/datasets';
+import { resolveSource, type ResolvedSource, type SourceItem } from '../api/inference';
 
 export interface ImageSourceState {
   readonly items: readonly SourceItem[];
   readonly index: number;
   readonly current: SourceItem | null;
-  readonly kind: ImageSource['kind'] | null;
+  readonly kind: ResolvedSource['kind'] | null;
   readonly root: string | null;
   readonly loading: boolean;
   readonly error: string | null;
@@ -35,8 +36,35 @@ function describe(cause: unknown, fallback: string): string {
   return cause instanceof ApiError ? cause.message : fallback;
 }
 
-export function useImageSource(path: string | null): ImageSourceState {
-  const [source, setSource] = useState<ImageSource | null>(null);
+/** A dataset, shaped exactly as `resolveSource` shapes a folder (doc 50).
+ *
+ *  Built here rather than server-side because the backend route answers "what is at this
+ *  path", and a dataset is not at a path — its images may be scattered originals. Same
+ *  shape out, so nothing downstream learns a second kind of source. */
+async function datasetAsSource(datasetId: string, signal: AbortSignal): Promise<ResolvedSource> {
+  const entries = await listDatasetImages(datasetId, signal);
+  return {
+    kind: 'folder',
+    root: datasetId,
+    // A dataset listing is never capped: the store returns what it holds.
+    truncated: false,
+    // `item_id` is the app's stable identity for a result — never a path. A dataset's
+    // stored path is already unique within it, so it serves, and prefixing keeps it
+    // from ever colliding with an id the backend minted for a folder listing.
+    items: entries.map((entry) => ({
+      item_id: `dataset:${datasetId}:${entry.path}`,
+      name: baseName(entry.path),
+      path: entry.path,
+    })),
+  };
+}
+
+function baseName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
+export function useImageSource(path: string | null, dataset: string | null = null): ImageSourceState {
+  const [source, setSource] = useState<ResolvedSource | null>(null);
   // Only the position is stored. The current item is derived, because seeding state from
   // data that has not arrived yet is how this codebase has produced bugs twice.
   const [index, setIndex] = useState(0);
@@ -51,7 +79,7 @@ export function useImageSource(path: string | null): ImageSourceState {
     setError(null);
     itemsRef.current = [];
 
-    if (!path) {
+    if (!path && !dataset) {
       setLoading(false);
       return;
     }
@@ -61,7 +89,9 @@ export function useImageSource(path: string | null): ImageSourceState {
 
     void (async () => {
       try {
-        const resolved = await resolveSource(path, controller.signal);
+        const resolved = dataset
+          ? await datasetAsSource(dataset, controller.signal)
+          : await resolveSource(path as string, controller.signal);
         if (controller.signal.aborted) return;
         setSource(resolved);
         itemsRef.current = resolved.items;
@@ -74,7 +104,7 @@ export function useImageSource(path: string | null): ImageSourceState {
     })();
 
     return () => controller.abort();
-  }, [path]);
+  }, [path, dataset]);
 
   const items = source?.items ?? [];
 

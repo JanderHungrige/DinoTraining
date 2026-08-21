@@ -22,7 +22,7 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
-import { FolderField } from './FolderField';
+import { ImageSourceField, type ImageSource } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
 import { ProposalModePicker, type ProposalMode } from './ProposalModePicker';
 import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
@@ -36,7 +36,7 @@ export interface SessionSetupProps {
 }
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
-  const [folder, setFolder] = useState('');
+  const [images, setImages] = useState<ImageSource>({ kind: 'folder', folder: '' });
   const [mode, setMode] = useState<ProposalMode>('prompt');
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [foundationOverride, setFoundationOverride] = useState('');
@@ -102,7 +102,13 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       return;
     }
 
-    let targetId = datasetId;
+    if (images.kind === 'folder' && !images.folder.trim()) {
+      setError('Choose a folder of images, or a dataset you already have.');
+      return;
+    }
+
+    // A dataset source *is* the target: picking one means "carry on working on this".
+    let targetId = images.kind === 'dataset' ? images.datasetId : datasetId;
     if (!targetId) {
       if (!newName.trim()) {
         setError('Choose an existing dataset or name a new one.');
@@ -120,7 +126,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     }
 
     onStart({
-      folder: folder.trim(),
+      images,
       datasetId: targetId,
       source:
         mode === 'foundation'
@@ -148,40 +154,48 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
   return (
     <form className="setup" onSubmit={(event) => void handleSubmit(event)}>
-      <div className="setup__row">
-        <FolderField id="folder" value={folder} onChange={setFolder} required />
-      </div>
+      <ImageSourceField
+        id="folder"
+        value={images}
+        onChange={setImages}
+        datasets={datasets}
+        datasetHint="Its boxes load onto the canvas and your edits replace them — this is how you correct or extend a dataset you already have."
+      />
 
-      <div className="setup__row">
-        <label className="setup__field" htmlFor="dataset">
-          Dataset
-          <select
-            id="dataset"
-            value={datasetId}
-            onChange={(event) => setDatasetId(event.target.value)}
-          >
-            <option value="">Create a new one…</option>
-            {datasets.map((dataset) => (
-              <option key={dataset.id} value={dataset.id}>
-                {dataset.name} ({dataset.counts.images} images)
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {!datasetId && (
-          <label className="setup__field" htmlFor="newname">
-            New dataset name
-            <input
-              id="newname"
-              type="text"
-              value={newName}
-              placeholder="Cats"
-              onChange={(event) => setNewName(event.target.value)}
-            />
+      {/* Hidden when the source *is* a dataset: that dataset is the target, and offering
+          a second choice would let the two disagree without saying so. */}
+      {images.kind === 'folder' && (
+        <div className="setup__row">
+          <label className="setup__field" htmlFor="dataset">
+            Dataset
+            <select
+              id="dataset"
+              value={datasetId}
+              onChange={(event) => setDatasetId(event.target.value)}
+            >
+              <option value="">Create a new one…</option>
+              {datasets.map((dataset) => (
+                <option key={dataset.id} value={dataset.id}>
+                  {dataset.name} ({dataset.counts.images} images)
+                </option>
+              ))}
+            </select>
           </label>
-        )}
-      </div>
+
+          {!datasetId && (
+            <label className="setup__field" htmlFor="newname">
+              New dataset name
+              <input
+                id="newname"
+                type="text"
+                value={newName}
+                placeholder="Cats"
+                onChange={(event) => setNewName(event.target.value)}
+              />
+            </label>
+          )}
+        </div>
+      )}
 
       <ProposalModePicker mode={mode} onChange={setMode} />
 

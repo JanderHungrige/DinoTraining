@@ -6,14 +6,14 @@ import type { CanvasBox } from '../types/annotation';
 import type { SessionConfig } from './useAnnotationSession';
 
 export const CONFIG: SessionConfig = {
-  folder: '/pics',
+  images: { kind: 'folder', folder: '/pics' },
   datasetId: 'ds1',
   source: { kind: 'prompt', prompt: 'a cat', boxThreshold: 0.3, textThreshold: 0.25 },
 };
 
 /** The same session, proposing from a trained head instead of a phrase. */
 export const HEAD_CONFIG: SessionConfig = {
-  folder: '/pics',
+  images: { kind: 'folder', folder: '/pics' },
   datasetId: 'ds1',
   source: {
     kind: 'head',

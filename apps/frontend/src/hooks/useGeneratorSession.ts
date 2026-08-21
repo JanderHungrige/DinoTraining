@@ -12,7 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { listFolderImages } from '../api/annotate';
+
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, saveImageBoxes, saveImageMasks, type DatasetCounts } from '../api/datasets';
 import {
@@ -26,12 +26,14 @@ import {
   foundationCanvasBoxes,
   proposeWithFoundation,
 } from '../api/foundation';
+import type { ImageSource } from '../components/ImageSourceField';
+import { resolveImageSource, sourceNoun } from '../lib/imageSource';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 export interface ExpertConfig {
   readonly kind: 'expert';
   readonly datasetId: string;
-  readonly folder: string;
+  readonly images: ImageSource;
   readonly backboneId: string;
   readonly instanceId: string;
   readonly scoreThreshold: number;
@@ -40,7 +42,7 @@ export interface ExpertConfig {
 export interface MaskConfig {
   readonly kind: 'masks';
   readonly datasetId: string;
-  readonly folder: string;
+  readonly images: ImageSource;
   readonly annotatorId: string;
   readonly concept: string;
   readonly scoreThreshold: number;
@@ -49,7 +51,7 @@ export interface MaskConfig {
 export interface FoundationConfig {
   readonly kind: 'foundation';
   readonly datasetId: string;
-  readonly folder: string;
+  readonly images: ImageSource;
   /** Catalogue id of an installed detector. No backbone: it brings its own. */
   readonly foundationId: string;
   readonly scoreThreshold: number;
@@ -134,7 +136,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setLoading(true);
     setError(null);
 
-    listFolderImages(config.folder, controller.signal)
+    resolveImageSource(config.images, controller.signal)
       .then((found) => {
         setImages(found);
         setIndex(0);
@@ -144,7 +146,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       })
       .catch((caught: unknown) => {
         if (controller.signal.aborted) return;
-        setError(describe(caught, 'Could not list that folder.'));
+        setError(describe(caught, `Could not list that ${sourceNoun(config.images)}.`));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

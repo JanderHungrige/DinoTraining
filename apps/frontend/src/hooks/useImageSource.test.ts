@@ -9,14 +9,14 @@
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ImageSource } from '../api/inference';
+import type { ResolvedSource } from '../api/inference';
 import { useImageSource } from './useImageSource';
 
 function item(name: string): { item_id: string; name: string; path: string } {
   return { item_id: `id-${name}`, name, path: `/photos/${name}` };
 }
 
-function source(overrides: Partial<ImageSource> = {}): ImageSource {
+function source(overrides: Partial<ResolvedSource> = {}): ResolvedSource {
   return {
     kind: 'folder',
     root: '/photos',

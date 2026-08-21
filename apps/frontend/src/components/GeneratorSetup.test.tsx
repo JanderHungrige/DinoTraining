@@ -182,7 +182,7 @@ describe('GeneratorSetup', () => {
     await waitFor(() =>
       expect(onStart).toHaveBeenCalledWith(
         expect.objectContaining({
-          folder: '/photos',
+          images: { kind: 'folder', folder: '/photos' },
           backboneId: 'dinov2-small',
           instanceId: 'h1',
           datasetId: 'd1',

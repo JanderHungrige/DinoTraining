@@ -6,8 +6,11 @@ import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
 import { CounterBar } from '../components/CounterBar';
 import { BoxReviewList } from '../components/BoxReviewList';
+import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
+import { usePrescan } from '../hooks/usePrescan';
+import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import type { Label } from '../types/annotation';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
 
@@ -19,6 +22,7 @@ export function AnnotationStudioTab(): JSX.Element {
   const [threshold, setThreshold] = useState(0);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
+  const prescan = usePrescan();
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
@@ -44,6 +48,16 @@ export function AnnotationStudioTab(): JSX.Element {
       setSelectedId((current) => (current === id ? null : current));
     },
     [boxes, setBoxes],
+  );
+
+  const startScan = useCallback(
+    (labels: readonly string[], scoreThreshold: number): void => {
+      if (config === null) return;
+      void prescan.start(
+        prescanOptions(config.source, session.allImages, labels, scoreThreshold),
+      );
+    },
+    [config, prescan, session.allImages],
   );
 
   // Discards exactly what the slider is hiding, so what disappears is what was on screen.
@@ -95,6 +109,21 @@ export function AnnotationStudioTab(): JSX.Element {
 
       {currentImage && (
         <>
+          <PrescanPanel
+            total={session.allImages.length}
+            job={prescan.job}
+            starting={prescan.starting}
+            running={prescan.running}
+            error={prescan.error}
+            filtered={session.filtered}
+            suggestions={prescanSuggestions(config.source)}
+            onScan={startScan}
+            onCancel={prescan.cancel}
+            onApply={(apply) =>
+              session.setFilter(apply ? (prescan.job?.hits ?? []).map((h) => h.path) : null)
+            }
+          />
+
           <p className="studio__path" title={currentImage}>
             {currentImage}
           </p>

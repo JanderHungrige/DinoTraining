@@ -10,11 +10,13 @@
 
 import { useEffect, useState, type JSX } from 'react';
 
+import { listDatasets, type DatasetInfo } from '../api/datasets';
+
 import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
-import { FolderField } from './FolderField';
+import { ImageSourceField, type ImageSource } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
 import { GeneratorModePicker, type GeneratorMode } from './GeneratorModePicker';
 import { MaskSourceFields } from './MaskSourceFields';
@@ -34,7 +36,18 @@ export interface GeneratorSetupProps {
 const DEFAULT_THRESHOLD = 0.3;
 
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
-  const [folder, setFolder] = useState('');
+  const [source, setSource] = useState<ImageSource>({ kind: 'folder', folder: '' });
+  // Loaded here as well as in `GeneratorDestination`: the source picker offers datasets
+  // to *read* and the destination offers them to *write*, and the two lists answer
+  // different questions — one filters to datasets that have images.
+  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    void listDatasets(controller.signal)
+      .then(setDatasets)
+      .catch(() => setDatasets([]));
+    return () => controller.abort();
+  }, []);
   // The default is unchanged. A general detector leads the *list*, which is where
   // discoverability lives, but selecting it by default would drop someone who has trained
   // heads and no detector installed onto an empty state telling them to visit Admin.
@@ -126,7 +139,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   const ready =
     destinationReady(datasetId, newName) &&
-    folder.trim().length > 0 &&
+    (source.kind === 'dataset' ? source.datasetId !== '' : source.folder.trim() !== '') &&
     (mode === 'foundation'
       ? selectedDetector !== ''
       : mode === 'expert'
@@ -147,7 +160,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                 ? {
                     kind: 'foundation' as const,
                     datasetId: resolvedId,
-                    folder: folder.trim(),
+                    images: source,
                     foundationId: selectedDetector,
                     scoreThreshold: threshold,
                   }
@@ -155,7 +168,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                 ? {
                     kind: 'expert' as const,
                     datasetId: resolvedId,
-                    folder: folder.trim(),
+                    images: source,
                     backboneId,
                     instanceId,
                     scoreThreshold: threshold,
@@ -163,7 +176,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                 : {
                     kind: 'masks' as const,
                     datasetId: resolvedId,
-                    folder: folder.trim(),
+                    images: source,
                     annotatorId,
                     concept: concept.trim(),
                     scoreThreshold: threshold,
@@ -182,12 +195,14 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
       <GeneratorModePicker mode={mode} onChange={setMode} />
 
-      <FolderField
+      <ImageSourceField
         id="gen-folder"
-        value={folder}
-        onChange={setFolder}
+        value={source}
+        onChange={setSource}
+        datasets={datasets}
         placeholder="/Users/you/new-photos"
         variant="genpanel"
+        datasetHint="Its images are re-annotated into whichever dataset you choose below — the source is only where the pictures come from."
       />
 
       <MaskSourceFields
