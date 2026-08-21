@@ -107,6 +107,8 @@ export function AnnotationStudioTab(): JSX.Element {
         </p>
       )}
 
+      {session.loadingImages && <p role="status">Loading images…</p>}
+
       {currentImage && (
         <>
           <PrescanPanel

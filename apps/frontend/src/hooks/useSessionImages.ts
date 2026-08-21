@@ -20,6 +20,9 @@ import type { CanvasBox } from '../types/annotation';
 
 export interface SessionImages {
   readonly images: readonly string[];
+  /** True between a source changing and its listing arriving. Surfaced so the caller can
+   *  say "loading" rather than render an empty session that looks like an empty folder. */
+  readonly loading: boolean;
   /** Boxes each image already carries. Empty for a folder source, which is what makes the
    *  two kinds behave identically everywhere downstream. */
   readonly existing: ReadonlyMap<string, readonly CanvasBox[]>;
@@ -45,6 +48,7 @@ export function useSessionImages(
   );
   const [error, setError] = useState<string | null>(null);
   const [generation, setGeneration] = useState(0);
+  const [loading, setLoading] = useState(false);
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -57,9 +61,22 @@ export function useSessionImages(
   const key = keyOf(source);
 
   useEffect(() => {
-    if (source === null) return;
+    // **Cleared before the new listing is asked for, not after it arrives.** A source that
+    // fails to load must not leave the previous one's images on screen: they render fully
+    // interactive, so the user annotates the old folder's pictures while the boxes save
+    // into the new dataset — and the only clue is an error message above a canvas that
+    // looks like it is working.
+    setImages([]);
+    setExisting(new Map());
+    setError(null);
+    if (source === null) {
+      setLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     const noun = source.kind === 'dataset' ? 'dataset' : 'folder';
+    setLoading(true);
 
     void (async () => {
       try {
@@ -83,6 +100,8 @@ export function useSessionImages(
         if (mounted.current && !controller.signal.aborted) {
           setError(describe(cause, `Could not read that ${noun}.`));
         }
+      } finally {
+        if (mounted.current && !controller.signal.aborted) setLoading(false);
       }
     })();
 
@@ -91,5 +110,5 @@ export function useSessionImages(
     // and depending on it would re-list the folder continuously.
   }, [key]);
 
-  return { images, existing, error, generation };
+  return { images, existing, error, generation, loading };
 }

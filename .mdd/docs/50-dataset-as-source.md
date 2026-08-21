@@ -111,4 +111,33 @@ See frontmatter.
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+### 1 — A failed source left the previous session's images on screen
+
+**Reported by Jan on 2026-08-21**: *"the image in the annotation tab is always the same.
+Doesn't matter what model is chosen, it loads the same image also when choosing another."*
+
+**Reproduced**: start a session on a folder, press *Change folder*, point at a path that
+cannot be read, start again. The Studio showed `Image 1 / 289` and the **previous** folder's
+picture, fully interactive, with only an error line above it.
+
+That is worse than a stale display. The target dataset had already changed, so every box
+drawn on those images would have been saved into the newly chosen dataset — annotating one
+folder's pictures into another folder's dataset, with nothing on screen saying so.
+
+**Cause**: `useSessionImages` replaced `images` only inside the `try`, on success. A failed
+listing left the previous state untouched. The same shape was present in
+`useGeneratorSession`.
+
+**Fix**: clear before asking, not after answering. Both hooks now reset `images` (and the
+Generator's boxes, masks and size) at the top of the effect, and expose a `loading` flag so
+the surface says *"Loading images…"* rather than rendering an empty session that reads as an
+empty folder.
+
+**Pinned by** two tests in `useAnnotationSession.test.ts`, both confirmed to fail against the
+previous code: one that the previous images are gone after a failed switch, and one that
+they are gone *during* the load — because the window between asking and answering is the one
+the user annotates in.
+
+**Not a bug**: choosing a different *model* on the same source correctly shows the same
+first image. The model decides the boxes, not the picture. That part of the report was the
+app working as intended.

@@ -59,6 +59,8 @@ export interface SessionConfig {
 
 export interface AnnotationSession {
   readonly images: readonly string[];
+  /** True while a newly chosen source is being listed. */
+  readonly loadingImages: boolean;
   /** Every image the source holds, ignoring any prescan filter. */
   readonly allImages: readonly string[];
   readonly filtered: boolean;
@@ -252,6 +254,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
 
   return {
     images,
+    loadingImages: loaded.loading,
     allImages,
     filtered: filter !== null,
     setFilter,
