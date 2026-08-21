@@ -76,11 +76,10 @@ the Dataset Generator.
 it, the prompt field explains Grounding DINO's syntax (and head mode explains why there is
 no prompt), and folders can be dragged onto the desktop window.
 
-⚠️ **One thing in Wave 7 wants your hands.** The drag-and-drop is written, typed against the
-real Tauri API and unit-tested, but the actual drop was **never performed** — it needs a
-human to drag a folder onto the Tauri window, which nothing in my session can do or observe.
-Run `npm run tauri dev` in `apps/desktop` and drag a folder onto the Annotation Studio; the
-label should change to "Drop to use that folder" while it hovers.
+**Drag-and-drop is confirmed working** — you checked it in a `tauri dev` build on
+2026-08-20, which is the one path no automated check here can reach. To run the desktop app
+again: `apps/desktop` needs its own `npm install` (the Tauri CLI lives there), and
+`tauri dev` starts its **own** Vite, so port 1420 must be free first.
 
 **Wave 6 in one line:** a *foundation* model (Depth Anything V2) now runs in the Inference
 Viewer beside your trained heads, and every catalogue entry states its licence before you

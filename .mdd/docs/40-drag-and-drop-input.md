@@ -29,7 +29,6 @@ integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**Not verified against a running desktop app.** The browser branch was verified (no affordance offered, nothing else affected) and the types check against the real `@tauri-apps/api` 2.11.1 `DragDropEvent`. The drop itself needs a human to drag a folder onto the Tauri window, which no automated check here can perform. Treat the desktop path as written-and-typed, not exercised — this is the one thing in Wave 7 that wants a manual look."
   - "The drop is **window-level**, not per-field: Tauri reports a drop on the webview, not on what was under the cursor. Harmless while one tab is mounted at a time — exactly one listener exists — but a future split view with two path fields would need targeting the current event does not provide."
   - "Only the first dropped path is used. Dropping twelve images means one folder; dropping two *different* folders silently takes one. Refusing would be defensible; picking the first matches what the field can hold."
   - "`folderOf` decides file-vs-folder by extension, because the frontend has no `stat` and a round trip would make a drop feel slow. A directory named `photos.png` is mishandled."
@@ -103,13 +102,20 @@ resolves — otherwise it outlives the component and fires into a dead handler.
 
 ## Verified
 
-**Partially, and the gap is named.** In the browser: `hasFileDrop()` is false, no drop hint
-is offered on any of the three fields, and nothing else changes. Types check against the
-real `DragDropEvent` union. `folderOf` is pinned by thirteen cases including Windows
-separators, dotfiles, a folder with a dot in its name, and an image at the filesystem root.
+**Both branches, and the desktop one by hand.** In the browser: `hasFileDrop()` is false, no
+drop hint is offered on any of the three fields, and nothing else changes. Types check
+against the real `DragDropEvent` union. `folderOf` is pinned by thirteen cases including
+Windows separators, dotfiles, a folder with a dot in its name, and an image at the
+filesystem root.
 
-**The desktop drop itself is not exercised.** It needs a human to drag a folder onto the
-Tauri window; nothing available here can perform or observe that. See `known_issues`.
+**The desktop drop was confirmed working by Jan on 2026-08-20**, in a `tauri dev` build —
+the one path no automated check in this project can reach, since performing a drag needs a
+person at the window. Nothing needed changing.
+
+Two things to know before repeating it: `apps/desktop` needs its own `npm install`
+(the Tauri CLI lives there and `node_modules` was absent), and `tauri dev` starts its **own**
+Vite via `beforeDevCommand`, so port 1420 must be free — a dev server left running elsewhere
+collides with it.
 
 ## Known Issues
 
