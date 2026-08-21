@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: 7d49523b
+hash: 6c350c25
 ---
 
 # Wave 7.5: General Object Detection
@@ -152,7 +152,7 @@ without detectron2 or a pickle.
 - **dataset-filter** — `task` stopped discriminating once eighteen heads mostly answered
   `detection`; "which data did this learn from" still does.
 - **prescan** — run the session's own model over the folder first and show only the images
-  it found something in. Nothing is written: a model's silence is not an annotation, and
+  it found something in, in **both** the Studio and the Dataset Generator. Nothing is written: a model's silence is not an annotation, and
   that is what makes "check every image after all" a checkbox rather than an undo.
 - **osdar23-rail** — a real rail dataset (ASAM OpenLABEL, 9.84 GB per subsequence) imported
   and trained on. Needed two new capabilities: an OpenLABEL reader, and **tiling**, without

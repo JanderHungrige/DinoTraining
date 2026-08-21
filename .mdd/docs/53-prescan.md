@@ -18,6 +18,9 @@ source_files:
   - apps/frontend/src/lib/prescanSource.ts
   - apps/frontend/src/hooks/useAnnotationSession.ts
   - apps/frontend/src/tabs/AnnotationStudioTab.tsx
+  - apps/frontend/src/tabs/DatasetGeneratorTab.tsx
+  - apps/frontend/src/hooks/useGeneratorSession.ts
+  - apps/frontend/src/lib/generatorProposal.ts
 routes:
   - POST /api/v1/generate/prescan
   - GET /api/v1/generate/prescan/{job_id}
@@ -26,6 +29,7 @@ models: []
 test_files:
   - backend/tests/test_prescan.py
   - apps/frontend/src/components/PrescanPanel.test.tsx
+  - apps/frontend/src/lib/prescanSource.test.ts
 data_flow: reads-existing
 last_synced: 2026-08-21
 status: complete
@@ -38,8 +42,8 @@ satisfies_contracts: []
 security_read_sites:
   - backend/app/api/v1/prescan.py (image_paths are read directly; capped at MAX_IMAGES)
 known_issues:
+  - "**The Studio and the Generator share one runner**, so a scan started in one queues behind a scan running in the other. Neither surface says so."
   - "**One scan at a time, on its own worker.** A second scan queues behind the first. A shared worker with training would be worse — a scan queued behind a six-minute fine-tune looks hung — but two scans still serialise with no indication."
-  - "**The Studio only.** The Dataset Generator would benefit at least as much (it processes a whole folder unattended) and does not have it."
   - "The prompt branch hard-codes `grounding-dino-tiny`, because the session does not carry a model id for prompt mode. Correct today; wrong the moment a second grounding model is offered."
   - "Results are held in memory and lost on restart, like every other job runner here. A 400-image scan repeated after a restart is minutes wasted."
   - "**Label matching is substring, both ways.** Forgiving on purpose, but `signal` matches `signal_pole`, so filtering for one class of a multi-class detector can keep more than asked."
@@ -57,6 +61,18 @@ sister_projects: []
 
 A folder of 400 rail frames has a person in 30 of them. Reviewing it means pressing Next 370
 times to confirm nothing is there — the work this app exists to remove, being done by hand.
+
+## Both review surfaces
+
+The Studio and the **Dataset Generator** each get it. The Generator benefits at least as
+much: it proposes on every image whether or not there is anything in it, so reviewing 400
+crops of ballast is the same wasted afternoon, done unattended first.
+
+The Generator's three modes map onto the same three scan kinds, with one substitution that
+is only possible because of doc 45: a **mask** run names an annotator id, and those are now
+registered as foundation models under the same id — so `grounded-sam` scans as a
+concept-prompted detector and its *box* half does the filtering, exactly as it does in the
+Studio. Without doc 45, mask mode would have needed a fourth scan kind of its own.
 
 ## The same model, deliberately
 
@@ -125,7 +141,14 @@ opened with the dataset's own eight ground-truth boxes already on the canvas (do
 listed in the review panel (doc 47) — `signal ×5, signal_pole, person ×2`, all scoreless,
 which is correct for imported boxes.
 
-27 backend tests and 16 frontend.
+**In the Dataset Generator, same data, 2026-08-21**: the same 80-tile holdout, the rail
+RF-DETR, `person` at 0.4 — *"20 of 80 images matched"*, and ticking the filter took the
+counter to `Image 1 / 20` on `078_…_r2c3.png`. The same scan run with the *trained head*
+(mAP 0.339 on this holdout) matched **0 of 80**, which is the model being weak rather than
+the plumbing being wrong — and the panel correctly disabled the toggle and said *"nothing
+to show"*.
+
+27 backend tests and 28 frontend.
 
 ## Known Issues
 

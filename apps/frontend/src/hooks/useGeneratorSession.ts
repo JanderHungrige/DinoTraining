@@ -15,18 +15,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, saveImageBoxes, saveImageMasks, type DatasetCounts } from '../api/datasets';
-import {
-  proposeMasks,
-  proposeWithExpertHead,
-  toCanvasBoxes,
-  toReviewMasks,
-  type MaskProposalResponse,
-} from '../api/generate';
-import {
-  foundationCanvasBoxes,
-  proposeWithFoundation,
-} from '../api/foundation';
+import type { MaskProposalResponse } from '../api/generate';
 import type { ImageSource } from '../components/ImageSourceField';
+import { proposeForGenerator } from '../lib/generatorProposal';
 import { resolveImageSource, sourceNoun } from '../lib/imageSource';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
@@ -61,6 +52,10 @@ export type GeneratorConfig = ExpertConfig | MaskConfig | FoundationConfig;
 
 export interface GeneratorSession {
   readonly images: readonly string[];
+  /** Every image the source holds, ignoring any prescan filter. */
+  readonly allImages: readonly string[];
+  readonly filtered: boolean;
+  readonly setFilter: (paths: readonly string[] | null) => void;
   readonly index: number;
   readonly currentImage: string | null;
   readonly boxes: readonly CanvasBox[];
@@ -105,7 +100,10 @@ async function saveMasks(
 }
 
 export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSession {
-  const [images, setImages] = useState<readonly string[]>([]);
+  const [allImages, setImages] = useState<readonly string[]>([]);
+  // A prescan's hits (doc 53). Null means no filter. The full list stays loaded, so
+  // turning the filter off costs nothing and re-reads nothing.
+  const [filter, setFilterState] = useState<readonly string[] | null>(null);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxes] = useState<readonly CanvasBox[]>([]);
   const [masks, setMasks] = useState<readonly ReviewMask[]>([]);
@@ -133,16 +131,22 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       return;
     }
     const controller = new AbortController();
+    // Cleared before the new listing is asked for, not after it arrives (doc 50, bug 1). A source
+    // that fails to load must not leave the previous one's images on screen: they render
+    // fully interactive, so the user reviews the old folder's pictures while the boxes
+    // save into the newly chosen dataset, with only an error message to say otherwise.
+    setImages([]);
+    setIndex(0);
+    setBoxes([]);
+    setMasks([]);
+    setImageSize(null);
+    setFilterState(null);
     setLoading(true);
     setError(null);
 
     resolveImageSource(config.images, controller.signal)
       .then((found) => {
         setImages(found);
-        setIndex(0);
-        setBoxes([]);
-        setMasks([]);
-        setImageSize(null);
       })
       .catch((caught: unknown) => {
         if (controller.signal.aborted) return;
@@ -155,6 +159,8 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     return () => controller.abort();
   }, [config]);
 
+  const kept = filter === null ? null : new Set(filter);
+  const images = kept === null ? allImages : allImages.filter((path) => kept.has(path));
   const currentImage = images[index] ?? null;
 
   const propose = useCallback(async (): Promise<void> => {
@@ -164,51 +170,19 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setProposing(true);
     setError(null);
     try {
-      if (config.kind === 'foundation') {
-        const response = await proposeWithFoundation({
-          imagePath: currentImage,
-          foundationId: config.foundationId,
-          scoreThreshold: config.scoreThreshold,
-        });
-        if (ticket !== requestId.current) return;
+      const proposed = await proposeForGenerator(config, currentImage);
+      // A response for an image the user has already navigated away from must not land:
+      // its boxes and masks are in that image's coordinate space and would look plausible
+      // here. The ticket stays in the hook precisely so this check cannot be extracted.
+      if (ticket !== requestId.current) return;
 
-        setBoxes(foundationCanvasBoxes(response));
-        setImageSize({ width: response.width, height: response.height });
-        setProducerName(response.model_name);
-        setProducerDetail(response.model_summary);
-        setDirty(response.boxes.length > 0);
-      } else if (config.kind === 'expert') {
-        const response = await proposeWithExpertHead({
-          imagePath: currentImage,
-          backboneId: config.backboneId,
-          instanceId: config.instanceId,
-          scoreThreshold: config.scoreThreshold,
-        });
-        if (ticket !== requestId.current) return;
-
-        setBoxes(toCanvasBoxes(response));
-        setImageSize({ width: response.width, height: response.height });
-        setProducerName(response.head_name);
-        setProducerDetail(response.head_summary);
-        setDirty(response.boxes.length > 0);
-      } else {
-        const response = await proposeMasks({
-          imagePath: currentImage,
-          concept: config.concept,
-          annotatorId: config.annotatorId,
-          threshold: config.scoreThreshold,
-        });
-        // A response for an image the user has already navigated away from must not land:
-        // its masks are in that image's coordinate space and would look plausible here.
-        if (ticket !== requestId.current) return;
-
-        lastMaskProposal.current = response;
-        setMasks(toReviewMasks(response));
-        setImageSize({ width: response.width, height: response.height });
-        setProducerName(response.annotator_name);
-        setDirty(response.masks.length > 0);
-        setProducerDetail(`${response.masks.length} mask(s) for “${config.concept}”`);
-      }
+      lastMaskProposal.current = proposed.maskResponse;
+      setBoxes(proposed.boxes);
+      setMasks(proposed.masks);
+      setImageSize({ width: proposed.width, height: proposed.height });
+      setProducerName(proposed.producerName);
+      setProducerDetail(proposed.producerDetail);
+      setDirty(proposed.found);
     } catch (caught) {
       if (ticket === requestId.current) {
         setError(describe(caught, 'Nothing could be proposed for this image.'));
@@ -259,12 +233,27 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     [images.length],
   );
 
+  /** Show only these images, or all of them when given null (doc 53).
+   *
+   *  Resets to the first, because position 7 of the filtered list is not position 7 of the
+   *  full one and nothing on screen would explain the jump. */
+  const setFilter = useCallback((paths: readonly string[] | null): void => {
+    setFilterState(paths);
+    setIndex(0);
+    setBoxes([]);
+    setMasks([]);
+    setImageSize(null);
+  }, []);
+
   const reportImageSize = useCallback((width: number, height: number) => {
     setImageSize((current) => current ?? { width, height });
   }, []);
 
   return {
     images,
+    allImages,
+    filtered: filter !== null,
+    setFilter,
     index,
     currentImage,
     boxes,

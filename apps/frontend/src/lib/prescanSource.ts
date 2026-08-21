@@ -8,6 +8,7 @@
 
 import type { StartPrescanOptions } from '../api/prescan';
 import type { ProposalSource } from '../hooks/useAnnotationSession';
+import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
 export function prescanOptions(
   source: ProposalSource,
@@ -52,6 +53,53 @@ export function prescanOptions(
 export function prescanSuggestions(source: ProposalSource): string[] {
   return source.kind === 'prompt'
     ? source.prompt
+        .split(/[.,]/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+    : [];
+}
+
+
+/** The Dataset Generator's config, as a scan request (doc 53).
+ *
+ * Its three modes map onto the same three the Studio uses, with one substitution that is
+ * only possible because of doc 45: a **mask** run names an annotator id, and those are now
+ * registered as foundation models under the same id — so `grounded-sam` scans as a
+ * concept-prompted detector and its box half does the filtering, exactly as it does in the
+ * Studio. Without that, mask mode would have needed a fourth scan kind of its own.
+ */
+export function generatorPrescanOptions(
+  config: GeneratorConfig,
+  imagePaths: readonly string[],
+  labels: readonly string[],
+  scoreThreshold: number,
+): StartPrescanOptions {
+  const common = { imagePaths, labels, scoreThreshold } as const;
+
+  if (config.kind === 'expert') {
+    return {
+      ...common,
+      kind: 'head',
+      backboneId: config.backboneId,
+      instanceId: config.instanceId,
+    };
+  }
+  if (config.kind === 'foundation') {
+    return { ...common, kind: 'foundation', foundationId: config.foundationId };
+  }
+  return {
+    ...common,
+    kind: 'foundation',
+    foundationId: config.annotatorId,
+    concept: config.concept,
+  };
+}
+
+/** What to suggest in the Generator's "looking for" box. A mask run already names its
+ *  concept; the other two know their classes but the config does not carry them. */
+export function generatorPrescanSuggestions(config: GeneratorConfig): string[] {
+  return config.kind === 'masks'
+    ? config.concept
         .split(/[.,]/)
         .map((part) => part.trim())
         .filter(Boolean)
