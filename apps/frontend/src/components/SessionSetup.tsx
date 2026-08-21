@@ -20,6 +20,8 @@ import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { hasNativeDialog, pickFolder } from '../lib/dialog';
+import { folderOf } from '../lib/dragDrop';
+import { useFileDrop } from '../hooks/useFileDrop';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
 import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
@@ -34,6 +36,12 @@ export interface SessionSetupProps {
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
+  // Drop an image and you mean its folder — see `folderOf`. Only the first path is used:
+  // this field holds one folder, and silently picking among several would be a guess.
+  const drop = useFileDrop((paths) => {
+    const first = paths[0];
+    if (first) setFolder(folderOf(first));
+  });
   const [mode, setMode] = useState<'prompt' | 'head'>('prompt');
   const [prompt, setPrompt] = useState('');
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
@@ -114,9 +122,9 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
   return (
     <form className="setup" onSubmit={(event) => void handleSubmit(event)}>
-      <div className="setup__row">
+      <div className={`setup__row${drop.dropping ? ' setup__row--dropping' : ''}`}>
         <label className="setup__field setup__field--grow" htmlFor="folder">
-          Image folder
+          {drop.dropping ? 'Drop to use that folder' : 'Image folder'}
           <span className="setup__control">
             <input
               id="folder"
@@ -138,6 +146,11 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
           </span>
         </label>
       </div>
+      {drop.available && (
+        <FieldHint id="folder-hint">
+          Or drag a folder — or any image inside it — onto this window.
+        </FieldHint>
+      )}
 
       <div className="setup__row">
         <label className="setup__field" htmlFor="dataset">

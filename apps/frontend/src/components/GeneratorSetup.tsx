@@ -15,6 +15,8 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
+import { folderOf } from '../lib/dragDrop';
+import { useFileDrop } from '../hooks/useFileDrop';
 import {
   GeneratorDestination,
   destinationReady,
@@ -35,6 +37,10 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
   const [mode, setMode] = useState<Mode>('expert');
   const [concept, setConcept] = useState('');
+  const drop = useFileDrop((paths) => {
+    const first = paths[0];
+    if (first) setFolder(folderOf(first));
+  });
   const [datasetOverride, setDatasetOverride] = useState('');
   const [newName, setNewName] = useState('');
   const [starting, setStarting] = useState(false);
@@ -165,14 +171,20 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       </fieldset>
 
       <label className="genpanel__field">
-        <span>Image folder</span>
+        <span>{drop.dropping ? 'Drop to use that folder' : 'Image folder'}</span>
         <input
           type="text"
           value={folder}
           placeholder="/Users/you/new-photos"
+          aria-describedby={drop.available ? 'gen-folder-hint' : undefined}
           onChange={(event) => setFolder(event.target.value)}
         />
       </label>
+      {drop.available && (
+        <FieldHint id="gen-folder-hint">
+          Or drag a folder — or any image inside it — onto this window.
+        </FieldHint>
+      )}
 
       {mode === 'masks' && (
         <div className="genpanel__group">

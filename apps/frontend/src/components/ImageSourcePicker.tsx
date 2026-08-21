@@ -9,6 +9,7 @@
 
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
+import { useFileDrop } from '../hooks/useFileDrop';
 import { hasNativeDialog, pickFolder, pickImageFile } from '../lib/dialog';
 
 export interface ImageSourcePickerProps {
@@ -32,6 +33,15 @@ export function ImageSourcePicker({
     setHasPicker(hasNativeDialog());
   }, []);
 
+  // No `folderOf` here: doc 17's source contract takes a single image *or* a folder and
+  // returns the same shape either way, so a dropped file is already valid input.
+  const drop = useFileDrop((paths) => {
+    const first = paths[0];
+    if (!first) return;
+    setDraft(first);
+    onPick(first);
+  });
+
   const shown = draft ?? value ?? '';
 
   const submit = (event: FormEvent): void => {
@@ -51,9 +61,9 @@ export function ImageSourcePicker({
 
   return (
     <form className="setup" onSubmit={submit}>
-      <div className="setup__row">
+      <div className={`setup__row${drop.dropping ? ' setup__row--dropping' : ''}`}>
         <label className="setup__field setup__field--grow" htmlFor="source-path">
-          Image or folder
+          {drop.dropping ? 'Drop to load it' : 'Image or folder'}
           <span className="setup__control">
             <input
               id="source-path"
@@ -80,6 +90,9 @@ export function ImageSourcePicker({
           </span>
         </label>
       </div>
+      {drop.available && (
+        <p className="fieldhint">Or drag an image or a folder onto this window.</p>
+      )}
     </form>
   );
 }

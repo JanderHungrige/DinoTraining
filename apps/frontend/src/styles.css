@@ -509,6 +509,14 @@ body {
   color: var(--danger);
 }
 
+/* While files hover the window (doc 40). A dashed accent outline rather than a fill: the
+   field keeps its own contrast, and the change is unmistakably about *this* target. */
+.setup__row--dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
 /* Guidance under a form field. Dim and small: it is help, not a warning. */
 .fieldhint {
   margin: -0.3rem 0 0;
