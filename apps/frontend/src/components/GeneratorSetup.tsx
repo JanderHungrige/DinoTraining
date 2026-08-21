@@ -14,13 +14,11 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
-import { FieldHint } from './FieldHint';
+import { FolderField } from './FolderField';
 import { FoundationPicker } from './FoundationPicker';
 import { GeneratorModePicker, type GeneratorMode } from './GeneratorModePicker';
 import { MaskSourceFields } from './MaskSourceFields';
 import { listFoundations, type FoundationInfo } from '../api/foundation';
-import { folderOf } from '../lib/dragDrop';
-import { useFileDrop } from '../hooks/useFileDrop';
 import {
   GeneratorDestination,
   destinationReady,
@@ -46,10 +44,6 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [detectorOverride, setDetectorOverride] = useState('');
   const [concept, setConcept] = useState('');
-  const drop = useFileDrop((paths) => {
-    const first = paths[0];
-    if (first) setFolder(folderOf(first));
-  });
   const [datasetOverride, setDatasetOverride] = useState('');
   const [newName, setNewName] = useState('');
   const [starting, setStarting] = useState(false);
@@ -188,21 +182,13 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
       <GeneratorModePicker mode={mode} onChange={setMode} />
 
-      <label className="genpanel__field">
-        <span>{drop.dropping ? 'Drop to use that folder' : 'Image folder'}</span>
-        <input
-          type="text"
-          value={folder}
-          placeholder="/Users/you/new-photos"
-          aria-describedby={drop.available ? 'gen-folder-hint' : undefined}
-          onChange={(event) => setFolder(event.target.value)}
-        />
-      </label>
-      {drop.available && (
-        <FieldHint id="gen-folder-hint">
-          Or drag a folder — or any image inside it — onto this window.
-        </FieldHint>
-      )}
+      <FolderField
+        id="gen-folder"
+        value={folder}
+        onChange={setFolder}
+        placeholder="/Users/you/new-photos"
+        variant="genpanel"
+      />
 
       <MaskSourceFields
         mode={mode}

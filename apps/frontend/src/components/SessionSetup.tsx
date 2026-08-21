@@ -17,14 +17,12 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { DEFAULT_BOX_THRESHOLD, DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
-import { listFoundations, type FoundationInfo } from '../api/foundation';
+import { listFoundations, proposesBoxes, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
-import { hasNativeDialog, pickFolder } from '../lib/dialog';
-import { folderOf } from '../lib/dragDrop';
-import { useFileDrop } from '../hooks/useFileDrop';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
+import { FolderField } from './FolderField';
 import { FoundationPicker } from './FoundationPicker';
 import { ProposalModePicker, type ProposalMode } from './ProposalModePicker';
 import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
@@ -39,16 +37,13 @@ export interface SessionSetupProps {
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
-  // Drop an image and you mean its folder — see `folderOf`. Only the first path is used:
-  // this field holds one folder, and silently picking among several would be a guess.
-  const drop = useFileDrop((paths) => {
-    const first = paths[0];
-    if (first) setFolder(folderOf(first));
-  });
   const [mode, setMode] = useState<ProposalMode>('prompt');
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [foundationOverride, setFoundationOverride] = useState('');
   const [prompt, setPrompt] = useState('');
+  // Separate from `prompt` — that one is Grounding DINO's. One shared string would
+  // carry a stale prompt into a detector run the moment the user switched modes.
+  const [concept, setConcept] = useState('');
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [loadingHeads, setLoadingHeads] = useState(true);
   // Only the user's override is stored; the effective head falls back to the first
@@ -60,10 +55,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   const [newName, setNewName] = useState('');
   const [boxThreshold, setBoxThreshold] = useState(DEFAULT_BOX_THRESHOLD);
   const [error, setError] = useState<string | null>(null);
-  const [hasPicker, setHasPicker] = useState(false);
-
   useEffect(() => {
-    setHasPicker(hasNativeDialog());
     void listDatasets()
       .then(setDatasets)
       .catch(() => setError('Could not load datasets.'));
@@ -83,10 +75,11 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   );
   const selectedHead = headOverride || annotatable[0]?.id || '';
   // Derived, never seeded — the same rule, for the same reason.
-  const usableDetectors = foundations.filter(
-    (entry) => entry.render_hint === 'boxes' && entry.installed,
-  );
+  const usableDetectors = foundations.filter((e) => proposesBoxes(e) && e.installed);
   const selectedDetector = foundationOverride || usableDetectors[0]?.id || '';
+  // Asking the *selected* entry is what stops the field lingering after a switch back.
+  const detectorNeedsConcept =
+    usableDetectors.find((entry) => entry.id === selectedDetector)?.takes_concept === true;
 
   const handleSubmit = async (event: FormEvent): Promise<void> => {
     event.preventDefault();
@@ -99,6 +92,13 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
     if (mode === 'foundation' && !selectedDetector) {
       setError('No general detector is installed — get one in Admin / Models.');
+      return;
+    }
+
+    if (mode === 'foundation' && detectorNeedsConcept && !concept.trim()) {
+      // Refused here rather than sent — the backend refuses it too, but a round trip to
+      // learn that is worse than a message beside the field the user is looking at.
+      setError('Name what you are looking for — that model finds only what you ask for.');
       return;
     }
 
@@ -128,6 +128,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
               kind: 'foundation',
               foundationId: selectedDetector,
               scoreThreshold: boxThreshold,
+              ...(detectorNeedsConcept ? { concept } : {}),
             }
           : mode === 'head'
           ? {
@@ -147,35 +148,9 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
   return (
     <form className="setup" onSubmit={(event) => void handleSubmit(event)}>
-      <div className={`setup__row${drop.dropping ? ' setup__row--dropping' : ''}`}>
-        <label className="setup__field setup__field--grow" htmlFor="folder">
-          {drop.dropping ? 'Drop to use that folder' : 'Image folder'}
-          <span className="setup__control">
-            <input
-              id="folder"
-              type="text"
-              value={folder}
-              placeholder="/Users/you/photos"
-              required
-              onChange={(event) => setFolder(event.target.value)}
-            />
-            {hasPicker && (
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void pickFolder().then((picked) => picked && setFolder(picked))}
-              >
-                Browse…
-              </button>
-            )}
-          </span>
-        </label>
+      <div className="setup__row">
+        <FolderField id="folder" value={folder} onChange={setFolder} required />
       </div>
-      {drop.available && (
-        <FieldHint id="folder-hint">
-          Or drag a folder — or any image inside it — onto this window.
-        </FieldHint>
-      )}
 
       <div className="setup__row">
         <label className="setup__field" htmlFor="dataset">
@@ -223,6 +198,8 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
           onSelect={setFoundationOverride}
           legend="Detector"
           groupName="studio-detector"
+          concept={concept}
+          onConceptChange={setConcept}
         />
       )}
 
