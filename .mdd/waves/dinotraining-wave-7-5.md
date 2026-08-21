@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: f9f64ba0
+hash: 24c11b54
 ---
 
 # Wave 7.5: General Object Detection
@@ -112,6 +112,7 @@ without detectron2 or a pickle.
 | 5 | ~~45~~ | ~~general-detection-head~~ — **scrapped 2026-08-21** | — |
 | 6 | 45 | concept-segmentation-everywhere | 42 |
 | 7 | 46 | generator-folder-picker | 40 |
+| 8 | 47 | box-review-list | 42 |
 
 - **rf-detr-detector** — RF-DETR as a catalogue entry and a `FoundationModel` (doc 36's
   contract), rendering through the existing `boxes` render hint.
@@ -137,6 +138,10 @@ without detectron2 or a pickle.
 - **generator-folder-picker** — the Dataset Generator had no native picker at all, beside two
   tabs that did. Extracted rather than copied a third time, because "an image means its
   folder" is a rule a fourth copy would get wrong.
+- **box-review-list** — the Studio's canvas was built for a handful of hand-drawn boxes and
+  breaks on thirty proposed ones: a covered box cannot be clicked, the class is nowhere on
+  screen, and a verdict is hidden behind a cycle. Paint order by descending area fixes
+  containment outright; a list beside the image fixes the rest.
 
 ## Open questions — answered
 

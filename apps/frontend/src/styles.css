@@ -1759,3 +1759,198 @@ body {
   font: inherit;
   font-size: 0.9rem;
 }
+
+/* --- Box review (doc 47) ---
+   The list is the primary surface for detection output, so it is a sibling of the canvas
+   rather than something below it. Every colour here is a token defined in `:root` and
+   redefined for light — never a hardcoded hex with a fallback, which is how a 1.9:1
+   contrast bug shipped once already. */
+
+.studio__review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* One column below the width where a 22rem side panel starts squeezing the image. */
+@media (max-width: 62rem) {
+  .studio__review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.review__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.review__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.review__dim {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.review__threshold {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.review__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.review__empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* The list scrolls, the page does not: thirty proposed boxes must not push the Save
+     button below the fold on the one screen where it is pressed most. */
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.review__row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 2.6rem auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  border-left: 3px solid var(--verdict, var(--accent));
+}
+
+.review__row--positive {
+  --verdict: var(--accent);
+}
+.review__row--negative {
+  --verdict: var(--danger);
+}
+.review__row--unclear {
+  --verdict: var(--pending);
+}
+
+.review__row--selected {
+  border-color: var(--focus);
+  border-left-color: var(--verdict, var(--accent));
+  background: var(--bg);
+}
+
+.review__number {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.review__class {
+  min-width: 0;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+/* The field only looks like a field once you reach for it — thirty bordered inputs in a
+   column reads as a form to fill in rather than a list to skim. */
+.review__class:hover:not(:disabled),
+.review__class:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.review__score {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.review__verdicts {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.review__verdict {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.review__verdict:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+
+ /* The chosen verdict is filled, not merely tinted. Hue alone would leave the state
+    invisible to a colour-blind reviewer, and `aria-pressed` only helps a screen reader —
+    the fill and the border weight are the signal that works without either. */
+.review__verdict--on {
+  border-color: var(--verdict, var(--accent));
+  background: var(--verdict, var(--accent));
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.review__verdict:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.btn--small {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* The number sits inside the box tag, so a box reads as "3 person" on the image and
+   matches row 3 in the list beside it. */
+.canvas__boxnum {
+  display: inline-block;
+  margin-right: 0.3rem;
+  padding: 0 0.25rem;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 0.35);
+  font-variant-numeric: tabular-nums;
+}

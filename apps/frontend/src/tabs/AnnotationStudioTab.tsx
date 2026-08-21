@@ -1,18 +1,55 @@
 /** Wave 1 — Annotation Studio: the wave's demo-state, assembled. */
 
-import { useRef, useState, type JSX } from 'react';
+import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
 import { CounterBar } from '../components/CounterBar';
+import { BoxReviewList } from '../components/BoxReviewList';
 import { SessionSetup } from '../components/SessionSetup';
+import { hiddenByThreshold, numbered } from '../lib/boxReview';
+import type { Label } from '../types/annotation';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
 
 export function AnnotationStudioTab(): JSX.Element {
   const [config, setConfig] = useState<SessionConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Starts at 0 so nothing is ever hidden until the user asks. A review surface that opens
+  // with boxes already filtered out looks like a model that found fewer than it did.
+  const [threshold, setThreshold] = useState(0);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
+
+  const { boxes, setBoxes } = session;
+  const items = useMemo(() => numbered(boxes), [boxes]);
+  const hidden = useMemo(() => hiddenByThreshold(boxes, threshold), [boxes, threshold]);
+
+  const setLabel = useCallback(
+    (id: string, label: Label): void => {
+      setBoxes(boxes.map((box) => (box.id === id ? { ...box, label } : box)));
+    },
+    [boxes, setBoxes],
+  );
+
+  const rename = useCallback(
+    (id: string, text: string): void => {
+      setBoxes(boxes.map((box) => (box.id === id ? { ...box, text } : box)));
+    },
+    [boxes, setBoxes],
+  );
+
+  const remove = useCallback(
+    (id: string): void => {
+      setBoxes(boxes.filter((box) => box.id !== id));
+      setSelectedId((current) => (current === id ? null : current));
+    },
+    [boxes, setBoxes],
+  );
+
+  // Discards exactly what the slider is hiding, so what disappears is what was on screen.
+  const removeHidden = useCallback((): void => {
+    setBoxes(boxes.filter((box) => !hidden.has(box.id)));
+  }, [boxes, hidden, setBoxes]);
 
   if (!config) {
     return (
@@ -78,16 +115,32 @@ export function AnnotationStudioTab(): JSX.Element {
           />
 
           {imageSize ? (
-            <AnnotationCanvas
-              imageUrl={imageUrl(currentImage)}
-              naturalWidth={imageSize.width}
-              naturalHeight={imageSize.height}
-              boxes={session.boxes}
-              selectedId={selectedId}
-              onBoxesChange={session.setBoxes}
-              onSelect={setSelectedId}
-              disabled={session.busy}
-            />
+            <div className="studio__review">
+              <AnnotationCanvas
+                imageUrl={imageUrl(currentImage)}
+                naturalWidth={imageSize.width}
+                naturalHeight={imageSize.height}
+                boxes={items}
+                hidden={hidden}
+                selectedId={selectedId}
+                onBoxesChange={setBoxes}
+                onSelect={setSelectedId}
+                disabled={session.busy}
+              />
+              <BoxReviewList
+                boxes={items}
+                hidden={hidden}
+                selectedId={selectedId}
+                threshold={threshold}
+                onSelect={setSelectedId}
+                onLabel={setLabel}
+                onRename={rename}
+                onRemove={remove}
+                onThreshold={setThreshold}
+                onRemoveHidden={removeHidden}
+                disabled={session.busy}
+              />
+            </div>
           ) : (
             <p role="status">Loading image…</p>
           )}

@@ -4,6 +4,7 @@ import { useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
+import { numbered } from '../lib/boxReview';
 import { CounterBar } from '../components/CounterBar';
 import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { GeneratorSetup } from '../components/GeneratorSetup';
@@ -110,7 +111,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 imageUrl={imageUrl(currentImage)}
                 naturalWidth={imageSize.width}
                 naturalHeight={imageSize.height}
-                boxes={session.boxes}
+                boxes={numbered(session.boxes)}
                 selectedId={selectedId}
                 onBoxesChange={session.setBoxes}
                 onSelect={setSelectedId}

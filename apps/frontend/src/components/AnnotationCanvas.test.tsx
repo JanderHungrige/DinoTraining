@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { CanvasBox } from '../types/annotation';
+import { numbered } from '../lib/boxReview';
 import { AnnotationCanvas } from './AnnotationCanvas';
 
 const BOX: CanvasBox = {
@@ -33,7 +34,11 @@ beforeEach(() => {
   } as DOMRect);
 });
 
-function renderCanvas(boxes: readonly CanvasBox[] = [BOX], selectedId: string | null = null) {
+function renderCanvas(
+  boxes: readonly CanvasBox[] = [BOX],
+  selectedId: string | null = null,
+  hidden: ReadonlySet<string> = new Set(),
+) {
   const onBoxesChange = vi.fn<(boxes: CanvasBox[]) => void>();
   const onSelect = vi.fn<(id: string | null) => void>();
   render(
@@ -41,8 +46,9 @@ function renderCanvas(boxes: readonly CanvasBox[] = [BOX], selectedId: string | 
       imageUrl="/img.png"
       naturalWidth={200}
       naturalHeight={100}
-      boxes={boxes}
+      boxes={numbered(boxes)}
       selectedId={selectedId}
+      hidden={hidden}
       onBoxesChange={onBoxesChange}
       onSelect={onSelect}
     />,
