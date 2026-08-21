@@ -124,10 +124,18 @@ def write_image(path: Path, size: tuple[int, int] = (320, 240)) -> str:
 def add_detector(num_classes: int = 2, name: str = "Shapes detector") -> str:
     """A `boxes`-hint head — the only kind Wave 4's expert annotator will accept.
 
-    Weight shapes follow DetectionHead in app/ml/heads/modules.py: a 1x1 conv classifier,
-    a four-channel box regressor for the l/t/r/b distances, and a single centerness
-    channel.
+    Weight shapes follow DetectionHead in app/ml/heads/modules.py: a projection down to
+    DETECTION_HIDDEN, a learned upsample to twice the patch grid, a GroupNorm, then a 1x1
+    conv classifier, a four-channel box regressor for the l/t/r/b distances and a single
+    centerness channel.
+
+    Built from the real module rather than hand-listed shapes — doc 43 changed these and
+    every hand-written copy went stale at once. `state_dict()` cannot drift from the class
+    it came from.
     """
+    from app.ml.heads.modules import DetectionHead
+
+    reference = DetectionHead(EMBED, num_classes)
     instance = HeadInstanceStore().register(
         name=name,
         kind="trained-here",
@@ -138,12 +146,7 @@ def add_detector(num_classes: int = 2, name: str = "Shapes detector") -> str:
         embed_dim=EMBED,
         num_classes=num_classes,
         weights={
-            "classifier.weight": torch.randn(num_classes, EMBED, 1, 1),
-            "classifier.bias": torch.randn(num_classes),
-            "box_regressor.weight": torch.randn(4, EMBED, 1, 1),
-            "box_regressor.bias": torch.randn(4),
-            "centerness.weight": torch.randn(1, EMBED, 1, 1),
-            "centerness.bias": torch.randn(1),
+            key: value.clone() for key, value in reference.state_dict().items()
         },
         class_names=tuple(f"object{i}" for i in range(num_classes)),
     )

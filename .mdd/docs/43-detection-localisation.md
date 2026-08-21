@@ -9,24 +9,31 @@ depends_on: [09-head-implementations, 11-training-job-runner]
 relates: [16-inference-engine, 31-external-dataset-import, 41-rf-detr-detector]
 source_files:
   - backend/app/ml/training/losses.py
+  - backend/app/ml/heads/modules.py
+  - backend/app/ml/heads/decode.py
 routes: []
 models: []
 test_files:
   - backend/tests/test_detection_quality.py
+  - backend/tests/test_head_modules.py
+  - backend/tests/test_head_decode.py
+  - backend/tests/test_training_losses.py
 data_flow: reads-existing
 last_synced: 2026-08-20
 status: complete
 phase: all
 mdd_version: 11
-tags: [object-detection, fcos, centerness, giou, loss, metrics]
+tags: [object-detection, fcos, centerness, giou, vitdet, resolution, metrics]
 path: Head Trainer/Detection
 integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**The multi-scale half of this feature is not built.** A ViTDet-style feature pyramid is the third fix and the only one that changes `DetectionHead`'s parameter shapes — which invalidates every saved detection head. That is a decision about Jan's data, not a technical choice, so it was raised rather than taken. See \"What is deliberately not here\"."
-  - "Single training runs, and training is not reproducible (`.mdd/BACKLOG.md`). Two identical configs measured 4% apart on mAP earlier, so the thermal and blood mAP@75 gains (+20%, +12%) carry that noise. Chess (+174%) is far outside it."
-  - "`box_ltrb` is still scaled by `patch_size` in `DetectionHead.forward`. Harmless while there is one scale; it becomes the stride and must move with it the moment a pyramid lands."
+  - "**Saved detection heads from before this doc cannot be loaded.** `DetectionHead` gained a projection, a learned upsample and a GroupNorm, so `load_state_dict` refuses old checkpoints rather than silently mismatching. Jan chose this over the alternatives on 2026-08-20; a detector retrains in under two minutes."
+  - "**This is ViTDet's up-branch, not its full feature pyramid.** One finer level, not several. Extra levels solve scale *variation* and these datasets do not have it — their objects run 35-80 px. Full multi-level would rewrite the assigner, the loss and the decoder for a benefit this data cannot demonstrate. Revisit if a dataset arrives with objects spanning an order of magnitude."
+  - "**Chess mAP@50 regressed** — 0.837 after the loss fixes, 0.734 with the finer grid. Its mAP@75 more than doubled over the same step (0.178 -> 0.479) and its overall mAP rose, so the head is placing boxes far better and finding slightly fewer at loose IoU. Thirteen classes on 202 images is also the most overfit-prone case here, and the head grew from ~4k parameters to ~115k."
+  - "**Blood and chess both ran the full 30 epochs without early stopping**, so neither had converged. The numbers below are a floor, not a ceiling."
+  - "Single training runs, and training is not reproducible (`.mdd/BACKLOG.md`). Two identical configs measured ~4% apart on mAP, so single-digit percentages in the table are noise; the 40%+ moves are not."
 sister_projects: []
 ---
 
@@ -82,40 +89,57 @@ is what blurs the extents everything else then has to rank.
 
 ## Measured result
 
-Same data, same splits, same 30-epoch budget, same backbone. Only the loss changed:
+Same data, same splits, same 30-epoch budget, same backbone, measured at each step.
+**base** = doc 31, **loss** = centerness + GIoU, **fine** = the finer grid on top.
 
-| dataset | mAP | mAP@50 | mAP@75 |
+| dataset | mAP base → loss → fine | mAP@50 | mAP@75 |
 |---|---|---|---|
-| thermal | 0.404 → **0.447** (+11%) | 0.590 → 0.605 (+3%) | 0.203 → **0.243** (+20%) |
-| blood | 0.387 → **0.411** (+6%) | 0.610 → 0.627 (+3%) | 0.154 → **0.172** (+12%) |
-| chess | 0.525 → 0.525 (+0%) | 0.748 → **0.837** (+12%) | 0.065 → **0.178** (+174%) |
+| thermal | 0.404 → 0.447 → **0.587** (+45%) | 0.590 → 0.605 → **0.818** (+39%) | 0.203 → 0.243 → **0.338** (+67%) |
+| blood | 0.387 → 0.411 → **0.550** (+42%) | 0.610 → 0.627 → **0.775** (+27%) | 0.154 → 0.172 → **0.325** (+111%) |
+| chess | 0.525 → 0.525 → **0.606** (+15%) | 0.748 → 0.837 → 0.734 (−2%) | 0.065 → 0.178 → **0.479** (+637%) |
 
-**The gain lands where the diagnosis said it would.** mAP@50 barely moves on two of three —
-finding objects was never the problem — while mAP@75 rises everywhere, most on chess, which
-had the widest gap. Chess is also the case with many small same-class objects, where
-ranking by placement matters most.
+Two things are worth reading carefully rather than celebrating.
 
-Training is not reproducible run-to-run (`.mdd/BACKLOG.md`), and two identical configs
-measured ~4% apart earlier. The thermal and blood mAP@75 gains carry that noise; chess's
-+174% does not.
+**The loss fixes and the resolution fix helped different things.** The loss step moved
+mAP@75 and left mAP@50 alone, exactly as the diagnosis predicted: finding was never the
+problem. The resolution step moved *both*, because a finer grid gives more places for an
+object to be found as well as more precision about where it is.
 
-## What is deliberately not here
+**Chess mAP@50 regressed** — 0.837 → 0.734 — while its mAP@75 nearly tripled over the same
+step. The head is placing boxes far better and finding slightly fewer at loose IoU. Thirteen
+classes on 202 images is the most overfit-prone case here and the head grew from ~4k
+parameters to ~115k, which is the likely cause. Reported rather than buried.
 
-**The multi-scale feature pyramid.** It is the third cause — every box is regressed from a
-single 32×32 grid of 14 px cells, at every object size — and it is the only one of the
-three that changes `DetectionHead`'s parameter shapes. That **invalidates every saved
-detection head**, including the seven in Jan's store.
+**Blood and chess both ran all 30 epochs without early stopping**, so neither had converged.
+These are a floor.
 
-Two ways to avoid breaking them were considered and both are worse:
+Training is not reproducible run to run (`.mdd/BACKLOG.md`) — two identical configs measured
+~4% apart — so single-digit percentages here are noise. The 40%+ moves are not.
 
-- *Parameter-free upsampling* (bilinear ×2 before the existing 1×1 convs) keeps checkpoints
-  loadable but changes what their weights mean, because `box_ltrb` is scaled by
-  `patch_size` and the stride would halve. A checkpoint that loads and quietly predicts
-  differently is worse than one that refuses.
-- *A second head type* (`dense-detector-v2`) keeps both working at the cost of maintaining
-  two detection heads forever.
+## Three: one coarse scale
 
-Breaking saved heads is a decision about Jan's data, so it was raised rather than taken.
+Every box was regressed from a single **32×32 grid of 14 px cells**, whatever the object's
+size — chess pieces are ~35×62 px at the model's 448 px input. There is a floor on
+placement precision that no loss can get under.
+
+`DetectionHead` now **projects to 128 channels, upsamples ×2 with a learned transposed
+convolution, and predicts on the resulting 64×64 grid of 7 px cells.** `box_ltrb` is scaled
+by the *stride* rather than the patch size, and `assign_detection_targets` and
+`detection_decode` scale with it — all three read one `DETECTION_UPSAMPLE` constant, because
+if they disagree the targets land on different cells than the predictions and nothing
+crashes; the head simply learns nothing while every loss looks plausible.
+
+This is **ViTDet's up-branch, not its full feature pyramid.** A pyramid's extra levels solve
+scale *variation*, and these datasets do not have that problem — their objects run 35–80 px.
+Full multi-level would rewrite the assigner, the loss and the decoder for a benefit this
+data cannot demonstrate.
+
+### It breaks saved heads, deliberately
+
+The parameter shapes changed, so `load_state_dict` refuses pre-doc-43 checkpoints. Jan chose
+that over the two alternatives, both worse: *parameter-free upsampling* keeps checkpoints
+loadable while silently changing what their weights mean, and *a second head type* means
+maintaining two detection heads forever. A detector retrains in under two minutes.
 
 ## Business Rules
 

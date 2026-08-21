@@ -12,6 +12,7 @@ import torch
 from torch import Tensor
 from torch.nn import functional as torch_functional
 
+from app.ml.heads.modules import DETECTION_UPSAMPLE
 from app.ml.heads.registry import HeadTypeSpec
 
 #: (outputs, targets) -> scalar loss. ``targets`` is whatever the head type's assigner
@@ -55,6 +56,11 @@ def assign_detection_targets(
 ) -> dict[str, Tensor]:
     """Centre-sampling assignment: a cell is positive if its centre falls in a box.
 
+    ``grid`` and ``patch_size`` describe the **backbone's** grid; the detector predicts at
+    ``DETECTION_UPSAMPLE`` times that resolution (doc 43), so both are scaled here. Getting
+    this wrong does not crash — targets simply land on different cells than predictions,
+    and the head learns nothing while every loss looks plausible.
+
     When several boxes contain a cell, the **smallest** wins. Without that rule a large
     box swallows every cell of the small objects inside it, and the small objects are
     never learned — the classic ambiguity FCOS resolves by area.
@@ -62,16 +68,17 @@ def assign_detection_targets(
     Returns per-cell class targets (``-1`` = background, ``IGNORE_INDEX`` = ignore),
     ltrb regression targets, and a positive mask.
     """
-    rows, cols = grid
+    rows, cols = grid[0] * DETECTION_UPSAMPLE, grid[1] * DETECTION_UPSAMPLE
+    stride = patch_size / DETECTION_UPSAMPLE
     class_target = torch.full((rows, cols), -1, dtype=torch.long)
     box_target = torch.zeros((4, rows, cols), dtype=torch.float32)
     positive = torch.zeros((rows, cols), dtype=torch.bool)
     best_area = torch.full((rows, cols), float("inf"))
 
     for row in range(rows):
-        centre_y = (row + 0.5) * patch_size
+        centre_y = (row + 0.5) * stride
         for col in range(cols):
-            centre_x = (col + 0.5) * patch_size
+            centre_x = (col + 0.5) * stride
 
             for class_index, x, y, w, h in boxes:
                 if not (x <= centre_x <= x + w and y <= centre_y <= y + h):
