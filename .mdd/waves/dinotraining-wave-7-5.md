@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
 created: 2026-08-20
-hash: 24c11b54
+hash: f3c0e342
 ---
 
 # Wave 7.5: General Object Detection
@@ -113,6 +113,7 @@ without detectron2 or a pickle.
 | 6 | 45 | concept-segmentation-everywhere | 42 |
 | 7 | 46 | generator-folder-picker | 40 |
 | 8 | 47 | box-review-list | 42 |
+| 9 | 48 | dataset-format-guide | 31 |
 
 - **rf-detr-detector** — RF-DETR as a catalogue entry and a `FoundationModel` (doc 36's
   contract), rendering through the existing `boxes` render hint.
@@ -138,6 +139,10 @@ without detectron2 or a pickle.
 - **generator-folder-picker** — the Dataset Generator had no native picker at all, beside two
   tabs that did. Extracted rather than copied a third time, because "an image means its
   folder" is a rule a fourth copy would get wrong.
+- **dataset-format-guide** — an info button in the Head Trainer explaining exactly what a
+  dataset must look like to import, so the user can download one from anywhere and save it
+  correctly. The claims are pinned by *backend* tests, because nothing in the frontend can
+  tell whether prose about `coco_import.py` is still true.
 - **box-review-list** — the Studio's canvas was built for a handful of hand-drawn boxes and
   breaks on thirty proposed ones: a covered box cannot be clicked, the class is nowhere on
   screen, and a verdict is hidden behind a cycle. Paint order by descending area fixes

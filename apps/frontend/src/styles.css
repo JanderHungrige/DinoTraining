@@ -1954,3 +1954,65 @@ body {
   background: rgb(0 0 0 / 0.35);
   font-variant-numeric: tabular-nums;
 }
+
+/* --- Dataset format guide (doc 48) ---
+   Prose next to a form, so it is measured in characters rather than pixels: a line that
+   runs the width of the trainer panel is unreadable however wide the window is. */
+
+.formatinfo {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.formatinfo__panel {
+  max-width: 74ch;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.formatinfo__lead {
+  margin: 0 0 0.9rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.formatinfo__section + .formatinfo__section {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.formatinfo__heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.formatinfo__body {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.formatinfo__body:last-child {
+  margin-bottom: 0;
+}
+
+.formatinfo__tree {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  /* Scrolls inside itself; the page must never scroll sideways because of a code block. */
+  overflow-x: auto;
+}

@@ -7,6 +7,7 @@ import { FinetunePanel } from '../components/FinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
 import { TrainingProgress } from '../components/TrainingProgress';
+import { DatasetFormatPanel } from '../components/DatasetFormatPanel';
 import { listFoundations, type FoundationInfo } from '../api/foundation';
 import { useFinetune } from '../hooks/useFinetune';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
@@ -83,6 +84,11 @@ export function HeadTrainerTab(): JSX.Element {
         The backbone stays frozen — only the head trains. Preprocessing is chosen from the
         backbone and head type for you.
       </p>
+
+      {/* Beside the form rather than in the docs tab: the question is asked *while*
+          filling this in, by someone who has just downloaded a dataset from somewhere
+          and wants to know whether it will load. */}
+      <DatasetFormatPanel />
 
       {error && <p className="run__warn">{error}</p>}
       {loading && <p className="trainer__dim">Loading options…</p>}
