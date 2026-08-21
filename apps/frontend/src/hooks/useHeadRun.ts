@@ -7,6 +7,13 @@
  * the wave: the viewer's panes, the overlay registry and the compare layout already work
  * off `Prediction[]` and must not learn that some predictions came from elsewhere.
  *
+ * **A result belongs to the image it was computed from.** `currentPath` is required for
+ * that reason: without it this hook happily returned image 1's boxes over image 2, 3 and 4
+ * as the user paged through a folder — the prediction never expired, it just stopped being
+ * true. Gating is *derived* rather than cleared on navigation, which is what makes paging
+ * back to an earlier image correctly show that image's own result again, and what makes a
+ * response arriving after the user has moved on simply not appear.
+ *
  * The backbone is **derived from the selection** rather than picked separately. A head
  * only runs against the backbone it was registered for (doc 18 refuses the request
  * otherwise), so a separate backbone control would let the user build an invalid
@@ -51,12 +58,14 @@ function describe(cause: unknown, fallback: string): string {
   return cause instanceof ApiError ? cause.message : fallback;
 }
 
-export function useHeadRun(): HeadRunState {
+export function useHeadRun(currentPath: string | null): HeadRunState {
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
   const [result, setResult] = useState<ComposedResult | null>(null);
+  /** Which image `result` describes. Null whenever there is no result. */
+  const [resultPath, setResultPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [loadingHeads, setLoadingHeads] = useState(true);
@@ -150,6 +159,7 @@ export function useHeadRun(): HeadRunState {
     setSelected([]);
     setSelectedFoundations([]);
     setResult(null);
+    setResultPath(null);
     setError(null);
   }, []);
 
@@ -184,6 +194,7 @@ export function useHeadRun(): HeadRunState {
         ]);
         if (controller.signal.aborted) return;
 
+        setResultPath(imagePath);
         setResult({
           predictions: [...(composed?.predictions ?? []), ...foundationResults],
           // Foundation models run their own forward; they are not backbone passes and
@@ -200,12 +211,18 @@ export function useHeadRun(): HeadRunState {
         if (controller.signal.aborted) return;
         setError(describe(cause, 'Could not run that selection.'));
         setResult(null);
+        setResultPath(null);
       } finally {
         if (!controller.signal.aborted) setRunning(false);
       }
     },
     [selected, backboneId, selectedFoundations],
   );
+
+  // Derived, not stored: a result is shown only while the image it describes is the one
+  // on screen. Clearing on navigation instead would lose a result the user could page
+  // back to, and would still race a response that lands after they have moved on.
+  const resultForCurrentImage = resultPath !== null && resultPath === currentPath ? result : null;
 
   return {
     heads,
@@ -217,7 +234,7 @@ export function useHeadRun(): HeadRunState {
     taskFilter,
     selectedTask,
     running,
-    result,
+    result: resultForCurrentImage,
     error,
     loadingHeads,
     toggle,

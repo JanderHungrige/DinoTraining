@@ -21,8 +21,10 @@ import { useImageSource } from '../hooks/useImageSource';
 export function InferenceViewerTab(): JSX.Element {
   const [path, setPath] = useState<string | null>(null);
   const source = useImageSource(path);
-  const run = useHeadRun();
   const { current } = source;
+  // The hook needs to know which image is on screen, or a result outlives the image it
+  // describes — doc 21's stale-result bug.
+  const run = useHeadRun(current?.path ?? null);
 
   const predictions = run.result?.predictions ?? [];
 

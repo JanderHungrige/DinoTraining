@@ -109,8 +109,10 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-async function ready() {
-  const { result } = renderHook(() => useHeadRun());
+const IMAGE = '/pics/a.jpg';
+
+async function ready(path: string = IMAGE) {
+  const { result } = renderHook(() => useHeadRun(path));
   await waitFor(() => expect(result.current.heads).toHaveLength(1));
   await waitFor(() => expect(result.current.foundations).toHaveLength(1));
   return result;
@@ -127,7 +129,7 @@ describe('offering foundation models', () => {
     // An uninstalled model in the runner offers an action whose only outcome is a 409
     // telling you to go to the admin panel. The admin panel is where you install it.
     route({ foundations: [{ ...FOUNDATION, installed: false }] });
-    const { result } = renderHook(() => useHeadRun());
+    const { result } = renderHook(() => useHeadRun(IMAGE));
     await waitFor(() => expect(result.current.heads).toHaveLength(1));
     expect(result.current.foundations).toEqual([]);
   });
@@ -140,7 +142,7 @@ describe('offering foundation models', () => {
       if (url.includes('/heads')) return Promise.resolve(json({ heads: [HEAD] }));
       return Promise.resolve(json({}));
     });
-    const { result } = renderHook(() => useHeadRun());
+    const { result } = renderHook(() => useHeadRun(IMAGE));
     await waitFor(() => expect(result.current.heads).toHaveLength(1));
     expect(result.current.foundations).toEqual([]);
     expect(result.current.error).toBeNull();
@@ -156,7 +158,7 @@ describe('running them', () => {
 
     act(() => result.current.toggleFoundation('depth-anything-v2-small'));
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
 
     expect(result.current.result?.predictions).toHaveLength(1);
@@ -170,7 +172,7 @@ describe('running them', () => {
     act(() => result.current.toggle('h1'));
     act(() => result.current.toggleFoundation('depth-anything-v2-small'));
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
 
     const names = result.current.result?.predictions.map((p) => p.head_name);
@@ -185,7 +187,7 @@ describe('running them', () => {
 
     act(() => result.current.toggleFoundation('depth-anything-v2-small'));
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
 
     expect(result.current.result?.passes).toBe(0);
@@ -196,7 +198,7 @@ describe('running them', () => {
     const result = await ready();
 
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
 
     expect(result.current.result).toBeNull();
@@ -208,7 +210,7 @@ describe('running them', () => {
 
     act(() => result.current.toggleFoundation('depth-anything-v2-small'));
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
 
     expect(result.current.error).toBeTruthy();
@@ -231,7 +233,7 @@ describe('running them', () => {
 
     act(() => result.current.toggleFoundation('depth-anything-v2-small'));
     await act(async () => {
-      await result.current.run('/pics/a.jpg');
+      await result.current.run(IMAGE);
     });
     expect(result.current.result).not.toBeNull();
 
@@ -239,3 +241,83 @@ describe('running them', () => {
     expect(result.current.result).toBeNull();
   });
 });
+
+describe('a result belongs to the image it came from', () => {
+  /**
+   * The bug Jan hit: run a detector on the first image of a folder, page to the next, and
+   * the *first* image's boxes are still drawn — over every later image. The prediction
+   * never expired, it just stopped being true. Present since Wave 3 for trained heads too;
+   * only visible once someone runs a model and then pages through a folder.
+   */
+  it('does not show image one\'s boxes over image two', async () => {
+    route();
+    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
+      initialProps: { path: '/pics/a.jpg' },
+    });
+    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
+
+    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
+    await act(async () => {
+      await result.current.run('/pics/a.jpg');
+    });
+    expect(result.current.result?.predictions).toHaveLength(1);
+
+    rerender({ path: '/pics/b.jpg' });
+
+    expect(result.current.result).toBeNull();
+  });
+
+  it('shows it again when you page back to that image', async () => {
+    // Why the gate is derived rather than cleared on navigation: the result is still a
+    // true statement about image one, so returning to image one should show it.
+    route();
+    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
+      initialProps: { path: '/pics/a.jpg' },
+    });
+    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
+
+    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
+    await act(async () => {
+      await result.current.run('/pics/a.jpg');
+    });
+
+    rerender({ path: '/pics/b.jpg' });
+    expect(result.current.result).toBeNull();
+
+    rerender({ path: '/pics/a.jpg' });
+    expect(result.current.result?.predictions).toHaveLength(1);
+  });
+
+  it('does not show a response that lands after the user has moved on', async () => {
+    // The same gate covers the race for free: a slow response for image one arrives while
+    // image two is on screen, and simply does not appear.
+    route();
+    const { result, rerender } = renderHook(({ path }) => useHeadRun(path), {
+      initialProps: { path: '/pics/a.jpg' },
+    });
+    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
+
+    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
+    const pending = result.current.run('/pics/a.jpg');
+    rerender({ path: '/pics/b.jpg' });
+    await act(async () => {
+      await pending;
+    });
+
+    expect(result.current.result).toBeNull();
+  });
+
+  it('shows nothing when no image is on screen', async () => {
+    route();
+    const { result } = renderHook(() => useHeadRun(null));
+    await waitFor(() => expect(result.current.foundations).toHaveLength(1));
+
+    act(() => result.current.toggleFoundation('depth-anything-v2-small'));
+    await act(async () => {
+      await result.current.run('/pics/a.jpg');
+    });
+
+    expect(result.current.result).toBeNull();
+  });
+});
+
