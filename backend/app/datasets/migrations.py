@@ -39,8 +39,13 @@ from app.datasets.schema import (
 logger = logging.getLogger(__name__)
 
 #: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam;
-#: v5 added the producer column.
-LATEST_VERSION = 5
+#: v5 added the producer column; v6 added the imported provenance.
+#:
+#: Bumping this is **not** bookkeeping. `run_migrations` returns early once the stored
+#: version reaches it, so widening PROVENANCE_VALUES without moving this number rebuilds
+#: the CHECK on fresh databases only — every test passes and the real install raises
+#: IntegrityError on first write. The rebuild itself needs no new code; the gate does.
+LATEST_VERSION = 6
 
 # Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
 # silently transpose two same-typed columns if a schema is ever reordered.

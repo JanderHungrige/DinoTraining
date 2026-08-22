@@ -19,6 +19,7 @@ from collections.abc import Callable
 
 import torch
 from torch import Tensor
+from torchvision.ops import batched_nms
 
 from app.ml.heads.modules import decode_ltrb_to_boxes
 from app.ml.heads.registry import HeadTypeSpec
@@ -30,17 +31,47 @@ DecodeFn = Callable[[dict[str, Tensor], int], dict[str, Tensor]]
 #: cell would make average_precision quadratic in grid size for no gain.
 MAX_DETECTIONS = 100
 
+#: Overlap above which two same-class boxes are treated as the same object.
+#: 0.5 is the COCO convention and matches `map_50`, the metric this most affects.
+NMS_IOU_THRESHOLD = 0.5
+
 
 def identity_decode(outputs: dict[str, Tensor], patch_size: int) -> dict[str, Tensor]:
     """Classification and segmentation metrics read logits directly."""
     return outputs
 
 
+def _suppress_overlaps(boxes: Tensor, scores: Tensor, classes: Tensor) -> Tensor:
+    """Class-aware NMS. Returns surviving indices, already ordered by descending score.
+
+    Every patch cell whose receptive field covers an object regresses its *own* box to
+    that object, so one dog becomes thirty near-identical boxes. Centerness damps the
+    worst of them but suppresses nothing: it reweights, and a weighted duplicate is still
+    a duplicate. Without this step a single thermal image returned 32 overlapping
+    `person` boxes, and every one past the first counts as a false positive — so this
+    depressed `map` as much as it cluttered the review UI.
+
+    Class-aware (``batched_nms``) rather than global: a dog standing in front of a person
+    legitimately overlaps, and suppressing across classes would delete the rarer one.
+    """
+    if scores.numel() == 0:
+        return torch.empty(0, dtype=torch.long, device=scores.device)
+    # torchvision wants corners; the rest of this project speaks xywh.
+    x_min, y_min, width, height = boxes.unbind(dim=-1)
+    corners = torch.stack([x_min, y_min, x_min + width, y_min + height], dim=-1)
+    # torchvision ships no stubs for ops, so the return is Any without this.
+    keep: Tensor = batched_nms(corners, scores, classes, NMS_IOU_THRESHOLD)
+    return keep
+
+
 def detection_decode(outputs: dict[str, Tensor], patch_size: int) -> dict[str, Tensor]:
-    """Per-cell predictions to ranked boxes.
+    """Per-cell predictions to ranked, de-duplicated boxes.
 
     Score is ``sigmoid(class) * sigmoid(centerness)``: centerness suppresses cells near a
     box edge, which otherwise produce confident but badly-placed boxes and depress AP.
+    Overlapping duplicates are then removed by NMS — the head type has always advertised
+    it, and until doc 31 exercised a trained detector on real images, nothing implemented
+    it.
     """
     class_logits = outputs["class_logits"]
     centerness = outputs["centerness"]
@@ -54,9 +85,14 @@ def detection_decode(outputs: dict[str, Tensor], patch_size: int) -> dict[str, T
     scores = (best_score * centre).reshape(-1)
     classes = best_class.reshape(-1)
 
-    keep = min(MAX_DETECTIONS, scores.numel())
-    top = torch.topk(scores, keep).indices
-    return {"boxes": boxes[top], "scores": scores[top], "classes": classes[top]}
+    # NMS before the cap, not after: taking the top 100 cells first would fill the budget
+    # with duplicates of the same object and drop genuine second detections.
+    survivors = _suppress_overlaps(boxes, scores, classes)[:MAX_DETECTIONS]
+    return {
+        "boxes": boxes[survivors],
+        "scores": scores[survivors],
+        "classes": classes[survivors],
+    }
 
 
 DECODERS: dict[str, DecodeFn] = {

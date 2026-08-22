@@ -1,13 +1,15 @@
-"""Dataset endpoints: create, list, annotate, count, export, delete."""
+"""Dataset endpoints: create, list, annotate, count, import, export, delete."""
 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.datasets.coco import build_coco, write_coco
+from app.datasets.coco_import import import_coco_dataset
 from app.datasets.masks import MaskStore
 from app.datasets.models import (
     DatasetCounts,
@@ -38,6 +40,32 @@ class ExportResponse(BaseModel):
     path: str
     images: int
     annotations: int
+
+
+class ImportCocoRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    directory: str = Field(min_length=1, description="Folder holding the COCO export.")
+    copy_images: bool = Field(
+        default=False,
+        description="Copy images into the dataset instead of referencing them in place.",
+    )
+
+
+class ImportResponse(BaseModel):
+    """What the import actually stored.
+
+    The skip counters are part of the response, not just the log: an import that quietly
+    dropped half its boxes must not be indistinguishable from a clean one at the call site.
+    """
+
+    dataset_id: str
+    name: str
+    images: int
+    boxes: int
+    class_names: list[str]
+    sources: list[str]
+    skipped_images: int
+    skipped_boxes: int
 
 
 def _store() -> DatasetStore:
@@ -118,6 +146,42 @@ async def put_image_masks(
 async def get_counts(dataset_id: str) -> DatasetCounts:
     _require(dataset_id)
     return _store().counts(dataset_id)
+
+
+@router.post(
+    "/datasets/import/coco",
+    response_model=ImportResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Import a COCO export as a new dataset",
+)
+async def import_coco(request: ImportCocoRequest) -> ImportResponse:
+    """Create a dataset from a third-party COCO export and fill it.
+
+    Every failure mode here is bad *input* — a path that is not a folder, a directory with
+    no annotation file, malformed JSON — so they all arrive as ValueError and leave as 422.
+    Letting one escape as a 500 would put the only usable explanation in the log.
+    """
+    try:
+        dataset_id, summary = import_coco_dataset(
+            _store(),
+            name=request.name,
+            directory=Path(request.directory).expanduser(),
+            copy_images=request.copy_images,
+        )
+    except ValueError as error:
+        logger.info("COCO import from %s rejected: %s", request.directory, error)
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return ImportResponse(
+        dataset_id=dataset_id,
+        name=request.name,
+        images=summary.images,
+        boxes=summary.boxes,
+        class_names=list(summary.class_names),
+        sources=list(summary.sources),
+        skipped_images=summary.skipped_images,
+        skipped_boxes=summary.skipped_boxes,
+    )
 
 
 @router.post(

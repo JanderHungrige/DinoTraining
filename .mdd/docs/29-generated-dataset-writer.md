@@ -42,6 +42,7 @@ path: Dataset Generator/Save
 integration_contracts: []
 satisfies_contracts: []
 known_issues:
+  - "**Fixed 2026-08-20 (doc 31).** `saveImageBoxes` spread a `CanvasBox` straight into the request body, so a box's class went out as `text` — the canvas's name for it — while the store calls it `prompt`. Pydantic drops unknown fields silently, so the save succeeded, the counters were right, and the class name was simply gone. Wave 1 never noticed: the Studio also sends an image-level `prompt` that `replace_image_boxes` falls back to. The Dataset Generator sends none — it ran a head, not a phrase — so **every generated box lost its class**, and since the trainer derives its vocabulary from `prompt`, re-training on a generated dataset would have collapsed all classes into the `object` fallback. That is the flywheel this wave exists to close, silently broken. Pinned by `src/api/datasets.save.test.ts`."
   - "Dataset lineage — a parent-dataset link and generation timestamp — was considered and not built. Per-annotation provenance answers 'which model made this'; lineage answers 'which dataset was this generated from', which only becomes useful once datasets are routinely generated from other datasets. Revisit when that happens."
 security_read_sites: []
 ---

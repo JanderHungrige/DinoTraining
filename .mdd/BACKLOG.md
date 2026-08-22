@@ -43,6 +43,30 @@ to make ordering matter. The signal it needs — a per-prediction score — is a
 `Box.score` and in the Wave 3 `Prediction` payload, so nothing has to be built to keep the
 option open.
 
+### Reproducible training runs
+
+Added 2026-08-20, from doc 31's verification. `TrainingConfig.split_seed` makes the
+train/val/test **split** deterministic, and deliberately so — doc 11 splits by image to
+avoid box-level leakage. Nothing else in the run is seeded: not head weight init, not
+batch shuffling, not any augmentation RNG. Two runs of an *identical* config over the
+imported blood-cell dataset returned **map 0.4042 and 0.3872** — a 4% relative spread on
+inputs that did not change.
+
+That is harmless for a demo and wrong for the thing the Head Trainer actively invites: a
+user comparing two configurations, reading a 0.02 difference as signal when run-to-run
+noise is larger than that. The saved provenance makes it worse, because a checkpoint
+records the config that produced it and implies the number is a property of that config.
+
+**What it needs, roughly:** a `seed` on `TrainingConfig` (distinct from `split_seed`, or
+`split_seed` promoted to cover both) threaded through `torch.manual_seed`, the DataLoader
+generator and its `worker_init_fn`, then persisted with the run so a checkpoint's metric is
+reproducible from its own record. Worth checking whether MPS honours it fully — some
+kernels are nondeterministic regardless — in which case the honest fix may be to *report*
+the residual variance rather than promise exactness.
+
+**Candidate home:** any wave touching the trainer. Not urgent until someone compares two
+runs and believes the difference.
+
 ### SAM 3 in the Annotation Studio
 
 Wave 4 brings SAM 3 in for the **Dataset Generator**, where reviewing masks is the point.

@@ -96,8 +96,20 @@ export function saveImageBoxes(
       width: image.width,
       height: image.height,
       prompt: image.prompt ?? null,
-      // Strip the client-side id; the backend neither wants nor stores it.
-      boxes: boxes.map(({ id: _id, ...box }) => box),
+      // Strip the client-side id; the backend neither wants nor stores it. `text` is
+      // the canvas's name for a box's class, and the store calls it `prompt` — rename it
+      // here, at the one boundary where a CanvasBox becomes an API box.
+      //
+      // Sending `text` unchanged is silently lossy: pydantic drops the unknown field and
+      // `prompt` lands NULL. Wave 1 never noticed because the Studio also sends an
+      // image-level `prompt` that the backend falls back to; the Dataset Generator has
+      // no such prompt — it ran a head, not a phrase — so every generated box lost its
+      // class. The trainer derives classes from `prompt`, so re-training on a generated
+      // dataset collapsed every box into the single fallback class. See 31.
+      boxes: boxes.map(({ id: _id, text, ...box }) => ({
+        ...box,
+        ...(text ? { prompt: text } : {}),
+      })),
     }),
   });
 }
