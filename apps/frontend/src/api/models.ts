@@ -47,6 +47,10 @@ export interface ModelInfo {
   readonly requires_access_request: boolean;
   /** True when the licence forbids commercial use. Authoritative — never parsed from `licence`. */
   readonly non_commercial: boolean;
+  /** What redistributing this app with the model installed obliges (doc 54). */
+  readonly redistribution: 'free' | 'non-commercial' | 'copyleft' | 'restricted';
+  /** The obligation in words, empty when there is none. */
+  readonly redistribution_note: string;
   readonly installed: boolean;
   readonly size_on_disk_mb: number;
   readonly available: boolean;

@@ -2079,7 +2079,7 @@ body {
 
 .library__row {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
+  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.4rem 0.5rem;
@@ -2090,9 +2090,38 @@ body {
 /* One column on narrow windows: four columns at 400px reads as a broken table. */
 @media (max-width: 48rem) {
   .library__row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.2rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.2rem 0.5rem;
   }
+  .library__pick {
+    grid-row: span 4;
+  }
+}
+
+/* Sticky, because the selection is made by scrolling a long list and the action must not
+   scroll away from it. */
+.library__bulk {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--focus);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.875rem;
+}
+
+.library__bulknames {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .library__name {
@@ -2247,4 +2276,89 @@ body {
   align-items: center;
   gap: 0.45rem;
   cursor: pointer;
+}
+
+/* --- Distribution notice (doc 54) ---
+   Warning-coloured but not alarming: nothing is broken, there is a decision to make before
+   packaging. Uses `--pending`, the token this app already uses for "needs your attention",
+   never an invented `--warning` — that mistake shipped a 1.9:1 contrast bug once. */
+
+.distnotice {
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--pending);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.distnotice__title {
+  margin: 0 0 0.5rem;
+  color: var(--pending);
+  font-size: 0.95rem;
+}
+
+.distnotice__lead,
+.distnotice__foot {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.distnotice__foot {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.distnotice__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.distnotice__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 52rem) {
+  .distnotice__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+}
+
+.distnotice__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.distnotice__note {
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Three obligations, three colours. Collapsing them into one badge is the confusion this
+   whole component exists to undo. */
+.badge--non-commercial {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.badge--copyleft {
+  border-color: var(--pending);
+  color: var(--pending);
+}
+
+.badge--restricted {
+  border-color: var(--focus);
+  color: var(--focus);
 }

@@ -169,3 +169,107 @@ describe('deleting', () => {
     expect(within(heading).getByText('1')).toBeInTheDocument();
   });
 });
+
+describe('bulk delete (doc 54)', () => {
+  it('shows nothing until something is selected', async () => {
+    render(<LibraryTab />);
+    await screen.findByText('Chess pieces');
+    expect(screen.queryByRole('group', { name: 'Selected items' })).not.toBeInTheDocument();
+  });
+
+  it('counts what is selected across all three sections', async () => {
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByLabelText(/Select Chess detector/));
+    await user.click(screen.getByLabelText(/Select Rail RF-DETR/));
+    expect(within(screen.getByRole('group', { name: 'Selected items' })).getByText('3')).toBeInTheDocument();
+  });
+
+  it('asks before deleting, and names every item', async () => {
+    // Eleven checkboxes are easy to mis-tick; the confirmation is the last chance to see it.
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByLabelText(/Select Rail RF-DETR/));
+    await user.click(screen.getByRole('button', { name: 'Delete selected' }));
+
+    expect(datasets.deleteDataset).not.toHaveBeenCalled();
+    expect(screen.getByText(/Chess pieces, Rail RF-DETR/)).toBeInTheDocument();
+  });
+
+  it('deletes each one through the store that owns it', async () => {
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByLabelText(/Select Chess detector/));
+    await user.click(screen.getByLabelText(/Select Rail RF-DETR/));
+    await user.click(screen.getByRole('button', { name: 'Delete selected' }));
+    await user.click(screen.getByRole('button', { name: /Delete 3 permanently/ }));
+
+    await waitFor(() => expect(datasets.deleteDataset).toHaveBeenCalledWith('d1'));
+    expect(heads.deleteHeadInstance).toHaveBeenCalledWith('h1');
+    expect(foundation.deleteFoundationInstance).toHaveBeenCalledWith('f1');
+  });
+
+  it('lets you back out', async () => {
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByRole('button', { name: 'Delete selected' }));
+    await user.click(screen.getByRole('button', { name: 'Keep them' }));
+    expect(datasets.deleteDataset).not.toHaveBeenCalled();
+  });
+
+  it('clears the selection without deleting anything', async () => {
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.queryByRole('group', { name: 'Selected items' })).not.toBeInTheDocument();
+    expect(datasets.deleteDataset).not.toHaveBeenCalled();
+  });
+
+  it('re-reads the lists once, not once per item', async () => {
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByLabelText(/Select Chess detector/));
+    await user.click(screen.getByRole('button', { name: 'Delete selected' }));
+    await user.click(screen.getByRole('button', { name: /Delete 2 permanently/ }));
+
+    // One initial load plus one refresh. Refreshing per item would re-read the whole
+    // library N times and make each delete race the listing it is being removed from.
+    await waitFor(() => expect(datasets.listDatasets).toHaveBeenCalledTimes(2));
+  });
+
+  it('names what failed and keeps the rest', async () => {
+    vi.mocked(heads.deleteHeadInstance).mockRejectedValue(new Error('locked'));
+    const user = userEvent.setup();
+    render(<LibraryTab />);
+    await user.click(await screen.findByLabelText(/Select Chess pieces/));
+    await user.click(screen.getByLabelText(/Select Chess detector/));
+    await user.click(screen.getByRole('button', { name: 'Delete selected' }));
+    await user.click(screen.getByRole('button', { name: /Delete 2 permanently/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Could not delete 1 of 2/);
+    expect(screen.getByRole('alert')).toHaveTextContent(/Chess detector/);
+    // The one that worked still went.
+    expect(datasets.deleteDataset).toHaveBeenCalledWith('d1');
+  });
+});
+
+describe('when several items share a name', () => {
+  it('distinguishes their checkboxes by detail', async () => {
+    // Real case: four heads all called "Object detection: dog, person", differing only by
+    // what they were trained on and their mAP. Identical labels on four checkboxes is an
+    // ambiguity for anyone not reading the row visually.
+    vi.mocked(heads.listHeadInstances).mockResolvedValue([
+      { ...HEAD, id: 'h1', summary: 'Object detection · map 0.587' },
+      { ...HEAD, id: 'h2', summary: 'Object detection · map 0.263' },
+    ] as unknown as heads.HeadInstanceInfo[]);
+    render(<LibraryTab />);
+    expect(await screen.findByLabelText(/map 0\.587/)).toBeInTheDocument();
+    expect(screen.getByLabelText(/map 0\.263/)).toBeInTheDocument();
+  });
+});

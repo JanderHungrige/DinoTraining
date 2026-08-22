@@ -16,6 +16,28 @@ ModelFamily = Literal[
 ]
 
 
+Redistribution = Literal["free", "non-commercial", "copyleft", "restricted"]
+
+#: What each answer obliges, in the words the user needs before packaging. Keyed rather
+#: than composed at the call site, so the Admin panel and any future installer check cannot
+#: describe the same licence differently.
+REDISTRIBUTION_NOTES: dict[Redistribution, str] = {
+    "free": "",
+    "non-commercial": (
+        "Cannot be used or shipped commercially. Remove it before distributing a "
+        "commercial build."
+    ),
+    "copyleft": (
+        "Commercial use is allowed, but distributing it obliges releasing this whole "
+        "app's source under the same licence. Remove it, or accept that obligation."
+    ),
+    "restricted": (
+        "Ships under the vendor's own terms rather than a standard licence. Read them "
+        "before including it in anything you distribute."
+    ),
+}
+
+
 @dataclass(frozen=True, slots=True)
 class ModelSpec:
     """One downloadable model. Immutable — the catalogue is not user-editable."""
@@ -42,6 +64,20 @@ class ModelSpec:
     #: packaging constraint surfaced early — an installable app cannot redistribute a
     #: non-commercial model, and the user deciding to download one should be told first.
     non_commercial: bool = False
+    #: What the licence obliges when this app is **redistributed** (doc 54). Separate from
+    #: `non_commercial` because the two questions are genuinely different, and conflating
+    #: them is the mistake worth designing against:
+    #:
+    #: * `non-commercial` — CC BY-NC. May not be used or shipped commercially at all.
+    #: * `copyleft` — AGPL/GPL. **Commercial use is fine.** Distributing obliges releasing
+    #:   *this whole app's* source under the same licence, which is a much larger decision
+    #:   than "delete it before shipping" and is not a non-commercial restriction. Nothing
+    #:   in the catalogue is copyleft today; the value is naming it, because both YOLO
+    #:   routes Wave 7.5 evaluated are AGPL-3.0 and that is the parked Wave 8 decision.
+    #: * `restricted` — custom terms that have to be read. Meta's SAM licence is not a
+    #:   standard licence and this app should not pretend to summarise it.
+    #: * `free` — Apache-2.0 and friends. Ship it.
+    redistribution: Redistribution = "free"
 
 
 _SPECS: tuple[ModelSpec, ...] = (
@@ -180,6 +216,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         description="Larger Depth Anything V2. Sharper depth, non-commercial licence.",
         licence="CC BY-NC 4.0",
         non_commercial=True,
+        redistribution="non-commercial",
     ),
     ModelSpec(
         id="depth-anything-v2-large",
@@ -191,6 +228,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         description="Largest Depth Anything V2. Best quality, non-commercial licence.",
         licence="CC BY-NC 4.0",
         non_commercial=True,
+        redistribution="non-commercial",
     ),
     ModelSpec(
         id="sam2.1-hiera-small",
@@ -217,6 +255,7 @@ _SPECS: tuple[ModelSpec, ...] = (
         ),
         licence="SAM License (Meta, custom)",
         requires_access_request=True,
+        redistribution="restricted",
     ),
 )
 

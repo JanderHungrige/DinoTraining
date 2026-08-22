@@ -4,6 +4,7 @@ import type { JSX } from 'react';
 
 import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
 import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
+import { DistributionNotice } from '../components/DistributionNotice';
 import { ModelCard } from '../components/ModelCard';
 import { TokenPanel } from '../components/TokenPanel';
 import { useModels } from '../hooks/useModels';
@@ -73,6 +74,10 @@ export function AdminTab(): JSX.Element {
           freeDiskMb={system.free_disk_mb}
         />
       )}
+
+      {/* Above the model list, because it is about what is already downloaded and the
+          remove buttons are just below. */}
+      <DistributionNotice models={models} />
 
       <TokenPanel />
 
