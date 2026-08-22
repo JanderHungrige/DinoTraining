@@ -124,7 +124,9 @@ export interface ComposedResult {
 
 const RENDER_HINTS: readonly string[] = ['labels', 'boxes', 'masks', 'depth-map'];
 
-function isPrediction(value: unknown): value is Prediction {
+/** Exported so the foundation slice validates a prediction with the same guard.
+ *  Both endpoints return this shape by design — a second copy would be free to drift. */
+export function isPrediction(value: unknown): value is Prediction {
   if (!isRecord(value)) return false;
   return (
     typeof value['instance_id'] === 'string' &&

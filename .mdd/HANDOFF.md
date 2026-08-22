@@ -4,8 +4,8 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-20, after **Wave 5** was built and demonstrated. Wave 4 is
-complete; doc 31 unblocked its expert-head half earlier the same day.
+**Last updated:** 2026-08-20, after **Wave 6** was built and demonstrated. Waves 4, 5 and 6
+are all complete and unmerged; doc 31 unblocked Wave 4's expert-head half the same day.
 
 ---
 
@@ -15,14 +15,15 @@ complete; doc 31 unblocked its expert-head half earlier the same day.
 **Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
 Doc 30 is `complete`. There is nothing left waiting on you here.
 
-**2. Merge three branches. Waves 4 and 5 are both marked complete.** Merging is still
+**2. Merge four branches. Waves 4, 5 and 6 are all marked complete.** Merging is still
 yours, and they stack in this order:
 
 ```
 dev
- └─ feat/dinotraining-wave-4        4 commits   Wave 4 features 6-9
-     └─ feat/external-dataset-import 5 commits   doc 31 + the NMS and prompt fixes
-         └─ feat/dinotraining-wave-5 4 commits   docs 32-34
+ └─ feat/dinotraining-wave-4         Wave 4 features 6-9
+     └─ feat/external-dataset-import doc 31 + the NMS and lost-class fixes
+         └─ feat/dinotraining-wave-5 docs 32-34
+             └─ feat/dinotraining-wave-6 docs 35-37
 ```
 
 Both flips were made on your "continue with the whole project". Each is a one-line revert
@@ -55,19 +56,25 @@ The model cache is now 918 MB and the volume is back to **15 GB free, 97% used**
 
 ## Where the project stands
 
-**Waves 1–3 merged to `dev`. Waves 4 and 5 are complete, pushed, and not merged.**
+**Waves 1–3 merged to `dev`. Waves 4, 5 and 6 are complete, pushed, and not merged.**
 
 ```
 dev                            (features 1–5 of Wave 4 are already on it — see below)
 feat/dinotraining-wave-4       Wave 4 features 6–9
 feat/external-dataset-import   doc 31, the NMS fix, the lost-class fix
 feat/dinotraining-wave-5       docs 32–34
-922 backend tests · 319 frontend tests · ruff, mypy, tsc all clean
+953 backend tests · 338 frontend tests · ruff, mypy, tsc all clean
 ```
 
 **Wave 5 in one line:** the Annotation Studio can now annotate with a head you trained
 instead of a Grounding DINO phrase, which closes the flywheel in the Studio and not only in
 the Dataset Generator.
+
+**Wave 6 in one line:** a *foundation* model (Depth Anything V2) now runs in the Inference
+Viewer beside your trained heads, and every catalogue entry states its licence before you
+download it. **It shipped V2, not the V3 the plan named** — V3 has no transformers
+integration and its package pins `numpy<2` against this environment's 2.5.2. Confirmed with
+you first; V3 is backlogged.
 
 ⚠️ **`dev` already contains Wave 4 features 1–5.** You merged the branch mid-wave on
 2026-08-19 (`e110752`) and left the checkout on `dev`, and I then committed feature 5
@@ -317,8 +324,10 @@ two annotators behave identically and is the obvious next improvement.
 - Installed: `dinov2-small`, `grounding-dino-tiny`, `sam2.1-hiera-small`, **`sam3`**, plus
   the three default heads. **Both mask annotators are ready to run.**
 - Not installed: `dinov2-base/large`, `grounding-dino-base`, both DINOv3.
-- Database at **schema v6** (`imported` provenance). Nine datasets present — three imported,
-  four scratch, two from Wave 4 (see "Waiting on Jan").
+- Database at **schema v6** (`imported` provenance). Ten datasets present — three imported,
+  five scratch, two from Wave 4 (see "Waiting on Jan").
+- **`depth-anything-v2-small` installed** (94 MB) as of Wave 6. Base and Large are offered
+  but not installed, and both are CC BY-NC — badged non-commercial in the admin panel.
 - **12 GB free, 98% used** — SAM 3's 3.2 GB landed after the 920 MB pickle clear-out. The
   model cache is 4.1 GB, safetensors only.
 - Branches `feat/dinotraining-wave-2` and `feat/dinotraining-wave-3` are merged but still

@@ -62,6 +62,12 @@ export function HeadRunPanel({
     );
   }
 
+  // Counted together: a foundation model is as much "a thing you chose to run" as a head,
+  // and a Run button that stays dead after ticking one would read as broken.
+  const totalSelected = selected.length + state.selectedFoundations.length;
+  const nothingSelected = totalSelected === 0;
+  const runLabel = `Run ${totalSelected || ''} model${totalSelected === 1 ? '' : 's'}`;
+
   const sameTaskCount = state.selectedTask
     ? selected.filter((id) => heads.find((h) => h.id === id)?.task === state.selectedTask).length
     : 0;
@@ -119,22 +125,45 @@ export function HeadRunPanel({
         })}
       </fieldset>
 
+      {state.foundations.length > 0 && (
+        <fieldset className="runpanel__heads">
+          <legend>Foundation models</legend>
+          {/* A separate group because these are a different kind of thing, not a filtered
+              view of the same list: they have no backbone, so `isIncompatible` has nothing
+              to say about them and the backbone tooltip would be meaningless. Their
+              results land in the same panes. */}
+          {state.foundations.map((entry) => (
+            <label key={entry.id} className="runpanel__head" title={entry.description}>
+              <input
+                type="checkbox"
+                checked={state.selectedFoundations.includes(entry.id)}
+                disabled={disabled}
+                onChange={() => state.toggleFoundation(entry.id)}
+              />
+              <span className="runpanel__headname">{entry.title}</span>
+              <span className="runpanel__headmeta">
+                {entry.task} · {entry.licence}
+                {entry.non_commercial ? ' · non-commercial' : ''}
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
+
       <div className="runpanel__actions">
         <button
           type="button"
           className="btn btn--primary"
           onClick={onRun}
-          disabled={disabled || runDisabled || running || selected.length === 0}
+          disabled={disabled || runDisabled || running || nothingSelected}
         >
-          {running
-            ? 'Running…'
-            : `Run ${selected.length || ''} head${selected.length === 1 ? '' : 's'}`}
+          {running ? 'Running…' : runLabel}
         </button>
         <button
           type="button"
           className="btn"
           onClick={state.clear}
-          disabled={selected.length === 0 || running}
+          disabled={nothingSelected || running}
         >
           Clear
         </button>

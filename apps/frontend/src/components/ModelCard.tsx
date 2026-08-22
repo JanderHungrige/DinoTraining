@@ -3,6 +3,12 @@
  *
  * A gated model the user cannot download is shown disabled with the reason, rather
  * than hidden — "where is DINOv3?" is a worse question than "why is it greyed out?".
+ *
+ * **The licence is stated before the download, never after** (doc 35). It used to appear
+ * only for *gated* models, in the token panel — so an ungated CC BY-NC model showed no
+ * licence at all, which is the one case where not knowing actually costs something. That
+ * is a Wave 8 packaging constraint surfaced early: an installable app cannot redistribute
+ * a non-commercial model, and the person choosing to download one should be told first.
  */
 
 import type { JSX } from 'react';
@@ -66,11 +72,19 @@ export function ModelCard({
           <span className="badge badge--installed">Installed</span>
         )}
         {model.gated && !model.installed && <span className="badge badge--gated">Gated</span>}
+        {model.non_commercial && (
+          <span className="badge badge--noncommercial" title={`Licensed ${model.licence}`}>
+            Non-commercial
+          </span>
+        )}
       </div>
 
       <p className="modelcard__desc">{model.description}</p>
       <p className="modelcard__meta">
-        <code>{model.repo_id}</code> · {sizeLabel}
+        <code>{model.repo_id}</code> · {sizeLabel} ·{' '}
+        <a href={model.licence_url} target="_blank" rel="noreferrer noopener">
+          {model.licence}
+        </a>
       </p>
 
       {downloading && job ? (

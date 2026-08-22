@@ -8,8 +8,18 @@
 import { apiFetch } from './client';
 import type { Device } from './types';
 
-export type ModelKind = 'detector' | 'backbone';
-export type ModelFamily = 'grounding-dino' | 'dinov2' | 'dinov3' | 'sam2' | 'sam3';
+// Mirrors `ModelKind` in backend/app/ml/registry.py. It had already drifted before doc 35
+// noticed: `segmenter` arrived with Wave 4's SAM entries and was never added here, and
+// nothing failed because no TypeScript ever assigned one. Grep this file whenever a
+// backend literal changes — see the Wave 4 handoff.
+export type ModelKind = 'detector' | 'backbone' | 'segmenter' | 'depth-estimator';
+export type ModelFamily =
+  | 'grounding-dino'
+  | 'dinov2'
+  | 'dinov3'
+  | 'sam2'
+  | 'sam3'
+  | 'depth-anything';
 export type JobState = 'pending' | 'downloading' | 'complete' | 'failed';
 
 // Record<ModelFamily, string> rather than a partial map: adding a family to the type
@@ -20,6 +30,7 @@ export const FAMILY_LABELS: Readonly<Record<ModelFamily, string>> = Object.freez
   dinov3: 'DINOv3 — backbones (gated)',
   sam2: 'SAM 2.1 — segmentation (open)',
   sam3: 'SAM 3 — segmentation (gated, your own token)',
+  'depth-anything': 'Depth Anything V2 — monocular depth',
 });
 
 export interface ModelInfo {
@@ -34,6 +45,8 @@ export interface ModelInfo {
   readonly licence_url: string;
   /** True when a token alone is not enough and Meta must also grant access. SAM 3 only. */
   readonly requires_access_request: boolean;
+  /** True when the licence forbids commercial use. Authoritative — never parsed from `licence`. */
+  readonly non_commercial: boolean;
   readonly installed: boolean;
   readonly size_on_disk_mb: number;
   readonly available: boolean;

@@ -42,6 +42,9 @@ function state(overrides: Partial<HeadRunState> = {}): HeadRunState {
   return {
     heads: [],
     selected: [],
+    foundations: [],
+    selectedFoundations: [],
+    toggleFoundation: vi.fn(),
     backboneId: null,
     taskFilter: null,
     selectedTask: null,

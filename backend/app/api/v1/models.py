@@ -52,6 +52,9 @@ class ModelInfo(BaseModel):
     licence_url: str
     #: True when a token alone is not enough and access must also be granted. SAM 3 only.
     requires_access_request: bool
+    #: True when the licence forbids commercial use, so the admin panel can say so
+    #: *before* the download rather than after. See `35-model-licence-surfacing`.
+    non_commercial: bool
     installed: bool
     size_on_disk_mb: int
     available: bool = Field(description="False when a gated model has no token.")
@@ -100,6 +103,7 @@ def _describe(spec: ModelSpec) -> ModelInfo:
         licence=spec.licence,
         licence_url=licence_url(spec),
         requires_access_request=spec.requires_access_request,
+        non_commercial=spec.non_commercial,
         installed=installed,
         size_on_disk_mb=directory_size_bytes(directory) // _BYTES_PER_MB,
         available=available,

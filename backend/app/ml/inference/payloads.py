@@ -150,7 +150,18 @@ def depth_payload(
     # bilinear here: depth is continuous, so interpolation is meaningful — the opposite
     # of the label-map case above.
     at_source = invert_map(transform, at_frame[0, 0], mode="bilinear")
+    return encode_depth_map(at_source)
 
+
+def encode_depth_map(at_source: torch.Tensor) -> dict[str, object]:
+    """Encode a source-resolution depth tensor for transport.
+
+    Split out of :func:`depth_payload` so a **self-contained** depth model can produce the
+    identical payload without going through this project's letterbox geometry (doc 36).
+    Depth Anything V2 brings its own processor and returns depth already at source size, so
+    it has no `GeometryTransform` to invert — but the overlay renderer must not be able to
+    tell the two apart, and it cannot if the encoding lives in one place.
+    """
     low = float(at_source.min())
     high = float(at_source.max())
     # Normalised to 0..255 for transport. This is a *display* encoding: 256 levels across
