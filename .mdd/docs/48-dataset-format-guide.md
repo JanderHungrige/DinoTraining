@@ -4,7 +4,7 @@ title: Dataset Format Guide — What a Training Set Must Look Like
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [31-external-dataset-import]
 relates: [38-intro-tab, 39-prompt-guidance, 08-head-trainer-panel]
 source_files:

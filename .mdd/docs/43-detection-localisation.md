@@ -4,7 +4,7 @@ title: Detection Localisation — Teaching the Head Where, Not Just What
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [09-head-implementations, 11-training-job-runner]
 relates: [16-inference-engine, 31-external-dataset-import, 41-rf-detr-detector]
 source_files:

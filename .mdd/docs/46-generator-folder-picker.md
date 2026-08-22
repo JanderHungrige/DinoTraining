@@ -4,7 +4,7 @@ title: The Generator's Folder Picker — One Field, Three Ways In
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [40-drag-and-drop-input]
 relates: [22-generator-panel, 32-studio-session-setup, 17-image-source]
 source_files:

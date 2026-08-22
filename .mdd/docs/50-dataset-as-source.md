@@ -4,7 +4,7 @@ title: A Dataset Is a Source — Not Just a Destination
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [46-generator-folder-picker, 17-image-source]
 relates: [32-studio-session-setup, 22-generator-panel, 31-external-dataset-import]
 source_files:

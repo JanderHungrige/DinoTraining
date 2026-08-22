@@ -4,7 +4,7 @@ title: Library — Everything You Have Made, In One Place
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [12-head-instance-registry, 44-finetune-rf-detr]
 relates: [50-dataset-as-source, 35-model-licence-surfacing]
 source_files:

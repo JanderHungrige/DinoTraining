@@ -3,16 +3,36 @@ id: dinotraining-wave-7-5
 title: "Wave 7.5: General Object Detection"
 initiative: dinotraining
 initiative_version: 8
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-7
 demo_state: "The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads."
+demonstrated: 2026-08-21
 created: 2026-08-20
-hash: 6c350c25
+hash: 1525117b
 ---
 
 # Wave 7.5: General Object Detection
 
-## Demo-State
+## Demo-State — demonstrated 2026-08-21
+
+Run in the app, not asserted: RF-DETR (nano) over a wedding photograph from Jan's own
+`Hochzeit` dataset, selected as a *dataset* source, with **nothing trained**:
+
+```
+Original | RF-DETR (nano)     0 backbone passes
+person 0.65  person 0.64  person 0.63  tie 0.61  person 0.58  tie 0.51
+cell phone 0.43  person 0.41  … 15 boxes
+```
+
+**"0 backbone passes" is the architecture reporting itself.** RF-DETR brings its own
+DINOv2, so it cannot join `run_heads`' shared pass — and the viewer says so rather than
+pretending it participated.
+
+The fine-tune half was demonstrated twice: doc 44 on thermal (mAP 0.800) and doc 49 on
+OSDaR23 rail (0.857 on a temporally held-out split), both saved as named models and both
+appearing in all three tabs with no further work.
+
+## Demo-State (as planned)
 
 The user downloads **RF-DETR** from the admin panel and immediately gets useful boxes on any
 image — in the Inference Viewer, and as *proposals* in the Annotation Studio and the Dataset

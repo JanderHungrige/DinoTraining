@@ -4,7 +4,7 @@ title: RF-DETR — A General Detector That Needs No Prompt and No Training
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [02-model-manager, 35-model-licence-surfacing, 36-depth-foundation-model]
 relates: [20-inference-overlay-render, 37-foundation-model-in-viewer, 42-foundation-boxes-everywhere]
 source_files:

@@ -4,7 +4,7 @@ title: OSDaR23 — OpenLABEL, Tiling, and a Rail Detector
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [31-external-dataset-import, 43-detection-localisation, 44-finetune-rf-detr]
 relates: [11-training-job-runner, 48-dataset-format-guide]
 source_files:

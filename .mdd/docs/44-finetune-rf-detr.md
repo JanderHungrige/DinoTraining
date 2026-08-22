@@ -4,7 +4,7 @@ title: Fine-tune RF-DETR — The Founding Rule, With a Better Head
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [41-rf-detr-detector, 11-training-job-runner, 12-head-instance-registry]
 relates: [42-foundation-boxes-everywhere, 43-detection-localisation, 31-external-dataset-import]
 source_files:

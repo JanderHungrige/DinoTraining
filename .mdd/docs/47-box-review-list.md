@@ -4,7 +4,7 @@ title: Box Review — A List Beside the Image, Not Just Clicks On It
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [04-annotation-canvas, 42-foundation-boxes-everywhere]
 relates: [32-studio-session-setup, 45-concept-segmentation-everywhere, 24-mask-review-canvas]
 source_files:

@@ -4,7 +4,7 @@ title: Foundation Boxes Everywhere — Proposals Before Anything Is Trained
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
-wave_status: in_progress
+wave_status: complete
 depends_on: [41-rf-detr-detector, 25-expert-annotator, 33-studio-head-annotator]
 relates: [22-mask-dataset-store, 29-generated-dataset-writer, 26-generator-review-ui]
 source_files:

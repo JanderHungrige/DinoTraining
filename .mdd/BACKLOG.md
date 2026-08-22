@@ -12,6 +12,39 @@ is genuinely unassigned.
 
 ## Unassigned
 
+### Tiled inference
+
+**The largest gap Wave 7.5 left.** Doc 49 tiles images on the way *in* — a 6x4 grid turns a
+10.7 px object in a 2464 px frame into 10.1 px at the model's input, which is the difference
+between trainable and not. Nothing tiles on the way *out*: a head trained on 472 px tiles
+run against a full 2464 px frame finds nothing, and says nothing about why.
+
+What it needs: run the same grid at inference, map each tile's boxes back to frame
+coordinates, and merge across the overlap with NMS. `plan_tiles` already produces the grid
+and `decode.py` already has class-aware `batched_nms` (doc 43), so the pieces exist.
+
+The open question is **where it lives**. It is not a property of a head — the same head
+should be runnable either way — so it is either a per-run option in the viewer and the
+Studio, or something a *dataset* records about how it was built so anything trained on it
+inherits the setting. The second is more automatic and more surprising.
+
+**Candidate home**: any wave after packaging. It is a correctness gap for far-field data
+rather than a blocker for the app's advertised loop.
+
+### Splitting a video dataset by segment
+
+`split_indices` splits by image, which is right for the three reference photo datasets and
+**leaks badly on video**. Measured on OSDaR23: consecutive 10 Hz frames differ by 0.4 of
+255, and a random split inflated reported mAP by 42% for a trained head.
+
+Doc 49 split by contiguous frame index **by hand**. The app offers no such option, and
+nothing warns that a dataset looks like a sequence — even though the signal is usually
+sitting in the file names.
+
+Two shapes, and the cheap one may be enough: a **warning** when a dataset's file names carry
+consecutive indices, or a real **split-by-segment** option on `TrainingConfig`. The warning
+costs almost nothing and turns a silent wrong number into a visible question.
+
 ### Live video / webcam input
 
 Deferred out of Wave 3 on 2026-08-18: capture permissions in Tauri, frame pacing and drop
