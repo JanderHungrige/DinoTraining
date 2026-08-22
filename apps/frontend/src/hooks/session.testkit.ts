@@ -8,9 +8,19 @@ import type { SessionConfig } from './useAnnotationSession';
 export const CONFIG: SessionConfig = {
   folder: '/pics',
   datasetId: 'ds1',
-  prompt: 'a cat',
-  boxThreshold: 0.3,
-  textThreshold: 0.25,
+  source: { kind: 'prompt', prompt: 'a cat', boxThreshold: 0.3, textThreshold: 0.25 },
+};
+
+/** The same session, proposing from a trained head instead of a phrase. */
+export const HEAD_CONFIG: SessionConfig = {
+  folder: '/pics',
+  datasetId: 'ds1',
+  source: {
+    kind: 'head',
+    backboneId: 'dinov2-small',
+    instanceId: 'h1',
+    scoreThreshold: 0.3,
+  },
 };
 
 export const IMAGES = ['/pics/a.jpg', '/pics/b.jpg', '/pics/c.jpg'];
@@ -37,6 +47,29 @@ export const PROPOSAL = {
   ],
 };
 
+/** What `POST /generate/expert` returns — a head's proposals, not a phrase's. */
+export const EXPERT_PROPOSAL = {
+  image_path: '/pics/a.jpg',
+  width: 200,
+  height: 100,
+  device: 'mps',
+  head_name: 'Thermal spotter',
+  head_summary: 'Object detection · 2 classes · trained on 1 dataset · map 0.403',
+  boxes: [
+    {
+      label: 'positive',
+      provenance: 'expert-head',
+      x: 5,
+      y: 6,
+      w: 7,
+      h: 8,
+      score: 0.87,
+      prompt: 'person',
+      producer: { id: 'h1', label: 'Thermal spotter' },
+    },
+  ],
+};
+
 export function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -47,6 +80,7 @@ export function json(body: unknown, status = 200): Response {
 export interface Handlers {
   folder?: () => Response;
   annotate?: () => Response;
+  expert?: () => Response;
   save?: () => Response;
 }
 
@@ -58,6 +92,9 @@ export function route(fetchMock: ReturnType<typeof vi.fn>, handlers: Handlers = 
       return Promise.resolve(
         (handlers.folder ?? (() => json({ folder: '/pics', images: IMAGES })))(),
       );
+    }
+    if (url.includes('/generate/expert')) {
+      return Promise.resolve((handlers.expert ?? (() => json(EXPERT_PROPOSAL)))());
     }
     if (url.includes('/annotate')) {
       return Promise.resolve((handlers.annotate ?? (() => json(PROPOSAL)))());

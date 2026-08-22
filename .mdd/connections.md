@@ -1,8 +1,8 @@
 ---
 generated: 2026-08-20
-doc_count: 31
-connection_count: 71
-overlap_count: 48
+doc_count: 34
+connection_count: 78
+overlap_count: 50
 ---
 
 # Connections
@@ -14,6 +14,10 @@ Generated from feature-doc frontmatter only. Do not edit by hand — regenerate 
 ```
 Admin/Models
 └── 02-model-manager  complete
+
+Annotation Studio/Head Mode
+├── 32-shared-head-picker  complete
+└── 33-studio-head-annotator  complete
 
 Dataset Generator/Proposals
 ├── 25-expert-annotator  complete
@@ -31,7 +35,8 @@ Dataset Store/Import
 └── 31-external-dataset-import  complete
 
 Inference/Compare
-└── 21-same-task-head-compare  complete
+├── 21-same-task-head-compare  complete
+└── 34-inference-picker-upfront  complete
 
 Inference/Compose
 └── 18-multi-head-compose  complete
@@ -124,6 +129,9 @@ graph LR
     d29["29-generated-dataset-writer"]:::complete
     d30["30-sam3-annotator"]:::complete
     d31["31-external-dataset-import"]:::complete
+    d32["32-shared-head-picker"]:::complete
+    d33["33-studio-head-annotator"]:::complete
+    d34["34-inference-picker-upfront"]:::complete
     d01 --> d02
     d01 --> d03
     d02 --> d04
@@ -195,6 +203,13 @@ graph LR
     d24 --> d30
     d03 --> d31
     d22 --> d31
+    d12 --> d32
+    d26 --> d32
+    d06 --> d33
+    d25 --> d33
+    d32 --> d33
+    d19 --> d34
+    d32 --> d34
     classDef complete fill:#00e5cc,color:#000
     classDef in_progress fill:#ffaa00,color:#000
     classDef draft fill:#888,color:#fff
@@ -210,24 +225,26 @@ Files referenced by more than one doc — change one, check the others.
 | `apps/frontend/src/api/client.ts` | 01-app-shell, 13-training-metrics-stream |
 | `apps/frontend/src/api/datasets.ts` | 06-annotation-workflow, 29-generated-dataset-writer, 31-external-dataset-import |
 | `apps/frontend/src/api/generate.ts` | 26-generator-review-ui, 28-mask-review-ui |
-| `apps/frontend/src/api/headInstances.ts` | 12-head-instance-registry, 15-head-catalog-import, 26-generator-review-ui |
+| `apps/frontend/src/api/headInstances.ts` | 12-head-instance-registry, 15-head-catalog-import, 26-generator-review-ui, 32-shared-head-picker |
 | `apps/frontend/src/api/inference.ts` | 17-image-input-source, 20-inference-overlay-render |
 | `apps/frontend/src/api/models.ts` | 02-model-manager, 24-hf-token-settings |
 | `apps/frontend/src/api/types.ts` | 01-app-shell, 07-backbone-feature-extractor |
 | `apps/frontend/src/components/CounterBar.tsx` | 06-annotation-workflow, 29-generated-dataset-writer |
+| `apps/frontend/src/components/ExpertHeadPicker.tsx` | 26-generator-review-ui, 32-shared-head-picker |
 | `apps/frontend/src/components/GeneratorSetup.tsx` | 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator |
-| `apps/frontend/src/components/HeadRunPanel.tsx` | 20-inference-overlay-render, 21-same-task-head-compare |
-| `apps/frontend/src/components/SessionSetup.tsx` | 06-annotation-workflow, 17-image-input-source |
+| `apps/frontend/src/components/HeadRunPanel.tsx` | 20-inference-overlay-render, 21-same-task-head-compare, 32-shared-head-picker, 34-inference-picker-upfront |
+| `apps/frontend/src/components/SessionSetup.tsx` | 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator |
 | `apps/frontend/src/components/SideBySideViewer.tsx` | 19-side-by-side-viewer, 21-same-task-head-compare |
 | `apps/frontend/src/components/overlays/MapOverlay.tsx` | 20-inference-overlay-render, 28-mask-review-ui |
+| `apps/frontend/src/hooks/useAnnotationSession.ts` | 06-annotation-workflow, 33-studio-head-annotator |
 | `apps/frontend/src/hooks/useGeneratorSession.ts` | 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer |
 | `apps/frontend/src/hooks/useHeadRun.ts` | 20-inference-overlay-render, 21-same-task-head-compare |
-| `apps/frontend/src/styles.css` | 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui |
+| `apps/frontend/src/styles.css` | 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront |
 | `apps/frontend/src/tabs/AdminTab.tsx` | 01-app-shell, 02-model-manager, 15-head-catalog-import, 24-hf-token-settings |
-| `apps/frontend/src/tabs/AnnotationStudioTab.tsx` | 01-app-shell, 06-annotation-workflow |
+| `apps/frontend/src/tabs/AnnotationStudioTab.tsx` | 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator |
 | `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` | 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer |
 | `apps/frontend/src/tabs/HeadTrainerTab.tsx` | 01-app-shell, 14-trainer-config-ui |
-| `apps/frontend/src/tabs/InferenceViewerTab.tsx` | 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare |
+| `apps/frontend/src/tabs/InferenceViewerTab.tsx` | 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront |
 | `apps/frontend/src/types/annotation.ts` | 05-annotation-canvas, 26-generator-review-ui, 28-mask-review-ui, 31-external-dataset-import |
 | `backend/app/api/v1/datasets.py` | 03-dataset-store, 22-mask-dataset-store, 31-external-dataset-import |
 | `backend/app/api/v1/generate.py` | 25-expert-annotator, 27-grounded-sam-annotator, 29-generated-dataset-writer |

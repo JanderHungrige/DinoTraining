@@ -19,8 +19,9 @@ export function AnnotationStudioTab(): JSX.Element {
       <section className="studio">
         <h2 className="studio__title">Annotation Studio</h2>
         <p className="studio__lead">
-          Point at a folder of images, describe what you are looking for, and Grounding
-          DINO proposes boxes for you to accept or reject.
+          Point at a folder of images and choose what proposes the boxes — describe what
+          you are looking for, or run a head you already trained. Either way you accept,
+          reject or correct what comes back.
         </p>
         <SessionSetup onStart={setConfig} />
       </section>
@@ -28,6 +29,9 @@ export function AnnotationStudioTab(): JSX.Element {
   }
 
   const { currentImage, imageSize } = session;
+  // The label names the mode, so the button is not the only thing on screen that knows
+  // which one is running — the setup form's radios are behind "Change folder" by now.
+  const headMode = config.source.kind === 'head';
 
   return (
     <section className="studio">
@@ -94,7 +98,7 @@ export function AnnotationStudioTab(): JSX.Element {
               disabled={session.proposing || session.busy}
               onClick={() => void session.propose()}
             >
-              {session.proposing ? 'Detecting…' : 'Run prompt'}
+              {session.proposing ? 'Detecting…' : headMode ? 'Run head' : 'Run prompt'}
             </button>
             <button
               type="button"

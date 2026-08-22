@@ -48,14 +48,26 @@ export function InferenceViewerTab(): JSX.Element {
         <p role="status">Showing the first {source.items.length} images in that folder.</p>
       )}
 
+      {/* Outside the `current &&` guard on purpose (doc 34). Heads used to be pickable
+          only after an image had loaded, which put the slowest decision — which of N
+          heads to compare — behind a folder read. `useHeadRun` already lived at tab
+          level, so the selection survived image changes; only the panel was gated.
+          Running still needs an image, which is what `disabled` says. */}
+      <HeadRunPanel
+        state={run}
+        onRun={() => current && void run.run(current.path)}
+        disabled={source.loading}
+        runDisabled={!current}
+      />
+
+      {!current && !source.loading && (
+        <p role="status" className="studio__hint">
+          Pick an image or a folder above to run the selected head{run.selected.length === 1 ? '' : 's'}.
+        </p>
+      )}
+
       {current && (
         <>
-          <HeadRunPanel
-            state={run}
-            onRun={() => void run.run(current.path)}
-            disabled={source.loading}
-          />
-
           <p className="studio__path" title={current.path}>
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
