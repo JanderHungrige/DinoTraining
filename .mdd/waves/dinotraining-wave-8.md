@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-7
 demo_state: "A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works."
 created: 2026-08-14
-hash: 82c8ec5e
+hash: 1bc484a1
 ---
 
 # Wave 8: Packaging & Distribution
@@ -20,6 +20,20 @@ required model weights (kept out of the installer so it stays small). The full
 annotate → train → infer → generate loop works from the installed app.
 *(Not complete until this can be manually demonstrated.)*
 
+## Confirmed by Jan, 2026-08-21
+
+**All three platforms are required, not a choice between them.** macOS, Windows and Linux
+each get an installer. The demo-state above already said so; this records that it is a
+requirement rather than an aspiration, which matters because it decides the CI shape — the
+sidecar has to be built on each platform (PyInstaller does not cross-compile, and the torch
+wheel differs per platform), so feature 5 needs a build matrix rather than one runner.
+
+**Doc 54 is a prerequisite for feature 5, not a nicety.** The Admin panel now names which
+installed models carry a licence obligation, but it is only a *notice*. A release build that
+happens to run on a machine with SAM 3 in its cache must not pick it up. The release job
+needs to either build against an empty cache or fail loudly when a restricted model is
+present — the notice helps a human who reads it, and CI does not read.
+
 ## Features (draft — refined in plan-wave)
 
 | # | Feature | Doc | Status | Depends on |
@@ -28,7 +42,7 @@ annotate → train → infer → generate loop works from the installed app.
 | 2 | tauri-installers | — | planned | python-sidecar-bundling |
 | 3 | first-run-model-bootstrap | — | planned | — |
 | 4 | code-signing-notarization | — | planned | tauri-installers |
-| 5 | release-ci | — | planned | tauri-installers |
+| 5 | release-ci | — | planned | tauri-installers, **54-distribution-licensing** |
 | 6 | auto-update | — | planned | release-ci |
 
 ### Feature notes
@@ -38,6 +52,8 @@ annotate → train → infer → generate loop works from the installed app.
 - Tauri build → platform installers; keep installer small (no weights bundled).
 - First-run flow that guides model download + HF token for gated DINOv3.
 - macOS notarization + Windows signing (open product question).
+- **Linux has no signing step** in the same sense; AppImage is unsigned and distribution
+  is by checksum. Worth stating so it is not mistaken for an oversight.
 - GitHub Actions matrix build producing installers as release artifacts.
 - Optional auto-update (Tauri updater).
 

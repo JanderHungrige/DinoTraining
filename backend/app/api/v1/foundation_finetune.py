@@ -28,6 +28,15 @@ class FinetuneRequest(BaseModel):
     epochs: int = Field(default=10, ge=1, le=200)
     learning_rate: float = Field(default=1e-4, gt=0, le=1.0)
     val_fraction: float = Field(default=0.2, ge=0.0, lt=1.0)
+    unfreeze_blocks: int = Field(
+        default=0,
+        ge=-1,
+        le=48,
+        description=(
+            "How many of the backbone's last blocks to train too (doc 55). 0 keeps it "
+            "frozen; -1 trains all of it. Safe here because the whole model is saved."
+        ),
+    )
 
 
 class FinetuneEpochInfo(BaseModel):
@@ -92,6 +101,7 @@ async def start_finetune(request: FinetuneRequest) -> FinetuneJobInfo:
             epochs=request.epochs,
             learning_rate=request.learning_rate,
             val_fraction=request.val_fraction,
+            unfreeze_blocks=request.unfreeze_blocks,
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None

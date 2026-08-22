@@ -240,6 +240,27 @@ def extract(backbone: Backbone, pixel_values: Tensor) -> BackboneFeatures:
     return BackboneFeatures(cls=cls, patches=patches, grid=grid)
 
 
+def extract_trainable(backbone: Backbone, pixel_values: Tensor) -> BackboneFeatures:
+    """The same forward as :func:`extract`, but **inside the autograd graph** (doc 55).
+
+    A separate function rather than a `grad: bool` flag on `extract`, because every other
+    caller in this app wants the `no_grad` guarantee and none of them should be able to lose
+    it by passing the wrong argument. Inference, the feature cache and the annotators all
+    keep calling `extract` and cannot be affected by anything here.
+
+    Only the *training* path calls this, and only when the user has asked for backbone
+    blocks to be unfrozen. With a fully frozen backbone it would allocate a graph that
+    nothing backpropagates through — correct, but wasted memory on every image.
+    """
+    height, width = int(pixel_values.shape[-2]), int(pixel_values.shape[-1])
+    grid = _grid_dims(height, width, backbone.capabilities.patch_size)
+
+    outputs = backbone.model(pixel_values=pixel_values.to(backbone.device))
+    hidden: Tensor = outputs.last_hidden_state
+    cls, patches = _split_tokens(hidden, backbone.capabilities.num_prefix_tokens, grid)
+    return BackboneFeatures(cls=cls, patches=patches, grid=grid)
+
+
 def extract_images(backbone: Backbone, images: list[Image.Image]) -> BackboneFeatures:
     """Convenience for the inference path: PIL images straight to features."""
     return extract(backbone, preprocess(backbone, images))

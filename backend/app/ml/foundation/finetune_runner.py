@@ -117,7 +117,9 @@ class FinetuneRunner:
             config.foundation_id, len(class_names), class_names, self._settings
         )
         module = model.model
-        job.frozen_parameters, job.trainable_parameters = freeze_backbone(module)
+        job.frozen_parameters, job.trainable_parameters = freeze_backbone(
+            module, config.unfreeze_blocks
+        )
         logger.info(
             "Fine-tuning %s: %d frozen, %d trainable parameters",
             config.foundation_id,
@@ -125,10 +127,28 @@ class FinetuneRunner:
             job.trainable_parameters,
         )
 
+        # Two groups when the backbone is open: the decoder is being adapted and the
+        # backbone nudged. One shared rate is the setting that makes unfreezing look like a
+        # bad idea — at the decoder's rate a pretrained ViT is destroyed in one epoch.
+        backbone_params = [
+            p
+            for p in module.get_submodule("model.backbone").parameters()
+            if bool(p.requires_grad)
+        ]
+        backbone_ids = {id(p) for p in backbone_params}
+        rest = [
+            p for p in module.parameters() if bool(p.requires_grad) and id(p) not in backbone_ids
+        ]
+        groups: list[dict[str, object]] = [{"params": rest, "lr": config.learning_rate}]
+        if backbone_params:
+            groups.append(
+                {
+                    "params": backbone_params,
+                    "lr": config.learning_rate * config.backbone_lr_scale,
+                }
+            )
         optimiser = torch.optim.AdamW(
-            [p for p in module.parameters() if p.requires_grad],
-            lr=config.learning_rate,
-            weight_decay=config.weight_decay,
+            groups, lr=config.learning_rate, weight_decay=config.weight_decay
         )
 
         best = -1.0

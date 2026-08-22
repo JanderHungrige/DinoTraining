@@ -26,6 +26,7 @@ export interface FinetunePanelProps {
     datasetIds: string[];
     name: string;
     epochs: number;
+    unfreezeBlocks: number;
     learningRate: number;
   }) => void;
   readonly onCancel: () => void;
@@ -46,6 +47,9 @@ export function FinetunePanel({
 }: FinetunePanelProps): JSX.Element {
   const [name, setName] = useState('');
   const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
+  // Off by default: freezing is the founding rule, the fastest run, and the right
+  // choice unless placement is the thing that is wrong.
+  const [unfreezeBlocks, setUnfreezeBlocks] = useState(0);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [baseOverride, setBaseOverride] = useState('');
 
@@ -143,6 +147,28 @@ export function FinetunePanel({
         />
       </label>
 
+      <label className="genpanel__field">
+        <span>
+          Train the backbone too —{' '}
+          {unfreezeBlocks === 0 ? 'no (frozen)' : `last ${unfreezeBlocks} block${unfreezeBlocks === 1 ? '' : 's'}`}
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={12}
+          value={unfreezeBlocks}
+          disabled={running}
+          onChange={(event) => setUnfreezeBlocks(Number(event.target.value))}
+        />
+        <span className="finetune__hint">
+          {unfreezeBlocks === 0
+            ? 'The backbone stays frozen — this app’s founding rule, and the fastest run.'
+            : 'Measured on rail data: 4 blocks took mAP from 0.781 to 0.843 on held-out ' +
+              'frames, and cost 19% more time. It is the placement that improves — what ' +
+              'the model finds barely changes.'}
+        </span>
+      </label>
+
       {error && <p className="run__warn">{error}</p>}
 
       <div className="finetune__actions">
@@ -156,6 +182,7 @@ export function FinetunePanel({
               datasetIds: [...selected],
               name: name.trim(),
               epochs,
+              unfreezeBlocks,
               learningRate: DEFAULT_LEARNING_RATE,
             })
           }

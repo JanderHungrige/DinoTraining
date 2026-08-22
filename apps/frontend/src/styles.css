@@ -2362,3 +2362,12 @@ body {
   border-color: var(--focus);
   color: var(--focus);
 }
+
+/* --- Fine-tune hint (doc 55) --- */
+
+.finetune__hint {
+  max-width: 62ch;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}

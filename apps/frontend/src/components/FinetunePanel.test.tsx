@@ -6,7 +6,7 @@
  * form cannot start a run it has not been given enough to describe.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -190,5 +190,46 @@ describe('while it runs', () => {
   it('says where the result went once it is saved', () => {
     renderPanel({ job: job({ state: 'complete', instance_id: 'abc' }), running: false });
     expect(screen.getByText(/Annotation Studio/)).toBeInTheDocument();
+  });
+});
+
+describe('training the backbone too (doc 55)', () => {
+  it('defaults to frozen', async () => {
+    // The founding rule, the fastest run, and the right choice unless placement is what
+    // is wrong.
+    const { onStart, user } = renderPanel();
+    await user.type(screen.getByLabelText('Name'), 'x');
+    await user.click(screen.getByRole('checkbox', { name: /Thermal/ }));
+    await user.click(screen.getByRole('button', { name: 'Fine-tune' }));
+    expect(onStart.mock.calls[0]?.[0].unfreezeBlocks).toBe(0);
+  });
+
+  it('says what frozen means rather than leaving the slider unexplained', () => {
+    renderPanel();
+    expect(screen.getByText(/founding rule/)).toBeInTheDocument();
+  });
+
+  it('reports the chosen block count', async () => {
+    const { onStart, user } = renderPanel();
+    const slider = screen.getByLabelText(/Train the backbone too/);
+    fireEvent.change(slider, { target: { value: '4' } });
+    await user.type(screen.getByLabelText('Name'), 'x');
+    await user.click(screen.getByRole('checkbox', { name: /Thermal/ }));
+    await user.click(screen.getByRole('button', { name: 'Fine-tune' }));
+    expect(onStart.mock.calls[0]?.[0].unfreezeBlocks).toBe(4);
+  });
+
+  it('gives the measured trade rather than a vague promise', () => {
+    // "May improve accuracy" is not a reason to spend 19% more time. Numbers are.
+    renderPanel();
+    const slider = screen.getByLabelText(/Train the backbone too/);
+    fireEvent.change(slider, { target: { value: '4' } });
+    expect(screen.getByText(/0\.781 to 0\.843/)).toBeInTheDocument();
+    expect(screen.getByText(/19% more time/)).toBeInTheDocument();
+  });
+
+  it('locks while a run is going', () => {
+    renderPanel({ job: job(), running: true });
+    expect(screen.getByLabelText(/Train the backbone too/)).toBeDisabled();
   });
 });
