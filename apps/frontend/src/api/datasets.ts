@@ -167,3 +167,82 @@ export function saveImageMasks(
     }),
   });
 }
+
+
+// --- a dataset as an image source (doc 50) -------------------------------------------
+
+/** A box exactly as the store holds it. `prompt` is the class — see `saveImageBoxes`. */
+export interface StoredBox {
+  readonly label: CanvasBox['label'];
+  readonly provenance: CanvasBox['provenance'];
+  readonly x: number;
+  readonly y: number;
+  readonly w: number;
+  readonly h: number;
+  readonly score?: number | null;
+  readonly prompt?: string | null;
+}
+
+export interface DatasetImageInfo {
+  readonly path: string;
+  readonly width: number;
+  readonly height: number;
+  readonly boxes: readonly StoredBox[];
+}
+
+let storedCounter = 0;
+
+/** Stored boxes as the canvas holds them.
+ *
+ *  The mirror of `saveImageBoxes`, and it has to undo the same rename: the store calls a
+ *  box's class `prompt` and the canvas calls it `text`. Skipping that here would load a
+ *  dataset whose boxes all show as unnamed, and saving would then write the blanks back. */
+export function storedToCanvasBoxes(boxes: readonly StoredBox[]): CanvasBox[] {
+  return boxes.map((box) => ({
+    id: `stored-${(storedCounter += 1)}`,
+    label: box.label,
+    provenance: box.provenance,
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
+    ...(box.score === undefined || box.score === null ? {} : { score: box.score }),
+    ...(box.prompt ? { text: box.prompt } : {}),
+  }));
+}
+
+function isDatasetImages(value: unknown): value is { images: DatasetImageInfo[] } {
+  if (typeof value !== 'object' || value === null) return false;
+  const images = (value as { images?: unknown }).images;
+  return (
+    Array.isArray(images) &&
+    images.every(
+      (entry) =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof (entry as { path?: unknown }).path === 'string',
+    )
+  );
+}
+
+/** The images a dataset holds, so it can be used as a source anywhere a folder can. */
+export async function listDatasetImages(
+  datasetId: string,
+  signal?: AbortSignal,
+): Promise<DatasetImageInfo[]> {
+  const body = await apiFetch(
+    `/datasets/${encodeURIComponent(datasetId)}/images`,
+    isDatasetImages,
+    signal ? { signal } : {},
+  );
+  return body.images;
+}
+
+/** Delete a dataset. Returns nothing useful; a failure throws. */
+export async function deleteDataset(datasetId: string, signal?: AbortSignal): Promise<void> {
+  await apiFetch(
+    `/datasets/${encodeURIComponent(datasetId)}`,
+    (value): value is unknown => value !== undefined,
+    { method: 'DELETE', ...(signal ? { signal } : {}) },
+  );
+}

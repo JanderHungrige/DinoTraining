@@ -22,6 +22,11 @@ vi.mock('../api/datasets', async () => {
   return { ...actual, listDatasets: vi.fn(), createDataset: vi.fn() };
 });
 
+vi.mock('../api/foundation', async () => {
+  const actual = await vi.importActual<typeof import('../api/foundation')>('../api/foundation');
+  return { ...actual, listFoundations: vi.fn() };
+});
+
 vi.mock('../hooks/useTrainerOptions', async () => {
   const actual = await vi.importActual<typeof import('../hooks/useTrainerOptions')>(
     '../hooks/useTrainerOptions',
@@ -33,6 +38,7 @@ const headsApi = await import('../api/headInstances');
 const options = await import('../hooks/useTrainerOptions');
 const datasetsApi = await import('../api/datasets');
 const annotatorsApi = await import('../api/annotators');
+const foundationApi = await import('../api/foundation');
 
 const DETECTOR: HeadInstanceInfo = {
   id: 'h1',
@@ -73,6 +79,8 @@ function trainerOptions(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+  // Default: no foundation model offered. Every test that cares sets its own.
+  vi.mocked(foundationApi.listFoundations).mockResolvedValue([]);
   vi.mocked(headsApi.listHeadInstances).mockResolvedValue([DETECTOR]);
   vi.mocked(datasetsApi.listDatasets).mockResolvedValue([
     { id: 'd1', name: 'Bolts', counts: { images: 3 } } as never,
@@ -174,7 +182,7 @@ describe('GeneratorSetup', () => {
     await waitFor(() =>
       expect(onStart).toHaveBeenCalledWith(
         expect.objectContaining({
-          folder: '/photos',
+          images: { kind: 'folder', folder: '/photos' },
           backboneId: 'dinov2-small',
           instanceId: 'h1',
           datasetId: 'd1',

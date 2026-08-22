@@ -21,7 +21,7 @@ import torch
 from torch import Tensor
 from torchvision.ops import batched_nms
 
-from app.ml.heads.modules import decode_ltrb_to_boxes
+from app.ml.heads.modules import DETECTION_UPSAMPLE, decode_ltrb_to_boxes
 from app.ml.heads.registry import HeadTypeSpec
 
 #: (raw head outputs, patch_size) -> outputs shaped for the metric function.
@@ -77,7 +77,10 @@ def detection_decode(outputs: dict[str, Tensor], patch_size: int) -> dict[str, T
     centerness = outputs["centerness"]
     grid = (int(class_logits.shape[-2]), int(class_logits.shape[-1]))
 
-    boxes = decode_ltrb_to_boxes(outputs["box_ltrb"], grid, patch_size)[0]
+    # The grid is already the head's (upsampled) one; the stride must match it, or every
+    # decoded box is offset by half a patch and nothing says so. See doc 43.
+    stride = patch_size / DETECTION_UPSAMPLE
+    boxes = decode_ltrb_to_boxes(outputs["box_ltrb"], grid, stride)[0]
 
     probabilities = torch.sigmoid(class_logits[0])
     best_score, best_class = probabilities.max(dim=0)

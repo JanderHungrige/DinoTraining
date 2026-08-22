@@ -7,13 +7,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { listFolderImages, proposeBoxes, toCanvasBoxes } from '../api/annotate';
-import {
-  proposeWithExpertHead,
-  toCanvasBoxes as expertBoxes,
-} from '../api/generate';
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, saveImageBoxes, type DatasetCounts } from '../api/datasets';
+import type { ImageSource } from '../components/ImageSourceField';
+import { proposalFailure, proposeFor } from '../lib/proposeFor';
+import { useSessionImages } from './useSessionImages';
 import type { CanvasBox } from '../types/annotation';
 
 /**
@@ -36,16 +34,37 @@ export type ProposalSource =
       readonly backboneId: string;
       readonly instanceId: string;
       readonly scoreThreshold: number;
+    }
+  | {
+      // A general detector — no backbone to name and nothing trained. Doc 42.
+      readonly kind: 'foundation';
+      readonly foundationId: string;
+      readonly scoreThreshold: number;
+      /** What to segment, for a concept-prompted model (doc 45). Empty for a detector,
+       *  which predicts its own classes whatever is typed at it. */
+      readonly concept?: string;
     };
 
 export interface SessionConfig {
-  readonly folder: string;
+  /** Where the images come from (doc 50). A dataset is a first-class source: the app
+   *  already has the user's images once they have imported or generated one, and the
+   *  store may have *copied* them, so the folder they remember is not where they now are. */
+  readonly images: ImageSource;
+  /** Where annotations are written. When the source is a dataset this is that same
+   *  dataset — picking one means "carry on working on this", so its boxes load onto the
+   *  canvas and edits replace them. */
   readonly datasetId: string;
   readonly source: ProposalSource;
 }
 
 export interface AnnotationSession {
   readonly images: readonly string[];
+  /** True while a newly chosen source is being listed. */
+  readonly loadingImages: boolean;
+  /** Every image the source holds, ignoring any prescan filter. */
+  readonly allImages: readonly string[];
+  readonly filtered: boolean;
+  readonly setFilter: (paths: readonly string[] | null) => void;
   readonly index: number;
   readonly currentImage: string | null;
   readonly boxes: readonly CanvasBox[];
@@ -72,7 +91,10 @@ function describe(error: unknown, fallback: string): string {
 }
 
 export function useAnnotationSession(config: SessionConfig | null): AnnotationSession {
-  const [images, setImages] = useState<readonly string[]>([]);
+  // A prescan's hits (doc 53). Null means no filter. The **full** list stays loaded, so
+  // turning the filter off costs nothing and re-reads nothing — which is what makes
+  // "check every image after all" a toggle rather than a restart.
+  const [filter, setFilterState] = useState<readonly string[] | null>(null);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxesState] = useState<readonly CanvasBox[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
@@ -94,30 +116,38 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
   const stateRef = useRef({ boxes, dirty, index, imageSize });
   stateRef.current = { boxes, dirty, index, imageSize };
 
+  const loaded = useSessionImages(config?.images ?? null, describe);
+  const allImages = loaded.images;
+  const existing = loaded.existing;
+
+  const kept = filter === null ? null : new Set(filter);
+  const images = kept === null ? allImages : allImages.filter((path) => kept.has(path));
   const currentImage = images[index] ?? null;
 
-  // The folder is listed once per folder; re-listing on every navigation would put
-  // a disk read behind the arrow keys.
+  // Reset exactly once per completed load. Depending on `allImages` instead would reset
+  // on every render that produced a new array identity.
   useEffect(() => {
-    if (!config) return;
-    const controller = new AbortController();
+    setIndex(0);
+    setBoxesState([...(existing.get(allImages[0] ?? '') ?? [])]);
+    setDirty(false);
+    setFilterState(null);
+  }, [loaded.generation]);
 
-    void (async () => {
-      try {
-        const found = await listFolderImages(config.folder, controller.signal);
-        if (!mounted.current) return;
-        setImages(found);
-        setIndex(0);
-        setBoxesState([]);
-        setDirty(false);
-        setError(found.length === 0 ? 'No images found in that folder.' : null);
-      } catch (cause) {
-        if (mounted.current) setError(describe(cause, 'Could not read that folder.'));
-      }
-    })();
-
-    return () => controller.abort();
-  }, [config?.folder]);
+  /** Show only these images, or all of them when given null (doc 53).
+   *
+   *  Resets to the first image, because keeping the index would land the user on an
+   *  arbitrary one — position 7 of the filtered list is not position 7 of the full list,
+   *  and nothing on screen would explain the jump. */
+  const setFilter = useCallback(
+    (paths: readonly string[] | null): void => {
+      setFilterState(paths);
+      setIndex(0);
+      setBoxesState([...(existing.get((paths ?? allImages)[0] ?? '') ?? [])]);
+      setImageSize(null);
+      setDirty(false);
+    },
+    [allImages, existing],
+  );
 
   const reportImageSize = useCallback((width: number, height: number): void => {
     setImageSize((current) =>
@@ -135,30 +165,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     const { source } = config;
     setProposing(true);
     try {
-      // Both branches return proposals already in *source* pixel coordinates and already
-      // carrying their own provenance, so nothing downstream branches on mode again.
-      const proposed =
-        source.kind === 'head'
-          ? await proposeWithExpertHead({
-              imagePath: currentImage,
-              backboneId: source.backboneId,
-              instanceId: source.instanceId,
-              scoreThreshold: source.scoreThreshold,
-            }).then((response) => ({
-              boxes: expertBoxes(response),
-              width: response.width,
-              height: response.height,
-            }))
-          : await proposeBoxes({
-              imagePath: currentImage,
-              prompt: source.prompt,
-              boxThreshold: source.boxThreshold,
-              textThreshold: source.textThreshold,
-            }).then((response) => ({
-              boxes: toCanvasBoxes(response),
-              width: response.width,
-              height: response.height,
-            }));
+      const proposed = await proposeFor(source, currentImage);
       if (!mounted.current) return;
 
       // Hand-drawn boxes survive a re-run: they are work the model cannot reproduce.
@@ -169,12 +176,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
       setError(null);
     } catch (cause) {
       if (mounted.current) {
-        setError(
-          describe(
-            cause,
-            source.kind === 'head' ? 'Could not run that head.' : 'Could not run the detector.',
-          ),
-        );
+        setError(describe(cause, proposalFailure(source)));
       }
     } finally {
       if (mounted.current) setProposing(false);
@@ -238,7 +240,9 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
 
       if (!mounted.current) return;
       setIndex(target);
-      setBoxesState([]);
+      // A dataset source restores what that image already had; a folder source starts
+      // blank. Both are "what is true about this image", which is why one line serves.
+      setBoxesState([...(existing.get(images[target] ?? '') ?? [])]);
       setImageSize(null);
       setDirty(false);
     },
@@ -250,6 +254,10 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
 
   return {
     images,
+    loadingImages: loaded.loading,
+    allImages,
+    filtered: filter !== null,
+    setFilter,
     index,
     currentImage,
     boxes,
@@ -258,7 +266,9 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     dirty,
     busy,
     proposing,
-    error,
+    // The session's own error wins: a save or propose failure is about what the user just
+    // did, while a load error is about a source they have already seen fail.
+    error: error ?? loaded.error,
     setBoxes,
     reportImageSize,
     propose,

@@ -41,14 +41,23 @@ export function HeadRunPanel({
   runDisabled = false,
 }: HeadRunPanelProps): JSX.Element {
   const { heads, selected, running, loadingHeads, backboneId, taskFilter } = state;
+  const { datasetFilter, trainedOn } = state;
 
   // Grouping is doc 12's `groupByTask`, not a second implementation: the tasks offered
   // are exactly the tasks the installed heads cover, so an empty group cannot be picked.
   const tasks = useMemo(() => [...groupByTask(heads).keys()].sort(), [heads]);
 
+  // Both filters, and they compose. Filtering by dataset alone is the common case —
+  // "show me what I trained on the chess set" — and it answers a question the task filter
+  // cannot, because six detection heads all report `detection`.
   const visible = useMemo(
-    () => (taskFilter ? heads.filter((head) => head.task === taskFilter) : heads),
-    [heads, taskFilter],
+    () =>
+      heads.filter(
+        (head) =>
+          (!taskFilter || head.task === taskFilter) &&
+          (!datasetFilter || head.dataset_ids.includes(datasetFilter)),
+      ),
+    [heads, taskFilter, datasetFilter],
   );
 
   if (loadingHeads) return <p role="status">Loading heads…</p>;
@@ -64,6 +73,11 @@ export function HeadRunPanel({
 
   // Counted together: a foundation model is as much "a thing you chose to run" as a head,
   // and a Run button that stays dead after ticking one would read as broken.
+  // Derived from what is *selected*, not what is listed, so the field appears with the
+  // checkbox and disappears with it rather than sitting there through a depth-only run.
+  const conceptNeeded = state.foundations.some(
+    (entry) => entry.takes_concept && state.selectedFoundations.includes(entry.id),
+  );
   const totalSelected = selected.length + state.selectedFoundations.length;
   const nothingSelected = totalSelected === 0;
   const runLabel = `Run ${totalSelected || ''} model${totalSelected === 1 ? '' : 's'}`;
@@ -91,6 +105,26 @@ export function HeadRunPanel({
             </option>
           ))}
         </select>
+        {trainedOn.length > 0 && (
+          <>
+            <label htmlFor="dataset-filter">Trained on</label>
+            <select
+              id="dataset-filter"
+              value={datasetFilter ?? ALL_TASKS}
+              onChange={(event) =>
+                state.setDatasetFilter(event.target.value === ALL_TASKS ? null : event.target.value)
+              }
+              disabled={disabled || running}
+            >
+              <option value={ALL_TASKS}>Any dataset</option>
+              {trainedOn.map((dataset) => (
+                <option key={dataset.id} value={dataset.id}>
+                  {dataset.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
         {sameTaskCount > 1 && (
           <span className="runpanel__compare">
             Comparing {sameTaskCount} heads on {state.selectedTask}
@@ -147,6 +181,23 @@ export function HeadRunPanel({
               </span>
             </label>
           ))}
+
+          {conceptNeeded && (
+            <label className="runpanel__concept">
+              <span>What to find</span>
+              <input
+                type="text"
+                value={state.concept}
+                disabled={disabled}
+                placeholder="cat. dog. traffic light."
+                onChange={(event) => state.setConcept(event.target.value)}
+              />
+              <span className="runpanel__headmeta">
+                Concept models segment only what you name. Separate several with full
+                stops.
+              </span>
+            </label>
+          )}
         </fieldset>
       )}
 

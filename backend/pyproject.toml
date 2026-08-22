@@ -20,6 +20,11 @@ dependencies = [
     "huggingface-hub>=0.24",    # model download manager (gated DINOv3 needs HF_TOKEN)
     "pillow>=10.3",
     "numpy>=1.26",
+    # Required by transformers' DETR-family Hungarian matcher (`linear_sum_assignment`),
+    # which is what fine-tuning RF-DETR trains against — doc 44. Training only; inference
+    # never touches it. Verified against numpy 2.5 and torch 2.13, unlike the
+    # `depth-anything-3` package Wave 6 rejected for pinning numpy<2.
+    "scipy>=1.11",
     # --- Data / metadata ---
     # SQLite via stdlib; SQLAlchemy optional if the store grows.
 ]

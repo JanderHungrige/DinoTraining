@@ -7,6 +7,13 @@
  * the wave: the viewer's panes, the overlay registry and the compare layout already work
  * off `Prediction[]` and must not learn that some predictions came from elsewhere.
  *
+ * **A result belongs to the image it was computed from.** `currentPath` is required for
+ * that reason: without it this hook happily returned image 1's boxes over image 2, 3 and 4
+ * as the user paged through a folder — the prediction never expired, it just stopped being
+ * true. Gating is *derived* rather than cleared on navigation, which is what makes paging
+ * back to an earlier image correctly show that image's own result again, and what makes a
+ * response arriving after the user has moved on simply not appear.
+ *
  * The backbone is **derived from the selection** rather than picked separately. A head
  * only runs against the backbone it was registered for (doc 18 refuses the request
  * otherwise), so a separate backbone control would let the user build an invalid
@@ -18,6 +25,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import type { HeadTask } from '../api/heads';
+import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { listFoundations, runFoundation, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { runHeads, type ComposedResult } from '../api/inference';
@@ -29,10 +37,21 @@ export interface HeadRunState {
   readonly foundations: readonly FoundationInfo[];
   readonly selectedFoundations: readonly string[];
   readonly toggleFoundation: (foundationId: string) => void;
+  /** What a concept segmenter should look for (doc 45). One field for all of them:
+   *  two concept models selected at once with *different* concepts is a nicety this
+   *  surface does not need, and per-model state to express it. */
+  readonly concept: string;
+  readonly setConcept: (concept: string) => void;
   /** Fixed by the first selected head; null when nothing is selected. */
   readonly backboneId: string | null;
   /** Narrows the offered list. Same-task comparison is this filter, not a mode. */
   readonly taskFilter: HeadTask | null;
+  /** Show only heads trained on this dataset (doc 52). Null means all. */
+  readonly datasetFilter: string | null;
+  /** Every dataset any installed head was trained on, id -> name, for the picker.
+   *  Built from the datasets that actually appear, so a filter can never offer a
+   *  choice that matches nothing. */
+  readonly trainedOn: readonly { readonly id: string; readonly name: string }[];
   /** The task the current selection is on, when they all share one. */
   readonly selectedTask: HeadTask | null;
   readonly running: boolean;
@@ -41,6 +60,7 @@ export interface HeadRunState {
   readonly loadingHeads: boolean;
   readonly toggle: (instanceId: string) => void;
   readonly setTaskFilter: (task: HeadTask | null) => void;
+  readonly setDatasetFilter: (datasetId: string | null) => void;
   readonly clear: () => void;
   readonly run: (imagePath: string) => Promise<void>;
   /** True when this head cannot join the current selection — different backbone. */
@@ -51,16 +71,21 @@ function describe(cause: unknown, fallback: string): string {
   return cause instanceof ApiError ? cause.message : fallback;
 }
 
-export function useHeadRun(): HeadRunState {
+export function useHeadRun(currentPath: string | null): HeadRunState {
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
+  const [concept, setConcept] = useState('');
   const [result, setResult] = useState<ComposedResult | null>(null);
+  /** Which image `result` describes. Null whenever there is no result. */
+  const [resultPath, setResultPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [loadingHeads, setLoadingHeads] = useState(true);
   const [taskFilter, setTaskFilterState] = useState<HeadTask | null>(null);
+  const [datasetFilter, setDatasetFilterState] = useState<string | null>(null);
+  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
 
   const inFlight = useRef<AbortController | null>(null);
 
@@ -114,6 +139,28 @@ export function useHeadRun(): HeadRunState {
     return tasks.size === 1 ? [...tasks][0] ?? null : null;
   }, [heads, selected]);
 
+  // Names only — the filter matches on `dataset_ids`, which every head already carries.
+  // Its own effect rather than the heads' one: a dataset list that fails to load should
+  // cost the filter, not the panel.
+  useEffect(() => {
+    const controller = new AbortController();
+    void listDatasets(controller.signal)
+      .then(setDatasets)
+      .catch(() => setDatasets([]));
+    return () => controller.abort();
+  }, []);
+
+  const trainedOn = useMemo(() => {
+    const used = new Set(heads.flatMap((head) => head.dataset_ids));
+    return datasets
+      .filter((dataset) => used.has(dataset.id))
+      .map((dataset) => ({ id: dataset.id, name: dataset.name }));
+  }, [heads, datasets]);
+
+  const setDatasetFilter = useCallback((datasetId: string | null): void => {
+    setDatasetFilterState(datasetId);
+  }, []);
+
   const setTaskFilter = useCallback((task: HeadTask | null): void => {
     setTaskFilterState(task);
     // The selection is deliberately kept. Filtering changes what is *offered*, not what
@@ -150,6 +197,7 @@ export function useHeadRun(): HeadRunState {
     setSelected([]);
     setSelectedFoundations([]);
     setResult(null);
+    setResultPath(null);
     setError(null);
   }, []);
 
@@ -178,12 +226,16 @@ export function useHeadRun(): HeadRunState {
             : Promise.resolve(null),
           Promise.all(
             selectedFoundations.map((foundationId) =>
-              runFoundation({ imagePath, foundationId }, controller.signal),
+              runFoundation(
+                { imagePath, foundationId, ...(concept ? { concept } : {}) },
+                controller.signal,
+              ),
             ),
           ),
         ]);
         if (controller.signal.aborted) return;
 
+        setResultPath(imagePath);
         setResult({
           predictions: [...(composed?.predictions ?? []), ...foundationResults],
           // Foundation models run their own forward; they are not backbone passes and
@@ -200,6 +252,7 @@ export function useHeadRun(): HeadRunState {
         if (controller.signal.aborted) return;
         setError(describe(cause, 'Could not run that selection.'));
         setResult(null);
+        setResultPath(null);
       } finally {
         if (!controller.signal.aborted) setRunning(false);
       }
@@ -207,21 +260,31 @@ export function useHeadRun(): HeadRunState {
     [selected, backboneId, selectedFoundations],
   );
 
+  // Derived, not stored: a result is shown only while the image it describes is the one
+  // on screen. Clearing on navigation instead would lose a result the user could page
+  // back to, and would still race a response that lands after they have moved on.
+  const resultForCurrentImage = resultPath !== null && resultPath === currentPath ? result : null;
+
   return {
     heads,
     selected,
     foundations,
+    concept,
+    setConcept,
     selectedFoundations,
     toggleFoundation,
     backboneId,
     taskFilter,
+    datasetFilter,
+    trainedOn,
     selectedTask,
     running,
-    result,
+    result: resultForCurrentImage,
     error,
     loadingHeads,
     toggle,
     setTaskFilter,
+    setDatasetFilter,
     clear,
     run,
     isIncompatible,

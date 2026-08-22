@@ -9,72 +9,16 @@
  *      state stays '' while the list renders anyway, so the form looks filled in and the
  *      submit button never enables. The test that catches it has to render empty first and
  *      only then supply data — which is the sequence a real load produces.
+ *
+ * The general-detector mode lives in `SessionSetup.foundation.test.tsx`; fixtures are
+ * shared through `sessionSetup.testkit.tsx`.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { HeadInstanceInfo } from '../api/headInstances';
 import { SessionSetup } from './SessionSetup';
-
-const fetchMock = vi.fn<typeof fetch>();
-
-function head(overrides: Partial<HeadInstanceInfo> = {}): HeadInstanceInfo {
-  return {
-    id: 'h1',
-    name: 'Thermal spotter',
-    summary: 'Object detection · 2 classes · trained on 1 dataset',
-    kind: 'trained-here',
-    head_type_id: 'dense-detector',
-    task: 'detection',
-    render_hint: 'boxes',
-    backbone_id: 'dinov2-small',
-    backbone_family: 'dinov2',
-    embed_dim: 384,
-    num_classes: 2,
-    class_names: ['dog', 'person'],
-    dataset_ids: ['d1'],
-    metrics: {},
-    primary_metric: null,
-    primary_metric_value: null,
-    epochs_trained: 5,
-    best_epoch: 4,
-    source_repo: null,
-    created_at: '2026-08-20T00:00:00+00:00',
-    ...overrides,
-  };
-}
-
-function json(body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-const CREATED = {
-  id: 'ds-new',
-  name: 'Thermal',
-  created_at: '2026-08-20T00:00:00+00:00',
-  prompt: null,
-  copy_images: false,
-  counts: { images: 0, boxes: 0, masks: 0, positive: 0, negative: 0, unclear: 0 },
-};
-
-function routes(heads: readonly HeadInstanceInfo[]): void {
-  fetchMock.mockImplementation((input: unknown, init?: RequestInit) => {
-    const url = String(input);
-    if (url.includes('/heads')) return Promise.resolve(json({ heads }));
-    // Route by method, not just path: submitting creates the dataset before it starts,
-    // and a list-shaped body there fails validation and swallows the whole submit.
-    if (url.includes('/datasets') && init?.method === 'POST') {
-      return Promise.resolve(json(CREATED));
-    }
-    if (url.includes('/datasets')) return Promise.resolve(json({ datasets: [] }));
-    return Promise.resolve(json({}));
-  });
-}
+import { fetchMock, head, setup } from './sessionSetup.testkit';
 
 beforeEach(() => {
   vi.stubGlobal('fetch', fetchMock);
@@ -86,14 +30,6 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
 });
-
-async function setup(heads: readonly HeadInstanceInfo[] = [head()]) {
-  routes(heads);
-  const onStart = vi.fn();
-  render(<SessionSetup onStart={onStart} />);
-  await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-  return { onStart, user: userEvent.setup() };
-}
 
 describe('choosing a mode', () => {
   it('starts in prompt mode, which is what Wave 1 shipped', async () => {
@@ -256,4 +192,3 @@ describe('telling you which prompt you are looking at (doc 39)', () => {
     expect(await screen.findByText(/dog, person/)).toBeInTheDocument();
   });
 });
-

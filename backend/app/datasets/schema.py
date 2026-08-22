@@ -24,6 +24,11 @@ PROVENANCE_VALUES = (
     # none of them is true of a third-party dataset. Recording one would make the
     # producer snapshot a fiction. See `31-external-dataset-import`.
     "imported",
+    # A self-contained foundation model — RF-DETR today. The *kind*, not the model:
+    # `producer` names which one, exactly as `expert-head` does for heads. A value per
+    # model would grow the CHECK on every catalogue addition and tell a reviewer nothing
+    # `producer` does not already say. See `42-foundation-boxes-everywhere`.
+    "foundation-model",
 )
 
 #: Tables carrying a provenance CHECK. The migration runner rebuilds any of them whose

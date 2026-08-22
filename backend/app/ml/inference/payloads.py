@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import base64
 import io
+from collections.abc import Sequence
 
 import numpy as np
 import torch
@@ -94,15 +95,38 @@ def boxes_payload(
     frame_boxes = [tuple(float(v) for v in box) for box in kept_boxes]
     source_boxes = invert_boxes(transform, frame_boxes)  # type: ignore[arg-type]
 
-    # A box predicted entirely inside the letterbox padding inverts to zero area: it
-    # describes pixels the user's image does not have. Dropped here rather than left
-    # for the renderer to filter — and dropped from all three arrays together, because
-    # they are read positionally and a partial drop misaligns every later score.
+    return source_boxes_payload(
+        source_boxes,
+        [float(score) for score in kept_scores],
+        [int(cls) for cls in kept_classes],
+    )
+
+
+def source_boxes_payload(
+    boxes: Sequence[tuple[float, float, float, float]],
+    scores: Sequence[float],
+    classes: Sequence[int],
+) -> dict[str, object]:
+    """Assemble a boxes payload from values **already in source coordinates**.
+
+    Split out of :func:`boxes_payload` so a self-contained detector can produce the
+    identical shape without this project's letterbox geometry (doc 41). RF-DETR's own
+    processor maps back to source size, so it has no `GeometryTransform` to invert — but
+    the overlay renderer must not be able to tell the two apart, and it cannot if the
+    shape and its invariants live in one place.
+
+    Those invariants are the reason this is shared rather than reimplemented: the three
+    arrays are read **positionally** by `Prediction.detections`, a zero-area box is dropped
+    from all three together, and the cap is applied to all three together. A partial drop
+    misaligns every later score, which is a silent mislabel rather than a crash.
+    """
     survivors = [
         (box, float(score), int(cls))
-        for box, score, cls in zip(source_boxes, kept_scores, kept_classes, strict=True)
+        for box, score, cls in zip(boxes, scores, classes, strict=True)
+        # A box of zero area describes pixels no image has — from letterbox padding on the
+        # head path, or from a degenerate prediction on the foundation path.
         if box[2] > 0.0 and box[3] > 0.0
-    ]
+    ][:MAX_DISPLAY_BOXES]
 
     return {
         "boxes": [list(box) for box, _, _ in survivors],

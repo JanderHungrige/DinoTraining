@@ -104,14 +104,14 @@ def classifier_weights(num_classes: int) -> dict[str, torch.Tensor]:
 
 
 def detector_weights(num_classes: int) -> dict[str, torch.Tensor]:
-    return {
-        "classifier.weight": torch.randn(num_classes, EMBED, 1, 1),
-        "classifier.bias": torch.randn(num_classes),
-        "box_regressor.weight": torch.randn(4, EMBED, 1, 1),
-        "box_regressor.bias": torch.randn(4),
-        "centerness.weight": torch.randn(1, EMBED, 1, 1),
-        "centerness.bias": torch.randn(1),
-    }
+    """Built from the real module, not hand-listed shapes.
+
+    Doc 43 changed `DetectionHead`'s parameters and every hand-written copy of its shapes
+    went stale in the same commit. A `state_dict()` taken from the class itself cannot.
+    """
+    from app.ml.heads.modules import DetectionHead
+
+    return {k: v.clone() for k, v in DetectionHead(EMBED, num_classes).state_dict().items()}
 
 
 def segmenter_weights(num_classes: int) -> dict[str, torch.Tensor]:

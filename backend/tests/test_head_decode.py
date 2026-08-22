@@ -16,6 +16,7 @@ from app.ml.heads.decode import (
     decode_for,
     detection_decode,
 )
+from app.ml.heads.modules import DETECTION_UPSAMPLE
 from app.ml.heads.registry import HeadTypeSpec, all_head_types, get_head_type
 
 
@@ -89,13 +90,25 @@ class TestDetectionDecode:
 
     def test_centerness_suppresses_a_cell(self) -> None:
         """Confident cells near a box edge produce badly-placed boxes; centerness is
-        what stops them dominating the ranking."""
+        what stops them dominating the ranking.
+
+        Asserted on the *value* rather than by comparing `scores[0]` to `scores[1]`. Since
+        doc 43 halved the stride, two adjacent cells' boxes overlap enough for NMS to merge
+        them, so there may be only one survivor — and the old form then compared a score to
+        nothing, or to an unrelated detection.
+        """
         outputs = detector_outputs(rows=1, cols=2, num_classes=1)
         outputs["class_logits"][0, 0, 0, :] = 5.0  # both cells equally confident
         outputs["centerness"][0, 0, 0, 0] = 5.0
         outputs["centerness"][0, 0, 0, 1] = -5.0
+
         decoded = detection_decode(outputs, 14)
-        assert decoded["scores"][0] > decoded["scores"][1]
+        confident = float(torch.sigmoid(torch.tensor(5.0)) ** 2)
+        suppressed = float(torch.sigmoid(torch.tensor(5.0)) * torch.sigmoid(torch.tensor(-5.0)))
+
+        # The winner is the well-centred cell, and by a wide margin.
+        assert decoded["scores"][0].item() == pytest.approx(confident, abs=1e-5)
+        assert confident > suppressed * 100
 
     def test_classes_are_valid_indices(self) -> None:
         decoded = detection_decode(detector_outputs(num_classes=3), 14)
@@ -146,13 +159,19 @@ def _all_cells_on_one_box(
     This is what a real detector does around an object: each patch whose receptive field
     covers it predicts that same object. Reproducing it exactly is the only way to test
     duplicate suppression — random fixtures overlap by accident and prove nothing.
+
+    ``patch`` is the **backbone's** patch size, as `detection_decode` receives it. The
+    cell centres use `patch / DETECTION_UPSAMPLE`, because that is the stride the decoder
+    works at (doc 43) — building them a patch apart would put every target half a cell
+    away from where the decoder looks, and the test would fail for the wrong reason.
     """
     x0, y0, width, height = box
+    stride = patch / DETECTION_UPSAMPLE
     ltrb = torch.zeros(1, 4, rows, cols)
     for row in range(rows):
         for col in range(cols):
-            centre_x = (col + 0.5) * patch
-            centre_y = (row + 0.5) * patch
+            centre_x = (col + 0.5) * stride
+            centre_y = (row + 0.5) * stride
             ltrb[0, :, row, col] = torch.tensor(
                 [centre_x - x0, centre_y - y0, x0 + width - centre_x, y0 + height - centre_y]
             )

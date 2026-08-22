@@ -10,7 +10,12 @@ export interface SourceItem {
   readonly path: string;
 }
 
-export interface ImageSource {
+/** One path resolved to a browsable listing — a single image, or a folder's contents.
+ *
+ *  Named for what it *is* rather than for what was asked, because `ImageSource` now means
+ *  the user's *choice* of where images come from (doc 50) and two types called the same
+ *  thing in one codebase is a trap. */
+export interface ResolvedSource {
   readonly kind: 'file' | 'folder';
   readonly root: string;
   readonly items: readonly SourceItem[];
@@ -31,7 +36,7 @@ function isSourceItem(value: unknown): value is SourceItem {
   );
 }
 
-function isImageSource(value: unknown): value is ImageSource {
+function isResolvedSource(value: unknown): value is ResolvedSource {
   if (!isRecord(value)) return false;
   return (
     (value['kind'] === 'file' || value['kind'] === 'folder') &&
@@ -48,10 +53,10 @@ function isImageSource(value: unknown): value is ImageSource {
  * A single image and a folder come back as the same shape. An empty folder is a success
  * with no items, not an error.
  */
-export function resolveSource(path: string, signal?: AbortSignal): Promise<ImageSource> {
+export function resolveSource(path: string, signal?: AbortSignal): Promise<ResolvedSource> {
   return apiFetch(
     `/inference/source?path=${encodeURIComponent(path)}`,
-    isImageSource,
+    isResolvedSource,
     signal ? { signal } : undefined,
   );
 }

@@ -8,6 +8,7 @@
 
 import { apiFetch } from './client';
 import { isPrediction, type Prediction } from './inference';
+import type { CanvasBox } from '../types/annotation';
 
 export interface FoundationInfo {
   readonly id: string;
@@ -21,6 +22,19 @@ export interface FoundationInfo {
   readonly non_commercial: boolean;
   readonly installed: boolean;
   readonly approx_size_mb: number;
+  /** True when the model needs a text concept before it predicts anything (doc 45).
+   *  Grounded SAM segments whatever you name; RF-DETR ignores whatever you type. */
+  readonly takes_concept: boolean;
+}
+
+/** Can this model's output be reviewed as boxes?
+ *
+ *  `render_hint` alone stopped answering this at doc 45. A concept segmenter reports
+ *  `masks` — that is what the viewer draws — but Grounding DINO found boxes on the way
+ *  there, so the Studio can review them. Depth still cannot be, and that is the whole
+ *  point of keeping the rule in one exported place rather than inline in two pickers. */
+export function proposesBoxes(entry: FoundationInfo): boolean {
+  return entry.render_hint === 'boxes' || entry.takes_concept;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -57,6 +71,8 @@ export async function listFoundations(signal?: AbortSignal): Promise<FoundationI
 export interface RunFoundationOptions {
   readonly imagePath: string;
   readonly foundationId: string;
+  /** Ignored by every model whose `takes_concept` is false. */
+  readonly concept?: string;
 }
 
 export function runFoundation(
@@ -69,7 +85,176 @@ export function runFoundation(
     body: JSON.stringify({
       image_path: options.imagePath,
       foundation_id: options.foundationId,
+      ...(options.concept ? { concept: options.concept } : {}),
     }),
     ...(signal ? { signal } : {}),
   });
+}
+
+// --- proposals (doc 42) -------------------------------------------------------------
+//
+// Deliberately the same shape the expert route returns, because the review surface should
+// consume one shape rather than learn which kind of model produced a box.
+
+export interface FoundationProposalResponse {
+  readonly image_path: string;
+  readonly width: number;
+  readonly height: number;
+  readonly device: string;
+  readonly model_name: string;
+  readonly model_summary: string;
+  readonly boxes: readonly {
+    readonly label: CanvasBox['label'];
+    readonly provenance: CanvasBox['provenance'];
+    readonly x: number;
+    readonly y: number;
+    readonly w: number;
+    readonly h: number;
+    readonly score: number | null;
+    readonly prompt: string | null;
+    readonly producer: CanvasBox['producer'] | null;
+  }[];
+}
+
+function isFoundationProposal(value: unknown): value is FoundationProposalResponse {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['width'] === 'number' &&
+    typeof value['height'] === 'number' &&
+    typeof value['model_name'] === 'string' &&
+    Array.isArray(value['boxes'])
+  );
+}
+
+export interface ProposeFoundationOptions {
+  readonly imagePath: string;
+  readonly foundationId: string;
+  readonly scoreThreshold?: number;
+  /** Required by a concept segmenter; the backend refuses an empty one rather than
+   *  returning nothing, because nothing-found and nothing-asked look identical. */
+  readonly concept?: string;
+}
+
+export function proposeWithFoundation(
+  options: ProposeFoundationOptions,
+  signal?: AbortSignal,
+): Promise<FoundationProposalResponse> {
+  return apiFetch('/generate/foundation', isFoundationProposal, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      image_path: options.imagePath,
+      foundation_id: options.foundationId,
+      ...(options.scoreThreshold !== undefined
+        ? { score_threshold: options.scoreThreshold }
+        : {}),
+      ...(options.concept ? { concept: options.concept } : {}),
+    }),
+    ...(signal ? { signal } : {}),
+  });
+}
+
+/** Same mapping the expert route gets: the class rides as `text` and is renamed to
+ *  `prompt` on save (doc 31). */
+export function foundationCanvasBoxes(
+  response: FoundationProposalResponse,
+): CanvasBox[] {
+  return response.boxes.map((box, index) => ({
+    id: `foundation-${index}`,
+    label: box.label,
+    provenance: box.provenance,
+    x: box.x,
+    y: box.y,
+    w: box.w,
+    h: box.h,
+    ...(box.score !== null ? { score: box.score } : {}),
+    ...(box.prompt ? { text: box.prompt } : {}),
+    ...(box.producer ? { producer: box.producer } : {}),
+  }));
+}
+
+// --- fine-tuning (doc 44) ------------------------------------------------------------
+
+export interface FinetuneEpoch {
+  readonly epoch: number;
+  readonly train_loss: number;
+  readonly metrics: Record<string, number>;
+}
+
+export interface FinetuneJob {
+  readonly job_id: string;
+  readonly state: 'pending' | 'running' | 'complete' | 'failed' | 'cancelled';
+  readonly epoch: number;
+  readonly total_epochs: number;
+  readonly best_metric: number | null;
+  readonly class_names: readonly string[];
+  /** Proof the backbone was actually frozen — a silent no-op looks like a slow success. */
+  readonly frozen_parameters: number;
+  readonly trainable_parameters: number;
+  readonly message: string;
+  readonly instance_id: string | null;
+  readonly history: readonly FinetuneEpoch[];
+}
+
+function isFinetuneJob(value: unknown): value is FinetuneJob {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value['job_id'] === 'string' &&
+    typeof value['state'] === 'string' &&
+    typeof value['total_epochs'] === 'number' &&
+    Array.isArray(value['history'])
+  );
+}
+
+export interface StartFinetuneOptions {
+  readonly foundationId: string;
+  readonly datasetIds: readonly string[];
+  readonly name: string;
+  readonly epochs: number;
+  readonly learningRate: number;
+}
+
+export function startFinetune(options: StartFinetuneOptions): Promise<FinetuneJob> {
+  return apiFetch('/foundation/finetune', isFinetuneJob, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      foundation_id: options.foundationId,
+      dataset_ids: options.datasetIds,
+      name: options.name,
+      epochs: options.epochs,
+      learning_rate: options.learningRate,
+    }),
+  });
+}
+
+export function readFinetune(jobId: string, signal?: AbortSignal): Promise<FinetuneJob> {
+  return apiFetch(
+    `/foundation/finetune/${encodeURIComponent(jobId)}`,
+    isFinetuneJob,
+    signal ? { signal } : undefined,
+  );
+}
+
+export function cancelFinetune(jobId: string): Promise<FinetuneJob> {
+  return apiFetch(`/foundation/finetune/${encodeURIComponent(jobId)}/cancel`, isFinetuneJob, {
+    method: 'POST',
+  });
+}
+
+
+
+/** Delete a fine-tuned model (doc 51).
+ *
+ *  Only an instance, never a catalogue entry — those are downloads managed in Admin /
+ *  Models, and the backend answers 404 for one rather than pretending to remove it. */
+export async function deleteFoundationInstance(
+  instanceId: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  await apiFetch(
+    `/foundation/instances/${encodeURIComponent(instanceId)}`,
+    (value): value is unknown => value !== undefined,
+    { method: 'DELETE', ...(signal ? { signal } : {}) },
+  );
 }

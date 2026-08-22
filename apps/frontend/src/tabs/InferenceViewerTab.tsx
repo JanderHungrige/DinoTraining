@@ -8,9 +8,10 @@
  * `renderOverlayFor`, which dispatches on `render_hint`.
  */
 
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
+import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { HeadRunPanel } from '../components/HeadRunPanel';
 import { ImageSourcePicker } from '../components/ImageSourcePicker';
 import { SideBySideViewer } from '../components/SideBySideViewer';
@@ -20,9 +21,23 @@ import { useImageSource } from '../hooks/useImageSource';
 
 export function InferenceViewerTab(): JSX.Element {
   const [path, setPath] = useState<string | null>(null);
-  const source = useImageSource(path);
-  const run = useHeadRun();
+  // Mutually exclusive by construction rather than by a mode flag: choosing one clears
+  // the other, so there is never a state where both claim to be the source.
+  const [datasetId, setDatasetId] = useState<string | null>(null);
+  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
+  const source = useImageSource(path, datasetId);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void listDatasets(controller.signal)
+      .then(setDatasets)
+      .catch(() => setDatasets([]));
+    return () => controller.abort();
+  }, []);
   const { current } = source;
+  // The hook needs to know which image is on screen, or a result outlives the image it
+  // describes — doc 21's stale-result bug.
+  const run = useHeadRun(current?.path ?? null);
 
   const predictions = run.result?.predictions ?? [];
 
@@ -34,7 +49,20 @@ export function InferenceViewerTab(): JSX.Element {
         original against what they predicted.
       </p>
 
-      <ImageSourcePicker onPick={setPath} value={path ?? ''} busy={source.loading} />
+      <ImageSourcePicker
+        onPick={(picked) => {
+          setDatasetId(null);
+          setPath(picked);
+        }}
+        value={path ?? ''}
+        busy={source.loading}
+        datasets={datasets}
+        datasetId={datasetId ?? ''}
+        onPickDataset={(picked) => {
+          setPath(null);
+          setDatasetId(picked || null);
+        }}
+      />
 
       {source.error && (
         <p className="admin__error" role="alert">

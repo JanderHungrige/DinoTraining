@@ -6,6 +6,10 @@ import type { ExpertProposalResponse } from '../api/generate';
 import { useGeneratorSession, type GeneratorConfig } from './useGeneratorSession';
 
 vi.mock('../api/annotate', () => ({ listFolderImages: vi.fn() }));
+vi.mock('../api/datasets', async (original) => ({
+  ...(await original<Record<string, unknown>>()),
+  listDatasetImages: vi.fn(),
+}));
 vi.mock('../api/generate', async () => {
   const actual = await vi.importActual<typeof import('../api/generate')>('../api/generate');
   return { ...actual, proposeWithExpertHead: vi.fn() };
@@ -17,7 +21,7 @@ const generate = await import('../api/generate');
 const CONFIG: GeneratorConfig = {
   kind: 'expert',
   datasetId: 'd1',
-  folder: '/photos',
+  images: { kind: 'folder', folder: '/photos' },
   backboneId: 'dinov2-small',
   instanceId: 'h1',
   scoreThreshold: 0.3,

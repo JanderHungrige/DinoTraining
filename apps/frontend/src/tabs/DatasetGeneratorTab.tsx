@@ -1,10 +1,17 @@
 /** Wave 4 — Dataset Generator: a trained head proposes, the user reviews. */
 
-import { useRef, useState, type JSX } from 'react';
+import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
+import { numbered } from '../lib/boxReview';
 import { CounterBar } from '../components/CounterBar';
+import { PrescanPanel } from '../components/PrescanPanel';
+import { usePrescan } from '../hooks/usePrescan';
+import {
+  generatorPrescanOptions,
+  generatorPrescanSuggestions,
+} from '../lib/prescanSource';
 import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import {
@@ -17,6 +24,17 @@ export function DatasetGeneratorTab(): JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useGeneratorSession(config);
+  const prescan = usePrescan();
+
+  const startScan = useCallback(
+    (labels: readonly string[], scoreThreshold: number): void => {
+      if (config === null) return;
+      void prescan.start(
+        generatorPrescanOptions(config, session.allImages, labels, scoreThreshold),
+      );
+    },
+    [config, prescan, session.allImages],
+  );
 
   if (!config) {
     return (
@@ -64,6 +82,26 @@ export function DatasetGeneratorTab(): JSX.Element {
 
       {session.loading && <p role="status">Listing images…</p>}
 
+      {/* Unattended runs benefit at least as much as the Studio: the Generator proposes on
+          every image whether or not there is anything in it, and reviewing 400 crops of
+          ballast is the same wasted afternoon. */}
+      {!session.loading && session.allImages.length > 0 && (
+        <PrescanPanel
+          total={session.allImages.length}
+          job={prescan.job}
+          starting={prescan.starting}
+          running={prescan.running}
+          error={prescan.error}
+          filtered={session.filtered}
+          suggestions={generatorPrescanSuggestions(config)}
+          onScan={startScan}
+          onCancel={prescan.cancel}
+          onApply={(apply) =>
+            session.setFilter(apply ? (prescan.job?.hits ?? []).map((h) => h.path) : null)
+          }
+        />
+      )}
+
       {!session.loading && session.images.length === 0 && (
         <p role="status">No images in that folder.</p>
       )}
@@ -110,7 +148,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 imageUrl={imageUrl(currentImage)}
                 naturalWidth={imageSize.width}
                 naturalHeight={imageSize.height}
-                boxes={session.boxes}
+                boxes={numbered(session.boxes)}
                 selectedId={selectedId}
                 onBoxesChange={session.setBoxes}
                 onSelect={setSelectedId}

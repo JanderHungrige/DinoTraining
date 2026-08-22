@@ -1,5 +1,5 @@
 /**
- * Image with an overlay of labelled boxes.
+ * Image with an overlay of numbered, labelled boxes.
  *
  * DOM overlay rather than <canvas>: each box is a real focusable button, so keyboard
  * operation, focus rings and the accessibility tree come for free. A canvas would
@@ -7,6 +7,15 @@
  * no performance reason to pay that.
  *
  * Controlled component — it emits a new array and the parent owns the state.
+ *
+ * **Paint order is by descending area** (doc 47). Every box is a button filling its own
+ * rect, so a large box painted after a small one swallows every click meant for it — the
+ * bug Jan reported. Smallest-on-top means a box that entirely contains another can never
+ * hide it. The side list handles what no paint order can: partial overlap.
+ *
+ * Each box shows **its number and its class**, not its verdict. For detection output the
+ * class is the thing being checked and the number is how the box is named in conversation
+ * and in the list beside it; the verdict is legible from the colour.
  */
 
 import {
@@ -28,16 +37,21 @@ import {
   type Rect,
   type RenderedImage,
 } from '../lib/geometry';
+import { inPaintOrder, type NumberedBox } from '../lib/boxReview';
 import { LABEL_TITLES, nextLabel, type CanvasBox, type Label } from '../types/annotation';
 
 export interface AnnotationCanvasProps {
   readonly imageUrl: string;
   readonly naturalWidth: number;
   readonly naturalHeight: number;
-  readonly boxes: readonly CanvasBox[];
+  /** Every box, numbered against the *unfiltered* list so a number never moves. */
+  readonly boxes: readonly NumberedBox[];
   readonly selectedId: string | null;
   readonly onBoxesChange: (boxes: CanvasBox[]) => void;
   readonly onSelect: (id: string | null) => void;
+  /** Ids the threshold is hiding. Hidden boxes are not drawn and cannot be focused, but
+   *  they are still in `boxes` and still saved — hiding is a view, not a deletion. */
+  readonly hidden?: ReadonlySet<string>;
   readonly disabled?: boolean;
 }
 
@@ -49,6 +63,8 @@ const EMPTY_RENDER: RenderedImage = {
   naturalWidth: 0,
   naturalHeight: 0,
 };
+
+const EMPTY_HIDDEN: ReadonlySet<string> = new Set<string>();
 
 function makeId(): string {
   return `box-${Math.random().toString(36).slice(2, 10)}`;
@@ -78,8 +94,10 @@ export function AnnotationCanvas({
   selectedId,
   onBoxesChange,
   onSelect,
+  hidden = EMPTY_HIDDEN,
   disabled = false,
 }: AnnotationCanvasProps): JSX.Element {
+  const plain = boxes.map((entry) => entry.box);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [rendered, setRendered] = useState<RenderedImage>(EMPTY_RENDER);
   const [draft, setDraft] = useState<Rect | null>(null);
@@ -109,17 +127,17 @@ export function AnnotationCanvas({
 
   const setLabel = useCallback(
     (id: string, label: Label): void => {
-      onBoxesChange(boxes.map((box) => (box.id === id ? { ...box, label } : box)));
+      onBoxesChange(plain.map((box) => (box.id === id ? { ...box, label } : box)));
     },
-    [boxes, onBoxesChange],
+    [plain, onBoxesChange],
   );
 
   const removeBox = useCallback(
     (id: string): void => {
-      onBoxesChange(boxes.filter((box) => box.id !== id));
+      onBoxesChange(plain.filter((box) => box.id !== id));
       onSelect(null);
     },
-    [boxes, onBoxesChange, onSelect],
+    [plain, onBoxesChange, onSelect],
   );
 
   const handleBoxKeyDown = (event: KeyboardEvent<HTMLButtonElement>, box: CanvasBox): void => {
@@ -195,7 +213,7 @@ export function AnnotationCanvas({
       w: Math.round(natural.w),
       h: Math.round(natural.h),
     };
-    onBoxesChange([...boxes, created]);
+    onBoxesChange([...plain, created]);
     onSelect(created.id);
   };
 
@@ -217,33 +235,36 @@ export function AnnotationCanvas({
           onLoad={measure}
         />
 
-        {boxes.map((box) => {
-          const rect = toDisplay(box, rendered);
-          const selected = box.id === selectedId;
-          const score = box.score === undefined ? '' : `, score ${(box.score * 100).toFixed(0)}%`;
-          return (
-            <button
-              key={box.id}
-              type="button"
-              className={`canvas__box canvas__box--${box.label}${selected ? ' canvas__box--selected' : ''}`}
-              style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
-              aria-pressed={selected}
-              aria-label={`${LABEL_TITLES[box.label]} box${box.text ? `: ${box.text}` : ''}${score}. Press 1, 2 or 3 to relabel, Delete to remove.`}
-              disabled={disabled}
-              onClick={() => {
-                onSelect(box.id);
-                setLabel(box.id, nextLabel(box.label));
-              }}
-              onFocus={() => onSelect(box.id)}
-              onKeyDown={(event) => handleBoxKeyDown(event, box)}
-            >
-              <span className="canvas__boxtag">
-                {LABEL_TITLES[box.label]}
-                {box.score !== undefined ? ` ${(box.score * 100).toFixed(0)}%` : ''}
-              </span>
-            </button>
-          );
-        })}
+        {inPaintOrder(boxes)
+          .filter(({ box }) => !hidden.has(box.id))
+          .map(({ box, number }) => {
+            const rect = toDisplay(box, rendered);
+            const selected = box.id === selectedId;
+            const score =
+              box.score === undefined ? '' : `, score ${(box.score * 100).toFixed(0)}%`;
+            return (
+              <button
+                key={box.id}
+                type="button"
+                className={`canvas__box canvas__box--${box.label}${selected ? ' canvas__box--selected' : ''}`}
+                style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
+                aria-pressed={selected}
+                aria-label={`Box ${number}${box.text ? `, ${box.text}` : ''}, ${LABEL_TITLES[box.label].toLowerCase()}${score}. Press 1, 2 or 3 to relabel, Delete to remove.`}
+                disabled={disabled}
+                onClick={() => {
+                  onSelect(box.id);
+                  setLabel(box.id, nextLabel(box.label));
+                }}
+                onFocus={() => onSelect(box.id)}
+                onKeyDown={(event) => handleBoxKeyDown(event, box)}
+              >
+                <span className="canvas__boxtag">
+                  <span className="canvas__boxnum">{number}</span>
+                  {box.text ?? LABEL_TITLES[box.label]}
+                </span>
+              </button>
+            );
+          })}
 
         {draft && (
           <div
@@ -255,9 +276,9 @@ export function AnnotationCanvas({
       </div>
 
       <p className="canvas__hint">
-        Drag on the image to draw a box. Click a box to cycle its label. With a box
-        focused: <kbd>1</kbd> positive, <kbd>2</kbd> negative, <kbd>3</kbd> unclear,{' '}
-        <kbd>Delete</kbd> to remove.
+        Drag on the image to draw a box. Click a box to cycle its label, or use the list
+        beside it. With a box focused: <kbd>1</kbd> positive, <kbd>2</kbd> negative,{' '}
+        <kbd>3</kbd> unclear, <kbd>Delete</kbd> to remove.
       </p>
     </div>
   );

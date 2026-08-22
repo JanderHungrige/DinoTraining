@@ -1,5 +1,5 @@
 /**
- * The six top-level areas of the app.
+ * The seven top-level areas of the app.
  *
  * `intro` leads deliberately (doc 38): it is the only tab that assumes you know nothing,
  * and a first-time user reads left to right. It is *not* the default tab — see
@@ -12,6 +12,7 @@ export const TAB_IDS = [
   'trainer',
   'inference',
   'generator',
+  'library',
   'admin',
 ] as const;
 
@@ -58,6 +59,12 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
     label: 'Dataset Generator',
     hint: 'Auto-annotate new images with a trained head or a concept prompt, then review.',
     wave: 4,
+  },
+  {
+    id: 'library',
+    label: 'Library',
+    hint: 'Everything you have made — datasets, trained heads and fine-tuned models.',
+    wave: 7,
   },
   {
     id: 'admin',

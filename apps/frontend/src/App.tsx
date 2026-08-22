@@ -8,6 +8,7 @@ import { DatasetGeneratorTab } from './tabs/DatasetGeneratorTab';
 import { HeadTrainerTab } from './tabs/HeadTrainerTab';
 import { InferenceViewerTab } from './tabs/InferenceViewerTab';
 import { IntroTab } from './tabs/IntroTab';
+import { LibraryTab } from './tabs/LibraryTab';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 
 function renderTab(tab: TabId, onNavigate: (next: TabId) => void): JSX.Element {
@@ -22,6 +23,8 @@ function renderTab(tab: TabId, onNavigate: (next: TabId) => void): JSX.Element {
       return <InferenceViewerTab />;
     case 'generator':
       return <DatasetGeneratorTab />;
+    case 'library':
+      return <LibraryTab />;
     case 'admin':
       return <AdminTab />;
     default:

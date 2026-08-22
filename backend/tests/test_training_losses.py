@@ -61,12 +61,17 @@ class TestAssignDetectionTargets:
         assert int(targets["class_target"][9, 9]) == 0  # only inside big
 
     def test_ltrb_distances_are_from_the_cell_centre(self) -> None:
+        """`grid` and `patch_size` describe the *backbone*; the assigner scales both by
+        `DETECTION_UPSAMPLE` because that is where the head predicts (doc 43). A (1,1)
+        backbone grid at patch 10 becomes a (2,2) grid of 5 px cells, so cell (0,0) is
+        centred at 2.5 rather than 5."""
         targets = assign_detection_targets(
             [(0, 0.0, 0.0, 100.0, 100.0)], [], grid=(1, 1), patch_size=10, num_classes=1
         )
+        assert targets["box_target"].shape[1:] == (2, 2)
         left, top, right, bottom = targets["box_target"][:, 0, 0].tolist()
-        assert (left, top) == pytest.approx((5.0, 5.0))
-        assert (right, bottom) == pytest.approx((95.0, 95.0))
+        assert (left, top) == pytest.approx((2.5, 2.5))
+        assert (right, bottom) == pytest.approx((97.5, 97.5))
 
     def test_unclear_region_is_ignored_not_background(self) -> None:
         """Forcing it to background trains the model to suppress the ambiguous cases."""
@@ -131,9 +136,9 @@ class TestLosses:
             [(0, 0.0, 0.0, 40.0, 40.0)], [], grid=(4, 4), patch_size=10, num_classes=2
         )
         outputs = {
-            "class_logits": torch.randn(1, 2, 4, 4),
-            "box_ltrb": torch.rand(1, 4, 4, 4) + 1.0,
-            "centerness": torch.randn(1, 1, 4, 4),
+            "class_logits": torch.randn(1, 2, 8, 8),
+            "box_ltrb": torch.rand(1, 4, 8, 8) + 1.0,
+            "centerness": torch.randn(1, 1, 8, 8),
         }
         batched = {
             "class_target": targets["class_target"].unsqueeze(0),
@@ -146,9 +151,9 @@ class TestLosses:
         """A background-only image is legitimate supervision, not an error."""
         targets = assign_detection_targets([], [], grid=(4, 4), patch_size=10, num_classes=2)
         outputs = {
-            "class_logits": torch.randn(1, 2, 4, 4),
-            "box_ltrb": torch.rand(1, 4, 4, 4) + 1.0,
-            "centerness": torch.randn(1, 1, 4, 4),
+            "class_logits": torch.randn(1, 2, 8, 8),
+            "box_ltrb": torch.rand(1, 4, 8, 8) + 1.0,
+            "centerness": torch.randn(1, 1, 8, 8),
         }
         batched = {
             "class_target": targets["class_target"].unsqueeze(0),
@@ -162,11 +167,11 @@ class TestLosses:
         targets = assign_detection_targets(
             [(0, 0.0, 0.0, 40.0, 40.0)], [], grid=(4, 4), patch_size=10, num_classes=2
         )
-        logits = torch.randn(1, 2, 4, 4, requires_grad=True)
+        logits = torch.randn(1, 2, 8, 8, requires_grad=True)
         outputs = {
             "class_logits": logits,
-            "box_ltrb": torch.rand(1, 4, 4, 4, requires_grad=True) + 1.0,
-            "centerness": torch.randn(1, 1, 4, 4, requires_grad=True),
+            "box_ltrb": torch.rand(1, 4, 8, 8, requires_grad=True) + 1.0,
+            "centerness": torch.randn(1, 1, 8, 8, requires_grad=True),
         }
         batched = {
             "class_target": targets["class_target"].unsqueeze(0),

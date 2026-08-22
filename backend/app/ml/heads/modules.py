@@ -28,30 +28,68 @@ class ClassificationHead(nn.Module):
         return {"logits": self.linear(features.cls)}
 
 
+#: How much finer than the backbone's patch grid the detector predicts (doc 43).
+#:
+#: A plain ViT has **one** scale, and doc 31 measured what that costs: every box was
+#: regressed from a 32x32 grid of 14 px cells whatever the object's size, and mAP@75
+#: collapsed to 0.065 on chess pieces of ~35x62 px. Doubling the grid halves the cell to
+#: 7 px, which is the resolution mAP@75 is actually asking for.
+#:
+#: This is ViTDet's *up-branch* — project, learned upsample, predict — and deliberately not
+#: its full feature pyramid. A pyramid's extra levels solve scale *variation*, and these
+#: datasets do not have that problem: their objects run 35-80 px. Full multi-level would
+#: rewrite the assigner, the loss and the decoder for a benefit this data cannot show.
+#:
+#: **Read by three places** — this head, `assign_detection_targets` and `detection_decode`.
+#: They must agree or targets land on different cells than predictions.
+DETECTION_UPSAMPLE = 2
+
+#: Channels the detector works in after projecting down from the backbone. Small on
+#: purpose: the head trains on a few hundred images, and 384 channels of transposed
+#: convolution would be most of the parameters in the app fitted to the least data.
+DETECTION_HIDDEN = 128
+
+
 class DetectionHead(nn.Module):
-    """Anchor-free FCOS-style head over the patch grid.
+    """Anchor-free FCOS-style head, predicting at twice the patch grid's resolution.
 
     Each cell predicts class logits, four distances to the box edges (l, t, r, b) and
-    a centerness score. Distances go through ``softplus`` and are scaled by the patch
-    size: a raw linear output would allow negative extents, which decode into inverted
-    boxes that are hard to trace back to their cause.
+    a centerness score. Distances go through ``softplus`` and are scaled by the **stride**:
+    a raw linear output would allow negative extents, which decode into inverted boxes that
+    are hard to trace back to their cause.
+
+    **The parameter shapes changed in doc 43**, so head instances trained before it cannot
+    be loaded — `load_state_dict` refuses rather than silently mismatching. That was taken
+    deliberately: a detector retrains in under two minutes, and the alternatives were a
+    checkpoint that loads and quietly means something else, or two detection heads
+    maintained forever.
     """
 
     def __init__(self, embed_dim: int, num_classes: int, patch_size: int = 14) -> None:
         super().__init__()
         self.patch_size = patch_size
-        self.classifier = nn.Conv2d(embed_dim, num_classes, kernel_size=1)
-        self.box_regressor = nn.Conv2d(embed_dim, 4, kernel_size=1)
-        self.centerness = nn.Conv2d(embed_dim, 1, kernel_size=1)
+        #: Pixels per predicted cell. Not the patch size any more — that is the whole point.
+        self.stride = patch_size / DETECTION_UPSAMPLE
+        self.project = nn.Conv2d(embed_dim, DETECTION_HIDDEN, kernel_size=1)
+        self.upsample = nn.ConvTranspose2d(
+            DETECTION_HIDDEN, DETECTION_HIDDEN, kernel_size=2, stride=DETECTION_UPSAMPLE
+        )
+        # GroupNorm rather than BatchNorm: batches here are small and sometimes one image,
+        # where BatchNorm's statistics are noise.
+        self.norm = nn.GroupNorm(8, DETECTION_HIDDEN)
+        self.classifier = nn.Conv2d(DETECTION_HIDDEN, num_classes, kernel_size=1)
+        self.box_regressor = nn.Conv2d(DETECTION_HIDDEN, 4, kernel_size=1)
+        self.centerness = nn.Conv2d(DETECTION_HIDDEN, 1, kernel_size=1)
 
     def forward(self, features: BackboneFeatures) -> dict[str, Tensor]:
-        patches = features.patches
-        raw_boxes = self.box_regressor(patches)
+        hidden = self.upsample(self.project(features.patches))
+        hidden = nn.functional.gelu(self.norm(hidden))
+        raw_boxes = self.box_regressor(hidden)
         return {
-            "class_logits": self.classifier(patches),
+            "class_logits": self.classifier(hidden),
             # softplus keeps distances strictly positive; the scale puts them in pixels.
-            "box_ltrb": nn.functional.softplus(raw_boxes) * self.patch_size,
-            "centerness": self.centerness(patches),
+            "box_ltrb": nn.functional.softplus(raw_boxes) * self.stride,
+            "centerness": self.centerness(hidden),
         }
 
 
@@ -96,9 +134,12 @@ def upsample_logits(logits: Tensor, size: tuple[int, int]) -> Tensor:
 
 
 def decode_ltrb_to_boxes(
-    box_ltrb: Tensor, grid: tuple[int, int], patch_size: int
+    box_ltrb: Tensor, grid: tuple[int, int], patch_size: float
 ) -> Tensor:
     """Turn per-cell ltrb distances into ``(B, Gh*Gw, 4)`` boxes in xywh pixels.
+
+    ``patch_size`` is really the **stride** — pixels per cell — and is a float because the
+    detector predicts at half the patch size (doc 43).
 
     As with Wave 1's detector, this conversion exists in exactly one place so nothing
     downstream has to guess which convention the numbers are in. The output matches the

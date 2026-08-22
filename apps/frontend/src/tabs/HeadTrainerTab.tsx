@@ -3,9 +3,13 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
+import { FinetunePanel } from '../components/FinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
 import { TrainingProgress } from '../components/TrainingProgress';
+import { DatasetFormatPanel } from '../components/DatasetFormatPanel';
+import { listFoundations, type FoundationInfo } from '../api/foundation';
+import { useFinetune } from '../hooks/useFinetune';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { useTrainingRun } from '../hooks/useTrainingRun';
 
@@ -22,6 +26,17 @@ const DEFAULTS: TrainerSelection = {
 
 export function HeadTrainerTab(): JSX.Element {
   const [selection, setSelection] = useState<TrainerSelection>(DEFAULTS);
+  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
+  const finetune = useFinetune();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    // Non-fatal: head training still works if the catalogue is unhappy.
+    void listFoundations(controller.signal)
+      .then(setFoundations)
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [finetune.job?.instance_id]);
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
 
@@ -70,6 +85,11 @@ export function HeadTrainerTab(): JSX.Element {
         backbone and head type for you.
       </p>
 
+      {/* Beside the form rather than in the docs tab: the question is asked *while*
+          filling this in, by someone who has just downloaded a dataset from somewhere
+          and wants to know whether it will load. */}
+      <DatasetFormatPanel />
+
       {error && <p className="run__warn">{error}</p>}
       {loading && <p className="trainer__dim">Loading options…</p>}
 
@@ -98,6 +118,18 @@ export function HeadTrainerTab(): JSX.Element {
       {run.job && (
         <TrainingProgress job={run.job} history={run.history} onCancel={() => void run.cancel()} />
       )}
+
+      <h3 className="trainer__subtitle">Fine-tune a general detector</h3>
+      <FinetunePanel
+        datasets={datasets}
+        foundations={foundations}
+        job={finetune.job}
+        starting={finetune.starting}
+        running={finetune.running}
+        error={finetune.error}
+        onStart={(options) => void finetune.start(options)}
+        onCancel={() => void finetune.cancel()}
+      />
 
       <h3 className="trainer__subtitle">Trained heads</h3>
       <HeadInstanceList heads={heads} busy={busy} onDelete={(id) => void remove(id)} />

@@ -12,6 +12,7 @@ import torch
 
 from app.ml.backbone import BackboneFeatures
 from app.ml.heads.modules import (
+    DETECTION_UPSAMPLE,
     ClassificationHead,
     DepthHead,
     DetectionHead,
@@ -56,13 +57,20 @@ class TestClassificationHead:
 
 
 class TestDetectionHead:
-    def test_output_keys_and_shapes(self) -> None:
+    def test_it_predicts_at_twice_the_patch_grid(self) -> None:
+        """Doc 43: the detector's grid is finer than the backbone's, which is the whole
+        point — a 14 px cell cannot place a 35 px object to within 75% IoU."""
         head = DetectionHead(embed_dim=EMBED_DIM, num_classes=3)
         out = head(features(batch=2))
-        rows, cols = GRID
+        rows, cols = GRID[0] * DETECTION_UPSAMPLE, GRID[1] * DETECTION_UPSAMPLE
         assert out["class_logits"].shape == (2, 3, rows, cols)
         assert out["box_ltrb"].shape == (2, 4, rows, cols)
         assert out["centerness"].shape == (2, 1, rows, cols)
+
+    def test_its_stride_is_half_the_patch_size(self) -> None:
+        # `box_ltrb` is scaled by this, and the assigner and decoder must agree with it.
+        head = DetectionHead(embed_dim=EMBED_DIM, num_classes=3, patch_size=14)
+        assert head.stride == 7.0
 
     def test_box_distances_are_positive(self) -> None:
         """A raw linear output would allow negative extents and inverted boxes."""

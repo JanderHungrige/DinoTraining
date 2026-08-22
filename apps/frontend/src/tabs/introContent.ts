@@ -76,6 +76,16 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
       'first pass on the next batch, and you correct it instead of starting from nothing.',
   },
   {
+    tab: 'library',
+    title: 'Keep track of it all',
+    what:
+      'Every dataset, trained head and fine-tuned model in one list, with what it holds, ' +
+      'what it learned from, and a way to delete it.',
+    why:
+      'The loop above makes things quickly, and most of them are experiments. This is ' +
+      'where you see what you actually have, and throw away what you do not.',
+  },
+  {
     tab: 'admin',
     title: 'Models and settings',
     what:

@@ -10,10 +10,15 @@
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { useFileDrop } from '../hooks/useFileDrop';
+import type { DatasetInfo } from '../api/datasets';
 import { hasNativeDialog, pickFolder, pickImageFile } from '../lib/dialog';
 
 export interface ImageSourcePickerProps {
   readonly onPick: (path: string) => void;
+  /** Picking a dataset instead of a path (doc 50). Omit both to keep the path-only form. */
+  readonly datasets?: readonly DatasetInfo[];
+  readonly datasetId?: string;
+  readonly onPickDataset?: (datasetId: string) => void;
   /** The path currently loaded, if any. The field falls back to it until the user types. */
   readonly value?: string;
   readonly busy?: boolean;
@@ -21,6 +26,9 @@ export interface ImageSourcePickerProps {
 
 export function ImageSourcePicker({
   onPick,
+  datasets = [],
+  datasetId = '',
+  onPickDataset,
   value,
   busy = false,
 }: ImageSourcePickerProps): JSX.Element {
@@ -43,6 +51,7 @@ export function ImageSourcePicker({
   });
 
   const shown = draft ?? value ?? '';
+  const usable = datasets.filter((entry) => (entry.counts?.images ?? 0) > 0);
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
@@ -90,6 +99,29 @@ export function ImageSourcePicker({
           </span>
         </label>
       </div>
+      {/* A second way in rather than a mode switch: the viewer is a place you dip into
+          repeatedly, and making the user pick "folder or dataset" before every look would
+          be a question asked far more often than its answer changes. */}
+      {onPickDataset !== undefined && usable.length > 0 && (
+        <div className="setup__row">
+          <label className="setup__field setup__field--grow" htmlFor="source-dataset">
+            …or a dataset you already have
+            <select
+              id="source-dataset"
+              value={datasetId}
+              disabled={busy}
+              onChange={(event) => onPickDataset(event.target.value)}
+            >
+              <option value="">None</option>
+              {usable.map((entry) => (
+                <option key={entry.id} value={entry.id}>
+                  {entry.name} ({entry.counts?.images ?? 0} images)
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
       {drop.available && (
         <p className="fieldhint">Or drag an image or a folder onto this window.</p>
       )}
