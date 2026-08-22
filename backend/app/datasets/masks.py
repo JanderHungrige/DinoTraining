@@ -15,6 +15,7 @@ from app.core.config import Settings
 from app.datasets.db import transaction
 from app.datasets.images import store_image_file, upsert_image
 from app.datasets.models import DatasetCounts, ImageMaskAnnotation, Mask, MaskRle
+from app.datasets.producers import decode_producer, encode_producer
 from app.datasets.rle import rle_bbox
 from app.datasets.store import DatasetNotFoundError, DatasetStore, dataset_dir
 
@@ -53,9 +54,9 @@ class MaskStore:
             connection.execute("DELETE FROM masks WHERE image_id = ?", (image_id,))
             connection.executemany(
                 "INSERT INTO masks"
-                " (image_id, label, provenance, prompt, score,"
+                " (image_id, label, provenance, prompt, score, producer,"
                 "  rle_counts, rle_height, rle_width, x, y, w, h)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [(image_id, *row) for row in rows],
             )
 
@@ -77,6 +78,7 @@ class MaskStore:
             mask.provenance,
             mask.prompt or fallback_prompt,
             mask.score,
+            encode_producer(mask.producer),
             json.dumps(mask.rle.counts),
             height,
             width,
@@ -93,7 +95,8 @@ class MaskStore:
             result = []
             for image in images:
                 rows = connection.execute(
-                    "SELECT label, provenance, prompt, score, rle_counts, rle_height, rle_width"
+                    "SELECT label, provenance, prompt, score, producer,"
+                    " rle_counts, rle_height, rle_width"
                     " FROM masks WHERE image_id = ? ORDER BY id",
                     (image["id"],),
                 ).fetchall()
@@ -116,6 +119,7 @@ def _mask_from_row(row: object) -> Mask:
         provenance=mapping["provenance"],
         prompt=mapping["prompt"],
         score=mapping["score"],
+        producer=decode_producer(mapping.get("producer")),
         rle=MaskRle(
             size=(int(mapping["rle_height"]), int(mapping["rle_width"])),
             counts=json.loads(mapping["rle_counts"]),

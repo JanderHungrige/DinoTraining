@@ -20,6 +20,7 @@ from app.datasets.db import data_root, transaction
 from app.datasets.images import now as _now
 from app.datasets.images import store_image_file, upsert_image
 from app.datasets.models import Box, DatasetCounts, DatasetInfo, ImageAnnotation
+from app.datasets.producers import decode_producer, encode_producer
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,18 @@ def dataset_dir(dataset_id: str, settings: Settings | None = None) -> Path:
     """Directory for one dataset, confined under the datasets root."""
     root = datasets_root(settings)
     return ensure_within(root, root / dataset_id)
+
+
+def _box_from_row(row: sqlite3.Row) -> Box:
+    """Rehydrate a stored box, decoding its producer snapshot.
+
+    Not `Box(**dict(row))`: `producer` is JSON in the column and a model in the type,
+    and passing the raw string would fail validation at the one place it is least
+    expected — reading data back that this module itself wrote.
+    """
+    values = dict(row)
+    values["producer"] = decode_producer(values.get("producer"))
+    return Box(**values)
 
 
 class DatasetStore:
@@ -158,8 +171,8 @@ class DatasetStore:
             connection.execute("DELETE FROM boxes WHERE image_id = ?", (image_id,))
             connection.executemany(
                 "INSERT INTO boxes"
-                " (image_id, label, provenance, prompt, score, x, y, w, h)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                " (image_id, label, provenance, prompt, score, producer, x, y, w, h)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     (
                         image_id,
@@ -167,6 +180,7 @@ class DatasetStore:
                         box.provenance,
                         box.prompt or annotation.prompt,
                         box.score,
+                        encode_producer(box.producer),
                         box.x,
                         box.y,
                         box.w,
@@ -232,8 +246,8 @@ class DatasetStore:
             result = []
             for image in images:
                 boxes = connection.execute(
-                    "SELECT label, provenance, prompt, score, x, y, w, h FROM boxes"
-                    " WHERE image_id = ? ORDER BY id",
+                    "SELECT label, provenance, prompt, score, producer, x, y, w, h"
+                    " FROM boxes WHERE image_id = ? ORDER BY id",
                     (image["id"],),
                 ).fetchall()
                 result.append(
@@ -242,7 +256,7 @@ class DatasetStore:
                         str(image["path"]),
                         int(image["width"]),
                         int(image["height"]),
-                        [Box(**dict(box)) for box in boxes],
+                        [_box_from_row(box) for box in boxes],
                     )
                 )
         return result

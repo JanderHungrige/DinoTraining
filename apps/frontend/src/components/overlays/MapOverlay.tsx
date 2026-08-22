@@ -24,6 +24,13 @@ export interface MapOverlayProps {
   readonly rendered: RenderedImage;
   /** Pixel value 0..255 → colour. The whole difference between a mask and a depth map. */
   readonly colourFor: (value: number) => Rgb;
+  /**
+   * Pixel value 0..255 → alpha 0..255. Defaults to fully opaque, which is right for a
+   * class-index map where every pixel belongs to some class. A *binary instance* mask is
+   * the other case: value 0 means "not this object", and painting it opaque would cover
+   * the image with a rectangle instead of showing one shape.
+   */
+  readonly alphaFor?: (value: number) => number;
   readonly opacity?: number;
   readonly title?: string;
 }
@@ -34,6 +41,7 @@ export function MapOverlay({
   height,
   rendered,
   colourFor,
+  alphaFor,
   opacity = 0.55,
   title,
 }: MapOverlayProps): JSX.Element {
@@ -66,11 +74,12 @@ export function MapOverlay({
       // Recolour in place rather than allocating a second buffer — this runs over every
       // pixel of a full-resolution map.
       for (let i = 0; i < pixels.length; i += 4) {
-        const { r, g, b } = colourFor(pixels[i] ?? 0);
+        const value = pixels[i] ?? 0;
+        const { r, g, b } = colourFor(value);
         pixels[i] = r;
         pixels[i + 1] = g;
         pixels[i + 2] = b;
-        pixels[i + 3] = 255;
+        pixels[i + 3] = alphaFor ? alphaFor(value) : 255;
       }
 
       targetCtx.putImageData(data, 0, 0);
@@ -80,7 +89,7 @@ export function MapOverlay({
     return () => {
       cancelled = true;
     };
-  }, [encoded, width, height, colourFor]);
+  }, [encoded, width, height, colourFor, alphaFor]);
 
   // Positioned on the *rendered* image rather than the container: an object-fit:contain
   // image is letterboxed, and using the container would offset the whole map.

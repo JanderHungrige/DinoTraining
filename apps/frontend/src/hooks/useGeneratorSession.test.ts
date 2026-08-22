@@ -15,6 +15,8 @@ const annotate = await import('../api/annotate');
 const generate = await import('../api/generate');
 
 const CONFIG: GeneratorConfig = {
+  kind: 'expert',
+  datasetId: 'd1',
   folder: '/photos',
   backboneId: 'dinov2-small',
   instanceId: 'h1',
@@ -39,6 +41,7 @@ function proposal(overrides: Partial<ExpertProposalResponse> = {}): ExpertPropos
         h: 40,
         prompt: 'bolt',
         score: 0.8,
+        producer: { id: 'h1', label: 'Bolt finder · Object detection · 2 classes' },
       },
     ],
     ...overrides,
@@ -75,15 +78,15 @@ describe('useGeneratorSession', () => {
     expect(result.current.boxes[0]?.text).toBe('bolt');
   });
 
-  it('records the head by name and summary', async () => {
+  it('records what produced the proposals, by name and summary', async () => {
     const { result } = renderHook(() => useGeneratorSession(CONFIG));
     await waitFor(() => expect(result.current.currentImage).not.toBeNull());
     await act(async () => {
       await result.current.propose();
     });
 
-    expect(result.current.headName).toBe('Bolt finder');
-    expect(result.current.headSummary).toContain('Object detection');
+    expect(result.current.producerName).toBe('Bolt finder');
+    expect(result.current.producerDetail).toContain('Object detection');
   });
 
   it('takes the image size from the proposal', async () => {
@@ -167,7 +170,7 @@ describe('useGeneratorSession', () => {
       await result.current.propose();
     });
 
-    expect(result.current.error).toMatch(/could not propose boxes/i);
+    expect(result.current.error).toMatch(/nothing could be proposed/i);
   });
 
   it('reports a folder that cannot be listed', async () => {

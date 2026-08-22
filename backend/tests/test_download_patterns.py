@@ -81,3 +81,53 @@ class TestIgnorePatterns:
 
         assert captured["token"] == "hf_token"
         assert "*.bin" in captured["ignore_patterns"]
+
+
+class TestFailureMessages:
+    """A 403 must say the right thing, and there are three different right things."""
+
+    def test_an_approval_gated_model_says_the_request_is_pending(self) -> None:
+        from app.ml.downloads import failure_message
+
+        message = failure_message(_spec_for("sam3"), _forbidden())
+        assert "has not been granted yet" in message
+        assert "by a person" in message
+        # The opposite advice would be actively misleading: the token is fine.
+        assert "check your token" not in message.lower()
+
+    def test_a_terms_only_gated_model_points_at_the_licence(self) -> None:
+        from app.ml.downloads import failure_message
+
+        message = failure_message(_spec_for("dinov3-vitb16"), _forbidden())
+        assert "Accept the" in message
+        assert "has not been granted yet" not in message
+
+    def test_an_open_model_gets_the_generic_message(self) -> None:
+        from app.ml.downloads import failure_message
+
+        message = failure_message(_spec_for("dinov2-small"), _forbidden())
+        assert "facebook/dinov2-small" in message
+
+    def test_no_failure_message_leaks_the_exception_text(self) -> None:
+        """HuggingFace errors embed the request URL, and a token can ride along in it."""
+        from app.ml.downloads import failure_message
+
+        secret = "hf_supersecrettoken"
+        error = RuntimeError(f"401 for https://huggingface.co/api?token={secret}")
+        for model_id in ("sam3", "dinov3-vitb16", "dinov2-small"):
+            assert secret not in failure_message(_spec_for(model_id), error)
+
+
+def _spec_for(model_id: str) -> ModelSpec:
+    spec = next(s for s in all_models() if s.id == model_id)
+    return spec
+
+
+def _forbidden() -> Exception:
+    class _Response:
+        status_code = 403
+
+    class _HttpError(Exception):
+        response = _Response()
+
+    return _HttpError("forbidden")

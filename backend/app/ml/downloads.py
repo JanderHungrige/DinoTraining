@@ -127,10 +127,40 @@ class DownloadManager:
             # Log with context, report the class rather than the text: HF errors can
             # embed the request URL, and a token can ride along in it.
             logger.exception("Download failed for %s", spec.id)
-            job.finish("failed", f"{type(error).__name__} while downloading {spec.repo_id}")
+            job.finish("failed", failure_message(spec, error))
             return
         job.finish("complete")
         logger.info("Download complete for %s", spec.id)
+
+
+def failure_message(spec: ModelSpec, error: Exception) -> str:
+    """What to tell the user about a failed download.
+
+    Never the exception text: HuggingFace errors embed the request URL, and a token can
+    ride along in it. The class name plus the repo is enough to act on — except for the
+    one case where it is not.
+
+    A **403 on a model needing manual approval** is the most confusing failure this app
+    can produce, because the user has a valid token and has done everything the generic
+    message asks. Meta grants SAM 3 access by hand, so the answer is "your request has not
+    been approved yet", not "check your token".
+    """
+    status = getattr(getattr(error, "response", None), "status_code", None)
+    name = type(error).__name__
+    forbidden = status in (401, 403) or "401" in name or "403" in name
+
+    if forbidden and spec.requires_access_request:
+        return (
+            f"Access to {spec.repo_id} has not been granted yet. Your token is being sent; "
+            f"the repository still refused it. Request access on the model page and wait "
+            f"for approval — it is granted by a person, not automatically."
+        )
+    if forbidden and spec.gated:
+        return (
+            f"{spec.repo_id} refused the request. Accept the {spec.licence} on the model "
+            f"page, and check that the token saved in the admin tab is still valid."
+        )
+    return f"{type(error).__name__} while downloading {spec.repo_id}"
 
 
 #: Weight formats that are never loaded, and so are never fetched.

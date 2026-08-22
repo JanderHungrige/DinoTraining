@@ -27,6 +27,7 @@ import logging
 import sqlite3
 
 from app.datasets.schema import (
+    ADDED_COLUMNS,
     BOX_INDEXES,
     BOXES_TABLE,
     MASK_INDEXES,
@@ -37,15 +38,16 @@ from app.datasets.schema import (
 
 logger = logging.getLogger(__name__)
 
-#: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam.
-LATEST_VERSION = 4
+#: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam;
+#: v5 added the producer column.
+LATEST_VERSION = 5
 
 # Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
 # silently transpose two same-typed columns if a schema is ever reordered.
 _CARRIED_COLUMNS: dict[str, str] = {
-    "boxes": "image_id, label, provenance, prompt, score, x, y, w, h",
+    "boxes": "image_id, label, provenance, prompt, score, producer, x, y, w, h",
     "masks": (
-        "image_id, label, provenance, prompt, score,"
+        "image_id, label, provenance, prompt, score, producer,"
         " rle_counts, rle_height, rle_width, x, y, w, h"
     ),
 }
@@ -66,7 +68,7 @@ def run_migrations(connection: sqlite3.Connection) -> int:
     missing = [t for t in PROVENANCE_TABLES if _stored_ddl(connection, t) is None]
     stale = [t for t in PROVENANCE_TABLES if _provenance_is_stale(connection, t)]
 
-    if missing or stale:
+    if missing or stale or _columns_are_missing(connection):
         logger.info(
             "Migrating dataset schema to version %d%s%s",
             LATEST_VERSION,
@@ -81,8 +83,47 @@ def run_migrations(connection: sqlite3.Connection) -> int:
         for table in stale:
             _rebuild_table(connection, table)
 
+    # After any rebuild, because a rebuilt table is created from schema.py and already
+    # has every column; this only has work to do on tables that were left alone.
+    _add_missing_columns(connection)
+
     _stamp(connection, LATEST_VERSION)
     return LATEST_VERSION
+
+
+def _existing_columns(connection: sqlite3.Connection, table: str) -> set[str]:
+    if _stored_ddl(connection, table) is None:
+        return set()
+    return {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+
+
+def _columns_are_missing(connection: sqlite3.Connection) -> bool:
+    return any(
+        column not in _existing_columns(connection, table)
+        for table, columns in ADDED_COLUMNS.items()
+        if _stored_ddl(connection, table) is not None
+        for column in columns
+    )
+
+
+def _add_missing_columns(connection: sqlite3.Connection) -> None:
+    """Add nullable columns in place.
+
+    SQLite refuses to alter a CHECK constraint but is perfectly happy to append a
+    nullable column, so this is an ALTER rather than the rebuild `_rebuild_table` does.
+    Driven by PRAGMA table_info — the columns that are actually there — for the same
+    reason the CHECK check reads sqlite_master: it cannot be made stale by call order.
+    """
+    for table, columns in ADDED_COLUMNS.items():
+        if _stored_ddl(connection, table) is None:
+            continue
+        present = _existing_columns(connection, table)
+        for column, declaration in columns.items():
+            if column in present:
+                continue
+            logger.info("Adding %s.%s", table, column)
+            connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} {declaration}")
+    connection.commit()
 
 
 def _create_table(connection: sqlite3.Connection, table: str) -> None:
@@ -128,7 +169,15 @@ def _rebuild_table(connection: sqlite3.Connection, table: str) -> None:
     child rows are cascaded away with the table being replaced — and that PRAGMA is a no-op
     inside a transaction, so it is toggled outside one.
     """
-    columns = _CARRIED_COLUMNS[table]
+    # Intersected with what the OLD table actually has: a rebuild may run on a database
+    # that predates a later column addition, and copying a column the source lacks fails
+    # with "no such column" — during a migration, which is the worst place to fail.
+    present = _existing_columns(connection, table)
+    columns = ", ".join(
+        name
+        for name in (part.strip() for part in _CARRIED_COLUMNS[table].split(","))
+        if name in present
+    )
     scratch = f"{table}_migrated"
 
     had_foreign_keys = bool(connection.execute("PRAGMA foreign_keys").fetchone()[0])

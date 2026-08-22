@@ -7,6 +7,7 @@ import { CounterBar } from './CounterBar';
 const COUNTS: DatasetCounts = {
   images: 7,
   boxes: 12,
+  masks: 0,
   positive: 8,
   negative: 3,
   unclear: 1,

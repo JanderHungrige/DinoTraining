@@ -84,6 +84,23 @@ def _version(connection: sqlite3.Connection) -> int:
     return int(connection.execute("PRAGMA user_version").fetchone()[0])
 
 
+def _assert_row_preserved(table: str) -> None:
+    """Every pre-existing value survives, compared column by column.
+
+    Not whole-row equality: a migration may legitimately *add* a nullable column, and
+    asserting the row is byte-identical would fail on exactly the change being tested
+    while saying nothing about whether the old data survived.
+    """
+    connection = _at_v3()
+    before = dict(connection.execute(f"SELECT * FROM {table}").fetchone())  # noqa: S608
+    run_migrations(connection)
+    after = dict(connection.execute(f"SELECT * FROM {table}").fetchone())  # noqa: S608
+
+    for column, value in before.items():
+        assert after[column] == value, f"{table}.{column} changed during the rebuild"
+    assert set(after) >= set(before), "a column disappeared during the rebuild"
+
+
 class TestIncrementalUpgrade:
     def test_boxes_gains_the_new_provenance(self) -> None:
         connection = _at_v3()
@@ -106,21 +123,15 @@ class TestIncrementalUpgrade:
         assert connection.execute("SELECT COUNT(*) FROM masks").fetchone()[0] == 2
 
     def test_existing_mask_rows_survive_the_rebuild(self) -> None:
-        connection = _at_v3()
-        before = dict(connection.execute("SELECT * FROM masks").fetchone())
-        run_migrations(connection)
-        assert dict(connection.execute("SELECT * FROM masks").fetchone()) == before
+        _assert_row_preserved("masks")
 
     def test_existing_box_rows_survive_the_rebuild(self) -> None:
-        connection = _at_v3()
-        before = dict(connection.execute("SELECT * FROM boxes").fetchone())
-        run_migrations(connection)
-        assert dict(connection.execute("SELECT * FROM boxes").fetchone()) == before
+        _assert_row_preserved("boxes")
 
-    def test_it_stamps_version_four(self) -> None:
+    def test_it_stamps_the_latest_version(self) -> None:
         connection = _at_v3()
         run_migrations(connection)
-        assert _version(connection) == LATEST_VERSION == 4
+        assert _version(connection) == LATEST_VERSION
 
     def test_mask_indexes_are_recreated(self) -> None:
         connection = _at_v3()

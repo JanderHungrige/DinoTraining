@@ -1,11 +1,18 @@
 /** Dataset slice of the API contract. Mirrors backend/app/api/v1/datasets.py. */
 
 import { apiFetch } from './client';
-import type { CanvasBox } from '../types/annotation';
+import type { MaskProposalResponse } from './generate';
+import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 export interface DatasetCounts {
   readonly images: number;
   readonly boxes: number;
+  /**
+   * Separate from `boxes`, never summed with it: the trainer consumes the two for
+   * different tasks, so a combined "annotations" figure would mean nothing to either.
+   * The verdict counters below span both.
+   */
+  readonly masks: number;
   readonly positive: number;
   readonly negative: number;
   readonly unclear: number;
@@ -23,6 +30,7 @@ export interface DatasetInfo {
 export const EMPTY_COUNTS: DatasetCounts = Object.freeze({
   images: 0,
   boxes: 0,
+  masks: 0,
   positive: 0,
   negative: 0,
   unclear: 0,
@@ -101,4 +109,49 @@ export function exportCoco(datasetId: string): Promise<{ path: string; annotatio
       isRecord(value) && typeof value['path'] === 'string',
     { method: 'POST' },
   );
+}
+
+/**
+ * Save reviewed masks for one image.
+ *
+ * Takes the original proposal response *and* the reviewed masks, pairing them by index.
+ * That is what keeps the RLE out of the review type: the canvas only ever handles the
+ * PNG preview and a verdict, while the payload that gets stored is rebuilt here from the
+ * response the server sent. The two lists are the same length and the same order by
+ * construction — `toReviewMasks` maps one to one.
+ */
+export function saveImageMasks(
+  datasetId: string,
+  proposal: MaskProposalResponse,
+  reviewed: readonly ReviewMask[],
+): Promise<DatasetCounts> {
+  if (reviewed.length !== proposal.masks.length) {
+    // Not recoverable by guessing: pairing a verdict to the wrong mask is a silent
+    // mislabel, which is worse than refusing to save.
+    return Promise.reject(
+      new Error(
+        `Cannot save: ${reviewed.length} reviewed masks against ${proposal.masks.length} proposed.`,
+      ),
+    );
+  }
+
+  return apiFetch(`/datasets/${encodeURIComponent(datasetId)}/images/masks`, isDatasetCounts, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      path: proposal.image_path,
+      width: proposal.width,
+      height: proposal.height,
+      masks: proposal.masks.map((mask, index) => ({
+        // The verdict is the reviewer's; everything else is the server's own proposal,
+        // returned unchanged so nothing is re-derived on the way back.
+        label: reviewed[index]?.label ?? mask.label,
+        provenance: mask.provenance,
+        rle: mask.rle,
+        prompt: mask.concept,
+        score: mask.score,
+        producer: mask.producer,
+      })),
+    }),
+  });
 }

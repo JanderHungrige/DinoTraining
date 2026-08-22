@@ -35,6 +35,7 @@ known_issues:
   - "No undo. The component is controlled and never mutates, so the parent can add history; nothing does yet."
   - "Overlapping boxes: the topmost in DOM order wins the click. Fine at Grounding DINO densities; needs a z-order or cycle-through if a prompt ever returns dozens of overlapping proposals."
   - "Visual rendering verified via 06-annotation-workflow, which is what mounts the canvas; feature 05 itself has no route to open."
+  - "FIXED 2026-08-19 (Wave 4): the verdict tag was invisible in light mode. .canvas__boxtag built its background from color-mix(currentColor 85%, #000) while also setting its own near-black color — and currentColor resolves against the element's OWN computed colour, not its parent's — so the mix was near-black on near-black, contrast ratio 1.11. The tag had never actually been verdict-coloured; the app being dark-first merely hid it. Fixed with an inheriting --verdict custom property set on .canvas__box--<label>, read by both the border and the tag background; contrast is now 6.8-11.3 across the three verdicts. Found by running the Dataset Generator in light mode, not by any test."
 sister_projects: []
 ---
 

@@ -21,6 +21,23 @@ Provenance = Literal[
 LABELS: tuple[Label, ...] = ("positive", "negative", "unclear")
 
 
+class Producer(BaseModel):
+    """What produced an annotation, captured at write time.
+
+    A **snapshot**, not a foreign key: a head can be deleted and its provenance must
+    outlive it, because "which model made this annotation" is exactly the question asked
+    of an old dataset. `provenance` says what *kind* of thing produced it; this says
+    *which*.
+    """
+
+    #: Head instance id, or the annotator id. Machine-traceable.
+    id: str = Field(min_length=1)
+    #: Human snapshot — a head's name and summary, or the annotator's name.
+    label: str = Field(min_length=1)
+    #: The text concept, for annotators prompted by one.
+    concept: str | None = None
+
+
 class Box(BaseModel):
     """One bounding box.
 
@@ -36,6 +53,7 @@ class Box(BaseModel):
     h: float = Field(gt=0)
     prompt: str | None = None
     score: float | None = Field(default=None, ge=0, le=1)
+    producer: Producer | None = None
 
     def fits_within(self, width: int, height: int) -> bool:
         return self.x + self.w <= width and self.y + self.h <= height
@@ -98,6 +116,7 @@ class Mask(BaseModel):
     rle: MaskRle
     prompt: str | None = None
     score: float | None = Field(default=None, ge=0, le=1)
+    producer: Producer | None = None
 
     def matches_image(self, width: int, height: int) -> bool:
         return self.rle.size == (height, width)
