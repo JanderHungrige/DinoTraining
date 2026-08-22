@@ -14,6 +14,9 @@ import type { BackboneInfo } from '../api/backbones';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
+import { FieldHint } from './FieldHint';
+import { folderOf } from '../lib/dragDrop';
+import { useFileDrop } from '../hooks/useFileDrop';
 import {
   GeneratorDestination,
   destinationReady,
@@ -34,6 +37,10 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const [folder, setFolder] = useState('');
   const [mode, setMode] = useState<Mode>('expert');
   const [concept, setConcept] = useState('');
+  const drop = useFileDrop((paths) => {
+    const first = paths[0];
+    if (first) setFolder(folderOf(first));
+  });
   const [datasetOverride, setDatasetOverride] = useState('');
   const [newName, setNewName] = useState('');
   const [starting, setStarting] = useState(false);
@@ -164,14 +171,20 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       </fieldset>
 
       <label className="genpanel__field">
-        <span>Image folder</span>
+        <span>{drop.dropping ? 'Drop to use that folder' : 'Image folder'}</span>
         <input
           type="text"
           value={folder}
           placeholder="/Users/you/new-photos"
+          aria-describedby={drop.available ? 'gen-folder-hint' : undefined}
           onChange={(event) => setFolder(event.target.value)}
         />
       </label>
+      {drop.available && (
+        <FieldHint id="gen-folder-hint">
+          Or drag a folder — or any image inside it — onto this window.
+        </FieldHint>
+      )}
 
       {mode === 'masks' && (
         <div className="genpanel__group">
@@ -196,16 +209,17 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
               type="text"
               value={concept}
               placeholder={isGroundedSam ? 'a bolt. a nut.' : 'a bolt'}
+              aria-describedby="concept-hint"
               onChange={(event) => setConcept(event.target.value)}
             />
           </label>
-          {/* Outside the label on purpose: text inside a <label> joins the field's
-              accessible name, so this paragraph would be read out with every focus. */}
-          <p className="genpanel__hint">
+          {/* `FieldHint` renders outside the label, which is the rule this used to state
+              inline — see doc 39 for why it matters to a screen reader. */}
+          <FieldHint id="concept-hint">
             {isGroundedSam
               ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
               : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
-          </p>
+          </FieldHint>
         </div>
       )}
 

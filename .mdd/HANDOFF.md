@@ -4,8 +4,9 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-20, after **Wave 6** was built and demonstrated. Waves 4, 5 and 6
-are all complete and unmerged; doc 31 unblocked Wave 4's expert-head half the same day.
+**Last updated:** 2026-08-20, after **Wave 7** was built. Waves 4–7 are all complete and
+unmerged; doc 31 unblocked Wave 4's expert-head half the same day. **Only Wave 8
+(Packaging) and Wave 9 (Website) remain.**
 
 ---
 
@@ -15,8 +16,8 @@ are all complete and unmerged; doc 31 unblocked Wave 4's expert-head half the sa
 **Phase 7b passed on 2026-08-19 with no code changes**. Both annotators report `ready`.
 Doc 30 is `complete`. There is nothing left waiting on you here.
 
-**2. Merge four branches. Waves 4, 5 and 6 are all marked complete.** Merging is still
-yours, and they stack in this order:
+**2. Merge five branches. Waves 4–7 are all marked complete.** Merging is still yours,
+and they stack in this order:
 
 ```
 dev
@@ -24,6 +25,7 @@ dev
      └─ feat/external-dataset-import doc 31 + the NMS and lost-class fixes
          └─ feat/dinotraining-wave-5 docs 32-34
              └─ feat/dinotraining-wave-6 docs 35-37
+                 └─ feat/dinotraining-wave-7 docs 38-40
 ```
 
 Both flips were made on your "continue with the whole project". Each is a one-line revert
@@ -56,19 +58,28 @@ The model cache is now 918 MB and the volume is back to **15 GB free, 97% used**
 
 ## Where the project stands
 
-**Waves 1–3 merged to `dev`. Waves 4, 5 and 6 are complete, pushed, and not merged.**
+**Waves 1–3 merged to `dev`. Waves 4–7 are complete, pushed, and not merged.**
 
 ```
 dev                            (features 1–5 of Wave 4 are already on it — see below)
 feat/dinotraining-wave-4       Wave 4 features 6–9
 feat/external-dataset-import   doc 31, the NMS fix, the lost-class fix
 feat/dinotraining-wave-5       docs 32–34
-953 backend tests · 338 frontend tests · ruff, mypy, tsc all clean
+953 backend tests · 376 frontend tests · ruff, mypy, tsc all clean
 ```
 
 **Wave 5 in one line:** the Annotation Studio can now annotate with a head you trained
 instead of a Grounding DINO phrase, which closes the flywheel in the Studio and not only in
 the Dataset Generator.
+
+**Wave 7 in one line:** a "Start here" tab explains the app to someone who has never seen
+it, the prompt field explains Grounding DINO's syntax (and head mode explains why there is
+no prompt), and folders can be dragged onto the desktop window.
+
+**Drag-and-drop is confirmed working** — you checked it in a `tauri dev` build on
+2026-08-20, which is the one path no automated check here can reach. To run the desktop app
+again: `apps/desktop` needs its own `npm install` (the Tauri CLI lives there), and
+`tauri dev` starts its **own** Vite, so port 1420 must be free first.
 
 **Wave 6 in one line:** a *foundation* model (Depth Anything V2) now runs in the Inference
 Viewer beside your trained heads, and every catalogue entry states its licence before you

@@ -1,6 +1,19 @@
-/** The five top-level areas of the app. Wave 1 fills in Studio and Admin. */
+/**
+ * The six top-level areas of the app.
+ *
+ * `intro` leads deliberately (doc 38): it is the only tab that assumes you know nothing,
+ * and a first-time user reads left to right. It is *not* the default tab — see
+ * `DEFAULT_TAB` — because someone returning to work should land where the work is.
+ */
 
-export const TAB_IDS = ['studio', 'trainer', 'inference', 'generator', 'admin'] as const;
+export const TAB_IDS = [
+  'intro',
+  'studio',
+  'trainer',
+  'inference',
+  'generator',
+  'admin',
+] as const;
 
 export type TabId = (typeof TAB_IDS)[number];
 
@@ -15,9 +28,16 @@ export interface TabDefinition {
 
 export const TABS: readonly TabDefinition[] = Object.freeze([
   {
+    id: 'intro',
+    label: 'Start here',
+    hint: 'What this app does, what a backbone and a head are, and what it cannot do yet.',
+    wave: 7,
+  },
+  {
     id: 'studio',
     label: 'Annotation Studio',
-    hint: 'Point at an image folder, prompt Grounding DINO, label the boxes it proposes.',
+    // Updated in Wave 5: a prompt is no longer the only way to get proposals.
+    hint: 'Label a folder of images — from a text prompt, or from a head you trained.',
     wave: 1,
   },
   {
@@ -29,13 +49,14 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
   {
     id: 'inference',
     label: 'Inference Viewer',
-    hint: 'Run a backbone plus trained heads on an image or webcam, side by side.',
+    // Webcam is backlogged, not built — an intro that points at it would be a lie.
+    hint: 'Run trained heads and foundation models on one image, side by side.',
     wave: 3,
   },
   {
     id: 'generator',
     label: 'Dataset Generator',
-    hint: 'Auto-annotate new data with trained expert heads, then review and save.',
+    hint: 'Auto-annotate new images with a trained head or a concept prompt, then review.',
     wave: 4,
   },
   {
