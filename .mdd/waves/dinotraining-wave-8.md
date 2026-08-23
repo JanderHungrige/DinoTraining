@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-7
 demo_state: "A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works."
 created: 2026-08-14
-hash: 8932cefa
+hash: 224e1c67
 ---
 
 # Wave 8: Packaging & Distribution
@@ -21,6 +21,13 @@ annotate → train → infer → generate loop works from the installed app.
 *(Not complete until this can be manually demonstrated.)*
 
 ## Confirmed by Jan, 2026-08-21
+
+**GPU: CPU-only by default, CUDA as a download.** Chosen over shipping CUDA everywhere (a
+2.5 GB Windows installer) and over CPU-only everywhere (which would cost NVIDIA users the
+acceleration a *training* app most needs). Doc 57 builds the detection, the reporting and
+the Rust preference order; the artefact itself waits on `release-ci`, because a download
+cannot exist before there is something publishing it.
+
 
 **All three platforms are required, not a choice between them.** macOS, Windows and Linux
 each get an installer. The demo-state above already said so; this records that it is a
@@ -41,6 +48,7 @@ present — the notice helps a human who reads it, and CI does not read.
 | 1 | python-sidecar-bundling | **56** | **spiked — works, 636 MB** | — |
 | 2 | tauri-installers | — | planned | python-sidecar-bundling |
 | 3 | first-run-model-bootstrap | — | planned | — |
+| 3b | **gpu-support-download** | **57** | **detection done; artefact pending release-ci** | 56 |
 | 4 | code-signing-notarization | — | planned | tauri-installers |
 | 5 | release-ci | — | planned | tauri-installers, **54-distribution-licensing** |
 | 6 | auto-update | — | planned | release-ci |

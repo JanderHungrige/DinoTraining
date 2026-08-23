@@ -113,16 +113,62 @@ fn env_port() -> u16 {
         .unwrap_or(DEFAULT_PORT)
 }
 
-/// The frozen sidecar beside this executable, if there is one.
+fn sidecar_name() -> &'static str {
+    if cfg!(windows) { "dinotraining-sidecar.exe" } else { "dinotraining-sidecar" }
+}
+
+/// The frozen sidecar to run, preferring a downloaded GPU build (doc 57).
+///
+/// Wave 8 ships a **CPU-only** sidecar so the installer stays small (doc 56). A user with
+/// an NVIDIA GPU downloads a CUDA build through the Admin tab, which lands in the app's
+/// data directory rather than beside the executable — installed application directories
+/// are read-only on macOS and need elevation on Windows, so writing there is not an option.
+///
+/// **The downloaded build wins when it is there.** That is the whole point of downloading
+/// it, and the alternative — a flag the user has to find — means someone runs on CPU for a
+/// week without noticing.
 ///
 /// Tauri strips the target triple from an `externalBin` name when it bundles, so the file
 /// installed next to the app is plain `dinotraining-sidecar`. The build script names it
-/// with the triple because that is what the *bundler* looks for — the two names are
+/// *with* the triple because that is what the bundler looks for. The two names are
 /// deliberately different and confusing them is the usual first failure.
 fn frozen_sidecar() -> Option<PathBuf> {
-    let name = if cfg!(windows) { "dinotraining-sidecar.exe" } else { "dinotraining-sidecar" };
-    let beside = std::env::current_exe().ok()?.parent()?.join(name);
+    if let Some(gpu) = downloaded_gpu_sidecar() {
+        log::info!("Using the downloaded GPU sidecar: {}", gpu.display());
+        return Some(gpu);
+    }
+    let beside = std::env::current_exe().ok()?.parent()?.join(sidecar_name());
     beside.is_file().then_some(beside)
+}
+
+/// A CUDA sidecar the user downloaded, under the app data directory.
+///
+/// `DINO_DATA_DIR` is the same variable the Python side reads, so the two agree on where
+/// the app keeps things without either importing the other's notion of it.
+fn downloaded_gpu_sidecar() -> Option<PathBuf> {
+    let root = std::env::var_os("DINO_DATA_DIR")
+        .map(PathBuf::from)
+        .or_else(default_data_dir)?;
+    let candidate = root.join("runtimes").join("cuda").join(sidecar_name());
+    candidate.is_file().then_some(candidate)
+}
+
+/// Where the app keeps its data when `DINO_DATA_DIR` is unset. Mirrors the Python side's
+/// platform choices — the two are checked against each other by a test on that side.
+fn default_data_dir() -> Option<PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let home = PathBuf::from(home);
+    Some(if cfg!(target_os = "macos") {
+        home.join("Library").join("Application Support").join("DinoTraining").join("data")
+    } else if cfg!(windows) {
+        std::env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .unwrap_or(home)
+            .join("DinoTraining")
+            .join("data")
+    } else {
+        home.join(".local").join("share").join("DinoTraining").join("data")
+    })
 }
 
 fn env_or(fallback: &str, key: &str) -> String {

@@ -2371,3 +2371,48 @@ body {
   font-size: 0.78rem;
   line-height: 1.5;
 }
+
+/* --- GPU panel (doc 57) ---
+   Renders only when there is something to do, so it can afford to be prominent. */
+
+.gpupanel {
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--focus);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.gpupanel--warn {
+  border-color: var(--pending);
+}
+
+.gpupanel__title {
+  margin: 0 0 0.5rem;
+  color: var(--focus);
+  font-size: 0.95rem;
+}
+
+.gpupanel--warn .gpupanel__title {
+  color: var(--pending);
+}
+
+.gpupanel__lead,
+.gpupanel__foot {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.gpupanel__foot {
+  margin: 0.6rem 0 0.7rem;
+}
+
+.gpupanel__list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
