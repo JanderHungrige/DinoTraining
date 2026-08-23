@@ -15,7 +15,7 @@ const BACKEND_EVENT: &str = "backend-state";
 /// Lets the UI ask for the backend origin instead of hardcoding a port.
 #[tauri::command]
 fn backend_url() -> String {
-    SidecarConfig::for_development()
+    SidecarConfig::resolve()
         .map(|config| format!("http://{}:{}", config.host, config.port))
         .unwrap_or_else(|_| "http://127.0.0.1:8756".to_string())
 }
@@ -92,7 +92,7 @@ fn install_signal_handlers(_app: tauri::AppHandle) {
 async fn start_backend(app: tauri::AppHandle) {
     let _ = app.emit(BACKEND_EVENT, BackendState::Starting);
 
-    let config = match SidecarConfig::for_development() {
+    let config = match SidecarConfig::resolve() {
         Ok(config) => config,
         Err(error) => return report_failure(&app, error.to_string()),
     };

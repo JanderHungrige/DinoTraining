@@ -1,8 +1,9 @@
 //! Lifecycle for the FastAPI + PyTorch sidecar.
 //!
 //! In development the sidecar is `python -m app` run from the repo's backend venv.
-//! In a packaged build (Wave 5) it becomes a bundled binary; only [`resolve_command`]
-//! changes when that lands — everything above this module stays put.
+//! In a packaged build it is a **frozen binary** shipped beside the executable, and
+//! [`Launch`] is the only thing that differs — everything above this module stays put,
+//! which is what the original note promised (doc 56).
 
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -38,11 +39,23 @@ pub enum SidecarError {
     PortInUse(u16),
 }
 
+/// How the sidecar is started.
+///
+/// Two variants and no third: either PyInstaller froze it into one binary, or this is a
+/// checkout with a venv. A packaged build has no venv and a checkout has no frozen binary,
+/// so the choice is made by looking rather than by a flag someone has to remember to set.
+#[derive(Debug, Clone)]
+pub enum Launch {
+    /// A frozen binary next to the app executable, as Tauri's `externalBin` places it.
+    Frozen(PathBuf),
+    /// `python -m app` from the repository's backend venv.
+    Module { python: PathBuf, backend_dir: PathBuf },
+}
+
 /// Where the sidecar lives and how to reach it.
 #[derive(Debug, Clone)]
 pub struct SidecarConfig {
-    pub backend_dir: PathBuf,
-    pub python: PathBuf,
+    pub launch: Launch,
     pub host: String,
     pub port: u16,
 }
@@ -50,6 +63,24 @@ pub struct SidecarConfig {
 impl SidecarConfig {
     pub fn health_url(&self) -> String {
         format!("http://{}:{}/api/v1/health", self.host, self.port)
+    }
+
+    /// Resolve how to start the sidecar.
+    ///
+    /// **The frozen binary wins when it exists.** A packaged app must never fall through to
+    /// a developer's venv that happens to be on the same machine — it would run a different
+    /// build of the backend than the one shipped, and behave correctly enough that nobody
+    /// would notice until the versions diverged.
+    pub fn resolve() -> Result<Self, SidecarError> {
+        if let Some(frozen) = frozen_sidecar() {
+            log::info!("Using the bundled sidecar: {}", frozen.display());
+            return Ok(Self {
+                launch: Launch::Frozen(frozen),
+                host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
+                port: env_port(),
+            });
+        }
+        Self::for_development()
     }
 
     /// Resolve paths for a development run, relative to this crate's source location.
@@ -68,15 +99,30 @@ impl SidecarConfig {
         let python = resolve_python(&backend_dir)?;
 
         Ok(Self {
-            backend_dir,
-            python,
+            launch: Launch::Module { python, backend_dir },
             host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
-            port: std::env::var("DINO_API_PORT")
-                .ok()
-                .and_then(|value| value.parse().ok())
-                .unwrap_or(DEFAULT_PORT),
+            port: env_port(),
         })
     }
+}
+
+fn env_port() -> u16 {
+    std::env::var("DINO_API_PORT")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(DEFAULT_PORT)
+}
+
+/// The frozen sidecar beside this executable, if there is one.
+///
+/// Tauri strips the target triple from an `externalBin` name when it bundles, so the file
+/// installed next to the app is plain `dinotraining-sidecar`. The build script names it
+/// with the triple because that is what the *bundler* looks for — the two names are
+/// deliberately different and confusing them is the usual first failure.
+fn frozen_sidecar() -> Option<PathBuf> {
+    let name = if cfg!(windows) { "dinotraining-sidecar.exe" } else { "dinotraining-sidecar" };
+    let beside = std::env::current_exe().ok()?.parent()?.join(name);
+    beside.is_file().then_some(beside)
 }
 
 fn env_or(fallback: &str, key: &str) -> String {
@@ -115,12 +161,20 @@ pub fn ensure_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
 
 /// Start the backend process. Does not wait for it to become healthy.
 pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
-    log::info!("Spawning backend: {} -m app", config.python.display());
+    let mut command = match &config.launch {
+        Launch::Frozen(binary) => {
+            log::info!("Spawning bundled sidecar: {}", binary.display());
+            Command::new(binary)
+        }
+        Launch::Module { python, backend_dir } => {
+            log::info!("Spawning backend: {} -m app", python.display());
+            let mut command = Command::new(python);
+            command.arg("-m").arg("app").current_dir(backend_dir);
+            command
+        }
+    };
 
-    let child = Command::new(&config.python)
-        .arg("-m")
-        .arg("app")
-        .current_dir(&config.backend_dir)
+    let child = command
         .env("DINO_API_HOST", &config.host)
         .env("DINO_API_PORT", config.port.to_string())
         // Unbuffered, so the Python log reaches our stderr as it happens rather than

@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-7
 demo_state: "A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works."
 created: 2026-08-14
-hash: 1bc484a1
+hash: 8932cefa
 ---
 
 # Wave 8: Packaging & Distribution
@@ -38,7 +38,7 @@ present — the notice helps a human who reads it, and CI does not read.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | python-sidecar-bundling | — | planned | — |
+| 1 | python-sidecar-bundling | **56** | **spiked — works, 636 MB** | — |
 | 2 | tauri-installers | — | planned | python-sidecar-bundling |
 | 3 | first-run-model-bootstrap | — | planned | — |
 | 4 | code-signing-notarization | — | planned | tauri-installers |
@@ -47,8 +47,10 @@ present — the notice helps a human who reads it, and CI does not read.
 
 ### Feature notes
 
-- Bundle the FastAPI+PyTorch sidecar (PyInstaller / embedded env) as a Tauri external binary
-  per-platform. Spike this in Wave 1 since it constrains everything.
+- Bundle the FastAPI+PyTorch sidecar as a Tauri external binary per-platform. **Spiked on
+  2026-08-21 — doc 56.** PyInstaller works and the frozen build serves real inferences.
+  It is **636 MB**, and the torch wheel variant makes a Windows CUDA build 2.5 GB before
+  anything else. That is a product decision waiting on Jan, not a build detail.
 - Tauri build → platform installers; keep installer small (no weights bundled).
 - First-run flow that guides model download + HF token for gated DINOv3.
 - macOS notarization + Windows signing (open product question).
