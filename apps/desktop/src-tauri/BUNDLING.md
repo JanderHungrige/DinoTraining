@@ -1,9 +1,9 @@
 # Building an installer
 
-The sidecar is **not** in `tauri.conf.json`, and that is deliberate: `externalBin` makes
-Tauri's build script fail when the binary is absent, so putting it in the main config would
-break `cargo check` and `npm run tauri dev` for anyone who has not built a 640 MB sidecar
-first. Development does not need one — `SidecarConfig::resolve()` falls back to
+The sidecar is **not** in `tauri.conf.json`, and that is deliberate: a `bundle.resources`
+entry makes Tauri's build script fail when the path is absent, so putting it in the main
+config would break `cargo check` and `npm run tauri dev` for anyone who has not built a
+640 MB sidecar first. Development does not need one — `SidecarConfig::resolve()` falls back to
 `python -m app` from the backend venv.
 
 Release builds merge it in:
@@ -12,10 +12,11 @@ Release builds merge it in:
 # 1. Freeze the sidecar from a *production* venv (not the dev one — see doc 56).
 cd backend
 python -m venv .build && .build/bin/pip install . pyinstaller
-.build/bin/python packaging/build_sidecar.py
+.build/bin/python bundling/build_sidecar.py
 
-# 2. Put it where the bundler looks.
-cp -R dist/dinotraining-sidecar-<triple> ../apps/desktop/src-tauri/binaries/
+# 2. Put it where the bundler looks. One fixed name on every platform — the sidecar
+#    ships as a Tauri *resource*, not an externalBin, so no target triple is involved.
+cp -R dist/dinotraining-sidecar ../apps/desktop/src-tauri/binaries/
 
 # 3. Build the installer.
 cd ../apps/desktop

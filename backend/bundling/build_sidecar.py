@@ -6,15 +6,26 @@ PyInstaller — not the development venv, whose mypy, ruff and pytest would be f
 alongside the app for no reason:
 
     python -m venv .build && .build/bin/pip install . pyinstaller
-    .build/bin/python packaging/build_sidecar.py
+    .build/bin/python bundling/build_sidecar.py
 
-Produces `dist/dinotraining-sidecar-<target-triple>/`, named the way Tauri's `externalBin`
-expects.
+Produces `dist/dinotraining-sidecar/` — a directory, because PyInstaller's `--onedir`
+output is an executable plus `_internal/` holding 568 MB of torch.
+
+**The name carries no target triple**, deliberately. An earlier version added one because
+Tauri's `externalBin` requires it, but `externalBin` takes a single *file* and this is a
+directory, so the sidecar ships as a Tauri **resource** instead. Nothing at runtime then
+needs to know the triple, and the Rust side can look for one fixed name on every platform.
+The triple is printed for the release job to label its artefact with.
 
 **Per platform.** PyInstaller does not cross-compile and the torch wheel differs by
 platform, so this runs on each of macOS, Windows and Linux. That is why Wave 8's release
 job is a build matrix rather than one runner — see doc 56 for the size consequences, which
 are large enough to be a product decision rather than a build detail.
+
+**This directory is not called `packaging`.** It was, for about an hour, and that put
+`backend/packaging/` on `sys.path` ahead of the real `packaging` PyPI package — which
+setuptools, transformers and huggingface-hub all import. `pip install .` failed outright;
+the frozen build would have failed later and more mysteriously.
 """
 
 from __future__ import annotations
@@ -47,11 +58,11 @@ COLLECT = ("app", "transformers")
 
 
 def target_triple() -> str:
-    """The suffix Tauri's `externalBin` looks for, read from the Rust toolchain itself.
+    """The host triple, read from the Rust toolchain itself — for the *artefact label*.
 
     Asked rather than guessed: `aarch64-apple-darwin` and `x86_64-apple-darwin` are both
-    plausible on the same machine depending on the toolchain, and a mismatch fails at
-    bundle time complaining about a missing file rather than about the name.
+    plausible on the same machine depending on the toolchain, and a release labelled with
+    the wrong one is downloaded by users it cannot run on.
     """
     result = subprocess.run(["rustc", "-vV"], capture_output=True, text=True, check=True)
     for line in result.stdout.splitlines():
@@ -61,13 +72,13 @@ def target_triple() -> str:
 
 
 def main() -> int:
-    triple = target_triple()
+    print(f"host triple: {target_triple()}", flush=True)
     command = [
         sys.executable,
         "-m",
         "PyInstaller",
         "--name",
-        f"{NAME}-{triple}",
+        NAME,
         # `onedir`, not `onefile`: a onefile build unpacks ~600 MB to a temp directory on
         # every launch, which is seconds of disk churn before the port binds — and the app
         # looks hung for exactly as long.

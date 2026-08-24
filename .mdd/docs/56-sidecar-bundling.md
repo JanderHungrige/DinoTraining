@@ -30,6 +30,7 @@ satisfies_contracts: []
 security_read_sites: []
 known_issues:
   - "**Verified on macOS/arm64 only.** PyInstaller does not cross-compile, so Windows and Linux are unproven — and Windows is where the size problem is worst. The hidden-import list is the one that worked here; another platform may need more."
+  - "**The `.dmg` is 292 MB, not 636.** This doc first reasoned the installer size from the sidecar size and was wrong by a factor of two — compression matters more than expected. Corrected in the body; the Windows and Linux equivalents are still unmeasured."
   - "**No automated test.** Freezing takes ~2.5 minutes and produces 636 MB; nothing in `pytest` can assert against it. The spike was run by hand and the numbers below are from that run."
   - "`--collect-all transformers` is heavy-handed. It is also the only thing that works: transformers resolves model classes through a lazy registry keyed by config strings, so no import statement mentions `RfDetrForObjectDetection`. A curated list would break silently whenever a new model id was added to the catalogue."
   - "The frozen build reads `DINO_DATA_DIR` and `DINO_MODEL_CACHE_DIR` exactly as the dev one does, so a packaged app shares a developer's store on the same machine. Correct for now; worth revisiting when there is a real installer."
@@ -77,8 +78,12 @@ Two things had to be right, and both fail *late* rather than at build time:
 | **frozen sidecar** | **636 MB** |
 
 Freezing *helps* — it strips 350 MB of unused code — but the floor is torch. Weights were
-never the size problem this wave planned around; **the runtime is.** An installer that
-bundles no weights at all is still well over half a gigabyte per platform.
+never the size problem this wave planned around; **the runtime is.**
+
+**Correction, from actually building an installer (doc 58):** the `.app` is 1.0 GB and the
+`.dmg` is **292 MB**. DMG compression squeezes torch's dylibs hard, so the *download* is far
+smaller than the on-disk figure — a distinction this doc originally got wrong by reasoning
+from the sidecar size alone.
 
 ## The decision this forces, and it is Jan's
 

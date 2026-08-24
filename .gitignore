@@ -66,3 +66,8 @@ Thumbs.db
 # Bundled sidecar binaries — built per platform by the release job, never committed.
 apps/desktop/src-tauri/binaries/*
 !apps/desktop/src-tauri/binaries/README.md
+
+# Production venv and PyInstaller output — build artefacts, regenerated per release.
+backend/.build/
+backend/dist/
+backend/*.spec

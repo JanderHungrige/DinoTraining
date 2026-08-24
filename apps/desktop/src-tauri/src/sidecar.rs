@@ -71,8 +71,8 @@ impl SidecarConfig {
     /// a developer's venv that happens to be on the same machine — it would run a different
     /// build of the backend than the one shipped, and behave correctly enough that nobody
     /// would notice until the versions diverged.
-    pub fn resolve() -> Result<Self, SidecarError> {
-        if let Some(frozen) = frozen_sidecar() {
+    pub fn resolve(resource_dir: Option<&Path>) -> Result<Self, SidecarError> {
+        if let Some(frozen) = frozen_sidecar(resource_dir) {
             log::info!("Using the bundled sidecar: {}", frozen.display());
             return Ok(Self {
                 launch: Launch::Frozen(frozen),
@@ -119,6 +119,16 @@ fn sidecar_name() -> &'static str {
 
 /// The frozen sidecar to run, preferring a downloaded GPU build (doc 57).
 ///
+/// PyInstaller's `--onedir` output is a **directory** — the executable plus `_internal/`
+/// holding 568 MB of torch — so it ships as a Tauri *resource*, not an `externalBin`.
+/// `externalBin` takes a single file, and the `--onefile` alternative unpacks that 636 MB
+/// to a temp directory on **every launch**, which is seconds of disk churn before the port
+/// binds and an app that looks hung for exactly that long.
+///
+/// `resource_dir` comes from Tauri's own path API rather than being derived here, because
+/// the answer differs per platform (`Contents/Resources` on macOS, beside the executable on
+/// Windows, `/usr/lib/<app>` on Linux) and this module deliberately holds no Tauri types.
+///
 /// Wave 8 ships a **CPU-only** sidecar so the installer stays small (doc 56). A user with
 /// an NVIDIA GPU downloads a CUDA build through the Admin tab, which lands in the app's
 /// data directory rather than beside the executable — installed application directories
@@ -132,14 +142,18 @@ fn sidecar_name() -> &'static str {
 /// installed next to the app is plain `dinotraining-sidecar`. The build script names it
 /// *with* the triple because that is what the bundler looks for. The two names are
 /// deliberately different and confusing them is the usual first failure.
-fn frozen_sidecar() -> Option<PathBuf> {
+fn frozen_sidecar(resource_dir: Option<&Path>) -> Option<PathBuf> {
     if let Some(gpu) = downloaded_gpu_sidecar() {
         log::info!("Using the downloaded GPU sidecar: {}", gpu.display());
         return Some(gpu);
     }
-    let beside = std::env::current_exe().ok()?.parent()?.join(sidecar_name());
-    beside.is_file().then_some(beside)
+    let bundled = resource_dir?.join(BUNDLE_DIR).join(sidecar_name());
+    bundled.is_file().then_some(bundled)
 }
+
+/// The resource subdirectory the onedir build is copied into. Matches the `resources`
+/// entry in `tauri.release.conf.json`; the two are a pair and must agree.
+const BUNDLE_DIR: &str = "sidecar";
 
 /// A CUDA sidecar the user downloaded, under the app data directory.
 ///
