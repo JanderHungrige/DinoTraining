@@ -41,3 +41,20 @@ export function pickImageFile(): Promise<string | null> {
     filters: [{ name: 'Images', extensions: IMAGE_EXTENSIONS }],
   });
 }
+
+
+/** Show a folder in Finder / Explorer / the Linux file manager (doc 59).
+ *
+ *  Same shape as the pickers above and for the same reason: it exists only inside the
+ *  Tauri webview, so every caller must stay usable without it — the button disappears,
+ *  nothing else changes.
+ *
+ *  `revealItemInDir` rather than `openPath`: revealing selects the item in a *new* file
+ *  manager window, while opening a directory can reuse an existing window the user was
+ *  looking at something else in.
+ */
+export async function revealFolder(path: string): Promise<void> {
+  if (!hasNativeDialog()) return;
+  const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
+  await revealItemInDir(path);
+}

@@ -33,6 +33,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(SidecarHandle::default())
         .invoke_handler(tauri::generate_handler![backend_url])
         .setup(|app| {

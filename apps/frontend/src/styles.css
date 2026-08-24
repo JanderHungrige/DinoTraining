@@ -2448,3 +2448,19 @@ body {
   font-size: 0.85rem;
   line-height: 1.6;
 }
+
+/* --- Reveal-in-file-manager button (doc 59) --- */
+
+.srcfield__reveal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Beside the button rather than under the form: it is about the folder that was just
+   asked for, and a message that drifts away from its cause reads as unrelated. */
+.reveal__error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}

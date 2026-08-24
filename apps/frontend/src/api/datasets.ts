@@ -246,3 +246,33 @@ export async function deleteDataset(datasetId: string, signal?: AbortSignal): Pr
     { method: 'DELETE', ...(signal ? { signal } : {}) },
   );
 }
+
+
+/** Where a dataset's images actually are, for revealing in the file manager (doc 59). */
+export interface DatasetFolder {
+  readonly folder: string;
+  /** False when the folder no longer exists — an original the user moved or deleted. */
+  readonly exists: boolean;
+  /** True when the store holds copies; false means these are the user's own files. */
+  readonly copies: boolean;
+}
+
+function isDatasetFolder(value: unknown): value is DatasetFolder {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as { folder?: unknown }).folder === 'string' &&
+    typeof (value as { exists?: unknown }).exists === 'boolean'
+  );
+}
+
+export function getDatasetFolder(
+  datasetId: string,
+  signal?: AbortSignal,
+): Promise<DatasetFolder> {
+  return apiFetch(
+    `/datasets/${encodeURIComponent(datasetId)}/folder`,
+    isDatasetFolder,
+    signal ? { signal } : {},
+  );
+}

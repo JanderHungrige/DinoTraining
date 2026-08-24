@@ -138,3 +138,59 @@ class TestDeletingAFineTunedModel:
 def test_build_foundation_is_importable() -> None:
     # Guards the import the delete route needs; a NameError there would be a 500.
     assert callable(build_foundation)
+
+
+class TestWhereADatasetsImagesAre:
+    """Doc 59. The button opens *this* folder, so getting it wrong sends the user to an
+    empty directory and tells them nothing is there."""
+
+    def test_it_points_at_the_images_not_the_dataset_directory(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        """Every dataset gets `<store>/<id>/images/` at creation, but a dataset that
+        references the user's own files leaves it empty. Opening it would show nothing."""
+        dataset_id, path = _dataset_with_image(tmp_path)
+        body = client.get(f"/api/v1/datasets/{dataset_id}/folder").json()
+        assert body["folder"] == str(Path(path).parent)
+        assert dataset_id not in body["folder"], "that would be the empty store directory"
+
+    def test_it_says_whether_the_store_holds_copies(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        # `copies: false` means the button opens the user's own directory, which is worth
+        # knowing before something is deleted from it.
+        dataset_id, _ = _dataset_with_image(tmp_path)
+        assert client.get(f"/api/v1/datasets/{dataset_id}/folder").json()["copies"] is False
+
+    def test_an_empty_dataset_falls_back_to_its_own_directory(
+        self, client: TestClient
+    ) -> None:
+        # A button that opens nothing is worse than one that opens the manifest.
+        info = DatasetStore().create("Empty", None, copy_images=False)
+        body = client.get(f"/api/v1/datasets/{info.id}/folder").json()
+        assert info.id in body["folder"]
+        assert body["exists"] is True
+
+    def test_a_moved_original_is_reported_rather_than_hidden(
+        self, client: TestClient, tmp_path: Path
+    ) -> None:
+        """"The folder is gone" and "the button is broken" must not look the same."""
+        # Its own subdirectory, so removing it does not disturb the fixture's data dirs.
+        originals = tmp_path / "originals"
+        originals.mkdir()
+        store = DatasetStore()
+        info = store.create("Moved", None, copy_images=False)
+        path = originals / "frame.png"
+        Image.new("RGB", (10, 10)).save(path)
+        store.replace_image_boxes(
+            info.id, ImageAnnotation(path=str(path), width=10, height=10, boxes=[])
+        )
+
+        path.unlink()
+        originals.rmdir()
+        body = client.get(f"/api/v1/datasets/{info.id}/folder").json()
+        assert body["folder"] == str(originals)
+        assert body["exists"] is False
+
+    def test_an_unknown_dataset_is_a_404(self, client: TestClient) -> None:
+        assert client.get("/api/v1/datasets/nope/folder").status_code == 404
