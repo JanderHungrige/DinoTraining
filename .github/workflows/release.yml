@@ -32,15 +32,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            label: macOS (Apple silicon)
-            bundles: dmg
+          # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
+          # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
+          # against. They all run in parallel, but this is the one to read first.
           - os: windows-latest
             label: Windows
             bundles: msi,nsis
           - os: ubuntu-22.04
             label: Linux
             bundles: appimage,deb
+          - os: macos-14
+            label: macOS (Apple silicon)
+            bundles: dmg
 
     steps:
       - uses: actions/checkout@v4
