@@ -12,8 +12,6 @@ import threading
 import uuid
 from collections.abc import Callable
 
-import torch
-
 from app.datasets.store import DatasetStore
 from app.ml.backbone import BackboneCapabilities, load_backbone, read_capabilities
 from app.ml.heads.builders import build_head
@@ -22,10 +20,18 @@ from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.preprocess import plan_preprocessing
 from app.ml.training.config import TrainingConfig, split_indices
 from app.ml.training.job import EpochRecord, JobState, TrainingJob
-from app.ml.training.loop import evaluate, is_better, precompute_cache, run_epoch
+from app.ml.training.live_loop import LivePass, evaluate_live, run_live_epoch
+from app.ml.training.loop import (
+    CachedSample,
+    evaluate,
+    is_better,
+    precompute_cache,
+    run_epoch,
+)
 from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
 from app.ml.training.samples import build_samples, samples_for_task
+from app.ml.training.unfreeze import apply_unfreeze, caching_is_valid, optimiser_for
 
 logger = logging.getLogger(__name__)
 
@@ -133,19 +139,48 @@ class LocalJobRunner:
 
         head = build_head(config.head_type_id, capabilities, sample_set.num_classes)
         head.to(backbone.device)
-        optimiser = torch.optim.AdamW(
-            head.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
+
+        # Sets `requires_grad` across the backbone and reports what it did. Called even for
+        # the frozen path, because a backbone left trainable by a previous run in the same
+        # process would silently train here.
+        job.frozen_parameters, job.trainable_parameters = apply_unfreeze(
+            backbone, config.unfreeze_blocks
+        )
+        optimiser = optimiser_for(
+            head,
+            backbone,
+            config.learning_rate,
+            config.weight_decay,
+            config.backbone_lr_scale,
         )
         compute_loss = loss_for(spec)
         compute_metrics = metrics_for(spec)
         decode = decode_for(spec)
 
-        cache = precompute_cache(backbone, plan, spec, usable, sample_set.num_classes)
-        if not cache:
-            raise ValueError("None of the selected images could be read")
+        # The one branch, and it is not a preference. `caching_is_valid` says why: cached
+        # features are computed once, before training, so a run that also trains the
+        # backbone would use stale features *and* leave the backbone out of the graph
+        # entirely — training only the head while reporting six million unfrozen
+        # parameters. The two loops are separate for the same reason `finetune_runner` is.
+        live: LivePass | None = None
+        cache: list[CachedSample] = []
+        if caching_is_valid(config.unfreeze_blocks):
+            cache = precompute_cache(backbone, plan, spec, usable, sample_set.num_classes)
+            if not cache:
+                raise ValueError("None of the selected images could be read")
+            total = len(cache)
+        else:
+            live = LivePass(
+                backbone=backbone,
+                plan=plan,
+                spec=spec,
+                samples=usable,
+                num_classes=sample_set.num_classes,
+            )
+            total = len(usable)
 
         split = split_indices(
-            len(cache), config.val_fraction, config.test_fraction, config.split_seed
+            total, config.val_fraction, config.test_fraction, config.split_seed
         )
         assert spec.primary_metric is not None  # 08 guarantees this for trainable heads
         mode = spec.primary_metric_mode or "max"
@@ -156,8 +191,14 @@ class LocalJobRunner:
                 job.finish("cancelled", f"Cancelled at epoch {epoch}")
                 return
 
-            train_loss = run_epoch(head, optimiser, compute_loss, cache, split.train)
-            val_loss, outputs, targets = evaluate(head, compute_loss, cache, split.val)
+            if live is None:
+                train_loss = run_epoch(head, optimiser, compute_loss, cache, split.train)
+                val_loss, outputs, targets = evaluate(head, compute_loss, cache, split.val)
+            else:
+                train_loss = run_live_epoch(live, head, optimiser, compute_loss, split.train)
+                val_loss, outputs, targets = evaluate_live(
+                    live, head, compute_loss, split.val
+                )
             # Decode before metrics: detection metrics need boxes, not per-cell logits.
             decoded = [decode(out, plan.patch_size) for out in outputs]
             metrics = compute_metrics(decoded, targets) if decoded else {}

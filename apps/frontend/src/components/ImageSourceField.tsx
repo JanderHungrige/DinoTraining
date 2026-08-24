@@ -15,6 +15,7 @@ import { useEffect, useState, type JSX } from 'react';
 
 import type { DatasetInfo } from '../api/datasets';
 import { FolderField } from './FolderField';
+import { RevealDatasetButton } from './RevealDatasetButton';
 
 export type ImageSource =
   | { readonly kind: 'folder'; readonly folder: string }
@@ -124,6 +125,9 @@ export function ImageSourceField({
               ))}
             </select>
           </label>
+          <div className="srcfield__reveal">
+            <RevealDatasetButton datasetId={selected} disabled={disabled} />
+          </div>
           {datasetHint && <p className="srcfield__hint">{datasetHint}</p>}
         </>
       )}

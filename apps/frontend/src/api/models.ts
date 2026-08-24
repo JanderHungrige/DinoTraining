@@ -47,6 +47,10 @@ export interface ModelInfo {
   readonly requires_access_request: boolean;
   /** True when the licence forbids commercial use. Authoritative — never parsed from `licence`. */
   readonly non_commercial: boolean;
+  /** What redistributing this app with the model installed obliges (doc 54). */
+  readonly redistribution: 'free' | 'non-commercial' | 'copyleft' | 'restricted';
+  /** The obligation in words, empty when there is none. */
+  readonly redistribution_note: string;
   readonly installed: boolean;
   readonly size_on_disk_mb: number;
   readonly available: boolean;
@@ -150,4 +154,40 @@ export function deleteModel(modelId: string): Promise<DeleteResult> {
   return apiFetch(`/models/${encodeURIComponent(modelId)}`, isDeleteResult, {
     method: 'DELETE',
   });
+}
+
+
+// --- accelerator (doc 57) -------------------------------------------------------------
+
+export interface GpuInfo {
+  readonly name: string;
+  readonly memory_mb: number;
+  readonly driver_version: string;
+}
+
+export interface AcceleratorInfo {
+  readonly device: string;
+  /** The torch build frozen into this sidecar — `cpu`, `cuda`, `mps`, `rocm`. */
+  readonly torch_variant: string;
+  readonly nvidia: readonly GpuInfo[];
+  /** NVIDIA hardware present and this build cannot use it. The only actionable state. */
+  readonly upgrade_available: boolean;
+  readonly driver_error: string | null;
+  readonly summary: string;
+}
+
+function isAccelerator(value: unknown): value is AcceleratorInfo {
+  if (typeof value !== 'object' || value === null) return false;
+  const info = value as Record<string, unknown>;
+  return (
+    typeof info['device'] === 'string' &&
+    typeof info['torch_variant'] === 'string' &&
+    typeof info['upgrade_available'] === 'boolean' &&
+    Array.isArray(info['nvidia'])
+  );
+}
+
+/** What this machine could use, versus what this build can. Asks the driver, not torch. */
+export function getAccelerator(signal?: AbortSignal): Promise<AcceleratorInfo> {
+  return apiFetch('/system/accelerator', isAccelerator, signal ? { signal } : undefined);
 }

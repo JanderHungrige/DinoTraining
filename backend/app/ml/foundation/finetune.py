@@ -35,6 +35,7 @@ from app.ml.foundation.detect import RfDetrModel
 from app.ml.training.config import split_indices
 from app.ml.training.metrics import detection_metrics
 from app.ml.training.samples import TrainingSample, build_samples
+from app.ml.training.unfreeze import unfreeze_last_blocks
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,16 @@ class FinetuneConfig:
     batch_size: int = 2
     val_fraction: float = 0.2
     split_seed: int = 42
+    #: How many of the DINOv2 backbone's **last** blocks to train alongside the decoder
+    #: (doc 55). 0 keeps doc 44's founding-rule behaviour; -1 trains the whole backbone.
+    #:
+    #: **Correct here and refused for heads**, and the difference is not policy: this path
+    #: saves the *whole model* with `save_pretrained`, so a modified backbone is persisted
+    #: with everything else. A head stores only its own weights beside a `backbone_id`, so
+    #: the same change there produces a head that scores 0.000 in a fresh process.
+    unfreeze_blocks: int = 0
+    #: Backbone rate as a fraction of the decoder's. A pretrained ViT nudged, not fitted.
+    backbone_lr_scale: float = 0.1
 
     def __post_init__(self) -> None:
         if not self.dataset_ids:
@@ -69,6 +80,15 @@ class FinetuneConfig:
             raise ValueError(f"val_fraction must be in [0, 1), got {self.val_fraction}")
         if not self.name.strip():
             raise ValueError("A fine-tuned model needs a name")
+        if self.unfreeze_blocks < -1:
+            raise ValueError(
+                f"unfreeze_blocks must be -1 (all), 0 (none) or a positive count, "
+                f"got {self.unfreeze_blocks}"
+            )
+        if not 0.0 < self.backbone_lr_scale <= 1.0:
+            raise ValueError(
+                f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}"
+            )
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,11 +98,16 @@ class FinetuneEpoch:
     metrics: dict[str, float] = field(default_factory=dict)
 
 
-def freeze_backbone(model: torch.nn.Module) -> tuple[int, int]:
-    """Freeze the DINOv2 backbone. Returns (frozen, trainable) parameter counts.
+def freeze_backbone(model: torch.nn.Module, unfreeze_blocks: int = 0) -> tuple[int, int]:
+    """Freeze the DINOv2 backbone, optionally leaving its last blocks trainable (doc 55).
 
-    Returned rather than logged only, because "did it actually freeze?" is the question
-    this whole feature rests on and a silent no-op looks exactly like a slow success.
+    Returns (frozen, trainable) parameter counts. Returned rather than logged only, because
+    "did it actually freeze?" is the question this whole feature rests on and a silent
+    no-op looks exactly like a slow success.
+
+    `unfreeze_blocks` is safe here in a way it is not for heads: `save_pretrained` writes
+    the whole model, so a modified backbone travels with the decoder that was fitted
+    against it.
     """
     # torch types every submodule as `Tensor | Module`, so this narrows once rather than
     # scattering ignores. A missing backbone means the model is not what doc 41 registered,
@@ -90,7 +115,16 @@ def freeze_backbone(model: torch.nn.Module) -> tuple[int, int]:
     backbone = model.get_submodule("model.backbone")
     for parameter in backbone.parameters():
         parameter.requires_grad_(False)
-    frozen = sum(int(p.numel()) for p in backbone.parameters())
+
+    if unfreeze_blocks != 0:
+        # RF-DETR nests its DINOv2 one level deeper, under the C2f projector's encoder.
+        # Same `encoder.layer` shape, same addressing rule as a catalogue backbone.
+        opened = unfreeze_last_blocks(backbone.get_submodule("backbone"), unfreeze_blocks)
+        logger.info("Unfroze %d backbone block(s) for fine-tuning", opened)
+
+    frozen = sum(
+        int(p.numel()) for p in backbone.parameters() if not bool(p.requires_grad)
+    )
     trainable = sum(int(p.numel()) for p in model.parameters() if bool(p.requires_grad))
     return frozen, trainable
 

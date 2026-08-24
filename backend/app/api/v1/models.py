@@ -23,6 +23,7 @@ from app.core.paths import (
 )
 from app.ml.downloads import DownloadJob, get_download_manager
 from app.ml.registry import (
+    REDISTRIBUTION_NOTES,
     ModelFamily,
     ModelKind,
     ModelSpec,
@@ -55,6 +56,11 @@ class ModelInfo(BaseModel):
     #: True when the licence forbids commercial use, so the admin panel can say so
     #: *before* the download rather than after. See `35-model-licence-surfacing`.
     non_commercial: bool
+    #: What redistributing this app with the model installed obliges (doc 54).
+    redistribution: str
+    #: The obligation in words, empty when there is none. Sent rather than composed
+    #: client-side so one licence cannot be described two ways.
+    redistribution_note: str
     installed: bool
     size_on_disk_mb: int
     available: bool = Field(description="False when a gated model has no token.")
@@ -104,6 +110,8 @@ def _describe(spec: ModelSpec) -> ModelInfo:
         licence_url=licence_url(spec),
         requires_access_request=spec.requires_access_request,
         non_commercial=spec.non_commercial,
+        redistribution=spec.redistribution,
+        redistribution_note=REDISTRIBUTION_NOTES[spec.redistribution],
         installed=installed,
         size_on_disk_mb=directory_size_bytes(directory) // _BYTES_PER_MB,
         available=available,

@@ -11,7 +11,7 @@
 
 import { useState, type JSX } from 'react';
 
-import { useLibrary, type LibraryKind } from '../hooks/useLibrary';
+import { BULK, useLibrary, type LibraryKind, type LibraryTarget } from '../hooks/useLibrary';
 
 interface Row {
   readonly id: string;
@@ -23,9 +23,24 @@ interface Row {
 export function LibraryTab(): JSX.Element {
   const library = useLibrary();
   const [confirming, setConfirming] = useState<string | null>(null);
+  // Keyed by `kind:id`, because ids are opaque and three stores answer to them — a bare id
+  // could name a dataset and a head at once and nothing would notice.
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
+  const [confirmingBulk, setConfirmingBulk] = useState(false);
 
   const datasetName = (id: string): string =>
     library.datasets.find((entry) => entry.id === id)?.name ?? id.slice(0, 8);
+
+  const toggle = (kind: LibraryKind, id: string): void => {
+    const key = `${kind}:${id}`;
+    setSelected((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+    setConfirmingBulk(false);
+  };
 
   const datasetRows: Row[] = library.datasets.map((entry) => ({
     id: entry.id,
@@ -53,6 +68,12 @@ export function LibraryTab(): JSX.Element {
     meta: entry.licence,
   }));
 
+  const targets: LibraryTarget[] = [
+    ...datasetRows.map((row) => ({ kind: 'dataset' as const, id: row.id, name: row.name })),
+    ...headRows.map((row) => ({ kind: 'head' as const, id: row.id, name: row.name })),
+    ...finetuneRows.map((row) => ({ kind: 'finetune' as const, id: row.id, name: row.name })),
+  ].filter((target) => selected.has(`${target.kind}:${target.id}`));
+
   return (
     <section className="library">
       <h2 className="library__title">Your library</h2>
@@ -67,6 +88,58 @@ export function LibraryTab(): JSX.Element {
         </p>
       )}
 
+      {targets.length > 0 && (
+        <div className="library__bulk" role="group" aria-label="Selected items">
+          <span>
+            <strong>{targets.length}</strong> selected
+          </span>
+          {confirmingBulk ? (
+            <>
+              <button
+                type="button"
+                className="btn btn--small btn--danger"
+                disabled={library.busyId !== null}
+                onClick={() => {
+                  setConfirmingBulk(false);
+                  setSelected(new Set());
+                  void library.removeMany(targets);
+                }}
+              >
+                Delete {targets.length} permanently
+              </button>
+              <button
+                type="button"
+                className="btn btn--small"
+                onClick={() => setConfirmingBulk(false)}
+              >
+                Keep them
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="btn btn--small"
+              disabled={library.busyId !== null}
+              onClick={() => setConfirmingBulk(true)}
+            >
+              {library.busyId === BULK ? 'Deleting…' : 'Delete selected'}
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn--small"
+            onClick={() => setSelected(new Set())}
+          >
+            Clear selection
+          </button>
+          {/* Named in full while the confirmation is up: eleven checkboxes are easy to
+              mis-tick, and this is the last chance to notice. */}
+          {confirmingBulk && (
+            <p className="library__bulknames">{targets.map((t) => t.name).join(', ')}</p>
+          )}
+        </div>
+      )}
+
       {library.loading ? (
         <p role="status">Loading your library…</p>
       ) : (
@@ -76,6 +149,8 @@ export function LibraryTab(): JSX.Element {
             empty="No datasets yet. Annotate a folder, generate one, or import a COCO export."
             rows={datasetRows}
             kind="dataset"
+            selected={selected}
+            onToggle={toggle}
             confirming={confirming}
             onConfirm={setConfirming}
             busyId={library.busyId}
@@ -86,6 +161,8 @@ export function LibraryTab(): JSX.Element {
             empty="No heads yet. Train one in the Head Trainer."
             rows={headRows}
             kind="head"
+            selected={selected}
+            onToggle={toggle}
             confirming={confirming}
             onConfirm={setConfirming}
             busyId={library.busyId}
@@ -96,6 +173,8 @@ export function LibraryTab(): JSX.Element {
             empty="No fine-tuned models yet. Fine-tune a detector in the Head Trainer."
             rows={finetuneRows}
             kind="finetune"
+            selected={selected}
+            onToggle={toggle}
             confirming={confirming}
             onConfirm={setConfirming}
             busyId={library.busyId}
@@ -112,6 +191,8 @@ interface SectionProps {
   readonly empty: string;
   readonly rows: readonly Row[];
   readonly kind: LibraryKind;
+  readonly selected: ReadonlySet<string>;
+  readonly onToggle: (kind: LibraryKind, id: string) => void;
   readonly confirming: string | null;
   readonly onConfirm: (id: string | null) => void;
   readonly busyId: string | null;
@@ -123,6 +204,8 @@ function Section({
   empty,
   rows,
   kind,
+  selected,
+  onToggle,
   confirming,
   onConfirm,
   busyId,
@@ -140,6 +223,18 @@ function Section({
         <ul className="library__list">
           {rows.map((row) => (
             <li key={row.id} className="library__row">
+              <input
+                type="checkbox"
+                className="library__pick"
+                checked={selected.has(`${kind}:${row.id}`)}
+                disabled={busyId !== null}
+                // Name *and* detail: four heads here are all called "Object detection:
+                // dog, person" and differ only by what they were trained on and their
+                // mAP. Identical labels on four checkboxes is a real ambiguity for
+                // anyone not reading the row visually.
+                aria-label={`Select ${row.name} — ${row.detail}`}
+                onChange={() => onToggle(kind, row.id)}
+              />
               <span className="library__name">{row.name}</span>
               <span className="library__detail">{row.detail}</span>
               <span className="library__meta">{row.meta}</span>

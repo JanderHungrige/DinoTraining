@@ -64,3 +64,10 @@ asyncio_mode = "auto"
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
+
+# Explicit, because setuptools' flat-layout discovery finds *every* top-level directory and
+# then refuses when there is more than one. Adding `bundling/` broke `pip install .` the
+# moment it appeared — a good argument for saying what ships rather than letting it be
+# inferred. `bundling/` is build tooling and is deliberately not part of the wheel.
+[tool.setuptools.packages.find]
+include = ["app*"]

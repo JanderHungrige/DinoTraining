@@ -34,6 +34,15 @@ class TrainingConfig:
     save_best_only: bool = True
     early_stopping_patience: int = 5
     augment: bool = False
+    #: How many of the backbone's **last** transformer blocks to train alongside the head
+    #: (doc 55). 0 keeps the founding rule and the feature cache; -1 means the whole
+    #: backbone. A ViT's later blocks carry the most task-specific representation, and the
+    #: early ones carry general structure a few hundred images cannot improve.
+    unfreeze_blocks: int = 0
+    #: Backbone learning rate as a fraction of the head's. A backbone that already works is
+    #: being nudged; at the head's own rate a few hundred images destroy it in one epoch and
+    #: the run reports a worse number than the frozen one it was meant to beat.
+    backbone_lr_scale: float = 0.1
 
     def __post_init__(self) -> None:
         if not self.dataset_ids:
@@ -57,6 +66,33 @@ class TrainingConfig:
             )
         if self.early_stopping_patience < 1:
             raise ValueError("early_stopping_patience must be >= 1")
+        if self.unfreeze_blocks != 0:
+            # Refused, not merely warned about. Measured on 2026-08-21: a head trained
+            # against an unfrozen backbone scored **0.000 mAP** in a fresh process, because
+            # a `HeadInstance` stores head weights plus a `backbone_id` — there is nowhere
+            # to put a modified backbone, so the weights the head was fitted against are
+            # discarded when the process ends. The run reports a plausible validation
+            # number and produces a head that cannot work.
+            #
+            # See doc 55: this is not a missing flag, it is what "head" means here. A head
+            # that carries its own backbone cannot join `run_heads`' shared pass and is a
+            # foundation model — which is exactly why RF-DETR is not a head. Unfreezing
+            # lives on the fine-tune path, where the whole model is saved.
+            raise ValueError(
+                "Training the backbone is not supported for heads: a head stores only its "
+                "own weights, so a modified backbone would be discarded and the head would "
+                "predict nothing. Fine-tune a detector instead — see the Head Trainer's "
+                "fine-tuning panel."
+            )
+        if self.unfreeze_blocks < -1:
+            raise ValueError(
+                f"unfreeze_blocks must be -1 (all), 0 (none) or a positive count, "
+                f"got {self.unfreeze_blocks}"
+            )
+        if not 0.0 < self.backbone_lr_scale <= 1.0:
+            raise ValueError(
+                f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}"
+            )
 
 
 @dataclass(frozen=True, slots=True)

@@ -14,8 +14,8 @@ const BACKEND_EVENT: &str = "backend-state";
 
 /// Lets the UI ask for the backend origin instead of hardcoding a port.
 #[tauri::command]
-fn backend_url() -> String {
-    SidecarConfig::for_development()
+fn backend_url(app: tauri::AppHandle) -> String {
+    SidecarConfig::resolve(resource_dir(&app).as_deref())
         .map(|config| format!("http://{}:{}", config.host, config.port))
         .unwrap_or_else(|_| "http://127.0.0.1:8756".to_string())
 }
@@ -33,6 +33,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(SidecarHandle::default())
         .invoke_handler(tauri::generate_handler![backend_url])
         .setup(|app| {
@@ -88,11 +89,21 @@ fn install_signal_handlers(_app: tauri::AppHandle) {
     // Windows Ctrl-C handling arrives with the Wave 5 packaging work.
 }
 
+/// Where Tauri put the bundled resources, or None in a development run.
+///
+/// Asked of Tauri rather than derived from `current_exe`, because the answer differs by
+/// platform and getting it wrong means falling back to `python -m app` in a packaged build
+/// — which fails with "no venv" on a user's machine and reads as a broken install.
+fn resource_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
+    use tauri::Manager;
+    app.path().resource_dir().ok()
+}
+
 /// Spawn the sidecar and report the outcome to the UI.
 async fn start_backend(app: tauri::AppHandle) {
     let _ = app.emit(BACKEND_EVENT, BackendState::Starting);
 
-    let config = match SidecarConfig::for_development() {
+    let config = match SidecarConfig::resolve(resource_dir(&app).as_deref()) {
         Ok(config) => config,
         Err(error) => return report_failure(&app, error.to_string()),
     };

@@ -16,6 +16,8 @@ const MODEL: ModelInfo = {
   licence_url: 'https://huggingface.co/facebook/dinov2-base',
   requires_access_request: false,
   non_commercial: false,
+  redistribution: 'free' as const,
+  redistribution_note: '',
   installed: false,
   size_on_disk_mb: 0,
   available: true,

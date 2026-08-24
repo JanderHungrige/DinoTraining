@@ -212,6 +212,9 @@ export interface StartFinetuneOptions {
   readonly name: string;
   readonly epochs: number;
   readonly learningRate: number;
+  /** Backbone blocks to train alongside the decoder (doc 55). 0 frozen, -1 all.
+   *  Safe on this path and refused for heads: the fine-tune saves the whole model. */
+  readonly unfreezeBlocks?: number;
 }
 
 export function startFinetune(options: StartFinetuneOptions): Promise<FinetuneJob> {
@@ -224,6 +227,9 @@ export function startFinetune(options: StartFinetuneOptions): Promise<FinetuneJo
       name: options.name,
       epochs: options.epochs,
       learning_rate: options.learningRate,
+      ...(options.unfreezeBlocks === undefined
+        ? {}
+        : { unfreeze_blocks: options.unfreezeBlocks }),
     }),
   });
 }

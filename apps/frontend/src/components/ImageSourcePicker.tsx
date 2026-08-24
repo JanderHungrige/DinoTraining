@@ -12,6 +12,7 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 import { useFileDrop } from '../hooks/useFileDrop';
 import type { DatasetInfo } from '../api/datasets';
 import { hasNativeDialog, pickFolder, pickImageFile } from '../lib/dialog';
+import { RevealDatasetButton } from './RevealDatasetButton';
 
 export interface ImageSourcePickerProps {
   readonly onPick: (path: string) => void;
@@ -120,6 +121,7 @@ export function ImageSourcePicker({
               ))}
             </select>
           </label>
+          <RevealDatasetButton datasetId={datasetId} disabled={busy} />
         </div>
       )}
       {drop.available && (

@@ -4,123 +4,111 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-21, after **Wave 7.5** was built and demonstrated. Waves 4–7.5 are
-all complete and unmerged. **Only Wave 8 (Packaging) and Wave 9 (Website) remain.**
+**Last updated:** 2026-08-21, after **Wave 8** was closed. Waves 1–8 are merged to `dev`
+and `main`. **Only Wave 9 (Website & hyperscaler compute) remains**, plus three features
+deferred out of Wave 8.
 
 ---
 
 ## Waiting on Jan
 
-**1. Merge six branches. Waves 4–7.5 are all marked complete.** Merging is still yours, and
-they stack in this order:
+**1. Certificates — the one thing that cannot be done here.** Signing needs an Apple
+Developer ID and a Windows code-signing certificate. Until they exist:
 
-```
-dev
- └─ feat/dinotraining-wave-4          Wave 4 features 6-9
-     └─ feat/external-dataset-import  doc 31 + the NMS and lost-class fixes
-         └─ feat/dinotraining-wave-5  docs 32-34
-             └─ feat/dinotraining-wave-6 docs 35-37
-                 └─ feat/dinotraining-wave-7 docs 38-40
-                     └─ feat/dinotraining-wave-7-5 docs 41-53
-```
+- the macOS build is **Gatekeeper-blocked on first launch**,
+- the Windows build shows a **SmartScreen warning**,
+- `release.yml` publishes a **draft** rather than a live release, deliberately, so an
+  unsigned build cannot reach anyone by accident. **Keep that guard until signing lands.**
 
-**2. A Wave 8 licensing decision, parked deliberately.** Both YOLO routes evaluated in Wave
-7.5 are **AGPL-3.0** (inherited from Ultralytics, confirmed on PyPI). This is billed as a
-sharable, installable desktop app and Wave 8 *is* packaging; distributing AGPL-linked code
-obliges releasing the whole app under AGPL. Nothing AGPL is in the tree. The decision is
-"do we want a YOLO at the cost of the licence", and it is yours.
+**2. Nobody has ever installed this app.** The macOS `.app` was launched from its own build
+directory, on the machine that built it — sharing that machine's model cache and data
+directory. Windows and Linux **build** and have never been run at all. Installing each
+artefact on a clean machine is the highest-value hour available right now, and it needs
+machines rather than code.
 
-**3. Housekeeping — the Library tab now shows you the mess.** That is what it is for, and
-opening it for the first time on 2026-08-21 showed **21 datasets, 18 heads, 4 fine-tuned
-models**. Notable:
+**3. The `Open folder` button has never been clicked.** It is Tauri-only and this session
+cannot drive a native webview (doc 59). Everything around it is verified; the OS call is
+not.
 
-- Three datasets named `i'p`, `;oo` and `l’kl;`, all with zero images, from mistyped fields.
-- Two OSDaR23 rail datasets that exist only to prove the temporal-split point
-  (`OSDaR23 rail train (temporal)`, `OSDaR23 rail holdout (temporal)`); the third,
-  `OSDaR23 rail (rgb_center, tiled)`, is the full 392-tile one.
-- Four chess heads and several thermal scratch datasets from verification runs.
-
-**Deleting from your store is your call, so I left every one of it.** The imported datasets
-(Thermal dogs and people, Blood cells, Chess pieces) and the OSDaR23 tiled set are
-deliverables — keep those. Also on disk outside the store: `~/Downloads/osdar23` (652 MB of
-RGB frames) and `~/Downloads/osdar23-coco` + `osdar23-split` (~190 MB of tiles). Free disk
-was 13 GB when this was written.
+**4. `THIRD_PARTY_LICENCES.txt` is a judgement call worth a second opinion.** torch's
+vendored licence texts are flattened into one file to get under Windows' MAX_PATH (doc 58).
+The texts are unmodified and each carries its original path, which should satisfy BSD/MIT
+attribution — but that is a legal reading, not a technical one.
 
 ---
 
-## What Wave 7.5 turned out to be
+## What Wave 8 turned out to be
 
-It was planned as "General Object Detection" and grew a second half. Thirteen features:
+Six docs, 54–59. Two of them the wave never asked for.
 
 | | |
 |---|---|
-| 41–44 | RF-DETR as a foundation detector, everywhere; the localisation fixes; fine-tuning |
-| 45–46 | Grounded SAM beyond the Generator; the Generator's missing file picker |
-| 47–49 | Box review rework; the dataset-format guide; OSDaR23 (OpenLABEL + tiling) |
-| 50–53 | A dataset as an image source; the Library tab; the dataset filter; prescan |
+| 54 | What shipping obliges — three licence obligations, not one |
+| 55 | Unfreezing — where it works, and where it cannot |
+| 56 | Freezing the sidecar — the spike that constrained everything |
+| 57 | GPU support as a download |
+| 58 | A real installer, then CI written from what worked |
+| 59 | Open a dataset's folder |
 
-**One planned feature was scrapped**: `general-detection-head` (train `dense-detector` on
-COCO val2017). Its own plan had conceded the case, and doc 44 removed the last reason to
-want it — a fine-tuned RF-DETR reaches mAP 0.800 where the trained head reaches 0.587.
+**Deferred to the backlog**, each with its reasoning there: code signing, auto-update, and
+a first-run experience on a clean machine.
 
-## The three results worth carrying forward
+## The four results worth carrying forward
 
-**1. A frozen backbone with a light head has a real ceiling, and OSDaR23 found it.** On
-temporally held-out rail frames: trained head **0.339 mAP**, fine-tuned RF-DETR **0.857**.
-Doc 44 had measured *identical* mAP@50 on thermal (0.818 vs 0.817) — both found the objects
-equally well and only placement differed. On rail it is **0.979 against 0.399**: the head is
-not misplacing these objects, it is missing them. 10 px far-field objects on cluttered
-natural background is where DINOv2 patch features alone stop separating signal from
-vegetation. Reach for a fine-tune there, not a head.
+**1. A head cannot carry a backbone, and that is what "head" means here.** Training one
+scored **0.000 mAP** in a fresh process — a `HeadInstance` stores head weights beside a
+`backbone_id`, so a modified backbone is discarded, and the run reports a plausible
+validation number the whole way. Unfreezing lives on the **fine-tune** path, which saves
+the whole model: measured there at mAP 0.781 → **0.843** for 19% more time, because that
+path never had a feature cache to give up. This is also the real answer to "why isn't
+RF-DETR a head".
 
-**2. A random image split is wrong for video, and the job runner does not know it.**
-OSDaR23 is 10 Hz; consecutive frames differ by **0.4 of 255**. A random split put
-near-identical twins in both halves and inflated the reported mAP by **42% for the head**
-and **10% for the detector**. Doc 11's rule was "split by image, not by box"; video needs it
-one level up — by *segment*. Splitting by contiguous frames was done by hand for doc 49.
-**Nothing in the app offers it**, and any dataset whose file names carry frame indices will
-hit this.
+**2. The runtime is the size problem, not the weights.** The frozen sidecar is 636 MB
+before a single model is downloaded. Installers land at **181 MB (Windows, NSIS)**, 311 MB
+(macOS, dmg), 377 MB (Linux, deb) — and Windows being *smallest* is the opposite of the
+intuition; NSIS's LZMA squeezes torch hardest.
 
-**3. Tiling is arithmetic, not a technique.** A 10.7 px object in a 2464 px frame arrives at
-a 448 px input as **1.9 px** — below the 7 px stride the detector predicts on. No loss
-function and no number of epochs recovers an object smaller than one cell. `tiling.py` and
-`tiling_images.py` are general: any COCO document with known frame dimensions can be
-retiled. **There is no inference-side counterpart** — a head trained on 472 px tiles will
-find nothing on a full frame.
+**3. A CUDA torch wheel is 2532 MB on Windows against 111 MB for CPU.** That single number
+decided the packaging strategy: ship CPU, offer GPU as a download (doc 57). `--index-url
+.../whl/cpu` in `release.yml` is load-bearing — without it every Windows and Linux
+installer is over 2.5 GB.
+
+**4. AppImage cannot package this payload.** Isolated across CI runs 2 and 3: `appimage,deb`
+fails, `deb` alone passes. AppImage repacks the whole tree through `linuxdeploy` and the
+tree is 636 MB of PyInstaller `_internal`. **Linux ships `.deb` only**, which excludes
+distributions that do not take one.
 
 ---
 
-## Known gaps left open, in the order they will bite
+## Known gaps, in the order they will bite
 
-1. **No tiled inference** (doc 49). The rail head is unusable on full frames until this
-   exists. The largest single gap in the wave.
-2. **Prescan is one shared runner** across the Studio and the Generator (doc 53), so a scan
-   in one queues behind a scan in the other and neither says so.
-3. **Renaming** is missing from the Library (doc 51) — it needs routes that do not exist and
-   a rule about what a rename does to provenance recorded *inside* trained heads.
-4. **Per-class rename** is missing from box review (doc 47). Thirty boxes proposed as
-   `person` need thirty edits to become `pedestrian`.
-5. **`FoundationInfo` does not expose `dataset_ids`** (doc 52), so the dataset filter cannot
-   reach fine-tuned models — only heads.
-6. **Fine-tunes are 115 MB each** (doc 44) because `save_pretrained` writes the whole model.
-   Four of them are in your store. Relevant to Wave 8's installer size.
+1. **No tiled inference** (doc 49, backlog). A head trained on 472 px tiles finds nothing on
+   a full frame and says nothing about why. Still the largest correctness gap.
+2. **No signing** (backlog) — blocks any real distribution.
+3. **The GPU sidecar has no artefact** (doc 57). Detection works and tells the user their
+   GPU is idle; there is nothing to download yet, because that is a second CI matrix leg.
+4. **A random split leaks on video** (doc 49, backlog). `split_indices` splits by image,
+   which is right for photos and wrong for a 10 Hz sequence — it inflated a reported mAP by
+   42%. Nothing warns.
+5. **Prescan shares one runner** across the Studio and the Generator (doc 53).
+6. **Renaming is missing from the Library** (doc 51), and **per-class rename** from box
+   review (doc 47).
 
 ---
 
 ## If you are picking this up cold
 
-Read in this order: `.mdd/.startup.md` for the map, then
-`.mdd/waves/dinotraining-wave-7-5.md`, then docs **49** (the hardest data problem in the
-project) and **44** (why fine-tuning exists at all). Everything else is reachable from
-`.startup.md`.
+Read `.mdd/.startup.md` for the map, then `.mdd/waves/dinotraining-wave-8.md`, then docs
+**56** and **58** (what packaging actually costs), **55** (why a head is a head), and **49**
+(the hardest data problem in the project).
 
 **MDD hashes** must be recomputed after any initiative/wave edit:
 
 ```bash
-f=.mdd/waves/dinotraining-wave-7-5.md
+f=.mdd/waves/dinotraining-wave-8.md
 new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-21: `1133` backend tests, `519` frontend, `ruff` +
-`mypy` + `tsc` clean, no file over 300 lines.
+**Gates**, all green as of 2026-08-21: `1185` backend tests, `565` frontend, `ruff` +
+`mypy` + `tsc` + `cargo check` clean, no source file over 300 lines.

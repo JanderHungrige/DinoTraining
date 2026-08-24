@@ -25,6 +25,14 @@ import {
 
 export type LibraryKind = 'dataset' | 'head' | 'finetune';
 
+/** One thing to delete. The kind rides along because ids are opaque and three different
+ *  stores answer to them — guessing from the id is not possible and should not be. */
+export interface LibraryTarget {
+  readonly kind: LibraryKind;
+  readonly id: string;
+  readonly name: string;
+}
+
 export interface LibraryState {
   readonly datasets: readonly DatasetInfo[];
   readonly heads: readonly HeadInstanceInfo[];
@@ -33,6 +41,9 @@ export interface LibraryState {
   readonly error: string | null;
   readonly busyId: string | null;
   readonly remove: (kind: LibraryKind, id: string) => Promise<void>;
+  /** Delete several at once (doc 54). Clearing eleven verification leftovers one
+   *  confirmation at a time is the thing that made cleaning up not happen. */
+  readonly removeMany: (targets: readonly LibraryTarget[]) => Promise<void>;
   readonly refresh: () => Promise<void>;
 }
 
@@ -42,6 +53,10 @@ export interface LibraryState {
 export function isFineTuned(entry: FoundationInfo): boolean {
   return entry.approx_size_mb === 0;
 }
+
+/** `busyId` while a bulk delete runs. A sentinel rather than null, so every row disables
+ *  itself — the alternative is a list you can keep clicking while it is being rewritten. */
+export const BULK = '__bulk__';
 
 export function useLibrary(): LibraryState {
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
@@ -83,14 +98,51 @@ export function useLibrary(): LibraryState {
     void refresh();
   }, [refresh]);
 
+  /** One delete, without refreshing. The callers below decide when to re-read. */
+  const deleteOne = useCallback(async (kind: LibraryKind, id: string): Promise<void> => {
+    if (kind === 'dataset') await deleteDataset(id);
+    else if (kind === 'head') await deleteHeadInstance(id);
+    else await deleteFoundationInstance(id);
+  }, []);
+
+  const removeMany = useCallback(
+    async (targets: readonly LibraryTarget[]): Promise<void> => {
+      if (targets.length === 0) return;
+      setBusyId(BULK);
+      setError(null);
+
+      // Sequential, not Promise.all. Deleting a dataset and a head that references it at
+      // the same time is a race against the store, and the failure it produces is exactly
+      // the kind that leaves half a thing behind.
+      const failed: string[] = [];
+      for (const target of targets) {
+        try {
+          await deleteOne(target.kind, target.id);
+        } catch {
+          failed.push(target.name);
+        }
+      }
+
+      // Re-read first, then report: `refresh` clears the error when every list loads, so
+      // setting it before would wipe the message the user needs. Same bug as doc 51's.
+      await refresh();
+      if (failed.length > 0) {
+        setError(
+          `Could not delete ${failed.length} of ${targets.length}: ${failed.join(', ')}. ` +
+            'The lists below are what is really there.',
+        );
+      }
+      setBusyId(null);
+    },
+    [deleteOne, refresh],
+  );
+
   const remove = useCallback(
     async (kind: LibraryKind, id: string): Promise<void> => {
       setBusyId(id);
       setError(null);
       try {
-        if (kind === 'dataset') await deleteDataset(id);
-        else if (kind === 'head') await deleteHeadInstance(id);
-        else await deleteFoundationInstance(id);
+        await deleteOne(kind, id);
         await refresh();
       } catch {
         // Re-read rather than trusting the optimistic removal: a delete that half-failed
@@ -105,8 +157,18 @@ export function useLibrary(): LibraryState {
         setBusyId(null);
       }
     },
-    [refresh],
+    [deleteOne, refresh],
   );
 
-  return { datasets, heads, finetunes, loading, error, busyId, remove, refresh };
+  return {
+    datasets,
+    heads,
+    finetunes,
+    loading,
+    error,
+    busyId,
+    remove,
+    removeMany,
+    refresh,
+  };
 }

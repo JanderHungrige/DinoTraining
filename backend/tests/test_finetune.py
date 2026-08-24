@@ -27,6 +27,14 @@ def _isolated(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     reset_cache()
 
 
+@pytest.fixture
+def _real_cache(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point back at the machine's real model cache, undoing `_isolated` for one test."""
+    monkeypatch.delenv("DINO_MODEL_CACHE_DIR", raising=False)
+    get_settings.cache_clear()
+    reset_cache()
+
+
 class TestConfig:
     def test_it_needs_a_dataset(self) -> None:
         with pytest.raises(ValueError, match="dataset"):
@@ -185,3 +193,79 @@ class TestFineTuningDoesNotPoisonTheBaseModel:
     def test_a_fresh_build_is_not_stored_in_the_cache(self) -> None:
         fresh = build_foundation("rf-detr-nano", fresh=True)
         assert build_foundation("rf-detr-nano") is not fresh
+
+
+def _rf_detr_installed() -> bool:
+    """These three need the real weights: what they check is that RF-DETR's *nesting* is
+    addressed correctly (`model.backbone.backbone`), which a synthetic module cannot show.
+    Skipped rather than faked, and skipped rather than silently passing."""
+    from app.core.config import get_settings
+    from app.core.paths import is_installed, resolve_model_dir
+
+    get_settings.cache_clear()
+    try:
+        return is_installed(resolve_model_dir("rf-detr-nano"))
+    except Exception:  # noqa: BLE001 - absence is the answer
+        return False
+
+
+class TestUnfreezingTheBackbone:
+    """Doc 55. Safe here and refused for heads, and the difference is not policy: this path
+    saves the whole model, so a modified backbone travels with the decoder fitted against
+    it. A head stores only its own weights beside a `backbone_id`."""
+
+    def test_it_defaults_to_the_founding_rule(self) -> None:
+        config = FinetuneConfig(foundation_id="rf-detr-nano", dataset_ids=("d1",), name="n")
+        assert config.unfreeze_blocks == 0
+
+    def test_a_nonsense_block_count_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="unfreeze_blocks"):
+            FinetuneConfig(
+                foundation_id="rf-detr-nano",
+                dataset_ids=("d1",),
+                name="n",
+                unfreeze_blocks=-2,
+            )
+
+    def test_a_backbone_rate_above_the_decoder_is_refused(self) -> None:
+        with pytest.raises(ValueError, match="backbone_lr_scale"):
+            FinetuneConfig(
+                foundation_id="rf-detr-nano",
+                dataset_ids=("d1",),
+                name="n",
+                backbone_lr_scale=2.0,
+            )
+
+    @pytest.mark.skipif(not _rf_detr_installed(), reason="needs the real RF-DETR weights")
+    def test_zero_leaves_the_backbone_entirely_frozen(self, _real_cache: None) -> None:
+        from app.ml.foundation.build import build_foundation
+        from app.ml.foundation.finetune import freeze_backbone
+
+        model = build_foundation("rf-detr-nano", fresh=True)
+        frozen, trainable = freeze_backbone(model.model, 0)
+        backbone = model.model.get_submodule("model.backbone")
+        assert all(not p.requires_grad for p in backbone.parameters())
+        assert frozen > 0 and trainable > 0, "the decoder still trains"
+
+    @pytest.mark.skipif(not _rf_detr_installed(), reason="needs the real RF-DETR weights")
+    def test_unfreezing_opens_the_last_blocks_only(self, _real_cache: None) -> None:
+        from app.ml.foundation.build import build_foundation
+        from app.ml.foundation.finetune import freeze_backbone
+        from app.ml.training.unfreeze import blocks_in
+
+        model = build_foundation("rf-detr-nano", fresh=True)
+        freeze_backbone(model.model, 2)
+        layers = blocks_in(model.model.get_submodule("model.backbone.backbone"))
+        assert all(not p.requires_grad for p in layers[0].parameters())
+        assert all(p.requires_grad for p in layers[-1].parameters())
+
+    @pytest.mark.skipif(not _rf_detr_installed(), reason="needs the real RF-DETR weights")
+    def test_it_reports_more_trainable_than_the_frozen_run(self, _real_cache: None) -> None:
+        # The number the panel shows. A silent no-op looks exactly like a slow success.
+        from app.ml.foundation.build import build_foundation
+        from app.ml.foundation.finetune import freeze_backbone
+
+        model = build_foundation("rf-detr-nano", fresh=True)
+        _, closed = freeze_backbone(model.model, 0)
+        _, opened = freeze_backbone(model.model, 4)
+        assert opened > closed

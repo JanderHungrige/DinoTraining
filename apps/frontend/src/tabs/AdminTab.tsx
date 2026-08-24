@@ -1,10 +1,18 @@
 /** Wave 1 — Admin / Models: system status and the model download manager. */
 
-import type { JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 
 import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
 import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
+import { DistributionNotice } from '../components/DistributionNotice';
+import { GpuPanel } from '../components/GpuPanel';
 import { ModelCard } from '../components/ModelCard';
+import { getAccelerator, type AcceleratorInfo } from '../api/models';
+
+/** The CUDA sidecar's download size. Stated here rather than fetched: it is a property
+ *  of the *release*, not of the running app, and the app cannot know it before asking
+ *  for it. Update alongside the release. */
+const CUDA_SIDECAR_MB = 2400;
 import { TokenPanel } from '../components/TokenPanel';
 import { useModels } from '../hooks/useModels';
 import { useTrainerOptions } from '../hooks/useTrainerOptions';
@@ -54,6 +62,17 @@ function SystemPanel({
 
 export function AdminTab(): JSX.Element {
   const { models, system, jobs, loading, error, busy, download, remove } = useModels();
+
+  // Its own effect and its own failure: a driver probe that errors should cost the GPU
+  // panel, not the model list beneath it.
+  const [accelerator, setAccelerator] = useState<AcceleratorInfo | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    void getAccelerator(controller.signal)
+      .then(setAccelerator)
+      .catch(() => setAccelerator(null));
+    return () => controller.abort();
+  }, []);
   // Null backbone: the head-catalogue panel does its own per-backbone filtering, and
   // asking for verdicts here would tie the whole tab to one selection.
   const { backbones, headTypes } = useTrainerOptions(null);
@@ -73,6 +92,14 @@ export function AdminTab(): JSX.Element {
           freeDiskMb={system.free_disk_mb}
         />
       )}
+
+      {/* Above the model list, because it is about what is already downloaded and the
+          remove buttons are just below. */}
+      {/* Above the model list and below the system panel: it is about this machine,
+          like the panel above it, and it appears only when there is something to do. */}
+      <GpuPanel accelerator={accelerator} downloadMb={CUDA_SIDECAR_MB} />
+
+      <DistributionNotice models={models} />
 
       <TokenPanel />
 

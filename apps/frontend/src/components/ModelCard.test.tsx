@@ -25,6 +25,8 @@ function model(overrides: Partial<ModelInfo> = {}): ModelInfo {
     licence_url: 'https://huggingface.co/depth-anything/Depth-Anything-V2-Small-hf',
     requires_access_request: false,
     non_commercial: false,
+  redistribution: 'free' as const,
+  redistribution_note: '',
     installed: false,
     size_on_disk_mb: 0,
     available: true,

@@ -45,6 +45,11 @@ class TrainingJob:
     best_epoch: int | None = None
     class_names: tuple[str, ...] = ()
     skipped_mixed_class_images: int = 0
+    #: Backbone parameter split when blocks are unfrozen (doc 55). **Reported, not
+    #: just logged**, for doc 44's reason: "did it actually unfreeze?" is the question
+    #: the feature rests on, and a silent no-op looks exactly like a slow success.
+    frozen_parameters: int = 0
+    trainable_parameters: int = 0
     message: str = ""
     #: Set once the run is saved as a head instance, so the UI can link straight to it.
     head_instance_id: str | None = None

@@ -159,6 +159,47 @@ class DatasetImagesResponse(BaseModel):
     images: list[DatasetImageInfo]
 
 
+class DatasetFolder(BaseModel):
+    """Where a dataset's pictures actually are on disk (doc 59)."""
+
+    folder: str
+    #: False when the folder no longer exists — an original the user moved or deleted.
+    #: Reported rather than hidden, so the button can say why it will not open.
+    exists: bool
+    #: True when the store holds copies. False means the paths point at the user's own
+    #: files, wherever those are, and opening the folder shows *their* directory.
+    copies: bool
+
+
+@router.get(
+    "/datasets/{dataset_id}/folder",
+    response_model=DatasetFolder,
+    summary="The folder holding a dataset's images",
+)
+async def dataset_folder(dataset_id: str) -> DatasetFolder:
+    """The directory to reveal in the OS file manager.
+
+    **Derived from the first image, not from the dataset id.** Every dataset gets a
+    `<store>/<id>/images/` directory at creation, but it only *contains* anything when the
+    dataset was created with `copy_images`. For a dataset that references the user's own
+    files, that directory is empty and opening it would show them nothing — the pictures
+    are wherever they put them.
+
+    Falls back to the dataset's own directory when there are no images at all, because a
+    button that opens nothing is worse than one that opens the manifest.
+    """
+    info = _require(dataset_id)
+    images = _store().image_annotations(dataset_id)
+    if images:
+        folder = Path(images[0][1]).parent
+    else:
+        folder = dataset_dir(dataset_id)
+
+    return DatasetFolder(
+        folder=str(folder), exists=folder.is_dir(), copies=info.copy_images
+    )
+
+
 @router.get(
     "/datasets/{dataset_id}/images",
     response_model=DatasetImagesResponse,

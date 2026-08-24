@@ -13,6 +13,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
+import { RevealDatasetButton } from './RevealDatasetButton';
 
 export interface GeneratorDestinationProps {
   readonly datasetId: string;
@@ -66,6 +67,10 @@ export function GeneratorDestination({
           ))}
         </select>
       </label>
+
+      {/* Also a dataset selection: "where does this go" is a thing people want to open
+          just as often as "where did this come from". */}
+      <RevealDatasetButton datasetId={datasetId} />
 
       {datasetId === '' && (
         <label className="genpanel__field">
