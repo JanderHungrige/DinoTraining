@@ -35,12 +35,19 @@ jobs:
           # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
           # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
           # against. They all run in parallel, but this is the one to read first.
+          # **One format each, and these two specifically.** Run #2 got through the Rust
+          # compile on all three and then died inside the bundler on Windows (367 s) and
+          # Linux (230 s) while macOS's dmg succeeded. The payload is a 636 MB resource
+          # tree with thousands of files (PyInstaller's `_internal`), which is exactly what
+          # WiX/MSI and AppImage are worst at — WiX registers every file individually and
+          # AppImage repacks the tree through linuxdeploy. NSIS and deb are the formats
+          # that handle a large tree without doing either.
           - os: windows-latest
             label: Windows
-            bundles: msi,nsis
+            bundles: nsis
           - os: ubuntu-22.04
             label: Linux
-            bundles: appimage,deb
+            bundles: deb
           - os: macos-14
             label: macOS (Apple silicon)
             bundles: dmg
