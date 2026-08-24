@@ -29,7 +29,8 @@ integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**Windows does not build.** It fails inside the bundler with both MSI and NSIS, ~350 s into the step. The cause is unidentified because reading the job log needs admin rights on the repository. A long-paths mitigation is in the workflow and is **unverified**."
+  - "**Windows was fixed by shortening the payload, and the fix is verified locally but not yet in CI** — the sidecar rebuilds with a longest path of 111 characters and still serves inferences, but no Windows run has confirmed the bundle completes."
+  - "**`THIRD_PARTY_LICENCES.txt` is a flattening, not a summary.** The texts are unmodified and each carries its original path, which satisfies BSD/MIT attribution — but it is a judgement that a rolled-up file discharges the same obligation as the original tree. Worth a second opinion before a real release."
   - "**AppImage cannot package this payload.** Isolated across runs 2 and 3: `appimage,deb` fails and `deb` alone passes. Linux therefore ships a `.deb` only, which excludes users on distributions that do not take one."
   - "The `.build/Scripts` assumption for the Windows venv turned out to be correct — the sidecar built there in every run."
   - "**Nothing is signed.** An unsigned `.app` is Gatekeeper-blocked on first launch and an unsigned `.exe` gets a SmartScreen warning. The publish job therefore creates a **draft** release — a human decides when something unsigned reaches users. Signing is Wave 8 feature 4 and needs Jan's certificates, which I cannot hold."
@@ -121,6 +122,7 @@ Three runs against a `v0.0.1` tag on 2026-08-21. The value is in what each one r
 | 1 | fail | fail | fail |
 | 2 | fail | fail | **pass** |
 | 3 | fail | **pass** (deb) | **pass** |
+| 4 | (pending) | pass | pass |
 
 **Run 1 — the workflow, not the platforms.** All three built the sidecar and then failed
 identically at `npm run tauri build`. `@tauri-apps/cli` is a devDependency of
@@ -138,15 +140,33 @@ Linux pass. That isolates it: AppImage repacks the entire tree through `linuxdep
 the tree is 636 MB of PyInstaller `_internal` with thousands of files. `deb` is a tarball
 and does not care. macOS's dmg does not care either, which is why it passed from run 2.
 
-**Windows still fails, and NSIS is not the fix.** It fails with NSIS exactly as it did with
-MSI, at ~350 s — again past the compile, again in the bundler. So it is not WiX-specific.
-The cause is **not yet identified**: reading the job log needs admin rights on the
-repository, which this session does not have.
+**Run 4 — Windows was MAX_PATH, and the obvious mitigation was wrong.** Jan supplied the
+log. `makensis` aborted on:
 
-A long-paths step is now in the workflow as the standard mitigation — PyInstaller's
-`_internal` nests deeply and the runner workspace is already `D:\a\repo\repo\`, so 260
-characters is a plausible ceiling. **It is unverified.** It has not been shown to be the
-fix and should not be described as one.
+```
+_internal\torch-2.13.0+cpu.dist-info\licenses\third_party\kineto\libkineto\
+third_party\dynolog\third_party\prometheus-cpp\3rdparty\civetweb\src\
+third_party\duktape-1.5.2\LICENSE.txt
+```
+
+181 characters of relative path on top of the runner's 84-character base: **265, five over
+MAX_PATH**.
+
+The reflex fix — `LongPathsEnabled` in the registry — **cannot work here**, and a version of
+this workflow shipped with it before the log arrived. That flag only helps processes whose
+manifest declares `longPathAware`, and `makensis` is a legacy Win32 binary that does not. It
+has been removed rather than left in looking like a fix.
+
+**Deleting the licence tree would also have been wrong.** torch vendors its dependencies'
+licence texts, and BSD and MIT *require* reproducing them in a distribution. So
+`build_sidecar.py` now **flattens** them: every text is concatenated into
+`_internal/THIRD_PARTY_LICENCES.txt` under a header naming its original path, and only then
+are the deep trees removed. Measured: **147 texts preserved, 21 trees removed, longest
+relative path 181 → 111.** On the runner that is 195 absolute, with 65 to spare.
+
+A guard now fails the build if any path exceeds 140 characters, so this cannot regress into
+another failed release — and it runs on all three platforms, so macOS and Linux catch it
+too rather than leaving Windows as the only place it shows up.
 
 ## Verified
 

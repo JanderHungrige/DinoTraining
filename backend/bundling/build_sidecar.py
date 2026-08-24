@@ -30,6 +30,7 @@ the frozen build would have failed later and more mysteriously.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -55,6 +56,18 @@ HIDDEN = (
 #: no import statement anywhere mentions `RfDetrForObjectDetection` or `Dinov2Model`.
 #: Collecting the package wholesale is heavy-handed and is the only thing that works.
 COLLECT = ("app", "transformers")
+
+#: Where the flattened third-party licence texts end up.
+LICENCE_ROLLUP = "THIRD_PARTY_LICENCES.txt"
+
+#: Longest path, relative to the frozen output's root, that the Windows bundler survives.
+#:
+#: `makensis` fails at the 260-character MAX_PATH and **is not long-path aware** — it is a
+#: legacy Win32 binary without the manifest that opts in, so `LongPathsEnabled` in the
+#: registry does nothing for it. On a GitHub runner the base is already 84 characters
+#: (`D:\a\repo\repo\apps\desktop\src-tauri\binaries\dinotraining-sidecar\`), which
+#: leaves 176. 140 keeps room for a deeper checkout without another failed release.
+MAX_RELATIVE_PATH = 140
 
 
 def target_triple() -> str:
@@ -94,7 +107,83 @@ def main() -> int:
         str(HERE / "entry.py"),
     ]
     print(" ".join(command), flush=True)
-    return subprocess.run(command, cwd=BACKEND).returncode
+    code = subprocess.run(command, cwd=BACKEND).returncode
+    if code != 0:
+        return code
+
+    output = BACKEND / "dist" / NAME
+    kept, removed = flatten_licences(output)
+    print(f"licences: {kept} text(s) rolled up, {removed} deep tree(s) removed", flush=True)
+
+    too_long = overlong_paths(output)
+    if too_long:
+        print(
+            f"{len(too_long)} path(s) exceed {MAX_RELATIVE_PATH} characters and would "
+            f"break the Windows bundler:",
+            file=sys.stderr,
+        )
+        for path in too_long[:10]:
+            print(f"  {len(path)} {path}", file=sys.stderr)
+        return 1
+
+    print(f"longest relative path: {max(len(p) for p in relative_paths(output))}", flush=True)
+    return 0
+
+
+def relative_paths(root: Path) -> list[str]:
+    return [str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()]
+
+
+def overlong_paths(root: Path) -> list[str]:
+    return sorted((p for p in relative_paths(root) if len(p) > MAX_RELATIVE_PATH), key=len)
+
+
+def flatten_licences(root: Path) -> tuple[int, int]:
+    """Collect vendored licence texts into one file, then remove the deep trees.
+
+    **This is a compliance requirement, not tidying.** torch vendors the licences of its own
+    dependencies at paths like
+
+        torch-2.13.0+cpu.dist-info/licenses/third_party/kineto/libkineto/third_party/
+        dynolog/third_party/prometheus-cpp/3rdparty/civetweb/src/third_party/
+        duktape-1.5.2/LICENSE.txt
+
+    which is 181 characters on its own and pushed the absolute path to 265 — five over
+    MAX_PATH — killing the Windows build. Deleting them would fix that and would also drop
+    licence texts that BSD and MIT **require** to be reproduced in a distribution. So they
+    are concatenated into one file, each under a header naming where it came from, and only
+    then are the trees removed.
+
+    Nothing reads these at runtime: `importlib.metadata` uses `METADATA` and `RECORD`, both
+    of which stay.
+    """
+    trees = [d for d in root.rglob("*.dist-info/licenses") if d.is_dir()]
+    if not trees:
+        return 0, 0
+
+    sections: list[str] = [
+        "Third-party licence texts bundled with the DinoTraining sidecar.",
+        "",
+        "Flattened from their original locations so that Windows' 260-character path",
+        "limit does not break packaging. The texts are unmodified; only their paths are.",
+        "",
+    ]
+    kept = 0
+    for tree in sorted(trees):
+        for licence in sorted(tree.rglob("*")):
+            if not licence.is_file():
+                continue
+            sections.append("=" * 78)
+            sections.append(str(licence.relative_to(root)))
+            sections.append("=" * 78)
+            sections.append(licence.read_text(encoding="utf-8", errors="replace"))
+            sections.append("")
+            kept += 1
+
+    (root / "_internal" / LICENCE_ROLLUP).write_text("\n".join(sections), encoding="utf-8")
+    for tree in trees:
+        shutil.rmtree(tree)
+    return kept, len(trees)
 
 
 if __name__ == "__main__":

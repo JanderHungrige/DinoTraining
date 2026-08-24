@@ -42,9 +42,10 @@ jobs:
           # it. AppImage repacks the whole tree through linuxdeploy, and the tree is 636 MB
           # of PyInstaller `_internal` with thousands of files.
           #
-          # **Windows still fails**, with NSIS as well as MSI, ~350 s into the step — long
-          # enough to have finished the Rust compile, so it is dying in the bundler too.
-          # Cause not yet identified; the logs need admin rights this session does not have.
+          # **Windows failed for a different reason**, now fixed in `build_sidecar.py`:
+          # `makensis` hit MAX_PATH on a torch-vendored licence file 265 characters deep.
+          # Registry `LongPathsEnabled` does not help — makensis is a legacy Win32 binary
+          # without the manifest that opts in — so the payload was shortened instead.
           - os: windows-latest
             label: Windows
             bundles: nsis
@@ -67,16 +68,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      # Windows only, and **unverified**: PyInstaller's `_internal` nests deeply
-      # (`transformers/models/...`) and the runner workspace is already `D:\a\repo\repo\`,
-      # so the 260-character limit is a plausible cause of the bundler failure above. This
-      # is the standard mitigation and it is cheap; it has not been shown to be the fix.
-      - name: Enable long paths (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-          git config --system core.longpaths true
 
       # Tauri's Linux build needs GTK and WebKit; the other two runners ship what they need.
       - name: Linux build dependencies
