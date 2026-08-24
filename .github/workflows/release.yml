@@ -35,13 +35,16 @@ jobs:
           # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
           # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
           # against. They all run in parallel, but this is the one to read first.
-          # **One format each, and these two specifically.** Run #2 got through the Rust
-          # compile on all three and then died inside the bundler on Windows (367 s) and
-          # Linux (230 s) while macOS's dmg succeeded. The payload is a 636 MB resource
-          # tree with thousands of files (PyInstaller's `_internal`), which is exactly what
-          # WiX/MSI and AppImage are worst at — WiX registers every file individually and
-          # AppImage repacks the tree through linuxdeploy. NSIS and deb are the formats
-          # that handle a large tree without doing either.
+          # **Formats chosen by measurement, not preference** — see doc 58 for the runs.
+          #
+          # macOS/dmg and Linux/deb both build this payload. **AppImage does not**: run #2
+          # failed with `appimage,deb` and run #3 succeeded with `deb` alone, which isolates
+          # it. AppImage repacks the whole tree through linuxdeploy, and the tree is 636 MB
+          # of PyInstaller `_internal` with thousands of files.
+          #
+          # **Windows still fails**, with NSIS as well as MSI, ~350 s into the step — long
+          # enough to have finished the Rust compile, so it is dying in the bundler too.
+          # Cause not yet identified; the logs need admin rights this session does not have.
           - os: windows-latest
             label: Windows
             bundles: nsis
@@ -64,6 +67,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      # Windows only, and **unverified**: PyInstaller's `_internal` nests deeply
+      # (`transformers/models/...`) and the runner workspace is already `D:\a\repo\repo\`,
+      # so the 260-character limit is a plausible cause of the bundler failure above. This
+      # is the standard mitigation and it is cheap; it has not been shown to be the fix.
+      - name: Enable long paths (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          reg add "HKLM\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+          git config --system core.longpaths true
 
       # Tauri's Linux build needs GTK and WebKit; the other two runners ship what they need.
       - name: Linux build dependencies

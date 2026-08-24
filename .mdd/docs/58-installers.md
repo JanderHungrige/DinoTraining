@@ -29,7 +29,9 @@ integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**Only macOS was actually built.** The Windows and Linux legs of the matrix are written from the macOS run and are unproven. Windows in particular has an untested assumption: `.build/Scripts` rather than `.build/bin` for the venv."
+  - "**Windows does not build.** It fails inside the bundler with both MSI and NSIS, ~350 s into the step. The cause is unidentified because reading the job log needs admin rights on the repository. A long-paths mitigation is in the workflow and is **unverified**."
+  - "**AppImage cannot package this payload.** Isolated across runs 2 and 3: `appimage,deb` fails and `deb` alone passes. Linux therefore ships a `.deb` only, which excludes users on distributions that do not take one."
+  - "The `.build/Scripts` assumption for the Windows venv turned out to be correct — the sidecar built there in every run."
   - "**Nothing is signed.** An unsigned `.app` is Gatekeeper-blocked on first launch and an unsigned `.exe` gets a SmartScreen warning. The publish job therefore creates a **draft** release — a human decides when something unsigned reaches users. Signing is Wave 8 feature 4 and needs Jan's certificates, which I cannot hold."
   - "**`npm ci || npm install`** in the workflow is a hedge: this project needs `--legacy-peer-deps` and `npm ci` fails without a lockfile in sync. It should be one command once that is settled."
   - "The release job does not build the CUDA sidecar (doc 57), so the GPU download still has no artefact. It is a second matrix leg with a different `--index-url`, deliberately left until the CPU one is proven on all three platforms."
@@ -109,6 +111,42 @@ cache would happily ship someone else's weights. The job fails if any `.safetens
 
 **The publish job creates a draft.** Nothing is signed yet, and an unsigned build reaching
 users is Gatekeeper-blocked on macOS and SmartScreen-warned on Windows. A human decides.
+
+## What CI actually said
+
+Three runs against a `v0.0.1` tag on 2026-08-21. The value is in what each one ruled out.
+
+| run | Windows | Linux | macOS |
+|---|---|---|---|
+| 1 | fail | fail | fail |
+| 2 | fail | fail | **pass** |
+| 3 | fail | **pass** (deb) | **pass** |
+
+**Run 1 — the workflow, not the platforms.** All three built the sidecar and then failed
+identically at `npm run tauri build`. `@tauri-apps/cli` is a devDependency of
+`apps/desktop`, and the workflow installed only `apps/frontend`. There is no npm workspace
+root, so both need installing. It worked locally because `apps/desktop/node_modules` was
+already there — a difference between my machine and a clean checkout that only CI could
+show.
+
+**Run 2 — macOS green, and the failures moved into the bundler.** Windows and Linux both
+spent 367 s and 230 s inside "Build the installer", which is long enough to have finished
+the Rust compile. Whatever was wrong was in bundling, not in building.
+
+**Run 3 — AppImage is the Linux problem.** Narrowing `appimage,deb` to `deb` alone made
+Linux pass. That isolates it: AppImage repacks the entire tree through `linuxdeploy`, and
+the tree is 636 MB of PyInstaller `_internal` with thousands of files. `deb` is a tarball
+and does not care. macOS's dmg does not care either, which is why it passed from run 2.
+
+**Windows still fails, and NSIS is not the fix.** It fails with NSIS exactly as it did with
+MSI, at ~350 s — again past the compile, again in the bundler. So it is not WiX-specific.
+The cause is **not yet identified**: reading the job log needs admin rights on the
+repository, which this session does not have.
+
+A long-paths step is now in the workflow as the standard mitigation — PyInstaller's
+`_internal` nests deeply and the runner workspace is already `D:\a\repo\repo\`, so 260
+characters is a plausible ceiling. **It is unverified.** It has not been shown to be the
+fix and should not be described as one.
 
 ## Verified
 
