@@ -1,0 +1,162 @@
+# Build installers for macOS, Windows and Linux (doc 58).
+#
+# A **matrix, not a runner**: PyInstaller does not cross-compile and the torch wheel differs
+# per platform, so each installer is built on its own OS. That is a consequence of doc 56's
+# spike rather than a preference.
+#
+# Every step here was run by hand on macOS first (doc 58). The order and the arguments are
+# the ones that worked, not a guess at what should.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build the installers but publish nothing"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One platform failing should not hide whether the others work — the whole point of
+      # the matrix is to learn about all three from one run.
+      fail-fast: false
+      matrix:
+        include:
+          # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
+          # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
+          # against. They all run in parallel, but this is the one to read first.
+          # **Formats chosen by measurement, not preference** — see doc 58 for the runs.
+          #
+          # macOS/dmg and Linux/deb both build this payload. **AppImage does not**: run #2
+          # failed with `appimage,deb` and run #3 succeeded with `deb` alone, which isolates
+          # it. AppImage repacks the whole tree through linuxdeploy, and the tree is 636 MB
+          # of PyInstaller `_internal` with thousands of files.
+          #
+          # **Windows failed for a different reason**, now fixed in `build_sidecar.py`:
+          # `makensis` hit MAX_PATH on a torch-vendored licence file 265 characters deep.
+          # Registry `LongPathsEnabled` does not help — makensis is a legacy Win32 binary
+          # without the manifest that opts in — so the payload was shortened instead.
+          - os: windows-latest
+            label: Windows
+            bundles: nsis
+          - os: ubuntu-22.04
+            label: Linux
+            bundles: deb
+          - os: macos-14
+            label: macOS (Apple silicon)
+            bundles: dmg
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Tauri's Linux build needs GTK and WebKit; the other two runners ship what they need.
+      - name: Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      # --- the sidecar -------------------------------------------------------------------
+      #
+      # A **production** venv, not the dev one: `pip install .[dev]` would freeze mypy, ruff
+      # and pytest into the shipped binary for no reason. `--index-url` pins the CPU wheel —
+      # without it, Windows and Linux pull the CUDA build and the installer goes from
+      # ~300 MB to over 2.5 GB (doc 56). GPU support is a separate download (doc 57).
+      - name: Build the sidecar
+        working-directory: backend
+        shell: bash
+        run: |
+          python -m venv .build
+          BIN=".build/bin"; [ -d ".build/Scripts" ] && BIN=".build/Scripts"
+          "$BIN/python" -m pip install --upgrade pip
+          "$BIN/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+          "$BIN/pip" install . pyinstaller
+          "$BIN/python" bundling/build_sidecar.py
+
+      - name: Stage the sidecar for the bundler
+        shell: bash
+        run: cp -R backend/dist/dinotraining-sidecar apps/desktop/src-tauri/binaries/
+
+      # --- the installer -----------------------------------------------------------------
+      #
+      # **Two independent npm projects**, and both are needed. `apps/frontend` builds the UI
+      # that `beforeBuildCommand` invokes; `apps/desktop` holds `@tauri-apps/cli`, which is
+      # what `npm run tauri` resolves. Installing only the first is what broke run #1 — the
+      # sidecar built fine on all three platforms and then `tauri` was simply not on PATH.
+      - name: Install frontend dependencies
+        working-directory: apps/frontend
+        # --legacy-peer-deps is required by this project's dependency tree.
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Install the Tauri CLI
+        working-directory: apps/desktop
+        run: npm ci || npm install
+
+      - name: Build the installer
+        working-directory: apps/desktop
+        run: npm run tauri build -- --config src-tauri/tauri.release.conf.json --bundles ${{ matrix.bundles }}
+
+      # --- the guard doc 54 asked for ----------------------------------------------------
+      #
+      # The Admin panel warns a *human* about restricted models. CI does not read warnings,
+      # and a runner with a populated model cache would ship someone else's weights.
+      - name: Refuse to publish a build carrying model weights
+        shell: bash
+        run: |
+          BUNDLE=apps/desktop/src-tauri/target/release/bundle
+          if find "$BUNDLE" \( -name '*.safetensors' -o -name '*.bin' -o -name 'pytorch_model*' \) | grep -q .; then
+            echo "::error::Model weights found inside the bundle — see doc 54."
+            find "$BUNDLE" \( -name '*.safetensors' -o -name '*.bin' -o -name 'pytorch_model*' \)
+            exit 1
+          fi
+          echo "No model weights in the bundle."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.os }}
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+            apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+            apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
+            apps/desktop/src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: installer
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Draft, never live. macOS notarization and Windows signing are not wired up yet
+      # (Wave 8 feature 4), so an unsigned build reaching users would be Gatekeeper-blocked
+      # on macOS and SmartScreen-warned on Windows. A human decides when to publish.
+      - uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          files: artifacts/**/*

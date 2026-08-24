@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DinoTraining",
+  "version": "0.0.1",
+  "identifier": "com.dinotraining.app",
+  "build": {
+    "frontendDist": "../../frontend/dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": {
+      "cwd": "../../frontend",
+      "script": "npm run dev"
+    },
+    "beforeBuildCommand": {
+      "cwd": "../../frontend",
+      "script": "npm run build"
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "DinoTraining",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:8756 http://localhost:8756 ipc: http://ipc.localhost"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": [],
+    "externalBin": [],
+    "longDescription": "Desktop app for the annotate -> train -> infer -> generate computer-vision loop, built on DINOv2/DINOv3 and Grounding DINO.",
+    "shortDescription": "Annotate, train, infer, generate."
+  }
+}

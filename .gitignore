@@ -35,6 +35,8 @@ yarn-error.log*
 apps/desktop/target/
 target/
 Cargo.lock.orig
+# Tauri codegen output (capability/permission schemas) — regenerated on every build.
+apps/desktop/src-tauri/gen/
 
 # === ML artifacts / model weights (downloaded, never committed) ===
 # Root-anchored so they don't swallow source dirs like backend/app/datasets/.
@@ -60,3 +62,12 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Bundled sidecar binaries — built per platform by the release job, never committed.
+apps/desktop/src-tauri/binaries/*
+!apps/desktop/src-tauri/binaries/README.md
+
+# Production venv and PyInstaller output — build artefacts, regenerated per release.
+backend/.build/
+backend/dist/
+backend/*.spec

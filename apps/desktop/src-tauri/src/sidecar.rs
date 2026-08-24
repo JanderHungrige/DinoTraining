@@ -1,0 +1,317 @@
+//! Lifecycle for the FastAPI + PyTorch sidecar.
+//!
+//! In development the sidecar is `python -m app` run from the repo's backend venv.
+//! In a packaged build it is a **frozen binary** shipped beside the executable, and
+//! [`Launch`] is the only thing that differs — everything above this module stays put,
+//! which is what the original note promised (doc 56).
+
+use std::path::{Path, PathBuf};
+use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
+use std::time::Duration;
+
+use serde::Serialize;
+
+/// How long to wait for the backend to answer before giving up.
+/// Importing torch on a cold filesystem cache genuinely takes many seconds.
+const READY_TIMEOUT: Duration = Duration::from_secs(60);
+const POLL_INTERVAL: Duration = Duration::from_millis(250);
+
+const DEFAULT_HOST: &str = "127.0.0.1";
+const DEFAULT_PORT: u16 = 8756;
+
+#[derive(Debug, thiserror::Error)]
+pub enum SidecarError {
+    #[error("could not locate the backend at {0}")]
+    BackendMissing(PathBuf),
+    #[error("could not find a Python interpreter — expected a venv at {0}")]
+    PythonMissing(PathBuf),
+    #[error("failed to spawn the backend process: {0}")]
+    Spawn(#[from] std::io::Error),
+    #[error("backend did not become healthy within {0:?}")]
+    Timeout(Duration),
+    #[error("backend exited during startup ({0}) — see the log above for the Python traceback")]
+    BackendExited(std::process::ExitStatus),
+    #[error(
+        "port {0} is already in use. Another DinoTraining backend is probably still \
+         running — stop it (lsof -ti:{0} | xargs kill) and relaunch."
+    )]
+    PortInUse(u16),
+}
+
+/// How the sidecar is started.
+///
+/// Two variants and no third: either PyInstaller froze it into one binary, or this is a
+/// checkout with a venv. A packaged build has no venv and a checkout has no frozen binary,
+/// so the choice is made by looking rather than by a flag someone has to remember to set.
+#[derive(Debug, Clone)]
+pub enum Launch {
+    /// A frozen binary next to the app executable, as Tauri's `externalBin` places it.
+    Frozen(PathBuf),
+    /// `python -m app` from the repository's backend venv.
+    Module { python: PathBuf, backend_dir: PathBuf },
+}
+
+/// Where the sidecar lives and how to reach it.
+#[derive(Debug, Clone)]
+pub struct SidecarConfig {
+    pub launch: Launch,
+    pub host: String,
+    pub port: u16,
+}
+
+impl SidecarConfig {
+    pub fn health_url(&self) -> String {
+        format!("http://{}:{}/api/v1/health", self.host, self.port)
+    }
+
+    /// Resolve how to start the sidecar.
+    ///
+    /// **The frozen binary wins when it exists.** A packaged app must never fall through to
+    /// a developer's venv that happens to be on the same machine — it would run a different
+    /// build of the backend than the one shipped, and behave correctly enough that nobody
+    /// would notice until the versions diverged.
+    pub fn resolve(resource_dir: Option<&Path>) -> Result<Self, SidecarError> {
+        if let Some(frozen) = frozen_sidecar(resource_dir) {
+            log::info!("Using the bundled sidecar: {}", frozen.display());
+            return Ok(Self {
+                launch: Launch::Frozen(frozen),
+                host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
+                port: env_port(),
+            });
+        }
+        Self::for_development()
+    }
+
+    /// Resolve paths for a development run, relative to this crate's source location.
+    pub fn for_development() -> Result<Self, SidecarError> {
+        let repo_root = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(3)
+            .ok_or_else(|| SidecarError::BackendMissing(PathBuf::from(env!("CARGO_MANIFEST_DIR"))))?
+            .to_path_buf();
+
+        let backend_dir = repo_root.join("backend");
+        if !backend_dir.join("app").join("main.py").is_file() {
+            return Err(SidecarError::BackendMissing(backend_dir));
+        }
+
+        let python = resolve_python(&backend_dir)?;
+
+        Ok(Self {
+            launch: Launch::Module { python, backend_dir },
+            host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
+            port: env_port(),
+        })
+    }
+}
+
+fn env_port() -> u16 {
+    std::env::var("DINO_API_PORT")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(DEFAULT_PORT)
+}
+
+fn sidecar_name() -> &'static str {
+    if cfg!(windows) { "dinotraining-sidecar.exe" } else { "dinotraining-sidecar" }
+}
+
+/// The frozen sidecar to run, preferring a downloaded GPU build (doc 57).
+///
+/// PyInstaller's `--onedir` output is a **directory** — the executable plus `_internal/`
+/// holding 568 MB of torch — so it ships as a Tauri *resource*, not an `externalBin`.
+/// `externalBin` takes a single file, and the `--onefile` alternative unpacks that 636 MB
+/// to a temp directory on **every launch**, which is seconds of disk churn before the port
+/// binds and an app that looks hung for exactly that long.
+///
+/// `resource_dir` comes from Tauri's own path API rather than being derived here, because
+/// the answer differs per platform (`Contents/Resources` on macOS, beside the executable on
+/// Windows, `/usr/lib/<app>` on Linux) and this module deliberately holds no Tauri types.
+///
+/// Wave 8 ships a **CPU-only** sidecar so the installer stays small (doc 56). A user with
+/// an NVIDIA GPU downloads a CUDA build through the Admin tab, which lands in the app's
+/// data directory rather than beside the executable — installed application directories
+/// are read-only on macOS and need elevation on Windows, so writing there is not an option.
+///
+/// **The downloaded build wins when it is there.** That is the whole point of downloading
+/// it, and the alternative — a flag the user has to find — means someone runs on CPU for a
+/// week without noticing.
+///
+/// Tauri strips the target triple from an `externalBin` name when it bundles, so the file
+/// installed next to the app is plain `dinotraining-sidecar`. The build script names it
+/// *with* the triple because that is what the bundler looks for. The two names are
+/// deliberately different and confusing them is the usual first failure.
+fn frozen_sidecar(resource_dir: Option<&Path>) -> Option<PathBuf> {
+    if let Some(gpu) = downloaded_gpu_sidecar() {
+        log::info!("Using the downloaded GPU sidecar: {}", gpu.display());
+        return Some(gpu);
+    }
+    let bundled = resource_dir?.join(BUNDLE_DIR).join(sidecar_name());
+    bundled.is_file().then_some(bundled)
+}
+
+/// The resource subdirectory the onedir build is copied into. Matches the `resources`
+/// entry in `tauri.release.conf.json`; the two are a pair and must agree.
+const BUNDLE_DIR: &str = "sidecar";
+
+/// A CUDA sidecar the user downloaded, under the app data directory.
+///
+/// `DINO_DATA_DIR` is the same variable the Python side reads, so the two agree on where
+/// the app keeps things without either importing the other's notion of it.
+fn downloaded_gpu_sidecar() -> Option<PathBuf> {
+    let root = std::env::var_os("DINO_DATA_DIR")
+        .map(PathBuf::from)
+        .or_else(default_data_dir)?;
+    let candidate = root.join("runtimes").join("cuda").join(sidecar_name());
+    candidate.is_file().then_some(candidate)
+}
+
+/// Where the app keeps its data when `DINO_DATA_DIR` is unset. Mirrors the Python side's
+/// platform choices — the two are checked against each other by a test on that side.
+fn default_data_dir() -> Option<PathBuf> {
+    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
+    let home = PathBuf::from(home);
+    Some(if cfg!(target_os = "macos") {
+        home.join("Library").join("Application Support").join("DinoTraining").join("data")
+    } else if cfg!(windows) {
+        std::env::var_os("APPDATA")
+            .map(PathBuf::from)
+            .unwrap_or(home)
+            .join("DinoTraining")
+            .join("data")
+    } else {
+        home.join(".local").join("share").join("DinoTraining").join("data")
+    })
+}
+
+fn env_or(fallback: &str, key: &str) -> String {
+    std::env::var(key).unwrap_or_else(|_| fallback.to_string())
+}
+
+/// Prefer the project venv — a system Python almost certainly lacks torch.
+fn resolve_python(backend_dir: &Path) -> Result<PathBuf, SidecarError> {
+    let venv = backend_dir.join(".venv");
+    let candidates = if cfg!(windows) {
+        vec![venv.join("Scripts").join("python.exe")]
+    } else {
+        vec![venv.join("bin").join("python3"), venv.join("bin").join("python")]
+    };
+
+    candidates
+        .into_iter()
+        .find(|candidate| candidate.is_file())
+        .ok_or(SidecarError::PythonMissing(venv))
+}
+
+/// Fail fast if something already owns the port.
+///
+/// Without this the new sidecar dies on bind, the old one keeps answering
+/// `/api/v1/health`, and the shell cheerfully reports "ready" while pointed at a
+/// process it does not own and cannot shut down.
+pub fn ensure_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
+    match std::net::TcpListener::bind((config.host.as_str(), config.port)) {
+        Ok(listener) => {
+            drop(listener);
+            Ok(())
+        }
+        Err(_) => Err(SidecarError::PortInUse(config.port)),
+    }
+}
+
+/// Start the backend process. Does not wait for it to become healthy.
+pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
+    let mut command = match &config.launch {
+        Launch::Frozen(binary) => {
+            log::info!("Spawning bundled sidecar: {}", binary.display());
+            Command::new(binary)
+        }
+        Launch::Module { python, backend_dir } => {
+            log::info!("Spawning backend: {} -m app", python.display());
+            let mut command = Command::new(python);
+            command.arg("-m").arg("app").current_dir(backend_dir);
+            command
+        }
+    };
+
+    let child = command
+        .env("DINO_API_HOST", &config.host)
+        .env("DINO_API_PORT", config.port.to_string())
+        // Unbuffered, so the Python log reaches our stderr as it happens rather than
+        // in one lump when the process dies — which is exactly when you need it.
+        .env("PYTHONUNBUFFERED", "1")
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()?;
+
+    Ok(child)
+}
+
+/// Poll `/api/v1/health` until it answers, the child dies, or the timeout elapses.
+///
+/// Takes the child so a crashed backend is reported as a crash. Polling the port
+/// alone cannot distinguish "not listening yet" from "died on startup" — and the
+/// difference is the entire diagnostic.
+pub async fn wait_until_healthy(
+    config: &SidecarConfig,
+    child: &mut Child,
+) -> Result<(), SidecarError> {
+    let client = reqwest::Client::new();
+    let url = config.health_url();
+    let deadline = std::time::Instant::now() + READY_TIMEOUT;
+
+    while std::time::Instant::now() < deadline {
+        if let Some(status) = child.try_wait()? {
+            return Err(SidecarError::BackendExited(status));
+        }
+
+        match client.get(&url).timeout(Duration::from_secs(2)).send().await {
+            Ok(response) if response.status().is_success() => {
+                log::info!("Backend healthy at {url}");
+                return Ok(());
+            }
+            // A connection refused here is the normal "not listening yet" case.
+            Ok(_) | Err(_) => tokio::time::sleep(POLL_INTERVAL).await,
+        }
+    }
+
+    Err(SidecarError::Timeout(READY_TIMEOUT))
+}
+
+/// Owns the child process so it can be killed when the window closes.
+#[derive(Default)]
+pub struct SidecarHandle {
+    child: Mutex<Option<Child>>,
+}
+
+impl SidecarHandle {
+    pub fn store(&self, child: Child) {
+        if let Ok(mut slot) = self.child.lock() {
+            *slot = Some(child);
+        }
+    }
+
+    /// Kill the backend. Safe to call more than once.
+    ///
+    /// Without this the Python process outlives the window and keeps port 8756 —
+    /// the next launch then fails with a confusing "address in use".
+    pub fn shutdown(&self) {
+        let Ok(mut slot) = self.child.lock() else {
+            return;
+        };
+        if let Some(mut child) = slot.take() {
+            log::info!("Stopping backend (pid {})", child.id());
+            let _ = child.kill();
+            let _ = child.wait();
+        }
+    }
+}
+
+/// Reported to the UI so a failed startup is visible in the window, not just the log.
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum BackendState {
+    Starting,
+    Ready { url: String },
+    Failed { message: String },
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "./scripts/dev.sh",
+      "runtimeArgs": [
+        "web"
+      ],
+      "port": 1420
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "cwd": "apps/frontend",
+      "port": 1420
+    }
+  ]
+}

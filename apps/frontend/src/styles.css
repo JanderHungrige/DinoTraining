@@ -1,0 +1,2466 @@
+/* DinoTraining shell styles.
+   Dark-first, because the app sits next to image data all day and a bright chrome
+   skews how the user reads what they're annotating. */
+
+:root {
+  --bg: #14161a;
+  --bg-raised: #1c1f26;
+  --border: #2b303a;
+  --text: #e7e9ee;
+  --text-dim: #9aa2b1;
+  --accent: #4ade80;
+  --danger: #f87171;
+  --pending: #fbbf24;
+  --focus: #7dd3fc;
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f7f9;
+    --bg-raised: #ffffff;
+    --border: #d8dce3;
+    --text: #1a1d23;
+    --text-dim: #5c6470;
+    --accent: #15803d;
+    --danger: #b91c1c;
+    --pending: #a16207;
+    --focus: #0369a1;
+
+    color-scheme: light;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* Never remove the outline outright — replace it with a clearer one. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.app__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.app__panel {
+  flex: 1;
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+/* --- Tabs --- */
+
+.tabbar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+  overflow-x: auto;
+}
+
+.tabbar__tab {
+  flex: 0 0 auto;
+  padding: 0.6rem 0.9rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tabbar__tab:hover {
+  color: var(--text);
+}
+
+.tabbar__tab--active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- Backend status badge --- */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.status__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status--ready {
+  color: var(--accent);
+}
+
+.status--pending {
+  color: var(--pending);
+}
+
+.status--error {
+  color: var(--danger);
+}
+
+/* --- Stub panels --- */
+
+.stub {
+  max-width: 60ch;
+}
+
+.stub__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+}
+
+.stub__hint {
+  margin: 0 0 0.75rem;
+  color: var(--text-dim);
+}
+
+.stub__wave {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* --- Admin / Models --- */
+
+.admin__title {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+}
+
+.sysinfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.sysinfo__item--wide {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.sysinfo dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.sysinfo dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+}
+
+.sysinfo code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.admin__group {
+  margin-bottom: 2rem;
+}
+
+.admin__grouptitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.admin__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.admin__error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  color: var(--danger);
+}
+
+.modelcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.modelcard__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.modelcard__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.modelcard__desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.modelcard__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  word-break: break-all;
+}
+
+.modelcard__reason {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--pending);
+}
+
+.modelcard__actions {
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.modelcard__progresstext {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.badge {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge--installed {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
+.badge--gated {
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
+}
+
+.btn {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.progress__bar {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.progress__bar--indeterminate {
+  width: 35%;
+  animation: progress-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(340%);
+  }
+}
+
+/* --- Annotation canvas --- */
+
+.canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.canvas__stage {
+  position: relative;
+  width: 100%;
+  height: min(62vh, 620px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  /* The stage is a drawing surface — a text cursor here is a lie. */
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.canvas__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.canvas__box {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 2px solid var(--accent);
+  border-radius: 2px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* --verdict, not currentColor. The tag used to build its background from
+   `color-mix(currentColor …)`, but it also sets its own near-black `color` — and
+   currentColor resolves against the element's *own* computed colour, so the mix was
+   near-black on near-black. It looked fine only because the tag was legible against
+   whatever sat behind it in dark mode; in light mode the label vanished entirely.
+   A custom property inherits, so the tag can read the verdict from its button. */
+.canvas__box--positive {
+  --verdict: #4ade80;
+  border-color: var(--verdict);
+  background: rgb(74 222 128 / 12%);
+}
+
+.canvas__box--negative {
+  --verdict: #f87171;
+  border-color: var(--verdict);
+  background: rgb(248 113 113 / 12%);
+}
+
+.canvas__box--unclear {
+  --verdict: #fbbf24;
+  border-color: var(--verdict);
+  border-style: dashed;
+  background: rgb(251 191 36 / 12%);
+}
+
+.canvas__box--selected {
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgb(125 211 252 / 70%);
+}
+
+.canvas__boxtag {
+  position: absolute;
+  top: -1.35rem;
+  left: -2px;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  background: var(--verdict, #4ade80);
+  color: #06121f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.canvas__draft {
+  position: absolute;
+  border: 2px dashed var(--focus);
+  background: rgb(125 211 252 / 15%);
+  pointer-events: none;
+}
+
+.canvas__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.canvas__hint kbd {
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-raised);
+  font-size: 0.75rem;
+}
+
+/* --- Annotation studio --- */
+
+.studio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.studio__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.studio__title {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.studio__lead {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--text-dim);
+}
+
+.studio__path {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+/* A licence that forbids commercial use. Warning-coloured rather than neutral: it is a
+   constraint on what the user can do with the result, not a neutral fact about the file. */
+/* Follows `.badge--gated`'s formula rather than inventing colours: a translucent wash of
+   a palette variable, with the same variable as the text. Both flip with the colour scheme,
+   so this cannot go dark-on-dark the way a hardcoded pair can. */
+.badge--noncommercial {
+  background: color-mix(in srgb, var(--danger) 20%, transparent);
+  color: var(--danger);
+}
+
+/* While files hover the window (doc 40). A dashed accent outline rather than a fill: the
+   field keeps its own contrast, and the change is unmistakably about *this* target. */
+.setup__row--dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* --- Fine-tuning a detector (doc 44) ---------------------------------------------- */
+.finetune {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  max-width: 46rem;
+}
+
+.finetune__actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.finetune__progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.finetune__stats {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* The frozen/trainable split, shown rather than asserted: a freeze that silently did
+   nothing looks exactly like a slow success. */
+.finetune__frozen {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.finetune__saved {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+/* Guidance under a form field. Dim and small: it is help, not a warning. */
+.fieldhint {
+  margin: -0.3rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  max-width: 66ch;
+}
+
+/* --- Intro tab (doc 38) ------------------------------------------------------------
+   Reading text, not a control surface: a measure cap so lines stay readable, and more
+   air between blocks than the dense panels elsewhere use. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 62ch;
+}
+
+.intro__lead {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+.intro__heading {
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+}
+
+.intro__note {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.intro__stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.intro__stage {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+}
+
+.intro__stagehead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* `--bg` on `--accent`, not a hand-picked pair. The first version used a `--accent-dim`
+   that does not exist, so its fallback painted #15803d on #14532d — contrast 1.9, the digit
+   invisible. That is doc 05's Wave 1 bug exactly. Both variables here flip together with
+   the colour scheme, which is what makes the pairing safe rather than lucky. */
+.intro__step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  flex: none;
+}
+
+.intro__stagetitle {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.intro__go {
+  margin-left: auto;
+  font-size: 0.82rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.intro__what,
+.intro__why {
+  margin: 0.45rem 0 0;
+  line-height: 1.6;
+}
+
+.intro__why {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.intro__concepts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.intro__term {
+  font-weight: 600;
+}
+
+.intro__body {
+  margin: 0.3rem 0 0;
+  line-height: 1.65;
+}
+
+.intro__limits {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  line-height: 1.55;
+}
+
+/* Shown while heads can be chosen but there is nothing yet to run them on. */
+.studio__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.studio__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Side-by-side viewer (doc 19). Layout only — nothing here knows what a head draws. */
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  touch-action: none; /* the component owns panning; the browser must not also scroll */
+}
+
+.viewer:focus-visible {
+  outline: 2px solid var(--accent, #00e5cc);
+  outline-offset: 2px;
+}
+
+.viewer__panes {
+  display: grid;
+  /* Column count comes from the pane list (doc 21): one result is side-by-side, several
+     is a comparison, and there is no separate mechanism for the second case. */
+  grid-template-columns: repeat(var(--viewer-columns, 2), minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+/* One column below the point where two panes stop being comparable side by side. */
+@media (max-width: 720px) {
+  .viewer__panes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewer__pane {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0; /* or a wide image makes the grid column refuse to shrink */
+}
+
+.viewer__label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.viewer__frame {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  background: var(--surface-2, #1a1a1a);
+  cursor: grab;
+}
+
+.viewer__frame:active {
+  cursor: grabbing;
+}
+
+.viewer__stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+}
+
+.viewer__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.viewer__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.viewer__zoom {
+  min-width: 3.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.viewer__hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.viewer__placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  background: rgb(0 0 0 / 45%);
+}
+
+.studio__spacer {
+  flex: 1;
+}
+
+.btn--primary {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* --- Setup form --- */
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 900px;
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.setup__row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.setup__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 200px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.setup__field--grow {
+  flex: 1;
+  min-width: 260px;
+}
+
+.setup__control {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.setup__control input {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup__value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.setup input[type='text'],
+.setup select {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+/* --- Counters --- */
+
+.counters {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.counters strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.counters__item--positive strong {
+  color: #4ade80;
+}
+
+.counters__item--negative strong {
+  color: #f87171;
+}
+
+.counters__item--unclear strong {
+  color: #fbbf24;
+}
+
+.counters__dirty {
+  margin-left: auto;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- Wave 2: Head Trainer ------------------------------------------------- */
+
+.trainer {
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.trainer__title,
+.trainer__subtitle {
+  margin: 0 0 0.25rem;
+}
+
+.trainer__subtitle {
+  margin-top: 2rem;
+  font-size: 1rem;
+}
+
+.trainer__hint {
+  margin: 0 0 1.25rem;
+  color: var(--text-dim);
+  max-width: 62ch;
+}
+
+.trainer__dim {
+  color: var(--text-dim);
+}
+
+.trainer__form {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+}
+
+.trainer__group {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 0.75rem 1rem 1rem;
+  margin: 0;
+}
+
+.trainer__group legend {
+  padding: 0 0.35rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trainer__group--inline {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.trainer__group--inline label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+}
+
+.trainer__group input[type='number'],
+.trainer__group select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  min-width: 9rem;
+}
+
+.trainer__checks,
+.trainer__heads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.trainer__checks label,
+.trainer__head {
+  display: flex;
+  gap: 0.55rem;
+  align-items: start;
+  cursor: pointer;
+}
+
+.trainer__head--off {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.trainer__reason {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--pending);
+  font-size: 0.84rem;
+  font-style: normal;
+}
+
+.trainer__empty {
+  color: var(--text-dim);
+  margin: 0.25rem 0;
+}
+
+.trainer__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.trainer__blocked {
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+
+/* --- live run ------------------------------------------------------------- */
+
+.run {
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 1rem;
+  max-width: 46rem;
+}
+
+.run__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.run__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.run__message,
+.run__classes,
+.run__saved {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.run__saved {
+  color: var(--accent);
+}
+
+.run__warn {
+  margin: 0.6rem 0 0;
+  color: var(--pending);
+  font-size: 0.9rem;
+}
+
+.run__sparks {
+  display: grid;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.run__spark {
+  display: grid;
+  grid-template-columns: minmax(9rem, 18rem) 120px 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.run__key {
+  color: var(--text-dim);
+}
+
+.run__key--primary {
+  color: var(--accent);
+}
+
+.spark {
+  width: 120px;
+  height: 24px;
+}
+
+.run__last {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.run__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.run__caption {
+  text-align: left;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  padding-bottom: 0.35rem;
+}
+
+.run__table th,
+.run__table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.3rem 0.5rem;
+  text-align: right;
+}
+
+.run__table th[scope='col']:first-child,
+.run__table th[scope='row'] {
+  text-align: left;
+}
+
+.run__best {
+  color: var(--accent);
+}
+
+/* --- saved heads ---------------------------------------------------------- */
+
+.heads {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+  max-width: 46rem;
+}
+
+.heads__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  padding: 0.7rem 0.9rem;
+}
+
+.heads__name {
+  margin-right: 0.5rem;
+}
+
+.heads__summary {
+  margin: 0.25rem 0 0.15rem;
+}
+
+.heads__body p {
+  margin: 0;
+  font-size: 0.88rem;
+}
+
+/* --- head catalogue (doc 15) ------------------------------------------------ */
+
+/* Mirrors .modelcard deliberately: both are "a thing you can install" in the same
+   tab, and two different card shapes would read as two unrelated features. */
+.headcard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.headcard__head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.headcard__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.headcard__desc {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.headcard__meta {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  word-break: break-all;
+}
+
+.headcard__reason {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--pending);
+}
+
+.headcard__actions {
+  margin-top: auto;
+  padding-top: 0.25rem;
+}
+
+.headcard__done {
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.admin__groupnote {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.admin__notice {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+/* --- small form fields ------------------------------------------------------ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.field--inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.field--narrow {
+  max-width: 7rem;
+}
+
+.field__label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.field__input {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+}
+
+.headimport {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.headimport__note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+
+.headimport__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.headimport__row .field {
+  flex: 1 1 12rem;
+}
+
+/* Overlays (doc 20). Dispatched by render_hint; nothing here knows about tasks. */
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overlay__map {
+  position: absolute;
+  /* The map is data upsampled from a coarse patch grid; smoothing it invents boundaries
+     that the model did not predict. */
+  image-rendering: pixelated;
+  /* Decorative in both consumers: the viewer has nothing to click, and mask review puts
+     a real button over each mask. Without this the map would swallow those clicks if the
+     paint order ever changed. */
+  pointer-events: none;
+}
+
+.overlay__boxes {
+  position: absolute;
+  inset: 0;
+}
+
+.overlay__box {
+  position: absolute;
+  border: 2px solid;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 45%);
+}
+
+.overlay__boxtag {
+  position: absolute;
+  top: -1.15rem;
+  left: -2px;
+  padding: 0 0.25rem;
+  font-size: 0.68rem;
+  line-height: 1.1rem;
+  color: #000;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.overlay__labels {
+  position: absolute;
+  left: 0.5rem;
+  top: 0.5rem;
+  right: 0.5rem;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  list-style: none;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 60%);
+  font-size: 0.75rem;
+}
+
+.overlay__label {
+  display: grid;
+  grid-template-columns: 0.7rem 1fr 4rem 2.6rem;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.overlay__swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.overlay__labelname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overlay__labelbar {
+  display: block;
+  height: 0.35rem;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 18%);
+}
+
+.overlay__labelbar > span {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent, #00e5cc);
+}
+
+.overlay__labelscore {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Head selection */
+.runpanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.runpanel__heads {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0.5rem 0.75rem 0.75rem;
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+}
+
+.runpanel__head {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.runpanel__head--off {
+  opacity: 0.45;
+}
+
+.runpanel__headmeta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.runpanel__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.runpanel__cost {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.runpanel__filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.runpanel__compare {
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+/* --- Wave 4: HuggingFace token & licence acknowledgements (24-hf-token-settings) --- */
+
+.tokenpanel {
+  margin: 0 0 1.75rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.tokenpanel__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.tokenpanel__intro,
+.tokenpanel__hint {
+  margin: 0 0 0.75rem;
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.tokenpanel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 34rem;
+  margin: 0 0 0.5rem;
+}
+
+.tokenpanel__field input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.tokenpanel__actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0 0 0.5rem;
+}
+
+.tokenpanel__state {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.tokenpanel__ok {
+  margin: 0 0 0.5rem;
+  color: var(--accent, #00e5cc);
+}
+
+.tokenpanel__error {
+  margin: 0 0 0.5rem;
+  color: var(--danger, #ff6b6b);
+}
+
+.tokenpanel__subtitle {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.tokenpanel__licences {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tokenpanel__licence {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+/* Gap, not margins: the run-together "dinov3-vitb16DINOv3 License" was the symptom. */
+.tokenpanel__licence-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 0.4rem;
+}
+
+.tokenpanel__licence-name {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+/* `--warning` and `--warning-bg` were never defined, so these fallbacks always applied —
+   readable, but hardcoded dark and so unable to follow the light scheme. Same latent shape
+   as doc 05's Wave 1 contrast bug, caught while fixing a fresh instance of it in doc 38.
+   `--pending` is the palette's warning colour and flips with the scheme. */
+.tokenpanel__badge {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pending) 22%, transparent);
+  color: var(--pending);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tokenpanel__explain {
+  margin: 0 0 0.6rem;
+  max-width: 74ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.tokenpanel__licence-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.tokenpanel__ack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.tokenpanel__ack input[disabled] {
+  cursor: default;
+}
+
+/* --- Wave 4: Dataset Generator setup (26-generator-review-ui) --- */
+
+.genpanel {
+  display: grid;
+  gap: 1rem;
+  max-width: 46rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.genpanel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.genpanel__field input[type='text'],
+.genpanel__field select {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+}
+
+.headpick {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.headpick legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+/* Grid, not flex: the meta column wraps under the name on a narrow window instead of
+   squeezing a summary that is the whole point of the row. */
+.headpick__option {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.headpick__name {
+  font-weight: 600;
+}
+
+.headpick__meta {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.headpick__empty {
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.studio__note {
+  margin: 0.75rem 0 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+/* --- Wave 4: mask review (28-mask-review-ui) --- */
+
+/* The hit target sits over the mask, which is already tinted by verdict — so the fill is
+   dropped here and only the outline remains. Reusing .canvas__box--<label> keeps one
+   colour definition for boxes and masks. */
+.canvas__box--mask {
+  background: transparent;
+  border-style: dashed;
+}
+
+.canvas__box--mask.canvas__box--selected {
+  border-style: solid;
+}
+
+/* --- Proposal mode picker (Annotation Studio) ---
+   Stacked, not inline. It had no rule at all and fell back to the browser's inline
+   default, which put three options of very different lengths on one line and wrapped them
+   unevenly. This mirrors `.genpanel__modes` deliberately — the Generator asks the same
+   question and had already been given the answer; a third layout for a fourth picker is
+   how they drift. */
+
+.setup__modes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.setup__modes legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.setup__modes label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.genpanel__modes {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.genpanel__modes legend {
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.genpanel__mode {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.genpanel__group {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.genpanel__hint {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+/* --- Concept field (doc 45) ---
+   Grounded SAM finds only what it is told to find, so the field sits *inside* the model
+   list rather than beside it: it belongs to the model that needs it, and a user who
+   selects RF-DETR should never see it at all. Indented so it reads as a consequence of
+   the option above it. */
+
+.headpick__concept,
+.runpanel__concept {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  padding-left: 1.4rem;
+  font-size: 0.875rem;
+}
+
+.headpick__concept input[type='text'],
+.runpanel__concept input[type='text'] {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  /* Paired with `--bg`, never a hardcoded hex: the two flip together with the theme, and
+     a fallback colour on a themed background is how a 1.9:1 contrast bug ships. */
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+/* --- Box review (doc 47) ---
+   The list is the primary surface for detection output, so it is a sibling of the canvas
+   rather than something below it. Every colour here is a token defined in `:root` and
+   redefined for light — never a hardcoded hex with a fallback, which is how a 1.9:1
+   contrast bug shipped once already. */
+
+.studio__review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+  gap: 1rem;
+  align-items: start;
+}
+
+/* One column below the width where a 22rem side panel starts squeezing the image. */
+@media (max-width: 62rem) {
+  .studio__review {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.review__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.review__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.review__dim {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+
+.review__threshold {
+  display: grid;
+  gap: 0.35rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.review__value {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.review__empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.review__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* The list scrolls, the page does not: thirty proposed boxes must not push the Save
+     button below the fold on the one screen where it is pressed most. */
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.review__row {
+  display: grid;
+  grid-template-columns: 1.6rem minmax(0, 1fr) 2.6rem auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  border-left: 3px solid var(--verdict, var(--accent));
+}
+
+.review__row--positive {
+  --verdict: var(--accent);
+}
+.review__row--negative {
+  --verdict: var(--danger);
+}
+.review__row--unclear {
+  --verdict: var(--pending);
+}
+
+.review__row--selected {
+  border-color: var(--focus);
+  border-left-color: var(--verdict, var(--accent));
+  background: var(--bg);
+}
+
+.review__number {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.review__class {
+  min-width: 0;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+/* The field only looks like a field once you reach for it — thirty bordered inputs in a
+   column reads as a form to fill in rather than a list to skim. */
+.review__class:hover:not(:disabled),
+.review__class:focus {
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.review__score {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.review__verdicts {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.review__verdict {
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.review__verdict:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--text-dim);
+}
+
+ /* The chosen verdict is filled, not merely tinted. Hue alone would leave the state
+    invisible to a colour-blind reviewer, and `aria-pressed` only helps a screen reader —
+    the fill and the border weight are the signal that works without either. */
+.review__verdict--on {
+  border-color: var(--verdict, var(--accent));
+  background: var(--verdict, var(--accent));
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.review__verdict:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.btn--small {
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* The number sits inside the box tag, so a box reads as "3 person" on the image and
+   matches row 3 in the list beside it. */
+.canvas__boxnum {
+  display: inline-block;
+  margin-right: 0.3rem;
+  padding: 0 0.25rem;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 0.35);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Dataset format guide (doc 48) ---
+   Prose next to a form, so it is measured in characters rather than pixels: a line that
+   runs the width of the trainer panel is unreadable however wide the window is. */
+
+.formatinfo {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.formatinfo__panel {
+  max-width: 74ch;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.formatinfo__lead {
+  margin: 0 0 0.9rem;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.formatinfo__section + .formatinfo__section {
+  margin-top: 1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.formatinfo__heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.formatinfo__body {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.formatinfo__body:last-child {
+  margin-bottom: 0;
+}
+
+.formatinfo__tree {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  /* Scrolls inside itself; the page must never scroll sideways because of a code block. */
+  overflow-x: auto;
+}
+
+/* --- Library (doc 51) ---
+   A list to skim, not a table to read: three columns of fixed meaning, and the delete
+   control last because it is the rarest thing here and the most expensive to hit. */
+
+.library {
+  display: grid;
+  gap: 1rem;
+  max-width: 72rem;
+}
+
+.library__title {
+  margin: 0;
+}
+
+.library__lead {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+.library__section {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.library__heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.library__count {
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.library__empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+}
+
+.library__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.library__row {
+  display: grid;
+  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 5px;
+  background: var(--bg);
+}
+
+/* One column on narrow windows: four columns at 400px reads as a broken table. */
+@media (max-width: 48rem) {
+  .library__row {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.2rem 0.5rem;
+  }
+  .library__pick {
+    grid-row: span 4;
+  }
+}
+
+/* Sticky, because the selection is made by scrolling a long list and the action must not
+   scroll away from it. */
+.library__bulk {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid var(--focus);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.875rem;
+}
+
+.library__bulknames {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.library__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.library__detail,
+.library__meta {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.library__confirm {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.btn--danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+/* --- Image source (doc 50) --- */
+
+.srcfield {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.srcfield__modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.875rem;
+}
+
+.srcfield__legend {
+  padding: 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.srcfield__hint {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* --- Prescan (doc 53) ---
+   Collapsed by default: it answers a question most sessions never ask, and an always-open
+   panel of controls above the image is a tax on the common case. */
+
+.prescan {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: start;
+}
+
+.prescan--open {
+  justify-items: stretch;
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.prescan__lead {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.prescan__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.prescan__field {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1 1 16rem;
+  font-size: 0.85rem;
+}
+
+.prescan__field input[type='text'] {
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+.prescan__hint {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.prescan__value {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.prescan__progress,
+.prescan__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.prescan__progress progress {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.prescan__result {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.prescan__result p {
+  margin: 0 0 0.5rem;
+  line-height: 1.5;
+}
+
+.prescan__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+}
+
+/* --- Distribution notice (doc 54) ---
+   Warning-coloured but not alarming: nothing is broken, there is a decision to make before
+   packaging. Uses `--pending`, the token this app already uses for "needs your attention",
+   never an invented `--warning` — that mistake shipped a 1.9:1 contrast bug once. */
+
+.distnotice {
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--pending);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.distnotice__title {
+  margin: 0 0 0.5rem;
+  color: var(--pending);
+  font-size: 0.95rem;
+}
+
+.distnotice__lead,
+.distnotice__foot {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.distnotice__foot {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.distnotice__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.distnotice__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 52rem) {
+  .distnotice__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+  }
+}
+
+.distnotice__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.distnotice__note {
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Three obligations, three colours. Collapsing them into one badge is the confusion this
+   whole component exists to undo. */
+.badge--non-commercial {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.badge--copyleft {
+  border-color: var(--pending);
+  color: var(--pending);
+}
+
+.badge--restricted {
+  border-color: var(--focus);
+  color: var(--focus);
+}
+
+/* --- Fine-tune hint (doc 55) --- */
+
+.finetune__hint {
+  max-width: 62ch;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* --- GPU panel (doc 57) ---
+   Renders only when there is something to do, so it can afford to be prominent. */
+
+.gpupanel {
+  max-width: 72rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--focus);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.gpupanel--warn {
+  border-color: var(--pending);
+}
+
+.gpupanel__title {
+  margin: 0 0 0.5rem;
+  color: var(--focus);
+  font-size: 0.95rem;
+}
+
+.gpupanel--warn .gpupanel__title {
+  color: var(--pending);
+}
+
+.gpupanel__lead,
+.gpupanel__foot {
+  margin: 0;
+  max-width: 68ch;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.gpupanel__foot {
+  margin: 0.6rem 0 0.7rem;
+}
+
+.gpupanel__list {
+  margin: 0.6rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+/* --- Reveal-in-file-manager button (doc 59) --- */
+
+.srcfield__reveal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Beside the button rather than under the form: it is about the folder that was just
+   asked for, and a message that drifts away from its cause reads as unrelated. */
+.reveal__error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}

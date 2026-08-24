@@ -3,7 +3,7 @@ name = "dinotraining-backend"
 version = "0.0.1"
 description = "FastAPI + PyTorch ML sidecar for DinoTraining (annotate / train / infer / generate)."
 requires-python = ">=3.11"
-readme = "../README.md"
+readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
     # --- API ---
@@ -20,6 +20,11 @@ dependencies = [
     "huggingface-hub>=0.24",    # model download manager (gated DINOv3 needs HF_TOKEN)
     "pillow>=10.3",
     "numpy>=1.26",
+    # Required by transformers' DETR-family Hungarian matcher (`linear_sum_assignment`),
+    # which is what fine-tuning RF-DETR trains against — doc 44. Training only; inference
+    # never touches it. Verified against numpy 2.5 and torch 2.13, unlike the
+    # `depth-anything-3` package Wave 6 rejected for pinning numpy<2.
+    "scipy>=1.11",
     # --- Data / metadata ---
     # SQLite via stdlib; SQLAlchemy optional if the store grows.
 ]
@@ -41,9 +46,16 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.mypy]
-python_version = "3.11"
+# Matches the dev venv. requires-python stays >=3.11, but numpy's shipped stubs
+# use 3.12-only `type` statements, which mypy rejects when targeting 3.11.
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_decorators = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -52,3 +64,10 @@ asyncio_mode = "auto"
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
+
+# Explicit, because setuptools' flat-layout discovery finds *every* top-level directory and
+# then refuses when there is more than one. Adding `bundling/` broke `pip install .` the
+# moment it appeared — a good argument for saying what ships rather than letting it be
+# inferred. `bundling/` is build tooling and is deliberately not part of the wheel.
+[tool.setuptools.packages.find]
+include = ["app*"]

@@ -28,6 +28,28 @@ Full plan lives in `.mdd/` (initiative `dinotraining`, waves 1–6).
 
 - All backend endpoints under **`/api/v1/`** (FastAPI). Keep the frontend↔backend contract
   in one typed client module.
+- **A validation failure must never surface as a 500.** Handlers that accept external
+  input need a `ValueError → 422` backstop below the specific `except` clauses, so a new
+  raise site downstream cannot escape as an opaque error with the reason only in the log.
+- Watch exception *ordering*: several project errors subclass `LookupError`
+  (`ModelNotInstalledError`) or `ValueError` (`IncompatibleHeadError`). Catch the specific
+  one first, or a 409 silently becomes a 404.
+
+## React state
+
+- **Never seed `useState` from asynchronously-loaded props.**
+  `useState(items[0]?.id ?? '')` runs once, before the fetch resolves, so the state stays
+  `''` while a `<select>` renders its first option anyway — the form looks filled in and
+  its submit button is disabled forever. Store only the user's *override* and derive the
+  effective value:
+
+  ```tsx
+  const [override, setOverride] = useState('');
+  const selected = override || items[0]?.id || '';
+  ```
+
+  Test it by rendering with empty props, then `rerender` with data — that is the sequence
+  a real load produces, and the only one that reproduces the bug.
 
 ## Quality gates (from global — enforced here)
 
