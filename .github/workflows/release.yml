@@ -87,10 +87,19 @@ jobs:
         run: cp -R backend/dist/dinotraining-sidecar apps/desktop/src-tauri/binaries/
 
       # --- the installer -----------------------------------------------------------------
+      #
+      # **Two independent npm projects**, and both are needed. `apps/frontend` builds the UI
+      # that `beforeBuildCommand` invokes; `apps/desktop` holds `@tauri-apps/cli`, which is
+      # what `npm run tauri` resolves. Installing only the first is what broke run #1 — the
+      # sidecar built fine on all three platforms and then `tauri` was simply not on PATH.
       - name: Install frontend dependencies
         working-directory: apps/frontend
         # --legacy-peer-deps is required by this project's dependency tree.
         run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+
+      - name: Install the Tauri CLI
+        working-directory: apps/desktop
+        run: npm ci || npm install
 
       - name: Build the installer
         working-directory: apps/desktop
