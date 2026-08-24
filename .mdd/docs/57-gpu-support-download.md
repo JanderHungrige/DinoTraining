@@ -4,7 +4,7 @@ title: GPU Support as a Download — CPU by Default, CUDA on Request
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: [56-sidecar-bundling]
 relates: [02-model-download-manager, 35-model-licence-surfacing]
 source_files:

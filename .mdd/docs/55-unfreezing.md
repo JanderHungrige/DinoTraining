@@ -4,7 +4,7 @@ title: Training the Backbone — Where It Works, and Where It Cannot
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: [44-finetune-rf-detr, 43-detection-localisation, 49-osdar23-rail]
 relates: [11-training-job-runner, 41-rf-detr-detector, 18-shared-backbone-pass]
 source_files:

@@ -4,7 +4,7 @@ title: Freezing the Sidecar — the Spike That Constrains Wave 8
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: []
 relates: [54-distribution-licensing, 01-app-shell]
 source_files:

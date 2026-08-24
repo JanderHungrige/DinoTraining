@@ -4,7 +4,7 @@ title: What You Must Deal With Before Shipping — and Bulk Cleanup
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: [35-model-licence-surfacing, 51-library-tab]
 relates: [36-depth-foundation-model, 30-sam3-annotator]
 source_files:

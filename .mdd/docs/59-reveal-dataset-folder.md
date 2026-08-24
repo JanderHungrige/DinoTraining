@@ -4,7 +4,7 @@ title: Open a Dataset's Folder — Where the Pictures Actually Are
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: [50-dataset-as-source, 46-generator-folder-picker]
 relates: [51-library-tab, 40-drag-and-drop-input]
 source_files:

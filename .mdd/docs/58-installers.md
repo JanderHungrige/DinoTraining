@@ -4,7 +4,7 @@ title: A Real Installer — Built, Launched, and Then Codified as CI
 edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-8
-wave_status: in_progress
+wave_status: complete
 depends_on: [56-sidecar-bundling, 57-gpu-support-download]
 relates: [54-distribution-licensing, 01-app-shell]
 source_files:

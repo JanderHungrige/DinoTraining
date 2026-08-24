@@ -12,6 +12,43 @@ is genuinely unassigned.
 
 ## Unassigned
 
+### Code signing and notarization
+
+Deferred out of Wave 8 on 2026-08-21 because it needs certificates: an Apple Developer ID
+for macOS notarization and a code-signing certificate for Windows. Neither can be held or
+used by an assistant, so this is Jan's whichever way it is scheduled.
+
+**Until it exists**, the macOS build is Gatekeeper-blocked on first launch (right-click →
+Open is the workaround, which is not a thing to tell users) and Windows shows a SmartScreen
+warning. `release.yml` already publishes a **draft** rather than a live release, so an
+unsigned build cannot reach anyone by accident — that guard should stay until signing lands.
+
+Tauri handles both through `bundle.macOS.signingIdentity` and `bundle.windows.certificateThumbprint`,
+with secrets supplied by the release job. The work is mostly obtaining and storing the
+certificates rather than wiring them.
+
+### Auto-update
+
+Deferred out of Wave 8 on 2026-08-21. Depends on signing: an updater that installs unsigned
+payloads is worse than no updater.
+
+It also needs a real answer to **size**. The installers are 181–377 MB and Tauri's updater
+does not diff — it replaces the whole app. Shipping that for a one-line fix is a bad citizen,
+and the honest options are either updating the *sidecar* separately from the shell (they
+change at very different rates) or accepting full downloads and releasing rarely.
+
+### First-run experience on a clean machine
+
+Deferred out of Wave 8 on 2026-08-21, and the smallest of the three — but the one nobody has
+tested. **No installer has ever been installed.** The macOS `.app` was launched from its own
+build directory on the machine that built it, which shares that machine's model cache and
+data directory.
+
+What is unverified: that a fresh install finds no cache and says so usefully, that the Admin
+tab is discoverable enough to be the first stop, and that the sidecar starts when nothing
+else about the machine is set up. Doc 38's intro tab and doc 02's download manager are the
+pieces; whether they add up to a first run has not been seen.
+
 ### Tiled inference
 
 **The largest gap Wave 7.5 left.** Doc 49 tiles images on the way *in* — a 6x4 grid turns a
