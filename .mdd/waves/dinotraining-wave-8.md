@@ -7,7 +7,7 @@ status: planned
 depends_on: dinotraining-wave-7
 demo_state: "A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works."
 created: 2026-08-14
-hash: 37ca176a
+hash: c7739468
 ---
 
 # Wave 8: Packaging & Distribution
@@ -46,11 +46,11 @@ present — the notice helps a human who reads it, and CI does not read.
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
 | 1 | python-sidecar-bundling | **56** | **spiked — works, 636 MB** | — |
-| 2 | tauri-installers | **58** | **macOS built & launched; Win/Linux unproven** | 56 |
+| 2 | tauri-installers | **58** | **all three build; only macOS launched** | 56 |
 | 3 | first-run-model-bootstrap | — | planned | — |
 | 3b | **gpu-support-download** | **57** | **detection done; artefact pending release-ci** | 56 |
 | 4 | code-signing-notarization | — | planned | tauri-installers |
-| 5 | release-ci | **58** | **written from a real build; never run** | 2, 54 |
+| 5 | release-ci | **58** | **green on all three, run 4** | 2, 54 |
 | 6 | auto-update | — | planned | release-ci |
 
 ### Feature notes

@@ -29,7 +29,7 @@ integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**Windows was fixed by shortening the payload, and the fix is verified locally but not yet in CI** — the sidecar rebuilds with a longest path of 111 characters and still serves inferences, but no Windows run has confirmed the bundle completes."
+  - "**Only the macOS artefact has been run.** Windows and Linux build and produce installers, but nothing has installed or launched either — a green bundle step is not a working app. That is the next thing to check, and it needs machines this session does not have."
   - "**`THIRD_PARTY_LICENCES.txt` is a flattening, not a summary.** The texts are unmodified and each carries its original path, which satisfies BSD/MIT attribution — but it is a judgement that a rolled-up file discharges the same obligation as the original tree. Worth a second opinion before a real release."
   - "**AppImage cannot package this payload.** Isolated across runs 2 and 3: `appimage,deb` fails and `deb` alone passes. Linux therefore ships a `.deb` only, which excludes users on distributions that do not take one."
   - "The `.build/Scripts` assumption for the Windows venv turned out to be correct — the sidecar built there in every run."
@@ -122,7 +122,7 @@ Three runs against a `v0.0.1` tag on 2026-08-21. The value is in what each one r
 | 1 | fail | fail | fail |
 | 2 | fail | fail | **pass** |
 | 3 | fail | **pass** (deb) | **pass** |
-| 4 | (pending) | pass | pass |
+| 4 | **pass** | **pass** | **pass** |
 
 **Run 1 — the workflow, not the platforms.** All three built the sidecar and then failed
 identically at `npm run tauri build`. `@tauri-apps/cli` is a devDependency of
@@ -168,6 +168,18 @@ A guard now fails the build if any path exceeds 140 characters, so this cannot r
 another failed release — and it runs on all three platforms, so macOS and Linux catch it
 too rather than leaving Windows as the only place it shows up.
 
+**Run 4 was green on all three**, and the publish job created the draft release.
+
+| platform | format | installer | "Build the installer" |
+|---|---|---|---|
+| Windows | NSIS | **181 MB** | 631 s |
+| macOS | dmg | **311 MB** | 258 s |
+| Linux | deb | **377 MB** | 219 s |
+
+The ordering is the opposite of the intuition that Windows is the bloated one: NSIS's LZMA
+squeezes torch harder than either dmg or `.deb`, and Windows is smallest by a wide margin.
+It is also slowest to build by a factor of three, for the same reason.
+
 ## Verified
 
 Built and launched on macOS/arm64 on 2026-08-21, with the sidecar built through the
@@ -176,8 +188,9 @@ config. The running process was confirmed to be the one inside the `.app`, not a
 from a checkout. `cargo check` clean; the workflow parses and its weights guard was run
 against the real bundle.
 
-**Windows and Linux are unproven.** They are the next thing to try, and the matrix exists so
-that one run answers for all three.
+**All three platforms build**, on run 4. Only the macOS artefact has been *launched*: a
+green bundle step says the installer was produced, not that it installs or that the app
+starts. Windows and Linux need someone with those machines.
 
 ## Known Issues
 
