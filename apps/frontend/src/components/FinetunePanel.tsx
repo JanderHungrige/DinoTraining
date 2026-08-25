@@ -1,7 +1,7 @@
 /**
  * Fine-tune a general detector on your own datasets (doc 44 UI).
  *
- * Lives in the Head Trainer because that is where training lives, but says plainly that it
+ * Lives in Training because that is where training lives, but says plainly that it
  * is a *different* kind of training: minutes rather than seconds, one large model rather
  * than a small head. The Trainer's own hint says the backbone stays frozen — that is true
  * here too, and the panel proves it by reporting the frozen/trainable split the API

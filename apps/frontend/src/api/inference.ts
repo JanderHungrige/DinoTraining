@@ -153,11 +153,39 @@ function isComposedResult(value: unknown): value is ComposedResult {
   );
 }
 
+/**
+ * How to cut the frame before running (doc 62).
+ *
+ * A head trained on tiles finds nothing on a full frame, and the run *succeeds* — right
+ * pass count, right elapsed time, empty list. Omitting this, or sending a 1x1 grid, is the
+ * whole frame; the two take the same path server-side so they cannot drift apart.
+ */
+export interface TileGrid {
+  readonly columns: number;
+  readonly rows: number;
+  /** Fraction each tile extends past its cell, so a seam object is whole in some tile. */
+  readonly overlap: number;
+}
+
+/** Doc 49's default, because a grid that differs from the training grid is a different grid. */
+export const DEFAULT_TILE_OVERLAP = 0.2;
+
+export const NO_TILING: TileGrid = Object.freeze({
+  columns: 1,
+  rows: 1,
+  overlap: DEFAULT_TILE_OVERLAP,
+});
+
+export function isWholeFrame(grid: TileGrid): boolean {
+  return grid.columns === 1 && grid.rows === 1;
+}
+
 export interface RunHeadsOptions {
   readonly imagePath: string;
   readonly backboneId: string;
   readonly instanceIds: readonly string[];
   readonly scoreThreshold?: number;
+  readonly tiles?: TileGrid;
 }
 
 /** `POST /api/v1/inference/compose` — N heads over one image, sharing backbone passes. */
@@ -175,6 +203,18 @@ export function runHeads(
       ...(options.scoreThreshold === undefined
         ? {}
         : { score_threshold: options.scoreThreshold }),
+      // Omitted for the whole frame rather than sent as 1x1: the backend takes the
+      // untiled path either way, and not sending it keeps the request identical to what
+      // every caller sent before tiling existed.
+      ...(options.tiles && !isWholeFrame(options.tiles)
+        ? {
+            tiles: {
+              columns: options.tiles.columns,
+              rows: options.tiles.rows,
+              overlap: options.tiles.overlap,
+            },
+          }
+        : {}),
     }),
     ...(signal ? { signal } : {}),
   });

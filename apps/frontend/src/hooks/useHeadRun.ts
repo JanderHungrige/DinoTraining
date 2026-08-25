@@ -27,7 +27,7 @@ import { ApiError } from '../api/client';
 import type { HeadTask } from '../api/heads';
 import { runFoundation, type FoundationInfo } from '../api/foundation';
 import type { HeadInstanceInfo } from '../api/headInstances';
-import { runHeads, type ComposedResult } from '../api/inference';
+import { NO_TILING, runHeads, type ComposedResult, type TileGrid } from '../api/inference';
 import { useRunnableModels } from './useRunnableModels';
 
 export interface HeadRunState {
@@ -42,6 +42,12 @@ export interface HeadRunState {
    *  surface does not need, and per-model state to express it. */
   readonly concept: string;
   readonly setConcept: (concept: string) => void;
+  /** How to cut the frame before running (doc 62). `NO_TILING` is the whole frame. */
+  readonly tiles: TileGrid;
+  readonly setTiles: (grid: TileGrid) => void;
+  /** Median training width the selected heads agree on, or null. Feeds the tiling hint;
+   *  null when they disagree, because one number cannot describe two answers. */
+  readonly trainedWidth: number | null;
   /** Fixed by the first selected head; null when nothing is selected. */
   readonly backboneId: string | null;
   /** Narrows the offered list. Same-task comparison is this filter, not a mode. */
@@ -79,6 +85,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
   const [concept, setConcept] = useState('');
+  const [tiles, setTilesState] = useState<TileGrid>(NO_TILING);
   const [result, setResult] = useState<ComposedResult | null>(null);
   /** Which image `result` describes. Null whenever there is no result. */
   const [resultPath, setResultPath] = useState<string | null>(null);
@@ -92,6 +99,21 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
   const backboneId = useMemo(() => {
     const first = heads.find((head) => head.id === selected[0]);
     return first?.backbone_id ?? null;
+  }, [heads, selected]);
+
+  /**
+   * The training width the selection agrees on, for the tiling hint.
+   *
+   * Null when they disagree: two heads trained at different sizes have no single answer,
+   * and picking one would put a confident number next to a claim it does not support.
+   */
+  const trainedWidth = useMemo(() => {
+    const widths = new Set(
+      selected
+        .map((id) => heads.find((head) => head.id === id)?.trained_width)
+        .filter((width): width is number => typeof width === 'number' && width > 0),
+    );
+    return widths.size === 1 ? ([...widths][0] ?? null) : null;
   }, [heads, selected]);
 
   const selectedTask = useMemo(() => {
@@ -130,6 +152,13 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
    */
   const changeConcept = useCallback((next: string): void => {
     setConcept(next);
+    setResult(null);
+  }, []);
+
+  /** Changing the grid drops the result, for the reason every other input does: a
+   *  whole-frame answer left on screen under a tiled setting reads as the tiled one. */
+  const setTiles = useCallback((next: TileGrid): void => {
+    setTilesState(next);
     setResult(null);
   }, []);
 
@@ -181,7 +210,10 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
         // them would add the depth model's second onto the heads' for no reason.
         const [composed, foundationResults] = await Promise.all([
           hasHeads && backboneId
-            ? runHeads({ imagePath, backboneId, instanceIds: selected }, controller.signal)
+            ? runHeads(
+                { imagePath, backboneId, instanceIds: selected, tiles },
+                controller.signal,
+              )
             : Promise.resolve(null),
           Promise.all(
             selectedFoundations.map((foundationId) =>
@@ -221,7 +253,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     // a concept model is ticked, that was always the empty string. Every Grounded SAM and
     // SAM 3 run went out with no concept at all, came back as an all-background mask, and
     // looked identical however the phrase was changed.
-    [selected, backboneId, selectedFoundations, concept],
+    [selected, backboneId, selectedFoundations, concept, tiles],
   );
 
   // Derived, not stored: a result is shown only while the image it describes is the one
@@ -235,6 +267,9 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     foundations,
     concept,
     setConcept: changeConcept,
+    tiles,
+    setTiles,
+    trainedWidth,
     selectedFoundations,
     toggleFoundation,
     backboneId,

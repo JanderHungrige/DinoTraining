@@ -9,6 +9,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { HeadInstanceInfo } from '../api/headInstances';
+import { NO_TILING } from '../api/inference';
 import type { HeadRunState } from '../hooks/useHeadRun';
 import { HeadRunPanel } from './HeadRunPanel';
 
@@ -45,6 +46,9 @@ function state(overrides: Partial<HeadRunState> = {}): HeadRunState {
     foundations: [],
     selectedFoundations: [],
     toggleFoundation: vi.fn(),
+    tiles: NO_TILING,
+    setTiles: vi.fn(),
+    trainedWidth: null,
     concept: '',
     setConcept: vi.fn(),
     datasetFilter: null,

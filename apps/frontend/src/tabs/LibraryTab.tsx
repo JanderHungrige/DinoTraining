@@ -158,7 +158,7 @@ export function LibraryTab(): JSX.Element {
           />
           <Section
             title="Trained heads"
-            empty="No heads yet. Train one in the Head Trainer."
+            empty="No heads yet. Train one in Training."
             rows={headRows}
             kind="head"
             selected={selected}
@@ -170,7 +170,7 @@ export function LibraryTab(): JSX.Element {
           />
           <Section
             title="Fine-tuned models"
-            empty="No fine-tuned models yet. Fine-tune a detector in the Head Trainer."
+            empty="No fine-tuned models yet. Fine-tune a detector in Training."
             rows={finetuneRows}
             kind="finetune"
             selected={selected}

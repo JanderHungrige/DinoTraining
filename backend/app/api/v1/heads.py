@@ -7,10 +7,13 @@ never a bare filename, which is the whole reason the feature exists.
 from __future__ import annotations
 
 import logging
+import sqlite3
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.datasets.db import transaction
+from app.datasets.images import median_width
 from app.ml.heads.instances import HeadInstance, HeadInstanceKind
 from app.ml.heads.registry import RenderHint, get_head_type
 from app.ml.heads.store import HeadInstanceNotFoundError, HeadInstanceStore
@@ -55,6 +58,11 @@ class HeadInstanceInfo(BaseModel):
     best_epoch: int | None
     source_repo: str | None
     created_at: str
+    #: Median width of the images this head trained on, or null when the datasets are
+    #: gone. Powers doc 62's tiling hint — "trained on 616 px, running on 2464 px" — and
+    #: nothing acts on it. Null is expected: a dataset can be deleted after training, and
+    #: a listing must not break because one was.
+    trained_width: int | None = None
 
 
 class HeadInstanceListResponse(BaseModel):
@@ -66,7 +74,9 @@ class DeleteResponse(BaseModel):
     removed: bool
 
 
-def describe_instance(instance: HeadInstance) -> HeadInstanceInfo:
+def describe_instance(
+    instance: HeadInstance, trained_width: int | None = None
+) -> HeadInstanceInfo:
     """Instance -> API shape. Public because doc 15's catalogue router returns the
     same model — a second copy is how two endpoints start describing one head
     differently."""
@@ -91,6 +101,7 @@ def describe_instance(instance: HeadInstance) -> HeadInstanceInfo:
         best_epoch=instance.best_epoch,
         source_repo=instance.source_repo,
         created_at=instance.created_at,
+        trained_width=trained_width,
     )
 
 
@@ -100,7 +111,26 @@ async def list_heads(
     backbone: str | None = Query(default=None, description="Hide heads that cannot run."),
 ) -> HeadInstanceListResponse:
     instances = HeadInstanceStore().list_all(task=task, backbone_id=backbone)
-    return HeadInstanceListResponse(heads=[describe_instance(instance) for instance in instances])
+    return HeadInstanceListResponse(
+        heads=[describe_instance(instance, _trained_width(instance)) for instance in instances]
+    )
+
+
+def _trained_width(instance: HeadInstance) -> int | None:
+    """The median width of what this head trained on, for doc 62's tiling hint.
+
+    Failure is swallowed on purpose. This decorates a listing that must render whether or
+    not the datasets still exist — a hint nobody can compute is a missing hint, never a
+    500 on the picker that every tab depends on.
+    """
+    if not instance.dataset_ids:
+        return None
+    try:
+        with transaction() as connection:
+            return median_width(connection, list(instance.dataset_ids))
+    except sqlite3.Error:  # pragma: no cover - a listing must not fail for a hint
+        logger.warning("Could not read the training width for head %s", instance.id)
+        return None
 
 
 @router.get(
@@ -108,7 +138,8 @@ async def list_heads(
 )
 async def get_head(instance_id: str) -> HeadInstanceInfo:
     try:
-        return describe_instance(HeadInstanceStore().get(instance_id))
+        instance = HeadInstanceStore().get(instance_id)
+        return describe_instance(instance, _trained_width(instance))
     except HeadInstanceNotFoundError:
         raise HTTPException(status_code=404, detail=f"Unknown head: {instance_id}") from None
 

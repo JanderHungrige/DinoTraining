@@ -21,6 +21,9 @@ import { useImageSource } from '../hooks/useImageSource';
 
 export function InferenceViewerTab(): JSX.Element {
   const [path, setPath] = useState<string | null>(null);
+  // Read from the image itself rather than from any prediction: the tiling hint has to be
+  // available *before* a run, which is exactly when there is no prediction to ask.
+  const [imageWidth, setImageWidth] = useState<number | null>(null);
   // Mutually exclusive by construction rather than by a mode flag: choosing one clears
   // the other, so there is never a state where both claim to be the source.
   const [datasetId, setDatasetId] = useState<string | null>(null);
@@ -86,6 +89,7 @@ export function InferenceViewerTab(): JSX.Element {
         onRun={() => current && void run.run(current.path)}
         disabled={source.loading}
         runDisabled={!current}
+        imageWidth={imageWidth}
       />
 
       {!current && !source.loading && (
@@ -99,6 +103,16 @@ export function InferenceViewerTab(): JSX.Element {
           <p className="studio__path" title={current.path}>
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
+
+          {/* Hidden probe, the same one the Studio uses: the viewer's own image lives
+              inside SideBySideViewer's render-prop and its natural size is not reachable
+              from here. */}
+          <img
+            src={imageUrl(current.path)}
+            alt=""
+            hidden
+            onLoad={(event) => setImageWidth(event.currentTarget.naturalWidth)}
+          />
 
           {/* One pane per prediction. Comparing three segmenters is three panes; it is
               not a mode, and nothing here branches on how many there are. */}
