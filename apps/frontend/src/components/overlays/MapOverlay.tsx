@@ -6,13 +6,15 @@
  * be two places to fix the next canvas bug.
  *
  * The payload is a base64 PNG whose pixel values are data, not colour: a class index for
- * a mask, a 0..255 normalised depth for a depth map. So the PNG is decoded to an
- * offscreen canvas, read back, and recoloured — the browser does the decompression and
- * we only pay for the recolour.
+ * a mask, a 0..255 normalised depth for a depth map. Decoding goes through `decodeMap`
+ * rather than `drawImage` + `getImageData` directly — read the comment at the top of that
+ * file before changing it, because the naive version silently dithers the data and paints
+ * a speckle across the whole frame in WebKit.
  */
 
 import { useEffect, useRef, type JSX } from 'react';
 
+import { decodeMap } from '../../lib/decodeMap';
 import type { RenderedImage } from '../../lib/geometry';
 import type { Rgb } from '../../lib/overlayPalette';
 
@@ -48,44 +50,34 @@ export function MapOverlay({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || width <= 0 || height <= 0) return;
-
     let cancelled = false;
-    const image = new Image();
 
-    image.onload = () => {
-      // The component may have unmounted, or the prediction changed, while the browser
-      // was decoding. Painting then would put one head's mask over another's image.
-      if (cancelled) return;
+    void decodeMap(encoded, width, height)
+      .then((decoded) => {
+        // The component may have unmounted, or the prediction changed, while the browser
+        // was decoding. Painting then would put one head's mask over another's image.
+        if (cancelled || decoded === null) return;
+        const canvas = canvasRef.current;
+        const context = canvas?.getContext('2d', { colorSpace: 'srgb' });
+        if (!canvas || !context) return;
 
-      const source = document.createElement('canvas');
-      source.width = width;
-      source.height = height;
-      const sourceCtx = source.getContext('2d');
-      const targetCtx = canvas.getContext('2d');
-      if (!sourceCtx || !targetCtx) return;
+        const image = context.createImageData(width, height);
+        const pixels = image.data;
+        for (let p = 0, i = 0; p < decoded.values.length; p += 1, i += 4) {
+          const value = decoded.values[p] ?? 0;
+          const { r, g, b } = colourFor(value);
+          pixels[i] = r;
+          pixels[i + 1] = g;
+          pixels[i + 2] = b;
+          pixels[i + 3] = alphaFor ? alphaFor(value) : 255;
+        }
+        context.putImageData(image, 0, 0);
+      })
+      .catch(() => {
+        // A map that will not decode leaves the pane showing the image alone, which is
+        // better than taking the viewer down with it.
+      });
 
-      sourceCtx.drawImage(image, 0, 0);
-      const data = sourceCtx.getImageData(0, 0, width, height);
-      const pixels = data.data;
-
-      // The PNG is greyscale, so the red channel carries the value; the rest is repeat.
-      // Recolour in place rather than allocating a second buffer — this runs over every
-      // pixel of a full-resolution map.
-      for (let i = 0; i < pixels.length; i += 4) {
-        const value = pixels[i] ?? 0;
-        const { r, g, b } = colourFor(value);
-        pixels[i] = r;
-        pixels[i + 1] = g;
-        pixels[i + 2] = b;
-        pixels[i + 3] = alphaFor ? alphaFor(value) : 255;
-      }
-
-      targetCtx.putImageData(data, 0, 0);
-    };
-
-    image.src = `data:image/png;base64,${encoded}`;
     return () => {
       cancelled = true;
     };

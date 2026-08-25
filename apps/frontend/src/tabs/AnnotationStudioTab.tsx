@@ -1,6 +1,6 @@
 /** Wave 1 — Annotation Studio: the wave's demo-state, assembled. */
 
-import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
@@ -10,8 +10,9 @@ import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
 import { usePrescan } from '../hooks/usePrescan';
+import { useBoxEditing } from '../hooks/useBoxEditing';
+import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
-import type { Label } from '../types/annotation';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
 
 export function AnnotationStudioTab(): JSX.Element {
@@ -20,34 +21,57 @@ export function AnnotationStudioTab(): JSX.Element {
   // Starts at 0 so nothing is ever hidden until the user asks. A review surface that opens
   // with boxes already filtered out looks like a model that found fewer than it did.
   const [threshold, setThreshold] = useState(0);
+  // Masks are the finer answer and the box is derivable from them, so the box is what you
+  // opt into (doc 61). Not "hide the masks" — the two together are how you check that a
+  // box is tight.
+  const [showBoxes, setShowBoxes] = useState(false);
+  /**
+   * Ids hidden by hand, so the image is clear enough to draw on.
+   *
+   * A **snapshot of what was there when it was pressed**, not a live predicate: a box
+   * drawn afterwards is the whole point of pressing it, and a rule like "hide everything
+   * not hand-drawn" would hide the new one the moment it was saved and reloaded. Null
+   * means nothing is concealed.
+   */
+  const [concealed, setConcealed] = useState<ReadonlySet<string> | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
   const prescan = usePrescan();
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
-  const hidden = useMemo(() => hiddenByThreshold(boxes, threshold), [boxes, threshold]);
 
-  const setLabel = useCallback(
-    (id: string, label: Label): void => {
-      setBoxes(boxes.map((box) => (box.id === id ? { ...box, label } : box)));
-    },
-    [boxes, setBoxes],
+  // Two reasons a box is not drawn, kept apart on purpose. `belowCutoff` is what the
+  // slider is filtering and what `Remove N below` discards; `hidden` is everything not on
+  // screen. Folding them together would make the remove button delete boxes the user only
+  // asked to get out of the way — the worst thing this screen can do.
+  const belowCutoff = useMemo(() => hiddenByThreshold(boxes, threshold), [boxes, threshold]);
+  const hidden = useMemo(() => {
+    if (concealed === null) return belowCutoff;
+    const all = new Set(belowCutoff);
+    for (const id of concealed) all.add(id);
+    return all;
+  }, [belowCutoff, concealed]);
+
+  // Concealment is about the picture in front of you, so it does not survive moving to
+  // the next one — and the ids would be stale anyway.
+  useEffect(() => setConcealed(null), [session.currentImage]);
+
+  // Classes on the canvas right now, offered alongside the stored vocabulary (doc 60).
+  // A proposal run's classes are on screen and unsaved; a picker that could not offer
+  // them would be visibly wrong about what this image contains.
+  const inPlay = useMemo(
+    () => boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
+    [boxes],
   );
+  const vocabulary = useDatasetClasses(config?.datasetId ?? null, inPlay);
 
-  const rename = useCallback(
-    (id: string, text: string): void => {
-      setBoxes(boxes.map((box) => (box.id === id ? { ...box, text } : box)));
-    },
-    [boxes, setBoxes],
-  );
+  // The toggle only exists when something on screen has a mask. A control that does
+  // nothing reads as broken — the same rule doc 47 applied to the threshold slider.
+  const anySegmented = useMemo(() => boxes.some((box) => box.mask !== undefined), [boxes]);
 
-  const remove = useCallback(
-    (id: string): void => {
-      setBoxes(boxes.filter((box) => box.id !== id));
-      setSelectedId((current) => (current === id ? null : current));
-    },
-    [boxes, setBoxes],
+  const edit = useBoxEditing(boxes, setBoxes, (id) =>
+    setSelectedId((current) => (current === id ? null : current)),
   );
 
   const startScan = useCallback(
@@ -60,10 +84,10 @@ export function AnnotationStudioTab(): JSX.Element {
     [config, prescan, session.allImages],
   );
 
-  // Discards exactly what the slider is hiding, so what disappears is what was on screen.
-  const removeHidden = useCallback((): void => {
-    setBoxes(boxes.filter((box) => !hidden.has(box.id)));
-  }, [boxes, hidden, setBoxes]);
+  /** Get everything currently on screen out of the way, or bring it all back. */
+  const toggleConceal = useCallback((): void => {
+    setConcealed((current) => (current === null ? new Set(boxes.map((box) => box.id)) : null));
+  }, [boxes]);
 
   if (!config) {
     return (
@@ -156,6 +180,7 @@ export function AnnotationStudioTab(): JSX.Element {
                 selectedId={selectedId}
                 onBoxesChange={setBoxes}
                 onSelect={setSelectedId}
+                showBoxes={showBoxes || !anySegmented}
                 disabled={session.busy}
               />
               <BoxReviewList
@@ -164,17 +189,45 @@ export function AnnotationStudioTab(): JSX.Element {
                 selectedId={selectedId}
                 threshold={threshold}
                 onSelect={setSelectedId}
-                onLabel={setLabel}
-                onRename={rename}
-                onRemove={remove}
+                onLabel={edit.setLabel}
+                onRename={edit.rename}
+                onRemove={edit.remove}
+                belowCutoff={belowCutoff}
                 onThreshold={setThreshold}
-                onRemoveHidden={removeHidden}
+                onRemoveHidden={() => edit.removeAll(belowCutoff)}
+                classes={vocabulary.names}
+                onCreateClass={vocabulary.create}
+                onRenameClass={edit.renameClass}
                 disabled={session.busy}
               />
             </div>
           ) : (
             <p role="status">Loading image…</p>
           )}
+
+          <div className="studio__viewbar">
+            {anySegmented && (
+              <label className="studio__toggle">
+                <input
+                  type="checkbox"
+                  checked={showBoxes}
+                  onChange={(event) => setShowBoxes(event.target.checked)}
+                />
+                Show bounding boxes
+              </label>
+            )}
+
+            {/* Hiding what is already there is what makes drawing on a busy image
+                possible: thirty proposals cover the thing you wanted to add. Nothing is
+                deleted — hidden boxes are still saved, the same rule the slider follows. */}
+            {(boxes.length > 0 || concealed !== null) && (
+              <button type="button" className="btn btn--small" onClick={toggleConceal}>
+                {concealed === null
+                  ? `Hide the ${boxes.length} box${boxes.length === 1 ? '' : 'es'} already here`
+                  : `Show ${concealed.size} hidden box${concealed.size === 1 ? '' : 'es'}`}
+              </button>
+            )}
+          </div>
 
           <div className="studio__actions">
             <button

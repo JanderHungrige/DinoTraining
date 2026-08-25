@@ -112,6 +112,30 @@ class MaskStore:
         return result
 
 
+    def masks_for_image(self, dataset_id: str, path: str) -> list[Mask]:
+        """One image's masks (doc 61). Empty when the image has none, or is not here.
+
+        Per image rather than an addition to the dataset listing, and the reason is size:
+        an RLE is a run list over the whole frame — roughly 15 KB as JSON for a 2464x1600
+        mask — against four floats for a box. Shipping every image's masks inline the way
+        the listing ships boxes would make a 392-image dataset a listing measured in
+        hundreds of megabytes. The Studio shows one image at a time.
+
+        An unknown path returns `[]` rather than raising. To a review surface opening on an
+        image, "no masks yet" and "not in this dataset" are the same thing, and an error
+        would make the common case look like a failure.
+        """
+        with transaction(self._settings) as connection:
+            rows = connection.execute(
+                "SELECT m.label, m.provenance, m.prompt, m.score, m.producer,"
+                " m.rle_counts, m.rle_height, m.rle_width"
+                " FROM masks m JOIN images i ON m.image_id = i.id"
+                " WHERE i.dataset_id = ? AND i.path = ? ORDER BY m.id",
+                (dataset_id, path),
+            ).fetchall()
+        return [_mask_from_row(row) for row in rows]
+
+
 def _mask_from_row(row: object) -> Mask:
     mapping = dict(row)  # type: ignore[call-overload]
     return Mask(

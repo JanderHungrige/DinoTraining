@@ -14,16 +14,19 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
-from app.datasets.models import Box
+from app.datasets.models import Box, MaskRle
+from app.datasets.rle import rle_decode
 from app.ml import images as image_io
 from app.ml.annotators.foundation import (
     FoundationCannotAnnotateError,
+    FoundationProposal,
     propose_foundation_boxes,
 )
 from app.ml.errors import ModelNotInstalledError
 from app.ml.foundation.build import FoundationUnavailableError
 from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD as FOUNDATION_THRESHOLD
 from app.ml.foundation.registry import get_foundation
+from app.ml.inference.payloads import encode_png
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -43,11 +46,39 @@ class FoundationProposalRequest(BaseModel):
     )
 
 
+class ProposedMask(BaseModel):
+    """The segmentation behind a box, when the model produced one (doc 61).
+
+    Carried *beside* the box rather than instead of it: the box is the mask's extents and
+    every review surface already knows how to place one, so it stays the hit target and the
+    mask is what gets drawn and stored.
+    """
+
+    #: What is persisted. COCO uncompressed RLE — already the wire format.
+    rle: MaskRle
+    #: Preview only. Dense pixels travel as base64 PNG, never nested JSON — the Wave 3
+    #: rule, measured there at 12.5 MB against 17 KB.
+    png: str
+
+
+class ProposedBox(BaseModel):
+    """A proposed annotation: the box, and its mask when there was one."""
+
+    box: Box
+    #: None for a detector — RF-DETR has no segmentation to offer. Optional rather than
+    #: absent so one shape serves both and no consumer branches on which model ran.
+    mask: ProposedMask | None = None
+
+
 class FoundationProposalResponse(BaseModel):
     """Deliberately the same shape as an expert proposal.
 
     A reviewer should not be able to tell which produced a box except by reading where it
     says it came from — so the review surface consumes one shape, not two.
+
+    `boxes` keeps its name and its box-per-entry meaning; doc 61 added the optional mask
+    *inside* each entry rather than a parallel `masks` list, because a parallel list would
+    be paired by index and index pairing is what breaks the moment a reviewer removes one.
     """
 
     image_path: str
@@ -56,7 +87,7 @@ class FoundationProposalResponse(BaseModel):
     device: str
     model_name: str
     model_summary: str
-    boxes: list[Box]
+    boxes: list[ProposedBox]
 
 
 @router.post(
@@ -77,7 +108,7 @@ async def propose_with_foundation(
 
     settings = get_settings()
     try:
-        boxes = propose_foundation_boxes(
+        proposals = propose_foundation_boxes(
             image,
             request.foundation_id,
             settings,
@@ -110,5 +141,22 @@ async def propose_with_foundation(
         device=settings.resolved_device,
         model_name=spec.title if spec else request.foundation_id,
         model_summary=spec.description if spec else "",
-        boxes=boxes,
+        boxes=[_to_proposed(proposal) for proposal in proposals],
+    )
+
+
+def _to_proposed(proposal: FoundationProposal) -> ProposedBox:
+    """Add the drawable preview to a proposal that has a mask.
+
+    Decoding here rather than in the annotator keeps numpy out of the model layer's return
+    type, the same rule `app/ml/inference/results.py` follows: what crosses that boundary is
+    run lengths and floats, never an array.
+    """
+    if proposal.mask is None:
+        return ProposedBox(box=proposal.box)
+    mask = rle_decode(proposal.mask.counts, proposal.mask.size)
+    return ProposedBox(
+        box=proposal.box,
+        # 0/255 rather than 0/1: a boolean mask rendered as a PNG would be invisible.
+        mask=ProposedMask(rle=proposal.mask, png=encode_png(mask.astype("uint8") * 255)),
     )

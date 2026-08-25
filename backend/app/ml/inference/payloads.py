@@ -57,6 +57,31 @@ def encode_png(array: np.ndarray) -> str:
     return base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
+def encode_class_map(indices: np.ndarray, top_class: int) -> tuple[str, int]:
+    """Class indices → a PNG whose values are spread as far apart as the range allows.
+
+    **Class indices are terrible pixel values.** A concept segmenter produces classes 0 and
+    1 — adjacent bytes — and a browser that colour-manages the PNG on the way in dithers
+    the low bits, so a background 0 arrives as a scatter of 0s and 1s and *is* the other
+    class. That is the green speckle reported over the whole frame in the packaged app;
+    WebKit does the conversion even when asked not to, so the client cannot fix it alone.
+
+    Spreading fixes it at the source. With one phrase the two classes become 0 and 255, and
+    it takes a 128-level error to confuse them. The client divides by the returned stride.
+
+    Degrades to `stride = 1` — today's encoding, exactly — once there are enough classes to
+    fill the byte, which is where ADE20k's 150 land. Nothing is gained there and nothing is
+    lost: that path's class 0 is `wall`, a real class that is painted anyway, so a dithered
+    pixel is a slightly wrong colour rather than a hole in the background.
+    """
+    stride = max(1, 255 // max(top_class, 1))
+    # Widened before the multiply: `_mask_payload` builds its indices as uint8, and
+    # `uint8 * 255` is a silent wraparound waiting for the day a caller passes a class
+    # above the stride's range. `top_class * stride <= 255` holds by construction, so the
+    # cast back is lossless.
+    return encode_png((indices.astype(np.int32) * stride).astype(np.uint8)), stride
+
+
 def build_payload(
     spec: HeadTypeSpec,
     decoded: dict[str, torch.Tensor],
@@ -155,9 +180,12 @@ def masks_payload(
             f"Class index {present[-1]} exceeds the {MAX_PNG_CLASSES}-class PNG transport."
         )
 
+    mask_png, stride = encode_class_map(indices, present[-1] if present else 0)
     return {
-        "mask_png": encode_png(indices.astype(np.uint8)),
-        # The pixel value *is* the class index — no palette, so the client owns colour.
+        "mask_png": mask_png,
+        # The pixel value is the class index **times `class_stride`** — no palette, so the
+        # client owns colour, but it has to divide first. See `encode_class_map`.
+        "class_stride": stride,
         "present_classes": present,
         "height": int(at_source.shape[0]),
         "width": int(at_source.shape[1]),
