@@ -49,7 +49,7 @@ describe('TabBar', () => {
       'tabindex',
       '0',
     );
-    expect(screen.getByRole('tab', { name: 'Head Trainer' })).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('tab', { name: 'Training' })).toHaveAttribute('tabindex', '-1');
   });
 
   it('points each tab at the panel it controls', () => {
@@ -65,7 +65,7 @@ describe('TabBar', () => {
     const user = userEvent.setup();
     const { onTabChange } = renderTabBar('studio');
 
-    await user.click(screen.getByRole('tab', { name: 'Head Trainer' }));
+    await user.click(screen.getByRole('tab', { name: 'Training' }));
 
     expect(onTabChange).toHaveBeenCalledExactlyOnceWith('trainer');
   });

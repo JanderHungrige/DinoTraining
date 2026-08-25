@@ -44,6 +44,9 @@ export interface HeadInstanceInfo {
   readonly best_epoch: number | null;
   readonly source_repo: string | null;
   readonly created_at: string;
+  /** Median width of the images this head trained on, or null when the datasets are gone.
+   *  Powers the tiling hint (doc 62) and nothing acts on it. */
+  readonly trained_width?: number | null;
 }
 
 /**

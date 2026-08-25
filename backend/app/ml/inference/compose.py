@@ -31,6 +31,7 @@ from app.ml.inference.engine import (
     resolve_head,
 )
 from app.ml.inference.results import Prediction
+from app.ml.inference.tiled import TileGrid, run_tiled
 from app.ml.preprocess import PreprocessPlan, plan_preprocessing, prepare_images
 
 logger = logging.getLogger(__name__)
@@ -65,10 +66,28 @@ def run_heads(
     instance_ids: list[str],
     settings: Settings | None = None,
     score_threshold: float = DEFAULT_SCORE_THRESHOLD,
+    grid: TileGrid | None = None,
 ) -> ComposedResult:
-    """Run several heads over one image, sharing a backbone pass wherever possible."""
+    """Run several heads over one image, sharing a backbone pass wherever possible.
+
+    `grid` cuts the frame first (doc 62). It is a parameter here rather than a separate
+    entry point so every caller — the viewer, the Studio's proposals, `run_inference` —
+    gains it by passing one argument, and `ComposedResult` stays assembled in one place.
+
+    A **1x1 grid is the whole frame** and deliberately takes the untiled path: routing it
+    through the tiler would give the same answer by a different route, and the two drifting
+    apart is exactly the class of bug tiling is here to fix.
+    """
     settings = settings or get_settings()
     started = time.perf_counter()
+
+    if grid is not None and not grid.is_whole_frame:
+        tiled, tiled_passes, tiled_elapsed = run_tiled(
+            image, backbone_id, instance_ids, grid, settings, score_threshold
+        )
+        return ComposedResult(
+            predictions=tiled, passes=tiled_passes, elapsed_ms=tiled_elapsed
+        )
 
     # First occurrence wins: two identical predictions carry no information, and the
     # request is still coherent without them.

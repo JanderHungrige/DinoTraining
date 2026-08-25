@@ -87,7 +87,7 @@ describe('what it lists', () => {
   it('says what to do when a section is empty', async () => {
     vi.mocked(heads.listHeadInstances).mockResolvedValue([]);
     render(<LibraryTab />);
-    expect(await screen.findByText(/Train one in the Head Trainer/)).toBeInTheDocument();
+    expect(await screen.findByText(/Train one in Training/)).toBeInTheDocument();
   });
 });
 

@@ -24,6 +24,7 @@ from fastapi import APIRouter, HTTPException, Query
 from PIL.Image import Image as ImageType
 from pydantic import BaseModel, Field
 
+from app.datasets.tiling import DEFAULT_OVERLAP
 from app.ml.errors import ModelNotInstalledError
 from app.ml.heads.registry import RenderHint
 from app.ml.heads.store import HeadInstanceNotFoundError
@@ -36,6 +37,7 @@ from app.ml.inference.engine import (
 )
 from app.ml.inference.results import Prediction
 from app.ml.inference.source import InputSource, SourceKind, resolve_source
+from app.ml.inference.tiled import TileGrid
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -79,6 +81,32 @@ def describe(prediction: Prediction) -> PredictionResponse:
     )
 
 
+class TileGridRequest(BaseModel):
+    """How to cut the frame before running (doc 62).
+
+    Absent means the whole frame, which is what every caller sent before this existed. A
+    1x1 grid is *also* the whole frame and is not an error — it takes the untiled path, so
+    the two cannot drift apart.
+
+    The bounds are `plan_tiles`'s own, restated here so a bad grid is a 422 from the schema
+    rather than a ValueError from the arithmetic three layers down.
+    """
+
+    columns: int = Field(default=1, ge=1, le=16)
+    rows: int = Field(default=1, ge=1, le=16)
+    overlap: float = Field(
+        default=DEFAULT_OVERLAP,
+        ge=0.0,
+        lt=1.0,
+        description="Fraction each tile extends past its cell, so a seam object is whole "
+        "in some tile. Doc 49's default, because a grid that differs from the training "
+        "grid is a different grid.",
+    )
+
+    def to_grid(self) -> TileGrid:
+        return TileGrid(columns=self.columns, rows=self.rows, overlap=self.overlap)
+
+
 class ComposeRequest(BaseModel):
     image_path: str = Field(description="Absolute path to an image on this machine.")
     backbone_id: str = Field(description="Registry id of an installed backbone.")
@@ -91,6 +119,14 @@ class ComposeRequest(BaseModel):
         ge=0.0,
         le=1.0,
         description="Detection only; ignored by other render hints.",
+    )
+    tiles: TileGridRequest | None = Field(
+        default=None,
+        description=(
+            "Cut the frame into a grid and merge the results (doc 62). A head trained on "
+            "tiles finds nothing on a full frame — silently. Boxes only; other render "
+            "hints run whole-frame."
+        ),
     )
 
 
@@ -235,6 +271,7 @@ async def compose(request: ComposeRequest) -> ComposedResponse:
             backbone_id=request.backbone_id,
             instance_ids=list(request.instance_ids),
             score_threshold=request.score_threshold,
+            grid=request.tiles.to_grid() if request.tiles else None,
         )
 
     return ComposedResponse(

@@ -113,8 +113,11 @@ distributions that do not take one.
 
 ## Known gaps, in the order they will bite
 
-1. **No tiled inference** (doc 49, backlog). A head trained on 472 px tiles finds nothing on
-   a full frame and says nothing about why. Still the largest correctness gap.
+1. ~~**No tiled inference.**~~ **Fixed 2026-08-25 (doc 62.)** Measured on the frame it was
+   found in: 0 boxes whole-frame against 6 tiled, at a threshold where the whole-frame run
+   finds nothing at any setting. Per-run grid, with a hint when a head's training width is
+   far below the frame's. What it still does not cover is in doc 62's Known Issues —
+   foundation proposals, masks and depth.
 2. **No signing** (backlog) — blocks any real distribution.
 3. **The GPU sidecar has no artefact** (doc 57). Detection works and tells the user their
    GPU is idle; there is nothing to download yet, because that is a second CI matrix leg.
@@ -154,6 +157,6 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-25: `1248` backend tests, `660` frontend, `ruff` +
+**Gates**, all green as of 2026-08-25: `1262` backend tests, `677` frontend, `ruff` +
 `mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
 nothing since has touched `apps/desktop`.)

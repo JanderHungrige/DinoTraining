@@ -62,7 +62,7 @@ describe('reading turns into doing', () => {
   it('navigates to the tab a stage describes', async () => {
     const { onNavigate, user } = renderIntro();
 
-    await user.click(screen.getByRole('button', { name: 'Open Head Trainer' }));
+    await user.click(screen.getByRole('button', { name: 'Open Training' }));
 
     expect(onNavigate).toHaveBeenCalledWith('trainer');
   });

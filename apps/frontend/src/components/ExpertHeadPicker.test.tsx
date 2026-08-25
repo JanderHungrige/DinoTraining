@@ -75,9 +75,9 @@ describe('ExpertHeadPicker', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 
-  it('says why when nothing can annotate, and points at the Head Trainer', () => {
+  it('says why when nothing can annotate, and points at Training', () => {
     renderPicker([head({ render_hint: 'masks' })]);
-    expect(screen.getByRole('status')).toHaveTextContent(/Head Trainer/);
+    expect(screen.getByRole('status')).toHaveTextContent(/Training/);
   });
 
   it('distinguishes "wrong backbone" from "nothing can annotate"', () => {
@@ -85,7 +85,7 @@ describe('ExpertHeadPicker', () => {
     renderPicker([head({ backbone_id: 'dinov2-base' })]);
     const message = screen.getByRole('status').textContent ?? '';
     expect(message).toMatch(/dinov2-small/);
-    expect(message).not.toMatch(/Head Trainer/);
+    expect(message).not.toMatch(/Training/);
   });
 
   it('renders the provenance summary, never a filename', () => {

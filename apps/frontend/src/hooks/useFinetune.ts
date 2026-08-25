@@ -1,7 +1,7 @@
 /**
  * Starting and watching a fine-tune (doc 44 UI).
  *
- * **Polling, not SSE.** The Head Trainer streams because its epochs land in seconds and a
+ * **Polling, not SSE.** Head training streams because its epochs land in seconds and a
  * dropped update is visible; a fine-tune epoch takes tens of seconds, so a poll every few
  * seconds costs nothing and needs no stream to keep alive across a laptop sleeping.
  */
