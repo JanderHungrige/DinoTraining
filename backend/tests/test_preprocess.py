@@ -165,26 +165,57 @@ class TestTransformBoxes:
 
 
 class TestTransformMask:
+    """Takes the `GeometryTransform` rather than the plan — the same rule
+    `transform_boxes` follows, so a mask and a box on one image cannot disagree about
+    what happened to it."""
+
+    @staticmethod
+    def geometry_for(size: tuple[int, int], head: str = "linear-segmenter"):
+        """The transform an image of this size actually got."""
+        plan = plan_preprocessing(capabilities(), spec_for(head))
+        _, transform = apply_geometry(plan, Image.new("RGB", size))
+        return plan, transform
+
     def test_mask_matches_the_planned_size(self) -> None:
-        plan = plan_preprocessing(capabilities(), spec_for("linear-segmenter"))
+        plan, transform = self.geometry_for((640, 480))
         mask = Image.new("L", (640, 480), 3)
-        assert transform_mask(plan, mask).size == (plan.size, plan.size)
+        assert transform_mask(transform, mask).size == (plan.size, plan.size)
 
     def test_class_ids_are_preserved(self) -> None:
         """Bilinear resampling would invent class ids that were never annotated."""
-        plan = plan_preprocessing(capabilities(), spec_for("linear-segmenter"))
+        _, transform = self.geometry_for((100, 100))
         mask = Image.new("L", (100, 100), 0)
         for x in range(40, 60):
             for y in range(40, 60):
                 mask.putpixel((x, y), 7)
-        out = transform_mask(plan, mask)
+        out = transform_mask(transform, mask)
         assert set(numpy.asarray(out).flatten().tolist()) <= {0, 7}
 
     def test_padding_uses_the_ignore_index(self) -> None:
         """Padded regions are not class 0 — they are not annotated at all."""
-        plan = plan_preprocessing(capabilities(), spec_for("linear-segmenter"))
-        out = transform_mask(plan, Image.new("L", (400, 100), 5), ignore_index=255)
+        _, transform = self.geometry_for((400, 100))
+        out = transform_mask(transform, Image.new("L", (400, 100), 5), ignore_index=255)
         assert 255 in set(numpy.asarray(out).flatten().tolist())
+
+    def test_it_lands_where_the_image_landed(self) -> None:
+        """The load-bearing property. A mask offset by the letterbox supervises the wrong
+        pixels, and nothing about the loss would reveal it."""
+        plan, transform = self.geometry_for((400, 100))
+        image, _ = apply_geometry(plan, Image.new("RGB", (400, 100), (255, 255, 255)))
+        out = transform_mask(transform, Image.new("L", (400, 100), 5), ignore_index=255)
+
+        content = numpy.asarray(image).sum(axis=2) > 0
+        annotated = numpy.asarray(out) != 255
+        assert numpy.array_equal(content, annotated)
+
+    def test_a_centre_crop_shifts_the_mask_the_same_way(self) -> None:
+        """Negative padding, which is what lets one formula serve both geometries."""
+        plan, transform = self.geometry_for((400, 100), head="linear-classifier")
+        out = transform_mask(transform, Image.new("L", (400, 100), 5), ignore_index=255)
+
+        assert out.size == (plan.size, plan.size)
+        # A crop discards content rather than padding it, so nothing is unannotated.
+        assert set(numpy.asarray(out).flatten().tolist()) == {5}
 
 
 class TestToPixelValues:

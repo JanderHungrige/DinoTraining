@@ -90,8 +90,23 @@ class TestSamplesForTask:
         )
         assert len(samples_for_task(sample_set, "detection")) == 2
 
-    def test_segmentation_keeps_everything(self) -> None:
+    def test_segmentation_drops_what_nobody_segmented(self) -> None:
+        """A box-annotated image in a mixed dataset is not an empty segmentation — it is
+        an image no segmenter ever looked at, and training on it teaches the model that
+        whatever is in it is background."""
         sample_set = self.make(
-            [TrainingSample(path="a", width=10, height=10, image_class=None)]
+            [
+                TrainingSample(path="a", width=10, height=10, segmented=True),
+                TrainingSample(path="b", width=10, height=10, targets=((0, 1.0, 1.0, 2.0, 2.0),)),
+            ]
+        )
+        assert [s.path for s in samples_for_task(sample_set, "segmentation")] == ["a"]
+
+    def test_segmentation_keeps_an_image_whose_masks_were_all_rejected(self) -> None:
+        """The other half of the same rule. A reviewer who rejected every mask said the
+        frame is background, which is real supervision — and is why a rejected mask is
+        stored as a `negative` rather than deleted."""
+        sample_set = self.make(
+            [TrainingSample(path="a", width=10, height=10, masks=(), segmented=True)]
         )
         assert len(samples_for_task(sample_set, "segmentation")) == 1

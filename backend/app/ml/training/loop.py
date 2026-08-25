@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 
+import numpy as np
 import torch
 from PIL import Image
 from torch import Tensor, nn
@@ -22,9 +23,10 @@ from app.ml.preprocess import (
     apply_geometry,
     to_pixel_values,
     transform_boxes,
+    transform_mask,
 )
-from app.ml.training.losses import assign_detection_targets
-from app.ml.training.samples import TrainingSample
+from app.ml.training.losses import IGNORE_INDEX, assign_detection_targets
+from app.ml.training.samples import MaskTarget, TrainingSample
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,9 @@ def build_targets(
     if spec.task == "classification":
         return {"labels": torch.tensor([sample.image_class or 0], dtype=torch.long)}
 
+    if spec.task == "segmentation":
+        return {"mask": segmentation_target(sample, transform)}
+
     raw = [(x, y, w, h) for _, x, y, w, h in sample.targets]
     moved, keep = transform_boxes(transform, raw)
     classes = [sample.targets[index][0] for index in keep]
@@ -79,6 +84,54 @@ def build_targets(
     targets["boxes"] = torch.tensor(moved, dtype=torch.float32).reshape(-1, 4)
     targets["classes"] = torch.tensor(classes, dtype=torch.long)
     return targets
+
+
+def segmentation_target(sample: TrainingSample, transform: GeometryTransform) -> Tensor:
+    """One image's masks composited into a label map, in the transformed frame.
+
+    **Class 0 is background and a real class starts at 1** — `MaskTarget.class_index` is
+    into the box vocabulary, which has no background entry, so everything shifts by one
+    here. `classes_for_task` builds the head against the matching `("background", …)`.
+
+    Order matters twice over:
+
+    * positives paint in the order they were stored, so a later mask wins an overlap —
+      the same last-writer-wins the concept segmenter's own composite produces;
+    * `unclear` masks paint **last**, over everything. An uncertain region stays uncertain
+      even where a positive claims it, because the reviewer's doubt is about that region,
+      and resolving it in the model's favour is the one thing they did not say.
+
+    The composite is built at *source* resolution and put through the same
+    `GeometryTransform` the image took — never rasterised straight into the frame, which
+    would be a second implementation of the letterbox and a second chance to be off by it.
+
+    Returns **(1, H, W)**, not (H, W). Every target in this module carries a leading batch
+    dimension — classification's `labels` is `(1,)` for the same reason — and `run_epoch`
+    passes them to the loss untouched. Without it `cross_entropy` reads the height as the
+    batch size and fails with "Expected input batch_size (1) to match target batch_size
+    (448)", which is a real run's error message and not a hypothetical one.
+    """
+    height, width = sample.height, sample.width
+    if sample.masks:
+        height, width = sample.masks[0].size
+
+    indices = np.zeros((height, width), dtype=np.uint8)
+    for target in sample.masks:
+        indices[_decode(target)] = target.class_index + 1
+    for target in sample.ignore_masks:
+        indices[_decode(target)] = IGNORE_INDEX
+
+    composited = Image.fromarray(indices, mode="L")
+    moved = transform_mask(transform, composited, ignore_index=IGNORE_INDEX)
+    return torch.from_numpy(np.asarray(moved).astype(np.int64)).unsqueeze(0)
+
+
+def _decode(target: MaskTarget) -> np.ndarray:
+    # Imported here rather than at module scope: `rle.py` pulls in numpy for the whole
+    # dataset layer, and the training loop's import cost is paid at API startup.
+    from app.datasets.rle import rle_decode
+
+    return rle_decode(list(target.counts), target.size)
 
 
 def to_device(targets: dict[str, Tensor], device: str | torch.device) -> dict[str, Tensor]:

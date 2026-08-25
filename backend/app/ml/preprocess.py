@@ -206,29 +206,31 @@ def transform_boxes(
 
 
 def transform_mask(
-    plan: PreprocessPlan, mask: Image.Image, ignore_index: int = DEFAULT_IGNORE_INDEX
+    transform: GeometryTransform, mask: Image.Image, ignore_index: int = DEFAULT_IGNORE_INDEX
 ) -> Image.Image:
-    """Resize a label mask with nearest-neighbour, padding with ``ignore_index``.
+    """Put a label mask through **exactly** what happened to its image.
 
-    Nearest-neighbour is mandatory: bilinear resampling of a label map averages class
-    ids and invents classes that were never annotated. Padding is ``ignore_index``
-    rather than 0, so the loss skips it instead of learning that padding is background.
+    Takes the `GeometryTransform`, not the plan, for the same reason `transform_boxes`
+    does: the transform records what an image actually got, and a target derived from the
+    plan instead would be right only for as long as the two agree. Targets go through the
+    transform; nothing derives geometry twice.
+
+    One formula for both geometries, which is what `_center_crop`'s negative padding is
+    for — a crop shifts content the opposite way to a pad, and PIL clips a paste at a
+    negative offset, so a letterbox and a crop are the same two lines.
+
+    Nearest-neighbour is mandatory: bilinear resampling of a label map averages class ids
+    and invents classes that were never annotated. Padding is ``ignore_index`` rather than
+    0, so the loss skips it instead of learning that padding is background.
     """
     source_w, source_h = mask.size
+    new_w = max(1, round(source_w * transform.scale))
+    new_h = max(1, round(source_h * transform.scale))
 
-    if plan.geometry == "aspect-preserve":
-        scale = min(plan.size / source_w, plan.size / source_h)
-        new_w, new_h = max(1, round(source_w * scale)), max(1, round(source_h * scale))
-        resized = mask.resize((new_w, new_h), Image.Resampling.NEAREST)
-        canvas = Image.new(mask.mode, (plan.size, plan.size), ignore_index)
-        canvas.paste(resized, ((plan.size - new_w) // 2, (plan.size - new_h) // 2))
-        return canvas
-
-    scale = plan.size / min(source_w, source_h)
-    new_w, new_h = max(1, round(source_w * scale)), max(1, round(source_h * scale))
     resized = mask.resize((new_w, new_h), Image.Resampling.NEAREST)
-    left, top = (new_w - plan.size) // 2, (new_h - plan.size) // 2
-    return resized.crop((left, top, left + plan.size, top + plan.size))
+    canvas = Image.new(mask.mode, (transform.out_w, transform.out_h), ignore_index)
+    canvas.paste(resized, (int(transform.pad_x), int(transform.pad_y)))
+    return canvas
 
 
 def to_pixel_values(plan: PreprocessPlan, images: list[Image.Image]) -> Tensor:

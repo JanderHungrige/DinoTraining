@@ -148,8 +148,9 @@ _SPECS: tuple[HeadTypeSpec, ...] = (
         task="segmentation",
         title="Linear segmenter",
         description=(
-            "Per-patch classification upsampled to a full-resolution mask. Needs a "
-            "dataset with masks — the Annotation Studio produces boxes until SAM lands."
+            "Per-patch classification upsampled to a full-resolution mask. Trains on a "
+            "dataset with masks — run a concept segmenter in the Annotation Studio to "
+            "make one. Class 0 is background; your own classes start at 1."
         ),
         trainable=True,
         target_format="masks",
