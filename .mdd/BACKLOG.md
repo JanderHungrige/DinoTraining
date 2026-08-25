@@ -224,7 +224,58 @@ never gains one. A reviewer can accept, reject or remove a mask, not correct it.
 box-prompt-to-SAM are the two obvious shapes — the second is nearly free, since SAM 2.1 is
 already loaded and box-prompted segmentation is exactly what it does.
 
-### Segmentation-head training has no data path
+### ~~Segmentation-head training has no data path~~ — delivered 2026-08-25
+
+**Done.** A `linear-segmenter` now trains on stored masks: verified end to end on
+Vegetation_track with `class_names ["background", "signal", "train tracks"]`, loss falling
+3.16 → 1.70 and mIoU rising 0.095 → 0.263 across three epochs. Two images, so the number is
+meaningless as a model — but loss falling and mIoU rising monotonically only happens if the
+targets are genuinely aligned with the images.
+
+Four decisions worth keeping:
+
+* **Class 0 is background, and only for segmentation.** Every pixel belongs to something and
+  most belong to none of the annotated classes; without it the loss can only ignore them and
+  the model learns to label the whole frame. `classes_for_task` is where that lives. Index 0
+  is not merely convention: the overlay registry already treats `class_names[0] ===
+  'background'` as the signal to draw class 0 transparent, so a head trained here renders
+  correctly in the Viewer with nothing told about it.
+* **`unclear` paints last, over positives.** The reviewer's doubt is about that region, and
+  resolving it in the model's favour is the one thing they did not say.
+* **An unsegmented image is not an empty one.** A box-annotated image in a mixed dataset is
+  one nobody looked at with a segmenter; training on it teaches that whatever is in it is
+  background. An image whose masks were all *rejected* is genuine background supervision —
+  which is why rejecting stores a `negative` rather than deleting. `TrainingSample.segmented`
+  is what tells them apart.
+* **Targets go through the `GeometryTransform`, never the plan.** `transform_mask` was
+  written for this in doc 10 and had sat unused ever since; it took a `PreprocessPlan`, and
+  was retargeted to match `transform_boxes` so a mask and a box on one image cannot disagree
+  about what happened to it.
+
+**What the real run caught that the unit tests did not**: the target needs a leading batch
+dimension, like every other target in the module. The first version of the tests added it
+themselves before calling the loss, so they passed while a run failed with "Expected input
+batch_size (1) to match target batch_size (448)". The test now passes `build_targets`
+output untouched, exactly as `run_epoch` does.
+
+**Also fixed, same day**: the vocabulary is built per task rather than unioned. Boxes and
+masks supervise different heads, so `build_class_vocabulary` and `build_mask_vocabulary` are
+separate and a `SampleSet` carries both. A segmenter never sees a box-only class and a
+detector never sees a mask-only one.
+
+This was not the cosmetic fix it looked like. On Vegetation_track the union had put `signal`
+— a leftover box class, on no mask — into a segmentation head, and removing it took epoch-1
+train loss from **3.16 to 0.70** and best mIoU from **0.263 to 0.539**. A channel that never
+appears in any target still takes probability mass.
+
+It also needed the run guard to become task-aware. `classes_for_task` returns
+`("background",)` for a dataset with no masks at all, so a guard counting that list sees one
+class and lets the run proceed to train on nothing; `learnable_classes` answers the question
+the guard actually means.
+
+---
+
+### (original entry, kept for the reasoning)
 
 Added 2026-08-25, found while answering a question about the ADE20k head rather than by an
 audit. `linear-segmenter` is registered `trainable=True` with `target_format="masks"`, and

@@ -30,7 +30,12 @@ from app.ml.training.loop import (
 )
 from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
-from app.ml.training.samples import build_samples, samples_for_task
+from app.ml.training.samples import (
+    build_samples,
+    classes_for_task,
+    learnable_classes,
+    samples_for_task,
+)
 from app.ml.training.unfreeze import apply_unfreeze, caching_is_valid, optimiser_for
 
 logger = logging.getLogger(__name__)
@@ -128,16 +133,38 @@ class LocalJobRunner:
         plan = plan_preprocessing(capabilities, spec)
 
         sample_set = build_samples(self._store, config.dataset_ids)
-        job.class_names = sample_set.class_names
+        # **The vocabulary the head is built against, which is not always the dataset's.**
+        # Segmentation prepends a background class, because every pixel belongs to
+        # something and most belong to none of the annotated classes. Derived once and used
+        # for the head, the cache, the targets and the saved provenance — a second
+        # derivation is a second chance for index 3 to mean two different things.
+        class_names = classes_for_task(sample_set, spec.task)
+        num_classes = len(class_names)
+        job.class_names = class_names
         job.skipped_mixed_class_images = sample_set.mixed_class_images
 
-        if sample_set.num_classes == 0:
-            raise ValueError("No positive boxes found in the selected datasets — nothing to learn")
+        # Asks the *dataset-derived* vocabulary, not the prefixed one: a segmentation
+        # vocabulary of background alone means the dataset taught nothing, and a guard
+        # reading `class_names` would count one class and let the run proceed.
+        if not learnable_classes(sample_set, spec.task):
+            raise ValueError(
+                "No positive masks found in the selected datasets — a segmentation head "
+                "learns from masks, which a concept segmenter produces in the Annotation "
+                "Studio or the Dataset Generator."
+                if spec.task == "segmentation"
+                else "No positive boxes found in the selected datasets — nothing to learn"
+            )
         usable = samples_for_task(sample_set, spec.task)
         if not usable:
-            raise ValueError("No usable training samples for this head type")
+            raise ValueError(
+                "No usable training samples for this head type — a segmentation head needs "
+                "a dataset with masks, which the Annotation Studio produces from a concept "
+                "segmenter."
+                if spec.task == "segmentation"
+                else "No usable training samples for this head type"
+            )
 
-        head = build_head(config.head_type_id, capabilities, sample_set.num_classes)
+        head = build_head(config.head_type_id, capabilities, num_classes)
         head.to(backbone.device)
 
         # Sets `requires_grad` across the backbone and reports what it did. Called even for
@@ -165,7 +192,7 @@ class LocalJobRunner:
         live: LivePass | None = None
         cache: list[CachedSample] = []
         if caching_is_valid(config.unfreeze_blocks):
-            cache = precompute_cache(backbone, plan, spec, usable, sample_set.num_classes)
+            cache = precompute_cache(backbone, plan, spec, usable, num_classes)
             if not cache:
                 raise ValueError("None of the selected images could be read")
             total = len(cache)
@@ -175,7 +202,7 @@ class LocalJobRunner:
                 plan=plan,
                 spec=spec,
                 samples=usable,
-                num_classes=sample_set.num_classes,
+                num_classes=num_classes,
             )
             total = len(usable)
 
