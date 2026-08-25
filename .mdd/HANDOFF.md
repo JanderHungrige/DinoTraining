@@ -4,13 +4,43 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-21, after **Wave 8** was closed. Waves 1–8 are merged to `dev`
-and `main`. **Only Wave 9 (Website & hyperscaler compute) remains**, plus three features
-deferred out of Wave 8.
+**Last updated:** 2026-08-25, after a round of **Annotation Studio work** that was not a
+wave: four bugs Jan reported from using the app, and two features (docs **60** and **61**)
+built out of them. Waves 1–8 are merged. **Only Wave 9 (Website & hyperscaler compute)
+remains** as planned work, plus the three features deferred out of Wave 8.
+
+---
+
+## What landed after Wave 8 — the Studio round, 2026-08-25
+
+Reported by Jan from using the app, which is where all four of these came from and none of
+them could have come from anywhere else.
+
+| | |
+|---|---|
+| fix | **A drag on the image never drew a box.** The guard asked for `target === currentTarget`, and the image fills the stage, so it was the target of every press. Every unit test passed because they fire on the stage directly. |
+| fix | **The Inference Viewer sent no concept.** `run` was memoised without `concept` in its deps, and the concept field only appears *after* a model is ticked — so the captured value was always `''`. Every SAM run returned an all-background mask in 26 ms. Compounded by the overlay painting class 0 opaque, which turned "no answer" into a full-frame colour wash. |
+| 60 | **A class picker for boxes** — a `dataset_classes` table, GET/POST/DELETE, a dropdown with inline `New class…`, and per-class rename across an image. Closes doc 47's first known issue. |
+| 61 | **Masks in the Studio** — Grounded SAM's segmentation is now shown and stored instead of discarded. One annotation per object: a mask row *or* a box row, never both, because the COCO exporter emits each table separately. |
+
+**The one to carry forward: WebKit colour-manages canvas image data whatever you ask.**
+`createImageBitmap(blob, { colorSpaceConversion: 'none' })` does not stop it — proved by
+giving the two mask surfaces different defences and seeing exactly one survive. Anything
+transported as a PNG whose pixels are *data* must assume the low bits are unreliable in the
+packaged app. Two defences that work: threshold rather than `> 0` (binary masks), and spread
+class indices across the byte and send the multiplier (`encode_class_map` / `class_stride`).
+
+**Chromium cannot reproduce any of it.** A dev-browser check is not evidence for a rendering
+fix; the packaged app is.
 
 ---
 
 ## Waiting on Jan
+
+**0. Confirm the Inference Viewer fizzle is gone in the packaged app.** The Studio was
+confirmed clean on 2026-08-25; the Viewer was still speckled at that point, and the
+`class_stride` fix that followed has only been verified on the wire and in Chromium. It no
+longer depends on WebKit honouring anything — only on arithmetic — but nobody has seen it.
 
 **1. Certificates — the one thing that cannot be done here.** Signing needs an Apple
 Developer ID and a Windows code-signing certificate. Until they exist:
@@ -91,8 +121,15 @@ distributions that do not take one.
    which is right for photos and wrong for a 10 Hz sequence — it inflated a reported mAP by
    42%. Nothing warns.
 5. **Prescan shares one runner** across the Studio and the Generator (doc 53).
-6. **Renaming is missing from the Library** (doc 51), and **per-class rename** from box
-   review (doc 47).
+6. **Renaming is missing from the Library** (doc 51). *(Per-class rename from box review
+   was the other half of this line and shipped in doc 60 on 2026-08-25.)*
+7. **`linear-segmenter` is declared trainable but cannot run.** `trainable=True`,
+   `target_format="masks"`, with `segmentation_loss` and `segmentation_metrics` both
+   registered — but `build_samples` reads only boxes, `TrainingSample` has no mask field,
+   and `build_targets` has no segmentation branch, so `targets["mask"]` is never produced.
+   Selecting it in the Head Trainer raises `KeyError: 'mask'` on the first batch; nothing
+   guards it upfront. Its description still names a blocker doc 61 removed. **Now the
+   cheapest route to a segmenter trained on your own classes**, because the masks exist.
 
 ---
 
@@ -110,5 +147,6 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-21: `1185` backend tests, `565` frontend, `ruff` +
-`mypy` + `tsc` + `cargo check` clean, no source file over 300 lines.
+**Gates**, all green as of 2026-08-25: `1227` backend tests, `651` frontend, `ruff` +
+`mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
+nothing since has touched `apps/desktop`.)
