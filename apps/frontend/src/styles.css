@@ -447,11 +447,14 @@ body {
   white-space: nowrap;
 }
 
-/* Masks (doc 61). Painting only — every hit target is still the box button drawn over
-   the mask, so this layer must never intercept a pointer. */
+/* Masks (doc 61). One canvas for all of them, positioned on the *rendered* image rather
+   than the container — an object-fit:contain image is letterboxed, and using the container
+   would offset every mask by the letterbox.
+
+   Painting only: every hit target is still the box button drawn over the mask, so this
+   must never intercept a pointer. */
 .masklayer {
   position: absolute;
-  inset: 0;
   pointer-events: none;
 }
 
@@ -476,6 +479,15 @@ body {
 .canvas__box--bare:focus-visible .canvas__boxtag,
 .canvas__box--bare.canvas__box--selected .canvas__boxtag {
   opacity: 1;
+}
+
+/* The view controls that sit under the canvas: what to draw, and what to get out of
+   the way. A row of their own so neither is mistaken for an action on the dataset. */
+.studio__viewbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .studio__toggle {
@@ -1916,6 +1928,8 @@ body {
 }
 
 .review__row {
+  /* The naming form positions itself against this — see `.classpicker--editing`. */
+  position: relative;
   display: grid;
   grid-template-columns: 1.6rem minmax(0, 1fr) 2.6rem auto;
   align-items: center;
@@ -2000,14 +2014,31 @@ body {
   color: var(--text);
 }
 
-/* Naming takes the whole cell: a text field, Add and Cancel do not fit beside a select,
-   and the select has nothing to say while a name is being typed. */
+/* Naming takes the whole **row**, not the class cell.
+   
+   Measured, because the first attempt shipped a field 12px wide and unusable: the review
+   row is `1.6rem minmax(0,1fr) 2.6rem auto`, and in a 256px panel that leaves the class
+   column 19px. A text field plus Add (41px) plus Cancel (58px) does not fit in 19px, and
+   `min-width: 0` obediently squeezed the field to nothing — focused, enabled, and
+   invisible, which reads exactly like a field that will not accept typing.
+   
+   Absolutely positioned over the row rather than widening the column: the score and the
+   verdict buttons have nothing to say while a class is being named, and this needs no
+   `:has()` and no extra React state to express that. */
 .classpicker--editing {
+  position: absolute;
+  inset: 0.15rem 0.3rem;
+  z-index: 2;
   gap: 0.25rem;
+  padding: 0 0.1rem;
+  border-radius: 4px;
+  background: var(--bg-raised);
 }
 
 .classpicker__field {
   flex: 1 1 auto;
+  /* Zero so a long name cannot push the buttons out of the row, but the row is the width
+     budget now rather than a 19px column. */
   min-width: 0;
   padding: 0.15rem 0.3rem;
   border: 1px solid var(--border);

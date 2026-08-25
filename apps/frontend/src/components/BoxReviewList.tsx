@@ -19,7 +19,12 @@ import type { CanvasBox, Label } from '../types/annotation';
 
 export interface BoxReviewListProps {
   readonly boxes: readonly NumberedBox[];
+  /** Every box not on screen, whatever the reason — this is what filters the list. */
   readonly hidden: ReadonlySet<string>;
+  /** The subset the *score slider* is filtering. Separate from `hidden` because the two
+   *  read differently and act differently: "below cutoff" is a claim about the score, and
+   *  `Remove N below` must never discard a box the user merely got out of the way. */
+  readonly belowCutoff?: ReadonlySet<string>;
   readonly selectedId: string | null;
   readonly threshold: number;
   readonly onSelect: (id: string | null) => void;
@@ -46,9 +51,12 @@ const VERDICTS: readonly (readonly [Label | null, string, string])[] = [
   [null, '🗑', 'Remove'],
 ];
 
+const EMPTY: ReadonlySet<string> = new Set<string>();
+
 export function BoxReviewList({
   boxes,
   hidden,
+  belowCutoff = EMPTY,
   selectedId,
   threshold,
   onSelect,
@@ -65,13 +73,19 @@ export function BoxReviewList({
   const all = boxes.map((entry) => entry.box);
   const scored = hasScores(all);
   const visible = boxes.filter((entry) => !hidden.has(entry.box.id));
+  const concealed = [...hidden].filter((id) => !belowCutoff.has(id)).length;
 
   return (
     <aside className="review" aria-label="Boxes">
       <header className="review__head">
         <h3 className="review__title">
           {visible.length} box{visible.length === 1 ? '' : 'es'}
-          {hidden.size > 0 && <span className="review__dim"> · {hidden.size} below cutoff</span>}
+          {/* Counted apart, because "below cutoff" is a claim about the score and would be
+              a lie about a box the reviewer simply hid. */}
+          {belowCutoff.size > 0 && (
+            <span className="review__dim"> · {belowCutoff.size} below cutoff</span>
+          )}
+          {concealed > 0 && <span className="review__dim"> · {concealed} hidden</span>}
         </h3>
       </header>
 
@@ -96,10 +110,10 @@ export function BoxReviewList({
           <button
             type="button"
             className="btn btn--small"
-            disabled={disabled || hidden.size === 0}
+            disabled={disabled || belowCutoff.size === 0}
             onClick={onRemoveHidden}
           >
-            Remove {hidden.size} below
+            Remove {belowCutoff.size} below
           </button>
         </div>
       )}
@@ -108,7 +122,9 @@ export function BoxReviewList({
         <p className="review__empty" role="status">
           {all.length === 0
             ? 'No boxes yet. Run a model, or drag on the image to draw one.'
-            : 'Every box is below the cutoff. Lower it to see them.'}
+            : concealed > 0 && belowCutoff.size === 0
+              ? 'Every box is hidden. Show them again to review them.'
+              : 'Every box is below the cutoff. Lower it to see them.'}
         </p>
       ) : (
         <ul className="review__list">

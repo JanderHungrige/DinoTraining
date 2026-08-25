@@ -6,12 +6,22 @@
  * the backend later and render here without this wave's code being touched.
  */
 
-import { render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { decodeMap } from '../../lib/decodeMap';
 
 import type { Prediction, RenderHint } from '../../api/inference';
 import type { RenderedImage } from '../../lib/geometry';
 import { OVERLAY_RENDERERS, renderOverlayFor } from './registry';
+
+vi.mock('../../lib/decodeMap', () => ({ decodeMap: vi.fn() }));
+
+// A benign default: most tests here assert on the canvas element, not on pixels, and an
+// unmocked `decodeMap` would return undefined and throw inside the effect.
+beforeEach(() => {
+  vi.mocked(decodeMap).mockResolvedValue(null);
+});
 import { topLabels } from './LabelOverlay';
 
 const RENDERED: RenderedImage = {
@@ -224,41 +234,41 @@ describe('dense maps', () => {
 /**
  * Whether class 0 is painted — the difference between "no answer" and a broken-looking one.
  *
- * A regression file's worth of context: masks were rendered with no `alphaFor`, so every
- * pixel came out opaque. For an ADE20k segmenter that is right — its class 0 is `wall`.
- * For a concept segmenter class 0 is background, and an all-background result was not an
- * empty overlay but the whole frame washed in one flat colour at 55% opacity. Asking
- * Grounded SAM for "sky" and getting a uniform red rectangle is what "very bad results"
- * looked like.
+ * Masks were rendered with no `alphaFor`, so every pixel came out opaque. For an ADE20k
+ * segmenter that is right — its class 0 is `wall`. For a concept segmenter class 0 is
+ * background, and an all-background result was not an empty overlay but the whole frame
+ * washed in one flat colour at 55% opacity. Asking Grounded SAM for "sky" and getting a
+ * uniform red rectangle is what "very bad results" looked like.
  *
- * jsdom decodes no PNGs, so the decode path is driven with a stubbed `Image` and a stubbed
- * 2D context. The assertion is on the alpha channel actually written back.
+ * `decodeMap` is mocked: jsdom decodes no images, and what is under test here is the
+ * *decision* about class 0, not the decode.
  */
 describe('mask background', () => {
   /** Pixel class indices in, the RGBA buffer the overlay paints out. */
-  function paint(classNames: readonly string[], values: readonly number[]): Uint8ClampedArray {
-    const data = new Uint8ClampedArray(values.length * 4);
-    values.forEach((value, index) => {
-      data[index * 4] = value;
-      data[index * 4 + 1] = value;
-      data[index * 4 + 2] = value;
-      data[index * 4 + 3] = 255;
+  async function paint(
+    classNames: readonly string[],
+    values: readonly number[],
+  ): Promise<Uint8ClampedArray> {
+    vi.mocked(decodeMap).mockResolvedValue({
+      values: new Uint8ClampedArray(values),
+      width: values.length,
+      height: 1,
     });
-    const buffer = { data, width: values.length, height: 1 };
 
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
-      drawImage: () => undefined,
-      getImageData: () => buffer,
-      putImageData: () => undefined,
-    } as unknown as CanvasRenderingContext2D);
-
-    class LoadsImmediately {
-      onload: (() => void) | null = null;
-      set src(_value: string) {
-        this.onload?.();
-      }
-    }
-    vi.stubGlobal('Image', LoadsImmediately);
+    let written: Uint8ClampedArray | null = null;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      () =>
+        ({
+          createImageData: (w: number, h: number) => ({
+            data: new Uint8ClampedArray(w * h * 4),
+            width: w,
+            height: h,
+          }),
+          putImageData: (image: { data: Uint8ClampedArray }) => {
+            written = image.data;
+          },
+        }) as unknown as CanvasRenderingContext2D,
+    );
 
     render(
       <>
@@ -277,24 +287,24 @@ describe('mask background', () => {
       </>,
     );
 
-    return data;
+    await waitFor(() => expect(written).not.toBeNull());
+    return written as unknown as Uint8ClampedArray;
   }
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
-  it('leaves a named background transparent', () => {
-    const painted = paint(['background', 'sky'], [0, 1, 0]);
+  it('leaves a named background transparent', async () => {
+    const painted = await paint(['background', 'sky'], [0, 1, 0]);
 
     expect(painted[3]).toBe(0);
     expect(painted[7]).toBe(255);
     expect(painted[11]).toBe(0);
   });
 
-  it('paints class 0 when it is a real class, as ADE20k’s wall is', () => {
-    const painted = paint(['wall', 'sky'], [0, 1]);
+  it('paints class 0 when it is a real class, as ADE20k\u2019s wall is', async () => {
+    const painted = await paint(['wall', 'sky'], [0, 1]);
 
     expect(painted[3]).toBe(255);
     expect(painted[7]).toBe(255);

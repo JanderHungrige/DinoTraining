@@ -123,6 +123,38 @@ describe('verdicts', () => {
   });
 });
 
+describe('hidden versus below the cutoff', () => {
+  it('does not call a concealed box "below cutoff"', () => {
+    // The slider makes a claim about the score. A box the reviewer got out of the way to
+    // draw on a clear image has said nothing about its score.
+    renderList({ hidden: new Set(['a', 'b']), belowCutoff: new Set() });
+
+    expect(screen.queryByText(/below cutoff/)).not.toBeInTheDocument();
+    expect(screen.getByText(/2 hidden/)).toBeInTheDocument();
+  });
+
+  it('counts the two reasons separately', () => {
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set(['c']) });
+
+    expect(screen.getByText(/1 below cutoff/)).toBeInTheDocument();
+    expect(screen.getByText(/2 hidden/)).toBeInTheDocument();
+  });
+
+  it('will not offer to discard a box that is merely concealed', () => {
+    // The load-bearing one. `Remove N below` discarding work the user only hid would be
+    // the worst thing this screen can do.
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set() });
+
+    expect(screen.getByRole('button', { name: /Remove 0 below/ })).toBeDisabled();
+  });
+
+  it('says how to get concealed boxes back, not how to lower a cutoff', () => {
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set() });
+
+    expect(screen.getByRole('status')).toHaveTextContent(/Show them again/);
+  });
+});
+
 describe('choosing a class', () => {
   it('reports the class picked for a box', async () => {
     const { onRename, user } = renderList();
@@ -197,13 +229,17 @@ describe('the threshold', () => {
   });
 
   it('leaves hidden boxes out of the list but says how many', () => {
-    renderList({ hidden: new Set(['c']), threshold: 0.3 });
+    renderList({ hidden: new Set(['c']), belowCutoff: new Set(['c']), threshold: 0.3 });
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getByText(/1 below cutoff/)).toBeInTheDocument();
   });
 
   it('offers to discard exactly what is hidden', async () => {
-    const { onRemoveHidden, user } = renderList({ hidden: new Set(['b', 'c']), threshold: 0.5 });
+    const { onRemoveHidden, user } = renderList({
+      hidden: new Set(['b', 'c']),
+      belowCutoff: new Set(['b', 'c']),
+      threshold: 0.5,
+    });
     const discard = screen.getByRole('button', { name: /Remove 2 below/ });
     await user.click(discard);
     expect(onRemoveHidden).toHaveBeenCalled();
@@ -215,7 +251,11 @@ describe('the threshold', () => {
   });
 
   it('says how to get the boxes back when everything is filtered out', () => {
-    renderList({ hidden: new Set(['a', 'b', 'c']), threshold: 0.99 });
+    renderList({
+      hidden: new Set(['a', 'b', 'c']),
+      belowCutoff: new Set(['a', 'b', 'c']),
+      threshold: 0.99,
+    });
     expect(screen.getByRole('status')).toHaveTextContent(/Lower it/);
   });
 

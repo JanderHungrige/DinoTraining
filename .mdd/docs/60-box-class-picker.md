@@ -267,6 +267,26 @@ picker. Then, in the Studio on one 32-box image:
   action, and the session went dirty. Doc 47's first known issue, closed.
 * A box drawn by hand opened at `— unnamed —` with every class offered.
 
+## Corrections
+
+**2026-08-25 — the naming field shipped 12px wide.** Reported as "adding a new label does
+not allow to write something in", and that is exactly how it looked: the field was
+rendered, focused and enabled, and you could type into it, but you could not see anything.
+
+The review row is `1.6rem minmax(0,1fr) 2.6rem auto`. In a 256px panel that leaves the
+class column **19px**, and a text field plus Add (41px) plus Cancel (58px) does not fit in
+19px — `min-width: 0` obediently squeezed the field to nothing. The picker's `<select>` had
+been fine there because a select shrinks to its box; a three-control form does not.
+
+The naming form is now absolutely positioned over the whole row. The score and the verdict
+buttons have nothing to say while a class is being named, so covering them costs nothing,
+and it needs neither `:has()` nor extra React state to express. Measured after: 106px in
+the same 256px panel, ~290px at a normal width.
+
+The lesson for the next control that lives in that column: **measure the cell, not the
+component.** A component that lays out correctly in isolation can still be unusable in a
+19px grid track, and no test that renders it standalone will notice.
+
 ## Known Issues
 
 - "**A rename leaves the old class in the vocabulary.** Renaming `black-pawn` to

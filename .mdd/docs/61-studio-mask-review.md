@@ -17,6 +17,8 @@ source_files:
   - apps/frontend/src/api/datasets.ts
   - apps/frontend/src/lib/saveAnnotations.ts
   - apps/frontend/src/components/MaskLayer.tsx
+  - apps/frontend/src/lib/decodeMap.ts
+  - apps/frontend/src/components/overlays/MapOverlay.tsx
   - apps/frontend/src/components/AnnotationCanvas.tsx
   - apps/frontend/src/hooks/useAnnotationSession.ts
   - apps/frontend/src/hooks/useSessionImages.ts
@@ -241,6 +243,55 @@ segmentation: 2801 runs
 That last line is the whole justification for the storage rule, measured: the derived box
 is there, the area is the segmentation's, and there is no second annotation.
 
+## Corrections
+
+**2026-08-25 — the fizzle, and one canvas instead of thirty.**
+
+Reported as "the box and segments seem to be found correctly, but there is still an overall
+fizzle when shown... looks like a displaying error", with a screenshot of a fine green
+speckle over the entire frame — sky, trees, everything the mask is not — and the real mask
+solid underneath it. Reported from the packaged app, not a dev browser.
+
+**The data was never wrong.** Decoding the stored mask in Chromium gives exactly two
+distinct byte values, 0 and 255, with 289,705 foreground pixels — the same number the COCO
+export reports as the area. So the RLE, the PNG encode and the store were all correct and
+the fault was in reading the PNG back.
+
+`new Image()` → `drawImage` → `getImageData` runs the image through **colour management**.
+The browser converts from the image's colour space to the canvas's, and where the
+conversion cannot land on an exact integer it *dithers*. Dithering a photograph is
+invisible; dithering data is not. A background of 0 comes back as a scatter of 0s and 1s,
+and `value > 0` — which is what both overlays tested — promotes every one of those 1s to a
+fully painted pixel. Chromium does not dither these; WebKit does, which is why it appears
+in the packaged app and not in a dev browser, and why the Inference Viewer showed it worst:
+that payload's classes are literally 0 and 1, so a one-level error *is* a different class.
+
+Three defences, in `lib/decodeMap.ts` and its callers:
+
+1. `createImageBitmap(blob, { colorSpaceConversion: 'none' })` — the standard way to say
+   "these are bytes, do not convert them", with an `<img>` fallback for older WebKit that
+   rejects the options bag;
+2. an `{ colorSpace: 'srgb' }` context with `imageSmoothingEnabled = false`, so nothing
+   downstream resamples or re-converts;
+3. **threshold instead of testing for non-zero.** Masks are encoded 0/255, so `>= 128` is
+   correct whatever any browser does to the low bits. This is the defence that does not
+   depend on a browser honouring a flag.
+
+**And one canvas for every mask, not one each.** The first implementation stacked an
+absolutely-positioned full-resolution canvas per annotation. At 2464x1600 that is 15.8 MB
+of pixel buffer apiece: thirty chess pieces would have asked the compositor for roughly
+half a gigabyte, and thirty translucent layers darken each other wherever masks overlap.
+They are composited into a single buffer now, which is cheaper *and* truer — where two
+masks meet the later one wins outright, the same last-writer-wins the backend's own index
+map produces.
+
+Verified after: one canvas, 289,705 painted pixels, 3,652,695 fully clear, and **zero**
+stray alpha values.
+
+**Not verified in the packaged app.** The speckle could not be reproduced in the dev
+browser, so the fix is reasoned from the mechanism rather than watched to go away. Defence
+3 is the one that holds regardless of whether the diagnosis is exactly right.
+
 ## Known Issues
 
 - "**The two writes are not atomic.** There is no endpoint that takes boxes and masks
@@ -261,6 +312,9 @@ is there, the area is the segmentation's, and there is no second annotation.
   everything else, and a mask loaded from the store is 'everything else'. That is the
   existing rule applied consistently, but it means re-running SAM on an image you already
   segmented loses the earlier verdicts."
+- "**The colour-management diagnosis is unconfirmed on WebKit.** The fizzle was reported
+  from the packaged app and could not be reproduced in the dev browser, so the decode fix
+  is reasoned rather than observed. The threshold guard holds either way."
 - "**The Dataset Generator is untouched.** It keeps its own mask review and its own
   index-paired save, which remain correct for a surface where the proposal is immutable." 
 
