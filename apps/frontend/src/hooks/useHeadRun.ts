@@ -174,6 +174,17 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     [backboneId],
   );
 
+  /**
+   * Wrapped rather than passed through, for the same reason `toggle` clears the result:
+   * a mask still on screen under a *changed* concept reads as though the new phrase had
+   * been segmented. Asking for "sky" and being shown the previous answer is the exact
+   * complaint this fix came from.
+   */
+  const changeConcept = useCallback((next: string): void => {
+    setConcept(next);
+    setResult(null);
+  }, []);
+
   const toggleFoundation = useCallback((foundationId: string): void => {
     setSelectedFoundations((current) =>
       current.includes(foundationId)
@@ -257,7 +268,12 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
         if (!controller.signal.aborted) setRunning(false);
       }
     },
-    [selected, backboneId, selectedFoundations],
+    // `concept` belongs here. Without it `run` was frozen at whatever the concept was
+    // when the *selection* last changed — and since the concept field only appears once
+    // a concept model is ticked, that was always the empty string. Every Grounded SAM and
+    // SAM 3 run went out with no concept at all, came back as an all-background mask, and
+    // looked identical however the phrase was changed.
+    [selected, backboneId, selectedFoundations, concept],
   );
 
   // Derived, not stored: a result is shown only while the image it describes is the one
@@ -270,7 +286,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     selected,
     foundations,
     concept,
-    setConcept,
+    setConcept: changeConcept,
     selectedFoundations,
     toggleFoundation,
     backboneId,

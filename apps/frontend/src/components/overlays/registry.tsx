@@ -27,9 +27,30 @@ function asNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' ? value : fallback;
 }
 
+/**
+ * Class 0 is transparent, but only where class 0 means "nothing here".
+ *
+ * ADE20k's class 0 is `wall` — a real prediction, and dimming it would hide it. A concept
+ * segmenter's class 0 is background and it says so by *naming* it, which is the signal
+ * used here: nothing branches on which model produced the prediction.
+ *
+ * Painting a named background opaque is what made Grounded SAM and SAM 3 look broken. At
+ * 55% opacity an all-background result is not an empty overlay, it is the whole frame
+ * washed in one flat colour — which reads as a nonsense mask rather than as no answer.
+ */
+const BACKGROUND_CLASS = 'background';
+
+/** Module-level so its identity is stable: `MapOverlay` keys its decode effect on this
+ *  function, and a fresh closure each render would re-decode the PNG every time. */
+function objectOnlyAlpha(value: number): number {
+  return value > 0 ? 255 : 0;
+}
+
 const renderMask: OverlayRenderer = ({ prediction, rendered }) => {
   const encoded = prediction.payload['mask_png'];
   if (typeof encoded !== 'string') return null;
+
+  const named = prediction.class_names[0] === BACKGROUND_CLASS;
 
   return (
     <MapOverlay
@@ -38,6 +59,7 @@ const renderMask: OverlayRenderer = ({ prediction, rendered }) => {
       height={asNumber(prediction.payload['height'])}
       rendered={rendered}
       colourFor={classColour}
+      {...(named ? { alphaFor: objectOnlyAlpha } : {})}
       title={`Segmentation from ${prediction.head_name}`}
     />
   );
