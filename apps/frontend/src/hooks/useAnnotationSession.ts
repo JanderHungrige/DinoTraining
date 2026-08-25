@@ -8,10 +8,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
-import { EMPTY_COUNTS, saveImageBoxes, type DatasetCounts } from '../api/datasets';
+import { EMPTY_COUNTS, type DatasetCounts } from '../api/datasets';
 import type { ImageSource } from '../components/ImageSourceField';
 import { proposalFailure, proposeFor } from '../lib/proposeFor';
+import { saveAnnotations } from '../lib/saveAnnotations';
 import { useSessionImages } from './useSessionImages';
+import { useStoredMasks } from './useStoredMasks';
 import type { CanvasBox } from '../types/annotation';
 
 /**
@@ -149,6 +151,15 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     [allImages, existing],
   );
 
+  // Stored masks arrive per image and are merged into `boxes` (doc 61). One array, so
+  // nothing downstream learns that some annotations came from a different table.
+  useStoredMasks({
+    datasetId: config?.datasetId ?? null,
+    imagePath: currentImage,
+    isDirty: () => stateRef.current.dirty,
+    onLoaded: (masks) => setBoxesState((current) => [...masks, ...current]),
+  });
+
   const reportImageSize = useCallback((width: number, height: number): void => {
     setImageSize((current) =>
       current?.width === width && current.height === height ? current : { width, height },
@@ -190,9 +201,13 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
 
       setBusy(true);
       try {
-        // A reviewed image with no boxes is still saved: "nothing here" is a real
+        // A reviewed image with no annotations is still saved: "nothing here" is a real
         // negative example, and skipping it would silently drop it from the dataset.
-        const fresh = await saveImageBoxes(
+        //
+        // `saveAnnotations` splits by whether an annotation carries a mask and writes each
+        // half to its own table — one object is a mask row or a box row, never both (doc
+        // 61). Both sets go out even when empty, because each endpoint replaces.
+        const fresh = await saveAnnotations(
           config.datasetId,
           {
             path: imagePath,

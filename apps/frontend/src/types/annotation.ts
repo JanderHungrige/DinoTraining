@@ -45,6 +45,23 @@ export interface Producer {
   readonly concept?: string;
 }
 
+/**
+ * A segmentation as the review surface holds it (doc 61).
+ *
+ * The RLE travels **on the annotation** rather than being paired to a proposal by index.
+ * `saveImageMasks` pairs by index and that is right for the Dataset Generator, whose
+ * proposal is immutable and whose review is verdicts-only. The Studio's list is edited —
+ * boxes are drawn, removed, and discarded wholesale by the threshold slider — and any of
+ * those breaks index pairing. A broken pairing is a *silent* mislabel: the save succeeds
+ * and every mask after the edit carries the wrong verdict and class.
+ */
+export interface CanvasMask {
+  /** COCO uncompressed RLE. `size` is [height, width] — COCO's order, not this file's. */
+  readonly rle: { readonly size: readonly [number, number]; readonly counts: readonly number[] };
+  /** Base64 PNG, no data: prefix. 0 = background, 255 = this object. Preview only. */
+  readonly png: string;
+}
+
 /** A box as the canvas holds it. `id` is client-side only. */
 export interface CanvasBox {
   readonly id: string;
@@ -57,6 +74,21 @@ export interface CanvasBox {
   readonly score?: number;
   readonly text?: string;
   readonly producer?: Producer;
+  /**
+   * The segmentation this annotation came from, when it has one (doc 61).
+   *
+   * Present on a concept segmenter's proposals and on anything loaded back from the
+   * `masks` table; absent on a hand-drawn box, a detector's box, and a prompt run. Whether
+   * it is present decides which table the annotation is saved to — one object is a mask
+   * row **or** a box row, never both, because the COCO exporter emits each table
+   * separately and storing both would double every segmented object in the export.
+   */
+  readonly mask?: CanvasMask;
+}
+
+/** Does this annotation carry a segmentation? The one test that decides how it is saved. */
+export function isSegmented(box: CanvasBox): boolean {
+  return box.mask !== undefined;
 }
 
 /** Click cycles rather than opening a menu — the same call, hundreds of times. */

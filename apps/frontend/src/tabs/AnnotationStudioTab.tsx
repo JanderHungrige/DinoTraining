@@ -21,6 +21,10 @@ export function AnnotationStudioTab(): JSX.Element {
   // Starts at 0 so nothing is ever hidden until the user asks. A review surface that opens
   // with boxes already filtered out looks like a model that found fewer than it did.
   const [threshold, setThreshold] = useState(0);
+  // Masks are the finer answer and the box is derivable from them, so the box is what you
+  // opt into (doc 61). Not "hide the masks" — the two together are how you check that a
+  // box is tight.
+  const [showBoxes, setShowBoxes] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
   const prescan = usePrescan();
@@ -37,6 +41,10 @@ export function AnnotationStudioTab(): JSX.Element {
     [boxes],
   );
   const vocabulary = useDatasetClasses(config?.datasetId ?? null, inPlay);
+
+  // The toggle only exists when something on screen has a mask. A control that does
+  // nothing reads as broken — the same rule doc 47 applied to the threshold slider.
+  const anySegmented = useMemo(() => boxes.some((box) => box.mask !== undefined), [boxes]);
 
   const setLabel = useCallback(
     (id: string, label: Label): void => {
@@ -186,6 +194,7 @@ export function AnnotationStudioTab(): JSX.Element {
                 selectedId={selectedId}
                 onBoxesChange={setBoxes}
                 onSelect={setSelectedId}
+                showBoxes={showBoxes || !anySegmented}
                 disabled={session.busy}
               />
               <BoxReviewList
@@ -207,6 +216,17 @@ export function AnnotationStudioTab(): JSX.Element {
             </div>
           ) : (
             <p role="status">Loading image…</p>
+          )}
+
+          {anySegmented && (
+            <label className="studio__toggle">
+              <input
+                type="checkbox"
+                checked={showBoxes}
+                onChange={(event) => setShowBoxes(event.target.checked)}
+              />
+              Show bounding boxes
+            </label>
           )}
 
           <div className="studio__actions">

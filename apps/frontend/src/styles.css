@@ -447,6 +447,45 @@ body {
   white-space: nowrap;
 }
 
+/* Masks (doc 61). Painting only — every hit target is still the box button drawn over
+   the mask, so this layer must never intercept a pointer. */
+.masklayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* A segmented annotation with `Show bounding boxes` off. The button stays — it is the
+   only focusable thing a mask has — but it draws nothing until it is reached for. */
+.canvas__box--bare {
+  border-color: transparent;
+  background: transparent;
+}
+
+.canvas__box--bare .canvas__boxtag {
+  opacity: 0;
+}
+
+.canvas__box--bare:hover,
+.canvas__box--bare:focus-visible,
+.canvas__box--bare.canvas__box--selected {
+  border-color: var(--verdict);
+}
+
+.canvas__box--bare:hover .canvas__boxtag,
+.canvas__box--bare:focus-visible .canvas__boxtag,
+.canvas__box--bare.canvas__box--selected .canvas__boxtag {
+  opacity: 1;
+}
+
+.studio__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
 .canvas__draft {
   position: absolute;
   border: 2px dashed var(--focus);

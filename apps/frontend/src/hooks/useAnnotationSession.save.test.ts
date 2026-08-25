@@ -25,9 +25,25 @@ async function startedSession(handlers = {}) {
   return result;
 }
 
+/**
+ * The **boxes** PUT specifically.
+ *
+ * A save is two requests since doc 61 — masks to `/images/masks`, boxes to `/images` — so
+ * "the first PUT" stopped identifying anything. Naming the endpoint is also what makes the
+ * split assertable rather than incidental.
+ */
 function putBody(): { boxes: unknown[]; path: string; width: number } {
-  const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
-  return JSON.parse(String(put?.[1]?.body));
+  return JSON.parse(String(putTo('/images')?.[1]?.body));
+}
+
+function maskBody(): { masks: unknown[]; path: string } {
+  return JSON.parse(String(putTo('/images/masks')?.[1]?.body));
+}
+
+function putTo(suffix: string) {
+  return fetchMock.mock.calls.find(
+    ([input, init]) => init?.method === 'PUT' && String(input).endsWith(suffix),
+  );
 }
 
 describe('saving', () => {
@@ -53,6 +69,19 @@ describe('saving', () => {
     });
 
     expect(putBody().boxes).toEqual([]);
+  });
+
+  it('clears an image\u2019s masks even when nothing on it has one', async () => {
+    // The mask endpoint *replaces*, so an empty list is how "none any more" is said.
+    // Skipping the call would leave rejected masks in the dataset for ever (doc 61).
+    const result = await startedSession();
+
+    act(() => result.current.setBoxes([box()]));
+    await act(async () => {
+      await result.current.save();
+    });
+
+    expect(maskBody().masks).toEqual([]);
   });
 
   it('strips the client-side id before sending', async () => {

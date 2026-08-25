@@ -16,6 +16,12 @@
  * Each box shows **its number and its class**, not its verdict. For detection output the
  * class is the thing being checked and the number is how the box is named in conversation
  * and in the list beside it; the verdict is legible from the colour.
+ *
+ * **Masks are painted by `MaskLayer`, and the box stays the hit target** (doc 61). An
+ * annotation that carries a segmentation gets its mask drawn and its rect hidden unless
+ * `showBoxes` is on — the mask is the finer answer, and the rect is derivable from it. The
+ * button is still there either way, transparent but focusable, because mask pixels cannot
+ * be focused and every keyboard affordance here hangs off that button.
  */
 
 import {
@@ -25,19 +31,12 @@ import {
   useState,
   type JSX,
   type KeyboardEvent,
-  type PointerEvent,
 } from 'react';
 
-import {
-  fitContain,
-  isDeliberateDrag,
-  rectFromPoints,
-  toDisplay,
-  toNatural,
-  type Rect,
-  type RenderedImage,
-} from '../lib/geometry';
+import { fitContain, toDisplay, type Rect, type RenderedImage } from '../lib/geometry';
+import { useBoxDraw } from '../hooks/useBoxDraw';
 import { inPaintOrder, type NumberedBox } from '../lib/boxReview';
+import { MaskLayer } from './MaskLayer';
 import { LABEL_TITLES, nextLabel, type CanvasBox, type Label } from '../types/annotation';
 
 export interface AnnotationCanvasProps {
@@ -52,6 +51,10 @@ export interface AnnotationCanvasProps {
   /** Ids the threshold is hiding. Hidden boxes are not drawn and cannot be focused, but
    *  they are still in `boxes` and still saved — hiding is a view, not a deletion. */
   readonly hidden?: ReadonlySet<string>;
+  /** Draw the rectangle over a segmented annotation as well as its mask (doc 61).
+   *  Ignored by anything with no mask — a box with no segmentation is always drawn, or
+   *  there would be nothing on screen at all. */
+  readonly showBoxes?: boolean;
   readonly disabled?: boolean;
 }
 
@@ -95,16 +98,12 @@ export function AnnotationCanvas({
   onBoxesChange,
   onSelect,
   hidden = EMPTY_HIDDEN,
+  showBoxes = true,
   disabled = false,
 }: AnnotationCanvasProps): JSX.Element {
   const plain = boxes.map((entry) => entry.box);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [rendered, setRendered] = useState<RenderedImage>(EMPTY_RENDER);
-  const [draft, setDraft] = useState<Rect | null>(null);
-  const dragStart = useRef<{ x: number; y: number } | null>(null);
-  // The live rect also lives in a ref: pointerup must not depend on a state update
-  // from pointermove having been flushed, which is not guaranteed between events.
-  const dragRect = useRef<Rect | null>(null);
 
   const measure = useCallback((): void => {
     const node = containerRef.current;
@@ -160,69 +159,32 @@ export function AnnotationCanvas({
     }
   };
 
-  const localPoint = (event: PointerEvent<HTMLDivElement>): { x: number; y: number } => {
-    const node = containerRef.current;
-    if (!node) return { x: 0, y: 0 };
-    const bounds = node.getBoundingClientRect();
-    return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-  };
+  const addDrawn = useCallback(
+    (natural: Rect): void => {
+      const created: CanvasBox = {
+        id: makeId(),
+        label: 'positive',
+        provenance: 'hand-drawn',
+        x: Math.round(natural.x),
+        y: Math.round(natural.y),
+        w: Math.round(natural.w),
+        h: Math.round(natural.h),
+      };
+      onBoxesChange([...plain, created]);
+      onSelect(created.id);
+    },
+    [plain, onBoxesChange, onSelect],
+  );
 
-  const handlePointerDown = (event: PointerEvent<HTMLDivElement>): void => {
-    if (disabled || event.button !== 0) return;
-    // A press on a box is that box's click; anything else on the stage draws.
-    //
-    // Asking for `target === currentTarget` instead is what broke hand-drawn boxes
-    // entirely: the image fills the stage, so it — not the stage — was the target of
-    // every press, and no drag ever started. `.canvas__image` is `pointer-events: none`
-    // now, but the rule is expressed here as what it actually means, so a future style
-    // change cannot silently take drawing away again.
-    if ((event.target as HTMLElement).closest('button')) return;
-    const point = localPoint(event);
-    dragStart.current = point;
-    dragRect.current = { x: point.x, y: point.y, w: 0, h: 0 };
-    setDraft(dragRect.current);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
+  const clearSelection = useCallback((): void => onSelect(null), [onSelect]);
 
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>): void => {
-    const start = dragStart.current;
-    if (!start) return;
-    const point = localPoint(event);
-    dragRect.current = rectFromPoints(start.x, start.y, point.x, point.y);
-    setDraft(dragRect.current);
-  };
-
-  const handlePointerUp = (event: PointerEvent<HTMLDivElement>): void => {
-    const start = dragStart.current;
-    const current = dragRect.current;
-    dragStart.current = null;
-    dragRect.current = null;
-    setDraft(null);
-    if (!start || !current) return;
-
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-
-    // A tiny drag is a stray click, not an attempt to draw a box.
-    if (!isDeliberateDrag(current)) {
-      onSelect(null);
-      return;
-    }
-
-    const natural = toNatural(current, rendered);
-    if (natural.w <= 0 || natural.h <= 0) return;
-
-    const created: CanvasBox = {
-      id: makeId(),
-      label: 'positive',
-      provenance: 'hand-drawn',
-      x: Math.round(natural.x),
-      y: Math.round(natural.y),
-      w: Math.round(natural.w),
-      h: Math.round(natural.h),
-    };
-    onBoxesChange([...plain, created]);
-    onSelect(created.id);
-  };
+  const draw = useBoxDraw({
+    containerRef,
+    rendered,
+    disabled,
+    onDraw: addDrawn,
+    onStrayClick: clearSelection,
+  });
 
   return (
     <div className="canvas">
@@ -230,9 +192,9 @@ export function AnnotationCanvas({
         ref={containerRef}
         className="canvas__stage"
         data-testid="canvas-stage"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
+        onPointerDown={draw.onPointerDown}
+        onPointerMove={draw.onPointerMove}
+        onPointerUp={draw.onPointerUp}
       >
         <img
           className="canvas__image"
@@ -242,18 +204,24 @@ export function AnnotationCanvas({
           onLoad={measure}
         />
 
+        <MaskLayer boxes={boxes} hidden={hidden} rendered={rendered} selectedId={selectedId} />
+
         {inPaintOrder(boxes)
           .filter(({ box }) => !hidden.has(box.id))
           .map(({ box, number }) => {
             const rect = toDisplay(box, rendered);
             const selected = box.id === selectedId;
+            // A segmented annotation's rect is hidden unless asked for, but the button
+            // stays: it is the only focusable thing a mask has, and removing it would
+            // take the verdict keys and the accessibility tree with it.
+            const bare = box.mask !== undefined && !showBoxes;
             const score =
               box.score === undefined ? '' : `, score ${(box.score * 100).toFixed(0)}%`;
             return (
               <button
                 key={box.id}
                 type="button"
-                className={`canvas__box canvas__box--${box.label}${selected ? ' canvas__box--selected' : ''}`}
+                className={`canvas__box canvas__box--${box.label}${selected ? ' canvas__box--selected' : ''}${bare ? ' canvas__box--bare' : ''}`}
                 style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
                 aria-pressed={selected}
                 aria-label={`Box ${number}${box.text ? `, ${box.text}` : ''}, ${LABEL_TITLES[box.label].toLowerCase()}${score}. Press 1, 2 or 3 to relabel, Delete to remove.`}
@@ -273,10 +241,15 @@ export function AnnotationCanvas({
             );
           })}
 
-        {draft && (
+        {draw.draft && (
           <div
             className="canvas__draft"
-            style={{ left: draft.x, top: draft.y, width: draft.w, height: draft.h }}
+            style={{
+              left: draw.draft.x,
+              top: draw.draft.y,
+              width: draw.draft.w,
+              height: draw.draft.h,
+            }}
             aria-hidden="true"
           />
         )}
