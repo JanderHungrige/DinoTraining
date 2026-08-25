@@ -11,6 +11,7 @@
 
 import type { JSX } from 'react';
 
+import { ModelGuidePanel } from '../components/ModelGuidePanel';
 import { INTRO_CONCEPTS, INTRO_LEAD, INTRO_LIMITS, INTRO_STAGES } from './introContent';
 import { getTab, type TabId } from './tabs';
 
@@ -64,6 +65,15 @@ export function IntroTab({ onNavigate }: IntroTabProps): JSX.Element {
           </div>
         ))}
       </dl>
+
+      {/* After the concepts and before the limits: it only makes sense once "backbone"
+          and "head" mean something, and it answers the question the limits list provokes. */}
+      <h3 className="intro__heading">Choosing a model</h3>
+      <p className="intro__note">
+        Every model here does something the others do badly. The numbers in this panel were
+        all measured in this app, on the datasets in it.
+      </p>
+      <ModelGuidePanel />
 
       <h3 className="intro__heading">What it cannot do yet</h3>
       <p className="intro__note">

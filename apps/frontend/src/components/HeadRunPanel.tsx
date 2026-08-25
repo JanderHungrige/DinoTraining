@@ -71,7 +71,7 @@ export function HeadRunPanel({
     return (
       <p role="status">
         No heads installed yet. Install a default from the Admin tab, or train one in the
-        Head Trainer.
+        Training tab.
       </p>
     );
   }

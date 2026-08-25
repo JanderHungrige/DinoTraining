@@ -972,6 +972,127 @@ body {
 
 /* --- Wave 2: Head Trainer ------------------------------------------------- */
 
+/* The two things Training does. A radio group rather than tabs-within-tabs: they are
+   mutually exclusive, and a radio group says so to a screen reader for free. Cards,
+   because the hint under each name is the part that makes the choice. */
+.modeswitch {
+  display: flex;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+  flex-wrap: wrap;
+}
+
+.modeswitch__legend {
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.modeswitch__option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.1rem 0.5rem;
+  flex: 1 1 16rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modeswitch__option--on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.modeswitch__name {
+  font-weight: 600;
+}
+
+/* Second column only, so it lines up under the name rather than under the radio — the
+   radio is a control, not the start of the sentence. */
+.modeswitch__hint {
+  grid-column: 2;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* The model guide (intro tab). Collapsed by default: it answers a day-three question and
+   would push the loop off the screen if it opened with the tab. */
+.guide {
+  margin: 0 0 1rem;
+}
+
+.guide__toggle {
+  font-weight: 600;
+}
+
+.guide__body {
+  margin-top: 0.75rem;
+}
+
+.guide__list {
+  display: grid;
+  gap: 0.9rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide__entry {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.guide__name {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.guide__best {
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+}
+
+/* Two columns where there is room, one where there is not — strengths and weaknesses are
+   a pair and reading them side by side is the point. */
+.guide__cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.6rem 1.25rem;
+}
+
+.guide__colhead {
+  margin: 0 0 0.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+}
+
+.guide__points {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.guide__points li + li {
+  margin-top: 0.3rem;
+}
+
+.guide__measured {
+  margin: 0.7rem 0 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.83rem;
+  color: var(--text-dim);
+}
+
 .trainer {
   padding: 1.25rem 1.5rem 2rem;
 }

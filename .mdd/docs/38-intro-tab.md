@@ -106,6 +106,25 @@ could not follow the light scheme; and this wave's own `.badge--noncommercial` (
 invented `--warn-bg`/`--warn-fg` the same way. Both now use the `color-mix` formula
 `.badge--gated` already established.
 
+## Later additions
+
+**2026-08-25 — "Which model should I use?"** Added after the question was asked out loud:
+*"is a DINOv2 head not really suitable for object detection?"* It is a fair question with a
+nuanced answer, and the nuance existed only in `.mdd/docs/`, where a user never looks.
+
+**Every number in it was measured in this app**, and they are cited rather than described,
+because "better for small objects" is an opinion and "0.5–0.6 against 0.96 on the same rail
+data" is not. The entries name what each model is *bad* at as prominently as what it is good
+at — an intro that only lists strengths is marketing, and the reason this tab exists is that
+being told beats concluding the app is broken.
+
+**Collapsed by default**, and placed after the concepts rather than before them: it only
+parses once "backbone" and "head" mean something, and open by default it would push the
+loop — the thing a first-time reader actually needs — off the screen.
+
+The limits list also stopped saying "which is what the Head Trainer is for", because that
+tab is called Training now and does two things.
+
 ## Known Issues
 
 See frontmatter.

@@ -197,7 +197,7 @@ describe('GeneratorSetup', () => {
     ]);
     render(<GeneratorSetup onStart={vi.fn()} />);
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/Head Trainer/);
+    expect(await screen.findByRole('status')).toHaveTextContent(/Training/);
     // Scoped to the head radios: the mode switch is also a radio group, and an
     // unscoped query would pass for the wrong reason once anything else is added.
     expect(screen.queryByRole('radio', { name: /Segmenter/ })).not.toBeInTheDocument();

@@ -43,8 +43,10 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
   },
   {
     id: 'trainer',
-    label: 'Head Trainer',
-    hint: 'Train a head on a frozen DINO backbone and watch live metrics.',
+    // "Head Trainer" named only half of what the tab does. Fine-tuning a whole model
+    // lived at the bottom of it under an <h3> and was, predictably, never found.
+    label: 'Training',
+    hint: 'Train a head on a frozen DINO backbone, or fine-tune a whole detector.',
     wave: 2,
   },
   {

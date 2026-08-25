@@ -152,7 +152,7 @@ describe('starting a run', () => {
   });
 
   it('warns that this is minutes, not seconds', () => {
-    // The Head Trainer next to it finishes in seconds. Someone who expects the same and
+    // Head training next to it finishes in seconds. Someone who expects the same and
     // gets six minutes concludes it has hung.
     renderPanel();
     expect(screen.getByText(/minutes/)).toBeInTheDocument();

@@ -68,7 +68,7 @@ export function ExpertHeadPicker({
       <p role="status" className="headpick__empty">
         No installed head can propose boxes. Classification, segmentation and depth heads
         run in the Inference Viewer; only a detection head proposes boxes — train one in
-        the Head Trainer.
+        Training.
       </p>
     );
   }
