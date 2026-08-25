@@ -95,6 +95,18 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
       'No weights ship with the app — the installer would be gigabytes and most of them ' +
       'would be ones you never use. You download exactly what you need.',
   },
+  {
+    tab: 'api',
+    title: 'Or let your own AI do all of it',
+    what:
+      'Everything above happens through a local API, and the API tab hands you one ' +
+      'document describing it. Paste that into ChatGPT, Claude or anything else and say ' +
+      'what you want — "download this dataset, fine-tune RF-DETR on it, then annotate my ' +
+      'images" — and it can carry out the whole loop for you.',
+    why:
+      'Not a step in the loop; a different way to run it. Listed here because a feature ' +
+      'nobody finds may as well not exist, and this one is easy to walk past.',
+  },
 ]);
 
 /** The three ideas the rest of the app assumes and never explains. */

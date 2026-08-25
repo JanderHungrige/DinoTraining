@@ -2769,3 +2769,147 @@ body {
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
+
+/* ---------------------------------------------------------------------------
+   The API tab (doc 63) — one document to hand an assistant.
+   --------------------------------------------------------------------------- */
+
+.apidocs__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.apidocs__note {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.apidocs__doc {
+  max-width: 52rem;
+}
+
+/* Rendered markdown. Semantic elements throughout, because this markup is also the print
+   source and a PDF's outline comes from real headings. */
+.md__h {
+  margin: 1.6rem 0 0.5rem;
+  line-height: 1.25;
+}
+
+.md__h--1 {
+  font-size: 1.45rem;
+  margin-top: 0;
+}
+.md__h--2 {
+  font-size: 1.15rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--border);
+}
+.md__h--3 {
+  font-size: 1rem;
+}
+
+.md__p {
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+
+.md__list {
+  margin: 0 0 0.9rem;
+  padding-left: 1.4rem;
+  line-height: 1.6;
+}
+
+.md__list li + li {
+  margin-top: 0.3rem;
+}
+
+/* Wide by nature — request bodies and paths. Scrolls inside itself rather than pushing
+   the page sideways. */
+.md__code {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.md__quote {
+  margin: 0 0 0.9rem;
+  padding: 0.5rem 0.9rem;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-raised);
+  font-style: italic;
+}
+
+.md code {
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  background: var(--bg-raised);
+  font-size: 0.85em;
+}
+
+.md__code code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+
+/* ---------------------------------------------------------------------------
+   Print — this is the PDF.
+
+   "Save as PDF" is the browser's own print, so the stylesheet *is* the export format.
+   Everything that is app rather than document is hidden: a PDF of the guide should not
+   carry a tab bar, a backend status light, or the three buttons that produced it.
+   --------------------------------------------------------------------------- */
+@media print {
+  .tabbar,
+  .app__header,
+  .apidocs__actions,
+  .apidocs__head .studio__lead {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .apidocs__doc {
+    max-width: none;
+  }
+
+  /* Ink, not screen: a light-on-dark code block prints as a black rectangle and empties a
+     cartridge doing it. */
+  .md__code,
+  .md code,
+  .md__quote {
+    background: #f4f4f5 !important;
+    color: #000 !important;
+    border-color: #d4d4d8 !important;
+  }
+
+  /* A heading alone at the foot of a page, or a split code block, is where a printed
+     document stops reading like one. */
+  .md__h {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .md__code,
+  .md__list li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  a[href]::after {
+    content: none;
+  }
+}
