@@ -9,6 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    agent_docs,
     annotate,
     annotators,
     backbones,
@@ -33,6 +34,7 @@ from app.api.v1 import (
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
+api_router.include_router(agent_docs.router, tags=["docs"])
 api_router.include_router(annotate.router, tags=["annotate"])
 api_router.include_router(annotators.router, tags=["annotators"])
 api_router.include_router(models.router, tags=["models"])
