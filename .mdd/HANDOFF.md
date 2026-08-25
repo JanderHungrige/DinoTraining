@@ -22,6 +22,9 @@ them could have come from anywhere else.
 | fix | **The Inference Viewer sent no concept.** `run` was memoised without `concept` in its deps, and the concept field only appears *after* a model is ticked — so the captured value was always `''`. Every SAM run returned an all-background mask in 26 ms. Compounded by the overlay painting class 0 opaque, which turned "no answer" into a full-frame colour wash. |
 | 60 | **A class picker for boxes** — a `dataset_classes` table, GET/POST/DELETE, a dropdown with inline `New class…`, and per-class rename across an image. Closes doc 47's first known issue. |
 | 61 | **Masks in the Studio** — Grounded SAM's segmentation is now shown and stored instead of discarded. One annotation per object: a mask row *or* a box row, never both, because the COCO exporter emits each table separately. |
+| 62 | **Tiled inference** — the largest correctness gap, closed. A head trained on 472px tiles found nothing on a 2464px frame *while the run succeeded*. Per-run grid, merged with class-aware NMS. Measured 0 boxes against 6 on the frame the gap was found in. |
+| — | **Segmentation heads train** — `linear-segmenter` was registered trainable with a loss wired to it and nothing that could produce its target. Class 0 is background; `unclear` paints over positives; an unsegmented image is not an empty one. |
+| — | **Training tab, and a model guide in the intro** — 'Head Trainer' did two things and named one, so fine-tuning was never found. The intro now says which model is for what, with numbers measured here. |
 
 **The one to carry forward: WebKit colour-manages canvas image data whatever you ask.**
 `createImageBitmap(blob, { colorSpaceConversion: 'none' })` does not stop it — proved by
@@ -157,6 +160,6 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-25: `1262` backend tests, `677` frontend, `ruff` +
+**Gates**, all green as of 2026-08-25: `1262` backend tests, `685` frontend, `ruff` +
 `mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
 nothing since has touched `apps/desktop`.)
