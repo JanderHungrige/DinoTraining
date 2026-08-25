@@ -125,11 +125,10 @@ distributions that do not take one.
 6. **Renaming is missing from the Library** (doc 51). *(Per-class rename from box review
    was the other half of this line and shipped in doc 60 on 2026-08-25.)*
 7. ~~**`linear-segmenter` is declared trainable but cannot run.**~~ **Fixed 2026-08-25** —
-   it trains on stored masks now; see the backlog entry for the four decisions and the one
-   thing only a real run caught. What remains: the vocabulary spans boxes *and* masks, so a
-   mixed dataset gives the head an output channel per box-only class that nothing can
-   supervise. Harmless, but a 13-class box dataset with one segmented class produces a
-   14-class head with twelve dead channels.
+   it trains on stored masks now; see the backlog entry for the decisions and the one thing
+   only a real run caught. The vocabulary is per task rather than unioned, so a segmenter
+   never sees a box-only class — which was worth more than it sounded: dropping one dead
+   channel took epoch-1 loss from 3.16 to 0.70 and best mIoU from 0.263 to 0.539.
 
    *(original)* **`linear-segmenter` is declared trainable but cannot run.** `trainable=True`,
    `target_format="masks"`, with `segmentation_loss` and `segmentation_metrics` both
@@ -155,6 +154,6 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-25: `1244` backend tests, `660` frontend, `ruff` +
+**Gates**, all green as of 2026-08-25: `1248` backend tests, `660` frontend, `ruff` +
 `mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
 nothing since has touched `apps/desktop`.)

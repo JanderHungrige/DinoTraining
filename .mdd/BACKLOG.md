@@ -258,12 +258,20 @@ themselves before calling the loss, so they passed while a run failed with "Expe
 batch_size (1) to match target batch_size (448)". The test now passes `build_targets`
 output untouched, exactly as `run_epoch` does.
 
-**Left open**: the vocabulary spans boxes *and* masks, so a mixed dataset gives the head an
-output channel per box-only class that nothing can ever supervise. Harmless — the model
-simply never predicts them — but a 13-class box dataset with one segmented class produces a
-14-class head with twelve dead channels, and the class list reads oddly. A segmentation-only
-vocabulary would be the fix, and it is a change to how the vocabulary is *built* rather than
-how it is prefixed.
+**Also fixed, same day**: the vocabulary is built per task rather than unioned. Boxes and
+masks supervise different heads, so `build_class_vocabulary` and `build_mask_vocabulary` are
+separate and a `SampleSet` carries both. A segmenter never sees a box-only class and a
+detector never sees a mask-only one.
+
+This was not the cosmetic fix it looked like. On Vegetation_track the union had put `signal`
+— a leftover box class, on no mask — into a segmentation head, and removing it took epoch-1
+train loss from **3.16 to 0.70** and best mIoU from **0.263 to 0.539**. A channel that never
+appears in any target still takes probability mass.
+
+It also needed the run guard to become task-aware. `classes_for_task` returns
+`("background",)` for a dataset with no masks at all, so a guard counting that list sees one
+class and lets the run proceed to train on nothing; `learnable_classes` answers the question
+the guard actually means.
 
 ---
 

@@ -30,6 +30,7 @@ from app.ml.training.samples import (
     SampleSet,
     TrainingSample,
     classes_for_task,
+    learnable_classes,
 )
 
 WIDTH, HEIGHT = 40, 20
@@ -87,7 +88,9 @@ class TestTheVocabulary:
         """Every pixel belongs to some class and most belong to none of the annotated
         ones. Without background the loss can only ignore them, and a model that never
         sees background learns to label the whole frame."""
-        classes = classes_for_task(SampleSet(class_names=("signal", "mast")), "segmentation")
+        classes = classes_for_task(
+            SampleSet(mask_class_names=("signal", "mast")), "segmentation"
+        )
 
         assert classes == (BACKGROUND_CLASS, "signal", "mast")
 
@@ -101,9 +104,43 @@ class TestTheVocabulary:
         # The overlay registry treats class_names[0] === 'background' as the signal to
         # draw class 0 transparent, so a head trained here renders correctly with nothing
         # told about it. Index 0 is not merely a convention here.
-        classes = classes_for_task(SampleSet(class_names=("sky",)), "segmentation")
+        classes = classes_for_task(SampleSet(mask_class_names=("sky",)), "segmentation")
 
         assert classes[0] == BACKGROUND_CLASS
+
+    def test_a_segmenter_never_sees_a_box_only_class(self) -> None:
+        """The dead-channel bug. A COCO import with thirteen box classes plus one
+        segmented class was giving the head fourteen outputs, twelve of which nothing
+        could ever supervise — harmless to the model, and wrong in the class list, the
+        metrics and the head's name."""
+        mixed = SampleSet(
+            class_names=("bishop", "king", "pawn"), mask_class_names=("train tracks",)
+        )
+
+        assert classes_for_task(mixed, "segmentation") == (BACKGROUND_CLASS, "train tracks")
+
+    def test_a_detector_never_sees_a_mask_only_class(self) -> None:
+        # The mirror, and it matters as much: a detector cannot learn a class that only
+        # ever appeared as a mask.
+        mixed = SampleSet(class_names=("bishop",), mask_class_names=("train tracks",))
+
+        assert classes_for_task(mixed, "detection") == ("bishop",)
+
+
+class TestTheGuard:
+    def test_background_alone_does_not_count_as_a_learnable_class(self) -> None:
+        """`classes_for_task` would report one class for a dataset with no masks at all,
+        and the run would proceed to train a segmenter on nothing."""
+        empty = SampleSet(class_names=("bishop",), mask_class_names=())
+
+        assert classes_for_task(empty, "segmentation") == (BACKGROUND_CLASS,)
+        assert learnable_classes(empty, "segmentation") == ()
+
+    def test_a_mask_only_dataset_is_learnable_for_segmentation(self) -> None:
+        only_masks = SampleSet(class_names=(), mask_class_names=("sky",))
+
+        assert learnable_classes(only_masks, "segmentation") == ("sky",)
+        assert learnable_classes(only_masks, "detection") == ()
 
 
 class TestTheLabelMap:

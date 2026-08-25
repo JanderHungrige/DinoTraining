@@ -30,7 +30,12 @@ from app.ml.training.loop import (
 )
 from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
-from app.ml.training.samples import build_samples, classes_for_task, samples_for_task
+from app.ml.training.samples import (
+    build_samples,
+    classes_for_task,
+    learnable_classes,
+    samples_for_task,
+)
 from app.ml.training.unfreeze import apply_unfreeze, caching_is_valid, optimiser_for
 
 logger = logging.getLogger(__name__)
@@ -138,9 +143,16 @@ class LocalJobRunner:
         job.class_names = class_names
         job.skipped_mixed_class_images = sample_set.mixed_class_images
 
-        if sample_set.num_classes == 0:
+        # Asks the *dataset-derived* vocabulary, not the prefixed one: a segmentation
+        # vocabulary of background alone means the dataset taught nothing, and a guard
+        # reading `class_names` would count one class and let the run proceed.
+        if not learnable_classes(sample_set, spec.task):
             raise ValueError(
-                "No positive annotations found in the selected datasets — nothing to learn"
+                "No positive masks found in the selected datasets — a segmentation head "
+                "learns from masks, which a concept segmenter produces in the Annotation "
+                "Studio or the Dataset Generator."
+                if spec.task == "segmentation"
+                else "No positive boxes found in the selected datasets — nothing to learn"
             )
         usable = samples_for_task(sample_set, spec.task)
         if not usable:
