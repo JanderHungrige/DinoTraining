@@ -3,6 +3,7 @@ import { useState, type JSX } from 'react';
 import { BackendStatus } from './components/BackendStatus';
 import { TabBar } from './components/TabBar';
 import { AdminTab } from './tabs/AdminTab';
+import { ApiTab } from './tabs/ApiTab';
 import { AnnotationStudioTab } from './tabs/AnnotationStudioTab';
 import { DatasetGeneratorTab } from './tabs/DatasetGeneratorTab';
 import { HeadTrainerTab } from './tabs/HeadTrainerTab';
@@ -25,6 +26,8 @@ function renderTab(tab: TabId, onNavigate: (next: TabId) => void): JSX.Element {
       return <DatasetGeneratorTab />;
     case 'library':
       return <LibraryTab />;
+    case 'api':
+      return <ApiTab />;
     case 'admin':
       return <AdminTab />;
     default:

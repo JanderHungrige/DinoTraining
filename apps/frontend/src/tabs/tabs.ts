@@ -14,6 +14,7 @@ export const TAB_IDS = [
   'generator',
   'library',
   'admin',
+  'api',
 ] as const;
 
 export type TabId = (typeof TAB_IDS)[number];
@@ -73,6 +74,14 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
     label: 'Admin / Models',
     hint: 'Download and remove models, manage the HF token, cache dir, and device.',
     wave: 1,
+  },
+  {
+    id: 'api',
+    // Last, and a destination rather than a setting: you come here to copy something out.
+    // Burying it in Admin would repeat the mistake that hid fine-tuning for three waves.
+    label: 'API',
+    hint: 'Hand this to your own AI assistant and let it drive the app.',
+    wave: 9,
   },
 ] as const);
 
