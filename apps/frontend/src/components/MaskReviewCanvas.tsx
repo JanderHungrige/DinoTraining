@@ -19,9 +19,14 @@
 import { useCallback, useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react';
 
 import { fitContain, toDisplay, type RenderedImage } from '../lib/geometry';
-import type { Rgb } from '../lib/overlayPalette';
-import { LABEL_TITLES, LABELS, nextLabel, type Label, type ReviewMask } from '../types/annotation';
-import { MapOverlay } from './overlays/MapOverlay';
+import {
+  LABEL_TITLES,
+  LABELS,
+  nextLabel,
+  type Label,
+  type ReviewMask,
+} from '../types/annotation';
+import { CompositedMasks } from './overlays/CompositedMasks';
 
 export interface MaskReviewCanvasProps {
   readonly imageUrl: string;
@@ -42,18 +47,6 @@ const EMPTY_RENDER: RenderedImage = {
   naturalWidth: 0,
   naturalHeight: 0,
 };
-
-/** Verdict colours, matching the box canvas's borders so one legend serves both. */
-const VERDICT_RGB: Readonly<Record<Label, Rgb>> = Object.freeze({
-  positive: { r: 74, g: 222, b: 128 },
-  negative: { r: 248, g: 113, b: 113 },
-  unclear: { r: 251, g: 191, b: 36 },
-});
-
-/** Background is transparent; only the object is tinted. */
-function alphaForBinary(value: number): number {
-  return value > 0 ? 255 : 0;
-}
 
 export function MaskReviewCanvas({
   imageUrl,
@@ -107,19 +100,20 @@ export function MaskReviewCanvas({
       <div className="canvas__stage" ref={containerRef}>
         <img className="canvas__image" src={imageUrl} alt="" onLoad={measure} draggable={false} />
 
-        {masks.map((mask) => (
-          <MapOverlay
-            key={`${mask.id}-map`}
-            encoded={mask.maskPng}
-            width={naturalWidth}
-            height={naturalHeight}
-            rendered={rendered}
-            colourFor={() => VERDICT_RGB[mask.label]}
-            alphaFor={alphaForBinary}
-            opacity={mask.id === selectedId ? 0.75 : 0.45}
-            title={`${LABEL_TITLES[mask.label]} mask${mask.concept ? `: ${mask.concept}` : ''}`}
-          />
-        ))}
+        {/* One canvas for all of them, and no ARIA of its own — each mask's button below
+            already announces its verdict, concept and score, so a per-canvas label would
+            put two entries in the accessibility tree for one mask. */}
+        <CompositedMasks
+          masks={masks.map((mask) => ({
+            id: mask.id,
+            label: mask.label,
+            png: mask.maskPng,
+          }))}
+          width={naturalWidth}
+          height={naturalHeight}
+          rendered={rendered}
+          selectedId={selectedId}
+        />
 
         {masks.map((mask) => {
           const rect = toDisplay(mask, rendered);
