@@ -41,6 +41,10 @@ function renderList(over: Partial<Parameters<typeof BoxReviewList>[0]> = {}) {
     onRemove: vi.fn(),
     onThreshold: vi.fn(),
     onRemoveHidden: vi.fn(),
+    // Doc 60: the class is chosen from a vocabulary now, not typed. `create` resolves to
+    // the name as stored, which is what the picker selects on success.
+    onCreateClass: vi.fn(async (name: string) => name),
+    onRenameClass: vi.fn(),
   };
   render(
     <BoxReviewList
@@ -48,6 +52,7 @@ function renderList(over: Partial<Parameters<typeof BoxReviewList>[0]> = {}) {
       hidden={new Set()}
       selectedId={null}
       threshold={0}
+      classes={['dog', 'person']}
       {...handlers}
       {...over}
     />,
@@ -118,11 +123,87 @@ describe('verdicts', () => {
   });
 });
 
-describe('renaming', () => {
-  it('reports a retyped class', async () => {
+describe('hidden versus below the cutoff', () => {
+  it('does not call a concealed box "below cutoff"', () => {
+    // The slider makes a claim about the score. A box the reviewer got out of the way to
+    // draw on a clear image has said nothing about its score.
+    renderList({ hidden: new Set(['a', 'b']), belowCutoff: new Set() });
+
+    expect(screen.queryByText(/below cutoff/)).not.toBeInTheDocument();
+    expect(screen.getByText(/2 hidden/)).toBeInTheDocument();
+  });
+
+  it('counts the two reasons separately', () => {
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set(['c']) });
+
+    expect(screen.getByText(/1 below cutoff/)).toBeInTheDocument();
+    expect(screen.getByText(/2 hidden/)).toBeInTheDocument();
+  });
+
+  it('will not offer to discard a box that is merely concealed', () => {
+    // The load-bearing one. `Remove N below` discarding work the user only hid would be
+    // the worst thing this screen can do.
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set() });
+
+    expect(screen.getByRole('button', { name: /Remove 0 below/ })).toBeDisabled();
+  });
+
+  it('says how to get concealed boxes back, not how to lower a cutoff', () => {
+    renderList({ hidden: new Set(['a', 'b', 'c']), belowCutoff: new Set() });
+
+    expect(screen.getByRole('status')).toHaveTextContent(/Show them again/);
+  });
+});
+
+describe('choosing a class', () => {
+  it('reports the class picked for a box', async () => {
     const { onRename, user } = renderList();
-    await user.type(screen.getByLabelText('Class of box 3'), 'x');
-    expect(onRename).toHaveBeenCalledWith('c', 'dogx');
+
+    await user.selectOptions(screen.getByLabelText('Class of box 3'), 'person');
+
+    expect(onRename).toHaveBeenCalledWith('c', 'person');
+  });
+
+  it('offers every class in the vocabulary, plus unnamed and new', () => {
+    renderList();
+
+    const options = within(screen.getByLabelText('Class of box 1') as HTMLElement)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+
+    expect(options).toEqual(['— unnamed —', 'dog', 'person', 'New class…']);
+  });
+
+  it('clears a class back to unnamed', async () => {
+    // A hand-drawn box starts with no class, so "no class yet" has to stay reachable
+    // after the first choice.
+    const { onRename, user } = renderList();
+
+    await user.selectOptions(screen.getByLabelText('Class of box 1'), '');
+
+    expect(onRename).toHaveBeenCalledWith('a', '');
+  });
+
+  it('renames a class across every box carrying it', async () => {
+    // The reason doc 47 chose a free-text input was that a proposal run names many boxes
+    // the same thing. That correction is now one decision rather than thirty.
+    const { onRenameClass, user } = renderList();
+
+    await user.click(
+      screen.getByLabelText('Rename person on every box in this image, Class of box 1'),
+    );
+    const field = screen.getByLabelText('Rename person, Class of box 1');
+    await user.clear(field);
+    await user.type(field, 'pedestrian');
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+
+    expect(onRenameClass).toHaveBeenCalledWith('person', 'pedestrian');
+  });
+
+  it('offers no rename on a box with no class', () => {
+    renderList({ boxes: numbered([box('a', { score: 0.9 })]) });
+
+    expect(screen.queryByRole('button', { name: /^Rename/ })).not.toBeInTheDocument();
   });
 });
 
@@ -148,13 +229,17 @@ describe('the threshold', () => {
   });
 
   it('leaves hidden boxes out of the list but says how many', () => {
-    renderList({ hidden: new Set(['c']), threshold: 0.3 });
+    renderList({ hidden: new Set(['c']), belowCutoff: new Set(['c']), threshold: 0.3 });
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getByText(/1 below cutoff/)).toBeInTheDocument();
   });
 
   it('offers to discard exactly what is hidden', async () => {
-    const { onRemoveHidden, user } = renderList({ hidden: new Set(['b', 'c']), threshold: 0.5 });
+    const { onRemoveHidden, user } = renderList({
+      hidden: new Set(['b', 'c']),
+      belowCutoff: new Set(['b', 'c']),
+      threshold: 0.5,
+    });
     const discard = screen.getByRole('button', { name: /Remove 2 below/ });
     await user.click(discard);
     expect(onRemoveHidden).toHaveBeenCalled();
@@ -166,7 +251,11 @@ describe('the threshold', () => {
   });
 
   it('says how to get the boxes back when everything is filtered out', () => {
-    renderList({ hidden: new Set(['a', 'b', 'c']), threshold: 0.99 });
+    renderList({
+      hidden: new Set(['a', 'b', 'c']),
+      belowCutoff: new Set(['a', 'b', 'c']),
+      threshold: 0.99,
+    });
     expect(screen.getByRole('status')).toHaveTextContent(/Lower it/);
   });
 

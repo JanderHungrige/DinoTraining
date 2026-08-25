@@ -30,7 +30,7 @@ from app.datasets.rle import rle_decode
 from app.ml.annotators.base import MaskProposal
 from app.ml.annotators.build import build_annotator
 from app.ml.foundation.registry import FoundationSpec
-from app.ml.inference.payloads import MAX_PNG_CLASSES, encode_png
+from app.ml.inference.payloads import MAX_PNG_CLASSES, encode_class_map
 from app.ml.inference.results import Prediction
 
 logger = logging.getLogger(__name__)
@@ -100,6 +100,11 @@ def _mask_payload(
     Class 0 is background, so a phrase's index is its position **plus one**. Later masks
     paint over earlier ones where they overlap — the same last-writer-wins a segmentation
     head's argmax produces, so the renderer cannot tell the two apart.
+
+    The indices are **spread across the byte range** before they become pixels — see
+    `encode_class_map`. This map is the fragile one: with a single phrase its classes are 0
+    and 1, adjacent bytes, and a webview that dithers the PNG on the way in turns half the
+    background into the phrase. That was the green speckle over the whole frame.
     """
     # Distinct concepts, in the order they first appear, so a phrase keeps one colour.
     phrases: list[str] = []
@@ -115,9 +120,13 @@ def _mask_payload(
         indices[mask] = phrases.index(proposal.concept) + 1
 
     present = sorted({int(value) for value in np.unique(indices)})
+    mask_png, stride = encode_class_map(indices, len(phrases))
     return (
         {
-            "mask_png": encode_png(indices),
+            "mask_png": mask_png,
+            #: Pixel value = class index × this. One phrase makes it 255, so background and
+            #: object sit at opposite ends of the byte instead of one apart.
+            "class_stride": stride,
             "present_classes": present,
             "height": height,
             "width": width,

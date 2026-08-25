@@ -133,6 +133,29 @@ renaming row 1 to `board` changed the tag on the image to `1 board` immediately.
 alone, that it does not mutate its input, and that a hand-drawn box survives a threshold of
 0.9.
 
+## Later additions
+
+**2026-08-25 — hiding everything that is already there.** Asked for as: *"add a button for
+annotation, to hide all existing boxes (and labels in the list at the side) — this makes
+drawing new boxes, adding new labels more easy."* Exactly right: thirty proposals cover the
+thing you wanted to add, and the score slider cannot help because what is in the way is
+usually the confident boxes.
+
+`Hide the N boxes already here` takes a **snapshot of the ids on screen** rather than
+applying a live predicate. A box drawn afterwards is the entire point of pressing it, so it
+must stay visible; a rule like "hide everything not hand-drawn" would hide the new one the
+moment it was saved and reloaded.
+
+The one thing that had to change underneath: hidden-by-slider and hidden-by-hand are now
+**two sets, not one**. `Remove N below` acts on the slider's set alone. Folding them
+together would have made that button discard work the reviewer had merely got out of the
+way — silently, and with no undo. The header counts them separately for the same reason:
+"below cutoff" is a claim about a score, and a concealed box has said nothing about its
+score.
+
+Concealment does not survive moving to the next image. It is about the picture in front of
+you, and the ids would be stale anyway.
+
 ## Known Issues
 
 See frontmatter.

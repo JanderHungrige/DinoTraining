@@ -37,8 +37,11 @@ function calledUrls(): string[] {
   return fetchMock.mock.calls.map(([input]) => String(input));
 }
 
+/** The **boxes** PUT. A save is two requests since doc 61 — see the save tests. */
 function putBody(): Record<string, unknown> {
-  const put = fetchMock.mock.calls.find(([, init]) => init?.method === 'PUT');
+  const put = fetchMock.mock.calls.find(
+    ([input, init]) => init?.method === 'PUT' && String(input).endsWith('/images'),
+  );
   return JSON.parse(String(put?.[1]?.body));
 }
 

@@ -12,6 +12,38 @@ is genuinely unassigned.
 
 ## Unassigned
 
+### Private Network Access — does a hosted GUI reach a local backend?
+
+Added 2026-08-25 from a design question: serve the SPA from a small central server while
+every user runs the frozen sidecar on their own machine, so the GUI is shared and the
+processing, the images and the model cache stay local. The frontend already supports it —
+`API_BASE_URL` reads `VITE_DINO_API_URL` and its comment already anticipates a build "where
+the backend is not on loopback" — and Wave 8's PyInstaller sidecar is already the local
+agent that architecture needs.
+
+**The unknown is browser policy, and it should be spiked before anything is designed around
+it.** Loopback is a "potentially trustworthy" origin so HTTPS→`http://127.0.0.1` is not
+mixed content, but Chrome's Private Network Access treats a public page calling a local
+address as a private-network request and wants
+`Access-Control-Allow-Private-Network: true` on the preflight. Safari and Firefox differ.
+One static page served from a non-localhost origin answers this in an afternoon.
+
+**If it works**, the rest is small: make `_ALLOWED_ORIGINS` configurable rather than the
+hardcoded tuple in `main.py`, add the PNA header, add a directory-browsing endpoint to
+replace the native picker, and add a static build target.
+
+**The security constraint is the part not to get wrong.** `read_image` opens any path it is
+given, with no confinement — correct for a desktop app where the user owns both ends, and
+dangerous the moment a web origin can call it. A wildcard allowlist would let any site the
+user visits read images off their disk and enumerate folders through `/annotate/folder`.
+`main.py` already states the stake: *"Not `*` — this process holds an HF token and local
+filesystem reach."* A hosted GUI wants a strict single-origin allowlist **and** a per-session
+token the local binary prints and the user pastes in.
+
+**Relationship to Wave 9**: adjacent, not the same. Wave 9 assumes hyperscaler compute and
+shared storage; this assumes neither and shares nothing but the GUI. Worth deciding which
+of the two "a server" is meant to mean before Wave 9 is planned.
+
 ### Code signing and notarization
 
 Deferred out of Wave 8 on 2026-08-21 because it needs certificates: an Apple Developer ID
@@ -174,14 +206,46 @@ not available"), so it could not have provided a default detector regardless of 
 **If the answer is no**, the Apache-2.0 substitutes are already in `transformers`:
 **RF-DETR** (taken in Wave 7.5) and **RT-DETRv2** (`PekingU/rtdetr_v2_r18vd`).
 
-### Depth Anything 3, when it is loadable
+### Mask refinement in the Annotation Studio
 
-Wave 4 brings SAM 3 in for the **Dataset Generator**, where reviewing masks is the point.
-Using it in the *Annotation Studio* needs a mask-drawing and refining tool that does not
-exist — the same gap Wave 5 hits for segmentation heads, and the reason Wave 6 puts Depth
-Anything 3 in the viewer rather than the Studio.
+**Retitled 2026-08-25.** This entry carried the heading "Depth Anything 3, when it is
+loadable" twice over, which was a copy-paste error: its body was always about SAM 3 in the
+Studio and never about depth.
 
-Listed in Wave 6's Open Research as a candidate, deliberately not assumed.
+**Mostly delivered by doc 61** on 2026-08-25. The Studio now shows a concept segmenter's
+masks and stores them as COCO RLE, so the original framing — "using it in the Annotation
+Studio needs a mask-drawing and refining tool that does not exist" — turned out to be
+answering the wrong question. Doc 45 declined mask review in the Studio because there was
+no mask *editor*; doc 61 observed that showing and keeping a mask the pipeline had already
+computed was never the same question, and reversed it on the record.
+
+**What genuinely remains** is the editor: a mask cannot be reshaped, and a hand-drawn box
+never gains one. A reviewer can accept, reject or remove a mask, not correct it. Brush and
+box-prompt-to-SAM are the two obvious shapes — the second is nearly free, since SAM 2.1 is
+already loaded and box-prompted segmentation is exactly what it does.
+
+### Segmentation-head training has no data path
+
+Added 2026-08-25, found while answering a question about the ADE20k head rather than by an
+audit. `linear-segmenter` is registered `trainable=True` with `target_format="masks"`, and
+both `segmentation_loss` and `segmentation_metrics` are wired to it — but nothing produces
+the target it reads. `build_samples` reads only `store.image_annotations` (boxes),
+`TrainingSample` has no mask field, and `build_targets` branches on `classification` and
+falls through to detection with no segmentation case. `segmentation_loss` reads
+`targets["mask"]`, so a run raises `KeyError: 'mask'` on the first batch. Nothing refuses it
+earlier.
+
+Its own description still says *"Needs a dataset with masks — the Annotation Studio produces
+boxes until SAM lands."* SAM landed; doc 61 stores masks per image.
+
+**Three contained pieces**: carry masks through `build_samples` into `TrainingSample`, add a
+segmentation branch to `build_targets` that rasterises the RLE through the same
+`GeometryTransform` the image took, and correct the description. The head, the loss and the
+metrics all already exist.
+
+**Why it is worth doing**: it is the difference between the ADE20k head — someone else's
+150 fixed classes — and a segmenter trained on the user's own. It is also the natural
+consumer of the masks doc 61 started storing.
 
 ---
 
@@ -225,6 +289,10 @@ Recorded so it is not re-proposed from scratch.
   `transformers` integration**, unlike `facebook/sam3` which ships `Sam3Processor`/`Sam3Model`.
   Taking 3.1 would add a second model-loading path for a benefit no current wave uses.
   Reconsider only if video is picked up. Recorded in the Wave 4 doc.
+- Whether Meta published a fine-tuning recipe for SAM 3, and whether the SAM License permits
+  distributing a derivative. Asked 2026-08-25 and not answered. Largely moot while Grounded
+  SAM's halves are Apache-2.0: Grounding DINO is the fine-tunable half worth the effort, and
+  `boxes.prompt` already stores exactly the box+phrase pairs its training needs.
 - Exact model sizes, so the admin panel's disk warnings stay honest (~14 GB free here).
   **SAM 3 measured 2026-08-19: ~0.9B params, F32 ≈ 3.6 GB**, and the repo is *gated* —
   per-repo access approval on top of a token, which DINOv3 does not require.

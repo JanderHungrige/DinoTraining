@@ -162,10 +162,27 @@ class TestTheBoxesTheStudioReviews:
         monkeypatch.setattr(
             "app.ml.annotators.foundation.build_foundation", lambda *a, **k: segmenter
         )
-        boxes = propose_foundation_boxes(
+        proposals = propose_foundation_boxes(
             Image.new("RGB", (60, 40)), "grounded-sam", concept="cat. dog."
         )
-        assert [box.prompt for box in boxes] == ["cat", "dog"]
+        assert [p.box.prompt for p in proposals] == ["cat", "dog"]
+
+    def test_the_mask_rides_along_with_its_box(
+        self, monkeypatch: pytest.MonkeyPatch, segmenter: ConceptSegmenter
+    ) -> None:
+        """Doc 61. The box is the mask's extents, so taking only the box meant every
+        Studio run computed a segmentation and dropped it on the floor."""
+        monkeypatch.setattr(
+            "app.ml.annotators.foundation.build_foundation", lambda *a, **k: segmenter
+        )
+        proposals = propose_foundation_boxes(
+            Image.new("RGB", (60, 40)), "grounded-sam", concept="cat. dog."
+        )
+
+        assert all(p.mask is not None for p in proposals)
+        # The RLE covers the frame the model saw, not the box it implies.
+        assert proposals[0].mask is not None
+        assert proposals[0].mask.size == (40, 60)
 
     def test_provenance_says_a_foundation_model_made_it(
         self, monkeypatch: pytest.MonkeyPatch, segmenter: ConceptSegmenter
@@ -173,12 +190,12 @@ class TestTheBoxesTheStudioReviews:
         monkeypatch.setattr(
             "app.ml.annotators.foundation.build_foundation", lambda *a, **k: segmenter
         )
-        boxes = propose_foundation_boxes(
+        proposals = propose_foundation_boxes(
             Image.new("RGB", (60, 40)), "grounded-sam", concept="cat"
         )
-        assert boxes[0].provenance == "foundation-model"
-        assert boxes[0].producer is not None
-        assert "cat" in boxes[0].producer.label
+        assert proposals[0].box.provenance == "foundation-model"
+        assert proposals[0].box.producer is not None
+        assert "cat" in proposals[0].box.producer.label
 
     def test_no_concept_is_refused_rather_than_silently_returning_nothing(
         self, monkeypatch: pytest.MonkeyPatch, segmenter: ConceptSegmenter

@@ -21,14 +21,14 @@
  * backbone and the rest are marked incompatible while it stands.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import type { HeadTask } from '../api/heads';
-import { listDatasets, type DatasetInfo } from '../api/datasets';
-import { listFoundations, runFoundation, type FoundationInfo } from '../api/foundation';
-import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
+import { runFoundation, type FoundationInfo } from '../api/foundation';
+import type { HeadInstanceInfo } from '../api/headInstances';
 import { runHeads, type ComposedResult } from '../api/inference';
+import { useRunnableModels } from './useRunnableModels';
 
 export interface HeadRunState {
   readonly heads: readonly HeadInstanceInfo[];
@@ -72,9 +72,11 @@ function describe(cause: unknown, fallback: string): string {
 }
 
 export function useHeadRun(currentPath: string | null): HeadRunState {
-  const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
+  // What exists, versus what the user chose to do with it. See `useRunnableModels`.
+  const catalogue = useRunnableModels();
+  const { heads, foundations, trainedOn, loadingHeads } = catalogue;
+
   const [selected, setSelected] = useState<readonly string[]>([]);
-  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [selectedFoundations, setSelectedFoundations] = useState<readonly string[]>([]);
   const [concept, setConcept] = useState('');
   const [result, setResult] = useState<ComposedResult | null>(null);
@@ -82,46 +84,10 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
   const [resultPath, setResultPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [loadingHeads, setLoadingHeads] = useState(true);
   const [taskFilter, setTaskFilterState] = useState<HeadTask | null>(null);
   const [datasetFilter, setDatasetFilterState] = useState<string | null>(null);
-  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
 
   const inFlight = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void listHeadInstances({}, controller.signal)
-      .then((found) => {
-        if (controller.signal.aborted) return;
-        setHeads(found);
-      })
-      .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setError(describe(cause, 'Could not load heads.'));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoadingHeads(false);
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void listFoundations(controller.signal)
-      .then((found) => {
-        if (controller.signal.aborted) return;
-        // Only installed ones are offered here. The admin panel is where a model is
-        // downloaded; listing an absent one in the runner would offer an action whose
-        // only outcome is a 409 telling you to go somewhere else.
-        setFoundations(found.filter((entry) => entry.installed));
-      })
-      .catch(() => {
-        // Non-fatal: heads still run. A foundation model failing to list must not take
-        // the whole panel down with it.
-        if (!controller.signal.aborted) setFoundations([]);
-      });
-    return () => controller.abort();
-  }, []);
 
   const backboneId = useMemo(() => {
     const first = heads.find((head) => head.id === selected[0]);
@@ -139,24 +105,6 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     return tasks.size === 1 ? [...tasks][0] ?? null : null;
   }, [heads, selected]);
 
-  // Names only — the filter matches on `dataset_ids`, which every head already carries.
-  // Its own effect rather than the heads' one: a dataset list that fails to load should
-  // cost the filter, not the panel.
-  useEffect(() => {
-    const controller = new AbortController();
-    void listDatasets(controller.signal)
-      .then(setDatasets)
-      .catch(() => setDatasets([]));
-    return () => controller.abort();
-  }, []);
-
-  const trainedOn = useMemo(() => {
-    const used = new Set(heads.flatMap((head) => head.dataset_ids));
-    return datasets
-      .filter((dataset) => used.has(dataset.id))
-      .map((dataset) => ({ id: dataset.id, name: dataset.name }));
-  }, [heads, datasets]);
-
   const setDatasetFilter = useCallback((datasetId: string | null): void => {
     setDatasetFilterState(datasetId);
   }, []);
@@ -173,6 +121,17 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
       backboneId !== null && head.backbone_id !== backboneId,
     [backboneId],
   );
+
+  /**
+   * Wrapped rather than passed through, for the same reason `toggle` clears the result:
+   * a mask still on screen under a *changed* concept reads as though the new phrase had
+   * been segmented. Asking for "sky" and being shown the previous answer is the exact
+   * complaint this fix came from.
+   */
+  const changeConcept = useCallback((next: string): void => {
+    setConcept(next);
+    setResult(null);
+  }, []);
 
   const toggleFoundation = useCallback((foundationId: string): void => {
     setSelectedFoundations((current) =>
@@ -257,7 +216,12 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
         if (!controller.signal.aborted) setRunning(false);
       }
     },
-    [selected, backboneId, selectedFoundations],
+    // `concept` belongs here. Without it `run` was frozen at whatever the concept was
+    // when the *selection* last changed — and since the concept field only appears once
+    // a concept model is ticked, that was always the empty string. Every Grounded SAM and
+    // SAM 3 run went out with no concept at all, came back as an all-background mask, and
+    // looked identical however the phrase was changed.
+    [selected, backboneId, selectedFoundations, concept],
   );
 
   // Derived, not stored: a result is shown only while the image it describes is the one
@@ -270,7 +234,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     selected,
     foundations,
     concept,
-    setConcept,
+    setConcept: changeConcept,
     selectedFoundations,
     toggleFoundation,
     backboneId,
@@ -280,7 +244,9 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     selectedTask,
     running,
     result: resultForCurrentImage,
-    error,
+    // A run failure is about what the user just did and wins over a catalogue failure,
+    // which is about a list they have already seen come up empty.
+    error: error ?? catalogue.error,
     loadingHeads,
     toggle,
     setTaskFilter,

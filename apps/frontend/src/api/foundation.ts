@@ -8,7 +8,7 @@
 
 import { apiFetch } from './client';
 import { isPrediction, type Prediction } from './inference';
-import type { CanvasBox } from '../types/annotation';
+import type { CanvasBox, CanvasMask } from '../types/annotation';
 
 export interface FoundationInfo {
   readonly id: string;
@@ -96,14 +96,9 @@ export function runFoundation(
 // Deliberately the same shape the expert route returns, because the review surface should
 // consume one shape rather than learn which kind of model produced a box.
 
-export interface FoundationProposalResponse {
-  readonly image_path: string;
-  readonly width: number;
-  readonly height: number;
-  readonly device: string;
-  readonly model_name: string;
-  readonly model_summary: string;
-  readonly boxes: readonly {
+/** One proposal: the box, and the segmentation behind it when the model produced one. */
+export interface ProposedBoxDto {
+  readonly box: {
     readonly label: CanvasBox['label'];
     readonly provenance: CanvasBox['provenance'];
     readonly x: number;
@@ -113,7 +108,22 @@ export interface FoundationProposalResponse {
     readonly score: number | null;
     readonly prompt: string | null;
     readonly producer: CanvasBox['producer'] | null;
-  }[];
+  };
+  /** Null for a detector — RF-DETR has no segmentation to offer (doc 61). */
+  readonly mask: { readonly rle: CanvasMask['rle']; readonly png: string } | null;
+}
+
+export interface FoundationProposalResponse {
+  readonly image_path: string;
+  readonly width: number;
+  readonly height: number;
+  readonly device: string;
+  readonly model_name: string;
+  readonly model_summary: string;
+  /** Still `boxes`, still one entry per annotation. The mask lives *inside* an entry
+   *  rather than in a parallel list, because a parallel list is paired by index and index
+   *  pairing breaks the moment a reviewer removes one. */
+  readonly boxes: readonly ProposedBoxDto[];
 }
 
 function isFoundationProposal(value: unknown): value is FoundationProposalResponse {
@@ -155,21 +165,22 @@ export function proposeWithFoundation(
 }
 
 /** Same mapping the expert route gets: the class rides as `text` and is renamed to
- *  `prompt` on save (doc 31). */
+ *  `prompt` on save (doc 31). The mask rides along untouched when there is one (doc 61). */
 export function foundationCanvasBoxes(
   response: FoundationProposalResponse,
 ): CanvasBox[] {
-  return response.boxes.map((box, index) => ({
+  return response.boxes.map((entry, index) => ({
     id: `foundation-${index}`,
-    label: box.label,
-    provenance: box.provenance,
-    x: box.x,
-    y: box.y,
-    w: box.w,
-    h: box.h,
-    ...(box.score !== null ? { score: box.score } : {}),
-    ...(box.prompt ? { text: box.prompt } : {}),
-    ...(box.producer ? { producer: box.producer } : {}),
+    label: entry.box.label,
+    provenance: entry.box.provenance,
+    x: entry.box.x,
+    y: entry.box.y,
+    w: entry.box.w,
+    h: entry.box.h,
+    ...(entry.box.score !== null ? { score: entry.box.score } : {}),
+    ...(entry.box.prompt ? { text: entry.box.prompt } : {}),
+    ...(entry.box.producer ? { producer: entry.box.producer } : {}),
+    ...(entry.mask ? { mask: { rle: entry.mask.rle, png: entry.mask.png } } : {}),
   }));
 }
 

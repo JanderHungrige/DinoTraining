@@ -14,11 +14,17 @@
 import type { JSX } from 'react';
 
 import { hasScores, type NumberedBox } from '../lib/boxReview';
+import { ClassPicker } from './ClassPicker';
 import type { CanvasBox, Label } from '../types/annotation';
 
 export interface BoxReviewListProps {
   readonly boxes: readonly NumberedBox[];
+  /** Every box not on screen, whatever the reason — this is what filters the list. */
   readonly hidden: ReadonlySet<string>;
+  /** The subset the *score slider* is filtering. Separate from `hidden` because the two
+   *  read differently and act differently: "below cutoff" is a claim about the score, and
+   *  `Remove N below` must never discard a box the user merely got out of the way. */
+  readonly belowCutoff?: ReadonlySet<string>;
   readonly selectedId: string | null;
   readonly threshold: number;
   readonly onSelect: (id: string | null) => void;
@@ -27,6 +33,13 @@ export interface BoxReviewListProps {
   readonly onRemove: (id: string) => void;
   readonly onThreshold: (threshold: number) => void;
   readonly onRemoveHidden: () => void;
+  /** Every class a box can be given (doc 60). Empty until the vocabulary loads, which is
+   *  why the picker still lists whatever class a box already carries. */
+  readonly classes: readonly string[];
+  /** Create a class. Resolves to the name as stored. */
+  readonly onCreateClass: (name: string) => Promise<string | null>;
+  /** Rename a class across every box on this image. Omitted where that has no meaning. */
+  readonly onRenameClass?: (from: string, to: string) => void;
   readonly disabled?: boolean;
 }
 
@@ -38,9 +51,12 @@ const VERDICTS: readonly (readonly [Label | null, string, string])[] = [
   [null, '🗑', 'Remove'],
 ];
 
+const EMPTY: ReadonlySet<string> = new Set<string>();
+
 export function BoxReviewList({
   boxes,
   hidden,
+  belowCutoff = EMPTY,
   selectedId,
   threshold,
   onSelect,
@@ -49,18 +65,27 @@ export function BoxReviewList({
   onRemove,
   onThreshold,
   onRemoveHidden,
+  classes,
+  onCreateClass,
+  onRenameClass,
   disabled = false,
 }: BoxReviewListProps): JSX.Element {
   const all = boxes.map((entry) => entry.box);
   const scored = hasScores(all);
   const visible = boxes.filter((entry) => !hidden.has(entry.box.id));
+  const concealed = [...hidden].filter((id) => !belowCutoff.has(id)).length;
 
   return (
     <aside className="review" aria-label="Boxes">
       <header className="review__head">
         <h3 className="review__title">
           {visible.length} box{visible.length === 1 ? '' : 'es'}
-          {hidden.size > 0 && <span className="review__dim"> · {hidden.size} below cutoff</span>}
+          {/* Counted apart, because "below cutoff" is a claim about the score and would be
+              a lie about a box the reviewer simply hid. */}
+          {belowCutoff.size > 0 && (
+            <span className="review__dim"> · {belowCutoff.size} below cutoff</span>
+          )}
+          {concealed > 0 && <span className="review__dim"> · {concealed} hidden</span>}
         </h3>
       </header>
 
@@ -85,10 +110,10 @@ export function BoxReviewList({
           <button
             type="button"
             className="btn btn--small"
-            disabled={disabled || hidden.size === 0}
+            disabled={disabled || belowCutoff.size === 0}
             onClick={onRemoveHidden}
           >
-            Remove {hidden.size} below
+            Remove {belowCutoff.size} below
           </button>
         </div>
       )}
@@ -97,7 +122,9 @@ export function BoxReviewList({
         <p className="review__empty" role="status">
           {all.length === 0
             ? 'No boxes yet. Run a model, or drag on the image to draw one.'
-            : 'Every box is below the cutoff. Lower it to see them.'}
+            : concealed > 0 && belowCutoff.size === 0
+              ? 'Every box is hidden. Show them again to review them.'
+              : 'Every box is below the cutoff. Lower it to see them.'}
         </p>
       ) : (
         <ul className="review__list">
@@ -112,6 +139,9 @@ export function BoxReviewList({
               onLabel={onLabel}
               onRename={onRename}
               onRemove={onRemove}
+              classes={classes}
+              onCreateClass={onCreateClass}
+              {...(onRenameClass ? { onRenameClass } : {})}
             />
           ))}
         </ul>
@@ -129,6 +159,9 @@ interface RowProps {
   readonly onLabel: (id: string, label: Label) => void;
   readonly onRename: (id: string, text: string) => void;
   readonly onRemove: (id: string) => void;
+  readonly classes: readonly string[];
+  readonly onCreateClass: (name: string) => Promise<string | null>;
+  readonly onRenameClass?: (from: string, to: string) => void;
 }
 
 function Row({
@@ -140,6 +173,9 @@ function Row({
   onLabel,
   onRename,
   onRemove,
+  classes,
+  onCreateClass,
+  onRenameClass,
 }: RowProps): JSX.Element {
   const percent = box.score === undefined ? null : `${(box.score * 100).toFixed(0)}%`;
 
@@ -152,17 +188,19 @@ function Row({
         {number}
       </span>
 
-      {/* An input rather than a label plus an edit button: a proposal run produces one
-          class name repeated many times, and the common correction is retyping it. */}
-      <input
-        className="review__class"
-        type="text"
+      {/* A picker rather than a free-text field (doc 60). Typing worked for a box you had
+          just drawn and knew the name of; it had no memory of the last thirty boxes, and no
+          way for a class to exist before something was labelled with it. Retyping — the
+          reason doc 47 chose an input — becomes the rename affordance, which corrects every
+          box carrying the class rather than one. */}
+      <ClassPicker
         value={box.text ?? ''}
-        placeholder="unnamed"
-        aria-label={`Class of box ${number}`}
+        options={classes}
+        label={`Class of box ${number}`}
         disabled={disabled}
-        onFocus={() => onSelect(box.id)}
-        onChange={(event) => onRename(box.id, event.target.value)}
+        onChange={(name) => onRename(box.id, name)}
+        onCreate={onCreateClass}
+        {...(onRenameClass ? { onRename: onRenameClass } : {})}
       />
 
       <span className="review__score">{percent ?? '—'}</span>

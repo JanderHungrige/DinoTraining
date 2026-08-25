@@ -144,9 +144,15 @@ def propose_for(
     if config.kind == "foundation":
         from app.ml.annotators.foundation import propose_foundation_boxes
 
-        return propose_foundation_boxes(
-            image, config.foundation_id, settings, config.score_threshold, config.concept
-        )
+        # Boxes only. A prescan asks "is the thing in this picture?" over hundreds of
+        # images and keeps a count; the masks a concept segmenter also produces would be
+        # decoded and thrown away once per image for no answer they could give (doc 61).
+        return [
+            proposal.box
+            for proposal in propose_foundation_boxes(
+                image, config.foundation_id, settings, config.score_threshold, config.concept
+            )
+        ]
     return _prompt_boxes(image, config)
 
 

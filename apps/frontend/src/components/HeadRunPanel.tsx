@@ -78,6 +78,10 @@ export function HeadRunPanel({
   const conceptNeeded = state.foundations.some(
     (entry) => entry.takes_concept && state.selectedFoundations.includes(entry.id),
   );
+  // A concept model with no concept returns an all-background mask — a real response
+  // that means nothing was asked. That is indistinguishable from "asked and found
+  // nothing", so the run is refused here instead, where there is room to say why.
+  const conceptMissing = conceptNeeded && state.concept.trim() === '';
   const totalSelected = selected.length + state.selectedFoundations.length;
   const nothingSelected = totalSelected === 0;
   const runLabel = `Run ${totalSelected || ''} model${totalSelected === 1 ? '' : 's'}`;
@@ -206,7 +210,7 @@ export function HeadRunPanel({
           type="button"
           className="btn btn--primary"
           onClick={onRun}
-          disabled={disabled || runDisabled || running || nothingSelected}
+          disabled={disabled || runDisabled || running || nothingSelected || conceptMissing}
         >
           {running ? 'Running…' : runLabel}
         </button>
@@ -218,6 +222,11 @@ export function HeadRunPanel({
         >
           Clear
         </button>
+        {conceptMissing && (
+          <span className="runpanel__cost">
+            Type what to look for — a concept model segments only what you name.
+          </span>
+        )}
         {state.result && (
           <span className="runpanel__cost">
             {state.result.passes} backbone pass{state.result.passes === 1 ? '' : 'es'} ·{' '}
