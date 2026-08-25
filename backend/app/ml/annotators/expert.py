@@ -23,6 +23,7 @@ from app.ml.annotators.proposals import PROPOSED_LABEL, clamp_to_frame
 from app.ml.heads.registry import RenderHint
 from app.ml.inference.compose import run_heads
 from app.ml.inference.engine import DEFAULT_SCORE_THRESHOLD
+from app.ml.inference.tiled import TileGrid
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ def propose_boxes(
     instance_id: str,
     settings: Settings | None = None,
     score_threshold: float = DEFAULT_SCORE_THRESHOLD,
+    grid: TileGrid | None = None,
 ) -> list[Box]:
     """Run one head over one image and return its detections as proposed annotations.
 
@@ -53,7 +55,10 @@ def propose_boxes(
     # run_heads with one head rather than the single-head path: it is the same resolution
     # and preprocessing logic, and using it here means the generator cannot drift from the
     # viewer in how a head is set up.
-    result = run_heads(image, backbone_id, [instance_id], settings, score_threshold)
+    # `grid` rides through for the same reason everything else here does: auto-annotating
+    # a full frame with a tile-trained head hits the identical wall the viewer does, and a
+    # generator that could not tile would quietly write empty annotations (doc 62).
+    result = run_heads(image, backbone_id, [instance_id], settings, score_threshold, grid)
     prediction = result.predictions[0]
 
     if prediction.render_hint != ANNOTATABLE_HINT:

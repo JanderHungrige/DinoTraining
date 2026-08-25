@@ -81,7 +81,23 @@ tab is discoverable enough to be the first stop, and that the sidecar starts whe
 else about the machine is set up. Doc 38's intro tab and doc 02's download manager are the
 pieces; whether they add up to a first run has not been seen.
 
-### Tiled inference
+### ~~Tiled inference~~ — delivered 2026-08-25 (doc 62)
+
+**Done.** Per-run grid on the Inference Viewer and the Studio's head proposals, merged with
+the class-aware NMS doc 43 already had, using the planner doc 49 already had. Measured on an
+OSDaR23 frame with a 472 px-trained head: **0 boxes whole-frame, 6 tiled**, at a threshold
+where the whole-frame run finds nothing at all. The six are 13–17 px signals — the objects
+doc 49 measured at a 10.7 px median.
+
+The open question — where the setting lives — resolved to **per run, with a hint**. A head
+records its datasets and those datasets' images record their width, so "trained on 472 px,
+running on 2464 px" is a query rather than a guess. The hint never acts: a control that
+turned itself on would make two runs of the same configuration differ.
+
+See doc 62's Known Issues for what it does not cover — foundation proposals, masks and
+depth, and no warning on a very large grid.
+
+### (original entry, kept for the reasoning)
 
 **The largest gap Wave 7.5 left.** Doc 49 tiles images on the way *in* — a 6x4 grid turns a
 10.7 px object in a 2464 px frame into 10.1 px at the model's input, which is the difference

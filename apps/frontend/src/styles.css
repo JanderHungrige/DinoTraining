@@ -1493,6 +1493,67 @@ body {
   white-space: nowrap;
 }
 
+/* The tiling grid (doc 62). Its own row under the head list: it is about the *image*,
+   not about which head runs, and putting it in the fieldset read as another model. */
+.tiling {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0;
+}
+
+.tiling__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.tiling__grid {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tiling__num {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.tiling__num input {
+  width: 3.5rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.tiling__times {
+  color: var(--text-dim);
+}
+
+.tiling__count {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The hint takes the whole row. It is a sentence, and wrapping it around a number input
+   would make it read as a label for one. */
+.tiling__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
 .runpanel__actions {
   display: flex;
   align-items: center;

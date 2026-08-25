@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import shutil
 import sqlite3
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -77,3 +78,30 @@ def store_image_file(
     if not destination.exists():
         shutil.copy2(source, destination)
     return str(destination)
+
+
+def median_width(connection: sqlite3.Connection, dataset_ids: Sequence[str]) -> int | None:
+    """Median width of the images across these datasets, or None when there are none.
+
+    **Median, not mean.** A tiled dataset has one consistent tile size and an odd
+    whole-frame image left in it should not move the answer; a mean would let one 2464 px
+    outlier drag a set of 616 px tiles halfway to nowhere.
+
+    Exists for doc 62's hint: a head records the datasets it trained on, so "this head
+    trained on 616 px images and you are running it on 2464 px" is a query rather than a
+    guess. It is a *hint* — nothing acts on it.
+    """
+    if not dataset_ids:
+        return None
+
+    placeholders = ",".join("?" for _ in dataset_ids)
+    widths = [
+        int(row[0])
+        for row in connection.execute(
+            f"SELECT width FROM images WHERE dataset_id IN ({placeholders}) ORDER BY width",
+            tuple(dataset_ids),
+        )
+    ]
+    if not widths:
+        return None
+    return widths[len(widths) // 2]

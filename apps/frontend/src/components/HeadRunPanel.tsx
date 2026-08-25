@@ -16,6 +16,7 @@ import { useMemo, type JSX } from 'react';
 import { describeHead, groupByTask } from '../api/headInstances';
 import type { HeadTask } from '../api/heads';
 import type { HeadRunState } from '../hooks/useHeadRun';
+import { TilingField } from './TilingField';
 
 export interface HeadRunPanelProps {
   readonly state: HeadRunState;
@@ -30,6 +31,9 @@ export interface HeadRunPanelProps {
    * together made the whole panel inert and quietly defeated moving it out of the guard.
    */
   readonly runDisabled?: boolean;
+  /** Natural width of the image on screen, for the tiling hint (doc 62). Null until it
+   *  loads, which is why the hint appears a moment after the picture does. */
+  readonly imageWidth?: number | null;
 }
 
 const ALL_TASKS = '' as const;
@@ -39,6 +43,7 @@ export function HeadRunPanel({
   onRun,
   disabled = false,
   runDisabled = false,
+  imageWidth = null,
 }: HeadRunPanelProps): JSX.Element {
   const { heads, selected, running, loadingHeads, backboneId, taskFilter } = state;
   const { datasetFilter, trainedOn } = state;
@@ -203,6 +208,18 @@ export function HeadRunPanel({
             </label>
           )}
         </fieldset>
+      )}
+
+      {/* Only for heads. A foundation detector brings its own preprocessing and was not
+          trained on this project's tiles, so the grid has nothing to say about it. */}
+      {selected.length > 0 && (
+        <TilingField
+          grid={state.tiles}
+          onChange={state.setTiles}
+          trainedWidth={state.trainedWidth}
+          imageWidth={imageWidth}
+          disabled={disabled || running}
+        />
       )}
 
       <div className="runpanel__actions">

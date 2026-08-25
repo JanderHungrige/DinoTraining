@@ -16,6 +16,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.v1.inference import TileGridRequest
 from app.core.config import get_settings
 from app.datasets.models import Box, Label, MaskRle, Producer, Provenance
 from app.datasets.rle import rle_decode
@@ -40,6 +41,9 @@ class ExpertProposalRequest(BaseModel):
     backbone_id: str = Field(min_length=1)
     instance_id: str = Field(min_length=1)
     score_threshold: float = Field(default=DEFAULT_SCORE_THRESHOLD, ge=0.0, le=1.0)
+    #: Same block the viewer sends (doc 62). Auto-annotating a full frame with a
+    #: tile-trained head hits the identical wall, and would write empty annotations.
+    tiles: TileGridRequest | None = None
 
 
 class ExpertProposalResponse(BaseModel):
@@ -79,6 +83,7 @@ async def propose_with_expert_head(
             request.instance_id,
             settings,
             request.score_threshold,
+            request.tiles.to_grid() if request.tiles else None,
         )
         instance = HeadInstanceStore(settings).get(request.instance_id)
     except HeadCannotAnnotateError as exc:
