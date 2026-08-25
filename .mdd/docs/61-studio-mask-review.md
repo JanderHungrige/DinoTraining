@@ -18,6 +18,8 @@ source_files:
   - apps/frontend/src/lib/saveAnnotations.ts
   - apps/frontend/src/components/MaskLayer.tsx
   - apps/frontend/src/lib/decodeMap.ts
+  - backend/app/ml/inference/payloads.py
+  - backend/app/ml/foundation/concept.py
   - apps/frontend/src/components/overlays/MapOverlay.tsx
   - apps/frontend/src/components/AnnotationCanvas.tsx
   - apps/frontend/src/hooks/useAnnotationSession.ts
@@ -288,9 +290,34 @@ map produces.
 Verified after: one canvas, 289,705 painted pixels, 3,652,695 fully clear, and **zero**
 stray alpha values.
 
-**Not verified in the packaged app.** The speckle could not be reproduced in the dev
-browser, so the fix is reasoned from the mechanism rather than watched to go away. Defence
-3 is the one that holds regardless of whether the diagnosis is exactly right.
+**Round two: the flag is not honoured, so the encoding changed instead.**
+
+The two surfaces were given deliberately different defences, which made the next report
+diagnostic: the Studio came back clean and the Inference Viewer did not. The Studio is the
+one protected by the threshold; the Viewer is the one that depended on
+`colorSpaceConversion: 'none'`. So WebKit converts the image whatever it is asked, and no
+client-side flag can prevent it.
+
+Which leaves the encoding. The Viewer's payload is a **composited class map**, and with a
+single phrase its classes are 0 and 1 — adjacent bytes, where one level of dither *is* the
+other class. `encode_class_map` now spreads the indices as far apart as the range allows
+and sends the multiplier as `class_stride`:
+
+| classes | stride | pixel values |
+|---|---|---|
+| background + 1 phrase | 255 | 0, 255 |
+| background + 3 phrases | 85 | 0, 85, 170, 255 |
+| ADE20k's 150 | 1 | 0…149, exactly as before |
+
+The client divides and rounds, so it now takes a **128-level** error to confuse background
+with an object rather than one. ADE20k degrades to the old encoding and needs nothing:
+its class 0 is `wall`, a real class that is painted anyway, so a dithered pixel there is a
+slightly wrong colour rather than a hole in the background.
+
+Verified on the wire after: `class_stride: 255`, `present_classes: [0, 1]`, and the PNG's
+distinct pixel values are `0` and `255` where they used to be `0` and `1`. The rendered
+overlay is 562,073 painted pixels, 3,380,327 fully clear, and exactly **one** distinct
+colour.
 
 ## Known Issues
 
@@ -312,9 +339,15 @@ browser, so the fix is reasoned from the mechanism rather than watched to go awa
   everything else, and a mask loaded from the store is 'everything else'. That is the
   existing rule applied consistently, but it means re-running SAM on an image you already
   segmented loses the earlier verdicts."
-- "**The colour-management diagnosis is unconfirmed on WebKit.** The fizzle was reported
-  from the packaged app and could not be reproduced in the dev browser, so the decode fix
-  is reasoned rather than observed. The threshold guard holds either way."
+- "**WebKit colour-manages canvas image data whatever it is asked.** `colorSpaceConversion:
+  'none'` did not stop it — confirmed by the Studio (threshold-protected) coming back clean
+  while the Viewer (flag-dependent) did not. Anything that puts *data* through
+  `drawImage`/`getImageData` must assume the low bits are unreliable and encode
+  accordingly; see `encode_class_map`."
+- "**A map with more than ~127 classes cannot be spread.** The stride falls to 1 and such a
+  payload is exactly as fragile as before. No head shipped today is affected — ADE20k's
+  class 0 is a real class — but a future segmenter with many classes *and* a true
+  background would be."
 - "**The Dataset Generator is untouched.** It keeps its own mask review and its own
   index-paired save, which remain correct for a surface where the proposal is immutable." 
 

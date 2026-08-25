@@ -108,13 +108,43 @@ class TestMasksPayload:
         assert "mask_png" in payload
         assert "mask" not in payload, "the nested-list transport is gone on purpose"
 
-    def test_pixel_values_are_class_indices(self) -> None:
-        """No palette in the payload — the client owns colour."""
+    def test_pixel_values_are_class_indices_times_the_stride(self) -> None:
+        """No palette in the payload — the client owns colour, once it divides.
+
+        The stride exists because adjacent class indices are terrible pixel values: a
+        webview that colour-manages the PNG on the way in dithers the low bits, and with
+        classes 0 and 1 that turns background into the other class. `present_classes` stays
+        in *index* space, because that is what the number means.
+        """
         payload = masks_payload(logits_for(4, 32, winner=3), identity_transform(32), 32)
 
+        stride = int(payload["class_stride"])  # type: ignore[arg-type]
         decoded = decode(payload["mask_png"])
-        assert set(np.unique(decoded).tolist()) == {3}
+        assert set(np.unique(decoded).tolist()) == {3 * stride}
         assert payload["present_classes"] == [3]
+
+    def test_a_two_class_map_puts_its_classes_at_opposite_ends_of_the_byte(self) -> None:
+        """The case that was actually broken. One phrase means classes 0 and 1, and one
+        level of dither is the whole difference between background and the object."""
+        logits = torch.zeros(1, 2, 8, 8)
+        logits[0, 1, :4] = 10.0
+        logits[0, 0, 4:] = 10.0
+
+        payload = masks_payload({"logits": logits}, identity_transform(8), 8)
+
+        assert payload["class_stride"] == 255
+        assert set(np.unique(decode(payload["mask_png"])).tolist()) == {0, 255}
+
+    def test_a_full_byte_of_classes_falls_back_to_plain_indices(self) -> None:
+        """ADE20k's 150 classes leave no room to spread, and need none: its class 0 is
+        `wall`, a real class that gets painted anyway."""
+        logits = torch.zeros(1, 200, 8, 8)
+        logits[0, 199] = 10.0
+
+        payload = masks_payload({"logits": logits}, identity_transform(8), 8)
+
+        assert payload["class_stride"] == 1
+        assert set(np.unique(decode(payload["mask_png"])).tolist()) == {199}
 
     def test_the_map_is_at_source_resolution(self) -> None:
         payload = masks_payload(logits_for(4, 64, winner=1), identity_transform(64), 64)

@@ -310,3 +310,106 @@ describe('mask background', () => {
     expect(painted[7]).toBe(255);
   });
 });
+
+/**
+ * The stride (`class_stride`) — what finally killed the fizzle in the packaged app.
+ *
+ * Adjacent class indices make terrible pixel values. With a single phrase a concept
+ * segmenter's classes are 0 and 1, and WebKit colour-manages the PNG on the way in
+ * whatever `colorSpaceConversion: 'none'` asks, dithering the low bits: half the
+ * background arrives as class 1 and is painted. Spread to 0 and 255 it takes a 128-level
+ * error to confuse them, and rounding here absorbs whatever the conversion did.
+ */
+describe('the class stride', () => {
+  async function paintStrided(
+    values: readonly number[],
+    stride: number | undefined,
+  ): Promise<Uint8ClampedArray> {
+    vi.mocked(decodeMap).mockResolvedValue({
+      values: new Uint8ClampedArray(values),
+      width: values.length,
+      height: 1,
+    });
+
+    let written: Uint8ClampedArray | null = null;
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(
+      () =>
+        ({
+          createImageData: (w: number, h: number) => ({
+            data: new Uint8ClampedArray(w * h * 4),
+            width: w,
+            height: h,
+          }),
+          putImageData: (image: { data: Uint8ClampedArray }) => {
+            written = image.data;
+          },
+        }) as unknown as CanvasRenderingContext2D,
+    );
+
+    render(
+      <>
+        {renderOverlayFor(
+          {
+            ...prediction('masks', {
+              mask_png: TINY_PNG,
+              width: values.length,
+              height: 1,
+              ...(stride === undefined ? {} : { class_stride: stride }),
+            }),
+            class_names: ['background', 'sky'],
+          },
+          RENDERED,
+        )}
+      </>,
+    );
+
+    await waitFor(() => expect(written).not.toBeNull());
+    return written as unknown as Uint8ClampedArray;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('reads a strided value back as its class', async () => {
+    // 255 with a stride of 255 is class 1, not class 255.
+    const painted = await paintStrided([0, 255], 255);
+
+    expect(painted[3]).toBe(0);
+    expect(painted[7]).toBe(255);
+  });
+
+  it('rounds a dithered background back down to background', async () => {
+    // The bug, reproduced at the level it survives at: WebKit turns some 0s into small
+    // values, and without the stride those *are* class 1.
+    const painted = await paintStrided([0, 1, 2, 255], 255);
+
+    expect(painted[3]).toBe(0);
+    expect(painted[7]).toBe(0);
+    expect(painted[11]).toBe(0);
+    expect(painted[15]).toBe(255);
+  });
+
+  it('rounds a dithered object back up to its class', async () => {
+    const painted = await paintStrided([253, 254], 255);
+
+    expect(painted[3]).toBe(255);
+    expect(painted[7]).toBe(255);
+  });
+
+  it('falls back to a stride of 1 when the backend does not send one', async () => {
+    // An older backend, or the depth path. The pre-stride encoding still renders.
+    const painted = await paintStrided([0, 1], undefined);
+
+    expect(painted[3]).toBe(0);
+    expect(painted[7]).toBe(255);
+  });
+
+  it('gives one colour per class, not one per pixel value', async () => {
+    // Three phrases at stride 85: values 85, 170, 255 must be classes 1, 2, 3.
+    const painted = await paintStrided([85, 170, 255], 85);
+    const colours = [0, 1, 2].map((i) => painted.slice(i * 4, i * 4 + 3).join(','));
+
+    expect(new Set(colours).size).toBe(3);
+  });
+});
