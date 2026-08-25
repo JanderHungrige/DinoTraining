@@ -37,10 +37,11 @@ fix; the packaged app is.
 
 ## Waiting on Jan
 
-**0. Confirm the Inference Viewer fizzle is gone in the packaged app.** The Studio was
-confirmed clean on 2026-08-25; the Viewer was still speckled at that point, and the
-`class_stride` fix that followed has only been verified on the wire and in Chromium. It no
-longer depends on WebKit honouring anything — only on arithmetic — but nobody has seen it.
+**0. Confirm the Dataset Generator's masks are clean in the packaged app.** The Studio and
+the Inference Viewer were both confirmed fixed on 2026-08-25 — the Viewer by the
+`class_stride` change, after `colorSpaceConversion: 'none'` turned out not to be honoured.
+The Generator was the third surface to show the same speckle, because each had grown its own
+compositor; they share one now (`CompositedMasks`), so this should be the last of it.
 
 **1. Certificates — the one thing that cannot be done here.** Signing needs an Apple
 Developer ID and a Windows code-signing certificate. Until they exist:
@@ -123,7 +124,13 @@ distributions that do not take one.
 5. **Prescan shares one runner** across the Studio and the Generator (doc 53).
 6. **Renaming is missing from the Library** (doc 51). *(Per-class rename from box review
    was the other half of this line and shipped in doc 60 on 2026-08-25.)*
-7. **`linear-segmenter` is declared trainable but cannot run.** `trainable=True`,
+7. ~~**`linear-segmenter` is declared trainable but cannot run.**~~ **Fixed 2026-08-25** —
+   it trains on stored masks now; see the backlog entry for the decisions and the one thing
+   only a real run caught. The vocabulary is per task rather than unioned, so a segmenter
+   never sees a box-only class — which was worth more than it sounded: dropping one dead
+   channel took epoch-1 loss from 3.16 to 0.70 and best mIoU from 0.263 to 0.539.
+
+   *(original)* **`linear-segmenter` is declared trainable but cannot run.** `trainable=True`,
    `target_format="masks"`, with `segmentation_loss` and `segmentation_metrics` both
    registered — but `build_samples` reads only boxes, `TrainingSample` has no mask field,
    and `build_targets` has no segmentation branch, so `targets["mask"]` is never produced.
@@ -147,6 +154,6 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-25: `1227` backend tests, `651` frontend, `ruff` +
+**Gates**, all green as of 2026-08-25: `1248` backend tests, `660` frontend, `ruff` +
 `mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
 nothing since has touched `apps/desktop`.)
