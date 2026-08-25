@@ -1911,7 +1911,20 @@ body {
   color: var(--text-dim);
 }
 
-.review__class {
+/* The class picker (doc 60). The select and its rename button share the row's second
+   column, and the whole thing swaps for a text field while a class is being named — which
+   is why the container is a grid rather than the select alone filling the cell. */
+.classpicker {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.classpicker__select {
+  flex: 1 1 auto;
+  /* Without this a long class name pushes the score and the verdicts off the row — the
+     flex default is min-content, not zero. */
   min-width: 0;
   padding: 0.15rem 0.3rem;
   border: 1px solid transparent;
@@ -1922,12 +1935,48 @@ body {
   font-size: 0.85rem;
 }
 
-/* The field only looks like a field once you reach for it — thirty bordered inputs in a
-   column reads as a form to fill in rather than a list to skim. */
-.review__class:hover:not(:disabled),
-.review__class:focus {
+/* The control only looks like a control once you reach for it — thirty bordered selects in
+   a column reads as a form to fill in rather than a list to skim. */
+.classpicker__select:hover:not(:disabled),
+.classpicker__select:focus {
   border-color: var(--border);
   background: var(--bg);
+}
+
+.classpicker__rename {
+  flex: 0 0 auto;
+  padding: 0.1rem 0.25rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.classpicker__rename:hover:not(:disabled),
+.classpicker__rename:focus-visible {
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Naming takes the whole cell: a text field, Add and Cancel do not fit beside a select,
+   and the select has nothing to say while a name is being typed. */
+.classpicker--editing {
+  gap: 0.25rem;
+}
+
+.classpicker__field {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
 }
 
 .review__score {

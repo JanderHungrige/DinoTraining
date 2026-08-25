@@ -154,7 +154,29 @@ CREATE TABLE IF NOT EXISTS head_instances (
     created_at           TEXT NOT NULL
 );
 
+-- The dataset's class vocabulary (doc 60). Until this table existed a class was only
+-- ever `boxes.prompt` — a string on an annotation — so a class could not exist before
+-- something was labelled with it, and "create a new class, then choose it" was
+-- unrepresentable.
+--
+-- Deliberately **not** the whole vocabulary: a dataset imported before this table existed
+-- has classes on its boxes and no rows here, so readers take the union of the two. See
+-- `app/datasets/classes.py`.
+--
+-- A new table needs no migration step. `CREATE TABLE IF NOT EXISTS` is a no-op only
+-- against a table that already exists, which is why migrations.py exists at all; a table
+-- nobody has yet is created here for every install, old and new. `head_instances`
+-- reached existing installs by exactly this route in Wave 2.
+CREATE TABLE IF NOT EXISTS dataset_classes (
+    id         INTEGER PRIMARY KEY,
+    dataset_id TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
+    name       TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (dataset_id, name)
+);
+
 CREATE INDEX IF NOT EXISTS idx_images_dataset ON images(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_dataset_classes_dataset ON dataset_classes(dataset_id);
 {BOX_INDEXES}
 {MASK_INDEXES}
 CREATE INDEX IF NOT EXISTS idx_heads_task     ON head_instances(task);

@@ -41,6 +41,10 @@ function renderList(over: Partial<Parameters<typeof BoxReviewList>[0]> = {}) {
     onRemove: vi.fn(),
     onThreshold: vi.fn(),
     onRemoveHidden: vi.fn(),
+    // Doc 60: the class is chosen from a vocabulary now, not typed. `create` resolves to
+    // the name as stored, which is what the picker selects on success.
+    onCreateClass: vi.fn(async (name: string) => name),
+    onRenameClass: vi.fn(),
   };
   render(
     <BoxReviewList
@@ -48,6 +52,7 @@ function renderList(over: Partial<Parameters<typeof BoxReviewList>[0]> = {}) {
       hidden={new Set()}
       selectedId={null}
       threshold={0}
+      classes={['dog', 'person']}
       {...handlers}
       {...over}
     />,
@@ -118,11 +123,55 @@ describe('verdicts', () => {
   });
 });
 
-describe('renaming', () => {
-  it('reports a retyped class', async () => {
+describe('choosing a class', () => {
+  it('reports the class picked for a box', async () => {
     const { onRename, user } = renderList();
-    await user.type(screen.getByLabelText('Class of box 3'), 'x');
-    expect(onRename).toHaveBeenCalledWith('c', 'dogx');
+
+    await user.selectOptions(screen.getByLabelText('Class of box 3'), 'person');
+
+    expect(onRename).toHaveBeenCalledWith('c', 'person');
+  });
+
+  it('offers every class in the vocabulary, plus unnamed and new', () => {
+    renderList();
+
+    const options = within(screen.getByLabelText('Class of box 1') as HTMLElement)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
+
+    expect(options).toEqual(['— unnamed —', 'dog', 'person', 'New class…']);
+  });
+
+  it('clears a class back to unnamed', async () => {
+    // A hand-drawn box starts with no class, so "no class yet" has to stay reachable
+    // after the first choice.
+    const { onRename, user } = renderList();
+
+    await user.selectOptions(screen.getByLabelText('Class of box 1'), '');
+
+    expect(onRename).toHaveBeenCalledWith('a', '');
+  });
+
+  it('renames a class across every box carrying it', async () => {
+    // The reason doc 47 chose a free-text input was that a proposal run names many boxes
+    // the same thing. That correction is now one decision rather than thirty.
+    const { onRenameClass, user } = renderList();
+
+    await user.click(
+      screen.getByLabelText('Rename person on every box in this image, Class of box 1'),
+    );
+    const field = screen.getByLabelText('Rename person, Class of box 1');
+    await user.clear(field);
+    await user.type(field, 'pedestrian');
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+
+    expect(onRenameClass).toHaveBeenCalledWith('person', 'pedestrian');
+  });
+
+  it('offers no rename on a box with no class', () => {
+    renderList({ boxes: numbered([box('a', { score: 0.9 })]) });
+
+    expect(screen.queryByRole('button', { name: /^Rename/ })).not.toBeInTheDocument();
   });
 });
 

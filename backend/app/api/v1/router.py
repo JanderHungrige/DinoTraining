@@ -12,6 +12,7 @@ from app.api.v1 import (
     annotate,
     annotators,
     backbones,
+    dataset_classes,
     datasets,
     foundation,
     foundation_finetune,
@@ -45,6 +46,7 @@ api_router.include_router(training.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(settings.router, tags=["settings"])
 api_router.include_router(datasets.router, tags=["datasets"])
+api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])
 api_router.include_router(prescan.router, tags=["generate"])

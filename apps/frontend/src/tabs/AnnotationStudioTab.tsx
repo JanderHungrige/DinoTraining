@@ -10,6 +10,7 @@ import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
 import { usePrescan } from '../hooks/usePrescan';
+import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import type { Label } from '../types/annotation';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
@@ -28,6 +29,15 @@ export function AnnotationStudioTab(): JSX.Element {
   const items = useMemo(() => numbered(boxes), [boxes]);
   const hidden = useMemo(() => hiddenByThreshold(boxes, threshold), [boxes, threshold]);
 
+  // Classes on the canvas right now, offered alongside the stored vocabulary (doc 60).
+  // A proposal run's classes are on screen and unsaved; a picker that could not offer
+  // them would be visibly wrong about what this image contains.
+  const inPlay = useMemo(
+    () => boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
+    [boxes],
+  );
+  const vocabulary = useDatasetClasses(config?.datasetId ?? null, inPlay);
+
   const setLabel = useCallback(
     (id: string, label: Label): void => {
       setBoxes(boxes.map((box) => (box.id === id ? { ...box, label } : box)));
@@ -38,6 +48,26 @@ export function AnnotationStudioTab(): JSX.Element {
   const rename = useCallback(
     (id: string, text: string): void => {
       setBoxes(boxes.map((box) => (box.id === id ? { ...box, text } : box)));
+    },
+    [boxes, setBoxes],
+  );
+
+  /**
+   * Rename a class on **every box in this image** that carries it (doc 60).
+   *
+   * The scope is the image, not the session, and that is the honest boundary: only the
+   * current image is saved on navigate, so rewriting the other 311 would edit images that
+   * are not on screen and persist none of them.
+   *
+   * A local edit like any other — it marks the session dirty and goes out with the next
+   * save. It deliberately does not call the classes API: the new name reaches the table by
+   * riding on a saved box, and the old one stays in the vocabulary until it is deleted.
+   */
+  const renameClass = useCallback(
+    (from: string, to: string): void => {
+      const target = to.trim();
+      if (target === '' || target === from) return;
+      setBoxes(boxes.map((box) => (box.text === from ? { ...box, text: target } : box)));
     },
     [boxes, setBoxes],
   );
@@ -169,6 +199,9 @@ export function AnnotationStudioTab(): JSX.Element {
                 onRemove={remove}
                 onThreshold={setThreshold}
                 onRemoveHidden={removeHidden}
+                classes={vocabulary.names}
+                onCreateClass={vocabulary.create}
+                onRenameClass={renameClass}
                 disabled={session.busy}
               />
             </div>
