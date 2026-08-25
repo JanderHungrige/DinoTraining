@@ -273,4 +273,44 @@ describe('drawing', () => {
     const created = onBoxesChange.mock.calls.at(-1)?.[0].at(-1);
     expect(onSelect).toHaveBeenLastCalledWith(created?.id);
   });
+
+  /**
+   * The bug every other test in this block missed.
+   *
+   * They all press on the stage, where `event.target` is the stage. In a browser it never
+   * is: the image fills the stage, so the press lands on the *image* and bubbles up. The
+   * old guard asked for `target === currentTarget` and rejected exactly that, which meant
+   * drawing a box by hand was impossible in the running app while every test passed.
+   *
+   * jsdom cannot resolve `pointer-events: none`, so the CSS half of the fix is invisible
+   * here — which is why the guard itself has to be right, and why this presses on the
+   * image rather than the stage.
+   */
+  function image(): HTMLElement {
+    const node = document.querySelector('.canvas__image');
+    if (!(node instanceof HTMLElement)) throw new Error('no canvas image');
+    return node;
+  }
+
+  it('draws when the press lands on the image, as it does in a browser', () => {
+    const { onBoxesChange } = renderCanvas([]);
+
+    drag(image(), [20, 20], [80, 60]);
+
+    const created = onBoxesChange.mock.calls.at(-1)?.[0].at(-1);
+    expect(created?.provenance).toBe('hand-drawn');
+    expect(created?.w).toBeGreaterThan(0);
+    expect(created?.h).toBeGreaterThan(0);
+  });
+
+  it('still treats a press on a box as that box\u2019s click, not a new drag', () => {
+    const { onBoxesChange } = renderCanvas([BOX]);
+
+    drag(screen.getByRole('button'), [12, 22], [70, 55]);
+
+    // The click cycles the label; what must not happen is a second box appearing.
+    for (const call of onBoxesChange.mock.calls) {
+      expect(call[0]).toHaveLength(1);
+    }
+  });
 });

@@ -387,6 +387,10 @@ body {
   object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
+  /* The image fills the stage, so without this it is the target of every pointerdown
+     and no drag ever starts on it — which is exactly how drawing a box by hand stopped
+     working. The stage owns the pointer; the image is something to look at. */
+  pointer-events: none;
 }
 
 .canvas__box {

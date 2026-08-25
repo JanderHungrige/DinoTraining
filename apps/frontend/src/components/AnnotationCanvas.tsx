@@ -168,8 +168,15 @@ export function AnnotationCanvas({
   };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>): void => {
-    // Only a drag starting on empty space draws; a press on a box is that box's click.
-    if (disabled || event.target !== event.currentTarget || event.button !== 0) return;
+    if (disabled || event.button !== 0) return;
+    // A press on a box is that box's click; anything else on the stage draws.
+    //
+    // Asking for `target === currentTarget` instead is what broke hand-drawn boxes
+    // entirely: the image fills the stage, so it — not the stage — was the target of
+    // every press, and no drag ever started. `.canvas__image` is `pointer-events: none`
+    // now, but the rule is expressed here as what it actually means, so a future style
+    // change cannot silently take drawing away again.
+    if ((event.target as HTMLElement).closest('button')) return;
     const point = localPoint(event);
     dragStart.current = point;
     dragRect.current = { x: point.x, y: point.y, w: 0, h: 0 };
