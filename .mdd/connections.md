@@ -341,23 +341,23 @@ graph LR
   41_rf_detr_detector --> 44_finetune_rf_detr
   11_training_job_runner --> 44_finetune_rf_detr
   12_head_instance_registry --> 44_finetune_rf_detr
-  23_mask_annotator_contract --> 45_concept_segmentation_everywhere
+  23_mask_annotator_registry --> 45_concept_segmentation_everywhere
   36_depth_foundation_model --> 45_concept_segmentation_everywhere
   42_foundation_boxes_everywhere --> 45_concept_segmentation_everywhere
   40_drag_and_drop_input --> 46_generator_folder_picker
-  04_annotation_canvas --> 47_box_review_list
+  05_annotation_canvas --> 47_box_review_list
   42_foundation_boxes_everywhere --> 47_box_review_list
   31_external_dataset_import --> 48_dataset_format_guide
   31_external_dataset_import --> 49_osdar23_rail
   43_detection_localisation --> 49_osdar23_rail
   44_finetune_rf_detr --> 49_osdar23_rail
   46_generator_folder_picker --> 50_dataset_as_source
-  17_image_source --> 50_dataset_as_source
+  17_image_input_source --> 50_dataset_as_source
   12_head_instance_registry --> 51_library_tab
   44_finetune_rf_detr --> 51_library_tab
   34_inference_picker_upfront --> 52_dataset_filter
   12_head_instance_registry --> 52_dataset_filter
-  32_studio_session_setup --> 53_prescan
+  06_annotation_workflow --> 53_prescan
   42_foundation_boxes_everywhere --> 53_prescan
   11_training_job_runner --> 53_prescan
   35_model_licence_surfacing --> 54_distribution_licensing
@@ -501,7 +501,4 @@ Files touched by more than one doc — the places where a change needs two docs 
 
 ## Warnings
 
-- `45-concept-segmentation-everywhere` depends on `23-mask-annotator-contract`, which does not exist
-- `47-box-review-list` depends on `04-annotation-canvas`, which does not exist
-- `50-dataset-as-source` depends on `17-image-source`, which does not exist
-- `53-prescan` depends on `32-studio-session-setup`, which does not exist
+(none)
