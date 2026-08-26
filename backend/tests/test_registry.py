@@ -297,3 +297,57 @@ class TestTheStarterSet:
         by_id = {entry["id"]: entry for entry in response.json()["models"]}
         assert by_id["dinov2-small"]["starter"] is True
         assert by_id["dinov2-large"]["starter"] is False
+
+
+class TestTheFrontendKnowsEveryFamily:
+    """The catalogue's families cross a language boundary, and the crossing has failed twice.
+
+    `models.ts` mirrors this module by hand and says so in a comment: "grep this file
+    whenever a backend literal changes". That instruction has been missed twice — `segmenter`
+    arrived with Wave 4 and was never added, and `rf-detr` was added with a full set of cards,
+    licences and a working download route that **no screen ever rendered**, because the Admin
+    tab's family list did not mention it. Both failures are silent in both languages: Python
+    does not read TypeScript, and TypeScript never assigned the missing literal, so there was
+    nothing to fail.
+
+    So the grep is a test now. It is a string search rather than a parse on purpose — the
+    question is only "does this literal appear in the union", and a parser here would be a
+    second thing to maintain for no extra answer.
+    """
+
+    def _models_ts(self) -> str:
+        import pathlib
+
+        path = (
+            pathlib.Path(__file__).resolve().parents[2]
+            / "apps"
+            / "frontend"
+            / "src"
+            / "api"
+            / "models.ts"
+        )
+        assert path.exists(), f"the frontend contract moved: {path}"
+        return path.read_text(encoding="utf-8")
+
+    def test_every_family_is_in_the_typescript_union(self) -> None:
+        source = self._models_ts()
+        missing = [
+            spec.family for spec in all_models() if f"'{spec.family}'" not in source
+        ]
+        assert missing == [], f"models.ts has no ModelFamily entry for: {sorted(set(missing))}"
+
+    def test_every_family_has_a_label_to_render_under(self) -> None:
+        """A family in the type with no label is a compile error; a family with a label is
+        rendered, because the order is derived from the labels. This pins the second half —
+        that the label map is what the section list is built from, which is the fix for a
+        hand-maintained order array that silently omitted two families."""
+        source = self._models_ts()
+        labels = source.split("FAMILY_LABELS", 1)[1].split("});", 1)[0]
+        missing = [spec.family for spec in all_models() if spec.family not in labels]
+        assert missing == [], f"no FAMILY_LABELS entry for: {sorted(set(missing))}"
+
+    def test_every_kind_is_in_the_typescript_union(self) -> None:
+        """The same crossing, for `ModelKind` — the literal that drifted the first time."""
+        source = self._models_ts()
+        missing = [spec.kind for spec in all_models() if f"'{spec.kind}'" not in source]
+        assert missing == [], f"models.ts has no ModelKind entry for: {sorted(set(missing))}"

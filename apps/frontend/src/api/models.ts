@@ -19,19 +19,33 @@ export type ModelFamily =
   | 'dinov3'
   | 'sam2'
   | 'sam3'
-  | 'depth-anything';
+  | 'depth-anything'
+  | 'rf-detr';
 export type JobState = 'pending' | 'downloading' | 'complete' | 'failed';
 
 // Record<ModelFamily, string> rather than a partial map: adding a family to the type
 // without a label here is a compile error, not a section that quietly fails to render.
+//
+// **Declaration order is display order.** It has to be one list, because it was two: the
+// Admin tab kept a `FAMILY_ORDER` array of its own, that array was never a
+// `Record<ModelFamily, …>`, and so nothing failed to compile when `rf-detr` and
+// `depth-anything` were left out of it. Both families had cards, licences, sizes and a
+// working download endpoint — and no way to reach any of it, which read exactly like the
+// models not existing.
 export const FAMILY_LABELS: Readonly<Record<ModelFamily, string>> = Object.freeze({
   'grounding-dino': 'Grounding DINO — open-vocabulary detection',
+  'rf-detr': 'RF-DETR — general object detection, and the one to fine-tune',
   dinov2: 'DINOv2 — backbones',
   dinov3: 'DINOv3 — backbones (gated)',
   sam2: 'SAM 2.1 — segmentation (open)',
   sam3: 'SAM 3 — segmentation (gated, your own token)',
   'depth-anything': 'Depth Anything V2 — monocular depth',
 });
+
+/** Every family, in display order. Derived so it cannot be a shorter list than the type. */
+export const FAMILY_ORDER: readonly ModelFamily[] = Object.freeze(
+  Object.keys(FAMILY_LABELS) as ModelFamily[],
+);
 
 export interface ModelInfo {
   readonly id: string;
