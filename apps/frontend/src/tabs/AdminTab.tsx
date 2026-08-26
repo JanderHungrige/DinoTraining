@@ -2,7 +2,12 @@
 
 import { useEffect, useState, type JSX } from 'react';
 
-import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
+import {
+  FAMILY_LABELS,
+  FAMILY_ORDER,
+  type ModelFamily,
+  type ModelInfo,
+} from '../api/models';
 import { AnnotatorReadiness } from '../components/AnnotatorReadiness';
 import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
 import { StarterSetPanel } from '../components/StarterSetPanel';
@@ -18,14 +23,6 @@ const CUDA_SIDECAR_MB = 2400;
 import { TokenPanel } from '../components/TokenPanel';
 import { useModels } from '../hooks/useModels';
 import { useTrainerOptions } from '../hooks/useTrainerOptions';
-
-const FAMILY_ORDER: readonly ModelFamily[] = [
-  'grounding-dino',
-  'dinov2',
-  'dinov3',
-  'sam2',
-  'sam3',
-];
 
 function SystemPanel({
   device,
