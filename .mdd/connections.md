@@ -1,8 +1,8 @@
 ---
 generated: 2026-08-26
-doc_count: 67
-connection_count: 151
-overlap_count: 101
+doc_count: 68
+connection_count: 155
+overlap_count: 103
 ---
 
 # Connections
@@ -47,7 +47,8 @@ Annotation Studio/Proposals
 Annotation Studio/Review
 ├── 47-box-review-list  complete
 ├── 60-box-class-picker  complete
-└── 61-studio-mask-review  complete
+├── 61-studio-mask-review  complete
+└── 67-annotation-view-and-output  complete
 
 Connection/MCP
 └── 64-mcp-server  complete
@@ -244,6 +245,7 @@ graph LR
   64_mcp_server["64-mcp-server"]:::complete
   65_starter_set["65-starter-set"]:::complete
   66_prompted_detection_everywhere["66-prompted-detection-everywhere"]:::complete
+  67_annotation_view_and_output["67-annotation-view-and-output"]:::complete
   01_app_shell --> 02_model_manager
   01_app_shell --> 03_dataset_store
   02_model_manager --> 04_grounding_dino_annotator
@@ -395,6 +397,10 @@ graph LR
   04_grounding_dino_annotator --> 66_prompted_detection_everywhere
   42_foundation_boxes_everywhere --> 66_prompted_detection_everywhere
   45_concept_segmentation_everywhere --> 66_prompted_detection_everywhere
+  22_mask_dataset_store --> 67_annotation_view_and_output
+  28_mask_review_ui --> 67_annotation_view_and_output
+  45_concept_segmentation_everywhere --> 67_annotation_view_and_output
+  61_studio_mask_review --> 67_annotation_view_and_output
   classDef complete fill:#00e5cc,color:#000
   classDef in_progress fill:#ffaa00,color:#000
   classDef draft fill:#888,color:#fff
@@ -422,21 +428,23 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/frontend/src/api/inference.ts` — 17-image-input-source, 20-inference-overlay-render, 37-foundation-model-in-viewer, 62-tiled-inference
 - `apps/frontend/src/api/models.ts` — 02-model-manager, 24-hf-token-settings, 35-model-licence-surfacing, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
 - `apps/frontend/src/api/types.ts` — 01-app-shell, 07-backbone-feature-extractor
-- `apps/frontend/src/components/AnnotationCanvas.tsx` — 05-annotation-canvas, 47-box-review-list, 61-studio-mask-review
+- `apps/frontend/src/components/AnnotationCanvas.tsx` — 05-annotation-canvas, 47-box-review-list, 61-studio-mask-review, 67-annotation-view-and-output
 - `apps/frontend/src/components/BoxReviewList.tsx` — 47-box-review-list, 60-box-class-picker
 - `apps/frontend/src/components/CounterBar.tsx` — 06-annotation-workflow, 29-generated-dataset-writer
 - `apps/frontend/src/components/ExpertHeadPicker.tsx` — 26-generator-review-ui, 32-shared-head-picker
 - `apps/frontend/src/components/FinetunePanel.tsx` — 44-finetune-rf-detr, 55-unfreezing
 - `apps/frontend/src/components/FoundationPicker.tsx` — 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 66-prompted-detection-everywhere
-- `apps/frontend/src/components/GeneratorSetup.tsx` — 26-generator-review-ui, 27-grounded-sam-annotator, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 46-generator-folder-picker, 50-dataset-as-source, 66-prompted-detection-everywhere
+- `apps/frontend/src/components/GeneratorSetup.tsx` — 26-generator-review-ui, 27-grounded-sam-annotator, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 46-generator-folder-picker, 50-dataset-as-source, 66-prompted-detection-everywhere, 67-annotation-view-and-output
 - `apps/frontend/src/components/HeadRunPanel.tsx` — 20-inference-overlay-render, 21-same-task-head-compare, 32-shared-head-picker, 34-inference-picker-upfront, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
 - `apps/frontend/src/components/ImageSourceField.tsx` — 50-dataset-as-source, 59-reveal-dataset-folder
 - `apps/frontend/src/components/ImageSourcePicker.tsx` — 17-image-input-source, 40-drag-and-drop-input, 50-dataset-as-source, 59-reveal-dataset-folder
+- `apps/frontend/src/components/MaskReviewCanvas.tsx` — 28-mask-review-ui, 67-annotation-view-and-output
 - `apps/frontend/src/components/MaskSourceFields.tsx` — 27-grounded-sam-annotator, 42-foundation-boxes-everywhere
 - `apps/frontend/src/components/ModelCard.tsx` — 02-model-manager, 35-model-licence-surfacing
 - `apps/frontend/src/components/SessionSetup.tsx` — 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 46-generator-folder-picker, 50-dataset-as-source
 - `apps/frontend/src/components/SideBySideViewer.tsx` — 19-side-by-side-viewer, 21-same-task-head-compare
 - `apps/frontend/src/components/overlays/MapOverlay.tsx` — 20-inference-overlay-render, 28-mask-review-ui, 61-studio-mask-review
+- `apps/frontend/src/components/overlays/registry.tsx` — 20-inference-overlay-render, 67-annotation-view-and-output
 - `apps/frontend/src/hooks/useAnnotationSession.ts` — 06-annotation-workflow, 33-studio-head-annotator, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 50-dataset-as-source, 53-prescan, 61-studio-mask-review
 - `apps/frontend/src/hooks/useGeneratorSession.ts` — 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 42-foundation-boxes-everywhere, 50-dataset-as-source, 53-prescan, 66-prompted-detection-everywhere
 - `apps/frontend/src/hooks/useHeadRun.ts` — 20-inference-overlay-render, 21-same-task-head-compare, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
@@ -447,11 +455,11 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/frontend/src/lib/generatorProposal.ts` — 53-prescan, 66-prompted-detection-everywhere
 - `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront, 35-model-licence-surfacing, 38-intro-tab, 39-prompt-guidance, 40-drag-and-drop-input, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 47-box-review-list, 48-dataset-format-guide, 54-distribution-licensing, 57-gpu-support-download, 59-reveal-dataset-folder, 60-box-class-picker, 61-studio-mask-review, 62-tiled-inference, 63-agent-api-guide, 64-mcp-server, 65-starter-set
 - `apps/frontend/src/tabs/AdminTab.tsx` — 01-app-shell, 02-model-manager, 15-head-catalog-import, 24-hf-token-settings, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
-- `apps/frontend/src/tabs/AnnotationStudioTab.tsx` — 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator, 47-box-review-list, 53-prescan, 60-box-class-picker, 61-studio-mask-review
+- `apps/frontend/src/tabs/AnnotationStudioTab.tsx` — 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator, 47-box-review-list, 53-prescan, 60-box-class-picker, 61-studio-mask-review, 67-annotation-view-and-output
 - `apps/frontend/src/tabs/ApiTab.tsx` — 63-agent-api-guide, 64-mcp-server
 - `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` — 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 47-box-review-list, 53-prescan
 - `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui, 44-finetune-rf-detr, 48-dataset-format-guide
-- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront
+- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront, 67-annotation-view-and-output
 - `apps/frontend/src/tabs/LibraryTab.tsx` — 51-library-tab, 54-distribution-licensing
 - `apps/frontend/src/tabs/introContent.ts` — 38-intro-tab, 51-library-tab
 - `apps/frontend/src/tabs/tabs.ts` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 64-mcp-server
@@ -484,7 +492,7 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `backend/app/ml/backbone.py` — 07-backbone-feature-extractor, 55-unfreezing
 - `backend/app/ml/downloads.py` — 02-model-manager, 30-sam3-annotator
 - `backend/app/ml/foundation/build.py` — 36-depth-foundation-model, 41-rf-detr-detector, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab, 66-prompted-detection-everywhere
-- `backend/app/ml/foundation/concept.py` — 45-concept-segmentation-everywhere, 61-studio-mask-review
+- `backend/app/ml/foundation/concept.py` — 45-concept-segmentation-everywhere, 61-studio-mask-review, 67-annotation-view-and-output
 - `backend/app/ml/foundation/detect.py` — 41-rf-detr-detector, 44-finetune-rf-detr
 - `backend/app/ml/foundation/finetune.py` — 44-finetune-rf-detr, 55-unfreezing
 - `backend/app/ml/foundation/finetune_runner.py` — 44-finetune-rf-detr, 55-unfreezing

@@ -14,6 +14,7 @@
 import type { JSX } from 'react';
 
 import { proposesBoxes, type FoundationInfo } from '../api/foundation';
+import { describeOutput } from '../types/annotationView';
 
 export interface FoundationPickerProps {
   readonly foundations: readonly FoundationInfo[];
@@ -92,6 +93,16 @@ export function FoundationPicker({
           </span>
         </label>
       ))}
+
+      {/* Doc 67. What this model *writes* — stated before the run, which is the only
+          point where it can still change the decision. Read off `render_hint`, never off
+          an id: Grounded SAM, SAM 3 and a fine-tuned RF-DETR share no id pattern.
+
+          It answers the question behind "boxes, segmentations, or both?": a segmentation
+          run gives you boxes too, because the COCO export derives one from each mask. */}
+      {selected && describeOutput(selected.render_hint) && (
+        <p className="genpanel__output">{describeOutput(selected.render_hint)}</p>
+      )}
 
       {needsConcept && (
         <label className="headpick__concept">
