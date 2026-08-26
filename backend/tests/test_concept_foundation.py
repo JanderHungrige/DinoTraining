@@ -142,6 +142,68 @@ class TestThePredictionTheViewerDraws:
         assert prediction.payload["present_classes"] == [0, 1]
 
 
+class TestTheBoxesTheViewerCanDraw:
+    """Doc 67. The payload used to carry the class map and nothing else, so "show the
+    bounding boxes for Grounded SAM" was impossible client-side — not because the boxes did
+    not exist, but because `_mask_payload` dropped them one step before the wire."""
+
+    def test_the_payload_carries_a_box_per_proposal(
+        self, segmenter: ConceptSegmenter
+    ) -> None:
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "cat. dog.")
+        assert len(prediction.payload["boxes"]) == 2
+
+    def test_box_classes_index_the_same_names_as_the_map(
+        self, segmenter: ConceptSegmenter
+    ) -> None:
+        """The one that bites silently. `class_names` starts with `background`, so a box
+        indexed from zero wears the previous phrase's name — every label off by one, and
+        every box still drawn in a plausible place."""
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "cat. dog.")
+        names = prediction.class_names
+        classes = prediction.payload["classes"]
+
+        assert names == ("background", "cat", "dog")
+        assert [names[index] for index in classes] == ["cat", "dog"]
+
+    def test_no_box_is_labelled_background(self, segmenter: ConceptSegmenter) -> None:
+        # Index 0 is "nothing here". A box can never be it.
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "cat. dog.")
+        assert 0 not in prediction.payload["classes"]
+
+    def test_two_proposals_of_one_concept_share_a_box_class(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Same rule the map follows, so a phrase keeps one colour across both surfaces."""
+        stub = _StubAnnotator([_proposal("cat", (2, 2, 8, 8)), _proposal("cat", (20, 20, 8, 8))])
+        monkeypatch.setattr(
+            "app.ml.foundation.concept.build_annotator", lambda _id: stub
+        )
+        spec = get_foundation("grounded-sam")
+        assert spec is not None
+        prediction = ConceptSegmenter(spec).predict(Image.new("RGB", (60, 40)), "cat")
+
+        assert prediction.payload["classes"] == [1, 1]
+
+    def test_the_boxes_are_the_masks_own_not_the_prompts(
+        self, segmenter: ConceptSegmenter
+    ) -> None:
+        """Doc 27 derives each box from its mask, so it is tighter than what Grounding DINO
+        proposed. Passing those through is the point — a looser box drawn over a tight mask
+        is what makes the pair look misaligned."""
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "cat. dog.")
+        # The fixture's first proposal is (5, 5, 10, 10) — passed through untouched.
+        assert prediction.payload["boxes"][0] == [5.0, 5.0, 10.0, 10.0]
+
+    def test_an_empty_concept_carries_no_boxes(self, segmenter: ConceptSegmenter) -> None:
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "")
+        assert prediction.payload["boxes"] == []
+
+    def test_scores_stay_aligned_with_the_boxes(self, segmenter: ConceptSegmenter) -> None:
+        prediction = segmenter.predict(Image.new("RGB", (60, 40)), "cat. dog.")
+        assert len(prediction.payload["scores"]) == len(prediction.payload["boxes"])
+
+
 class TestTheBoxesTheStudioReviews:
     def test_it_proposes_boxes_from_a_concept_segmenter(
         self, monkeypatch: pytest.MonkeyPatch, segmenter: ConceptSegmenter

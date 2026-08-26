@@ -15,7 +15,9 @@ import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { HeadRunPanel } from '../components/HeadRunPanel';
 import { ImageSourcePicker } from '../components/ImageSourcePicker';
 import { SideBySideViewer } from '../components/SideBySideViewer';
+import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { renderOverlayFor } from '../components/overlays/registry';
+import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
 import { useImageSource } from '../hooks/useImageSource';
 
@@ -24,6 +26,9 @@ export function InferenceViewerTab(): JSX.Element {
   // Read from the image itself rather than from any prediction: the tiling hint has to be
   // available *before* a run, which is exactly when there is no prediction to ask.
   const [imageWidth, setImageWidth] = useState<number | null>(null);
+  // A preference, not per-image state: it survives moving to the next image, because
+  // re-choosing "boxes" on every frame of a folder is the opposite of a convenience.
+  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
   // Mutually exclusive by construction rather than by a mode flag: choosing one clears
   // the other, so there is never a state where both claim to be the source.
   const [datasetId, setDatasetId] = useState<string | null>(null);
@@ -104,6 +109,23 @@ export function InferenceViewerTab(): JSX.Element {
             {current.name} — {source.index + 1} of {source.items.length}
           </p>
 
+          {/* Doc 67. One control for every pane rather than one each: comparing two
+              segmenters means looking at them the same way, and per-pane views would make
+              a difference in the control look like a difference in the models. */}
+          <div className="studio__viewbar">
+            <AnnotationViewToggle
+              view={view}
+              onChange={setView}
+              hasMasks={predictions.some((entry) => entry.render_hint === 'masks')}
+              hasBoxes={predictions.some(
+                (entry) =>
+                  entry.render_hint === 'masks' && Array.isArray(entry.payload['boxes']),
+              )}
+              disabled={run.running}
+              groupName="viewer-view"
+            />
+          </div>
+
           {/* Hidden probe, the same one the Studio uses: the viewer's own image lives
               inside SideBySideViewer's render-prop and its natural size is not reachable
               from here. */}
@@ -126,7 +148,9 @@ export function InferenceViewerTab(): JSX.Element {
                     // Provenance, never a filename — doc 12's contract at the pane title.
                     label: prediction.head_name,
                     renderOverlay: (rendered) => (
-                      <div className="overlay">{renderOverlayFor(prediction, rendered)}</div>
+                      <div className="overlay">
+                        {renderOverlayFor(prediction, rendered, view)}
+                      </div>
                     ),
                   }))
                 : [

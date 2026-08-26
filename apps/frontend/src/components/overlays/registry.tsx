@@ -12,6 +12,7 @@ import type { JSX } from 'react';
 import type { Prediction, RenderHint } from '../../api/inference';
 import type { RenderedImage } from '../../lib/geometry';
 import { classColour, depthColour, type Rgb } from '../../lib/overlayPalette';
+import { DEFAULT_VIEW, showsBoxes, showsMasks, type AnnotationView } from '../../types/annotationView';
 import { BoxOverlay } from './BoxOverlay';
 import { LabelOverlay } from './LabelOverlay';
 import { MapOverlay } from './MapOverlay';
@@ -19,6 +20,9 @@ import { MapOverlay } from './MapOverlay';
 export interface OverlayProps {
   readonly prediction: Prediction;
   readonly rendered: RenderedImage;
+  /** Which half of a segmentation result to draw (doc 67). Ignored by every hint that
+   *  produces only one of the two — a depth map has no second view to switch to. */
+  readonly view?: AnnotationView;
 }
 
 type OverlayRenderer = (props: OverlayProps) => JSX.Element | null;
@@ -80,23 +84,41 @@ function alphaForStride(stride: number): (value: number) => number {
   return fn;
 }
 
-const renderMask: OverlayRenderer = ({ prediction, rendered }) => {
+/**
+ * A segmentation result, drawn as its mask, its boxes, or both (doc 67).
+ *
+ * The boxes are the *mask's* boxes — doc 27 derives each from its own mask, so they are
+ * tighter than whatever the detector proposed and they line up with what is painted. They
+ * reached the client only from doc 67 onward; before that `_mask_payload` dropped them one
+ * step before the wire, which is why this could draw a mask and nothing else.
+ *
+ * Both layers render into the same absolutely-positioned stack, mask under boxes, so an
+ * outline is never buried by the 55% fill it describes.
+ */
+const renderMask: OverlayRenderer = ({ prediction, rendered, view = DEFAULT_VIEW }) => {
   const encoded = prediction.payload['mask_png'];
-  if (typeof encoded !== 'string') return null;
-
   const stride = strideOf(prediction.payload);
   const named = prediction.class_names[0] === BACKGROUND_CLASS;
+  const wantsMask = showsMasks(view) && typeof encoded === 'string';
+  const wantsBoxes = showsBoxes(view) && Array.isArray(prediction.payload['boxes']);
+
+  if (!wantsMask && !wantsBoxes) return null;
 
   return (
-    <MapOverlay
-      encoded={encoded}
-      width={asNumber(prediction.payload['width'])}
-      height={asNumber(prediction.payload['height'])}
-      rendered={rendered}
-      colourFor={colourForStride(stride)}
-      {...(named ? { alphaFor: alphaForStride(stride) } : {})}
-      title={`Segmentation from ${prediction.head_name}`}
-    />
+    <>
+      {wantsMask && (
+        <MapOverlay
+          encoded={encoded as string}
+          width={asNumber(prediction.payload['width'])}
+          height={asNumber(prediction.payload['height'])}
+          rendered={rendered}
+          colourFor={colourForStride(stride)}
+          {...(named ? { alphaFor: alphaForStride(stride) } : {})}
+          title={`Segmentation from ${prediction.head_name}`}
+        />
+      )}
+      {wantsBoxes && <BoxOverlay prediction={prediction} rendered={rendered} />}
+    </>
   );
 };
 
@@ -137,10 +159,11 @@ export const OVERLAY_RENDERERS: Record<RenderHint, OverlayRenderer> = {
 export function renderOverlayFor(
   prediction: Prediction,
   rendered: RenderedImage,
+  view: AnnotationView = DEFAULT_VIEW,
 ): JSX.Element | null {
   const renderer = OVERLAY_RENDERERS[prediction.render_hint];
   // Unreachable through the type system, but a head type added to the backend and not
   // here would otherwise fail as a blank pane with no explanation.
   if (!renderer) return null;
-  return renderer({ prediction, rendered });
+  return renderer({ prediction, rendered, view });
 }

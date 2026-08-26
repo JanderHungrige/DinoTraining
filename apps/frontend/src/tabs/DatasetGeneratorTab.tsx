@@ -13,6 +13,8 @@ import {
   generatorPrescanSuggestions,
 } from '../lib/prescanSource';
 import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
+import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import {
   useGeneratorSession,
@@ -22,6 +24,8 @@ import {
 export function DatasetGeneratorTab(): JSX.Element {
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // A preference across the whole folder, not per-image state.
+  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useGeneratorSession(config);
   const prescan = usePrescan();
@@ -141,6 +145,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 selectedId={selectedId}
                 onMasksChange={session.setMasks}
                 onSelect={setSelectedId}
+                view={view}
                 disabled={session.proposing}
               />
             ) : (
@@ -158,6 +163,19 @@ export function DatasetGeneratorTab(): JSX.Element {
           ) : (
             <p role="status">Loading image…</p>
           )}
+
+          {/* Doc 67. Only a mask run has two halves to choose between; a box run gets no
+              control, because `AnnotationViewToggle` renders nothing for one option. */}
+          <div className="studio__viewbar">
+            <AnnotationViewToggle
+              view={view}
+              onChange={setView}
+              hasMasks={config.kind === 'masks'}
+              hasBoxes={config.kind === 'masks' && session.masks.length > 0}
+              disabled={session.proposing}
+              groupName="generator-view"
+            />
+          </div>
 
           <div className="studio__actions">
             <button

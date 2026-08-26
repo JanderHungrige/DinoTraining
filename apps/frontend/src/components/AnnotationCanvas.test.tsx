@@ -314,3 +314,76 @@ describe('drawing', () => {
     }
   });
 });
+
+describe('the annotation view (doc 67)', () => {
+  /**
+   * Replaced a `showBoxes` boolean that had no test at all. The boolean could say "mask"
+   * and "mask + box" and never "box alone" — the view for checking a mask's extents
+   * against a detector's, and the one state that did not exist.
+   *
+   * A segmented annotation keeps its button under every view: mask pixels cannot be
+   * focused, and every keyboard affordance here hangs off that button. So what changes is
+   * whether the rect is *painted*, which is `canvas__box--bare`.
+   */
+  const SEGMENTED: CanvasBox = {
+    ...BOX,
+    id: 'm1',
+    // `size` is COCO's [height, width]; `counts` alternates background/foreground runs.
+    mask: { rle: { size: [100, 200], counts: [0, 20_000] }, png: '' },
+  };
+
+  function renderWithView(view: 'masks' | 'boxes' | 'both', boxes = [SEGMENTED]) {
+    const { container } = render(
+      <AnnotationCanvas
+        imageUrl="/img.png"
+        naturalWidth={200}
+        naturalHeight={100}
+        boxes={numbered(boxes)}
+        selectedId={null}
+        hidden={new Set()}
+        onBoxesChange={vi.fn()}
+        onSelect={vi.fn()}
+        view={view}
+      />,
+    );
+    return container;
+  }
+
+  it('paints the mask and hides the rect under "masks"', () => {
+    const container = renderWithView('masks');
+
+    expect(container.querySelector('.masklayer, canvas')).toBeTruthy();
+    expect(container.querySelector('.canvas__box--bare')).toBeTruthy();
+  });
+
+  it('paints the rect and drops the mask under "boxes"', () => {
+    // The state the old boolean could not reach.
+    const container = renderWithView('boxes');
+
+    expect(container.querySelector('.masklayer, canvas')).toBeNull();
+    expect(container.querySelector('.canvas__box--bare')).toBeNull();
+  });
+
+  it('paints both under "both"', () => {
+    const container = renderWithView('both');
+
+    expect(container.querySelector('.masklayer, canvas')).toBeTruthy();
+    expect(container.querySelector('.canvas__box--bare')).toBeNull();
+  });
+
+  it('keeps the button focusable under every view', () => {
+    // Removing it would take the verdict keys and the accessibility tree with it.
+    for (const view of ['masks', 'boxes', 'both'] as const) {
+      const container = renderWithView(view);
+      expect(container.querySelector('button')).toBeTruthy();
+    }
+  });
+
+  it('always draws a box that has no mask', () => {
+    // Nothing else of it exists to draw. Under "masks" it must not vanish.
+    const container = renderWithView('masks', [BOX]);
+
+    expect(container.querySelector('.canvas__box--bare')).toBeNull();
+    expect(container.querySelector('.canvas__box')).toBeTruthy();
+  });
+});

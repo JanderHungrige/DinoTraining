@@ -30,7 +30,11 @@ from app.datasets.rle import rle_decode
 from app.ml.annotators.base import MaskProposal
 from app.ml.annotators.build import build_annotator
 from app.ml.foundation.registry import FoundationSpec
-from app.ml.inference.payloads import MAX_PNG_CLASSES, encode_class_map
+from app.ml.inference.payloads import (
+    MAX_PNG_CLASSES,
+    encode_class_map,
+    source_boxes_payload,
+)
 from app.ml.inference.results import Prediction
 
 logger = logging.getLogger(__name__)
@@ -121,6 +125,20 @@ def _mask_payload(
 
     present = sorted({int(value) for value in np.unique(indices)})
     mask_png, stride = encode_class_map(indices, len(phrases))
+
+    # Boxes travel with the map (doc 67). Each proposal already carries one — doc 27 derives
+    # it from the mask, so it is *tighter* than the prompt's — and this function used to
+    # discard it one step before the wire, which is why the viewer could draw a mask and
+    # nothing else. Showing boxes for a concept segmenter was impossible client-side, not
+    # because the boxes did not exist, but because they never left the backend.
+    #
+    # Indexed into the **same** `class_names` as the map, so a phrase's box and its mask
+    # region carry the identical index. Two indexing schemes for one prediction is how a box
+    # ends up wearing the previous phrase's name.
+    boxes = [p.box for p in proposals]
+    scores = [p.score for p in proposals]
+    classes = [phrases.index(p.concept) + 1 for p in proposals]
+
     return (
         {
             "mask_png": mask_png,
@@ -130,6 +148,7 @@ def _mask_payload(
             "present_classes": present,
             "height": height,
             "width": width,
+            **source_boxes_payload(boxes, scores, classes),
         },
         ("background", *phrases),
     )
