@@ -128,7 +128,12 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const annotatorId =
     annotatorOverride || readyAnnotators[0]?.id || GROUNDED_SAM;
 
-  const isGroundedSam = annotatorId === GROUNDED_SAM;
+  // From the catalogue row, not from the id. Grounded SAM is three rows now (doc 27) and
+  // an id comparison would have given the two new ones SAM 3's single-concept wording
+  // while the pipeline behind them happily accepted several phrases.
+  const promptStyle =
+    readyAnnotators.find((annotator) => annotator.id === annotatorId)?.prompt_style ??
+    'phrases';
 
   const eligible = heads.filter(
     (head) => head.render_hint === 'boxes' && head.backbone_id === backboneId,
@@ -212,7 +217,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         onAnnotatorChange={setAnnotatorOverride}
         concept={concept}
         onConceptChange={setConcept}
-        isGroundedSam={isGroundedSam}
+        promptStyle={promptStyle}
       />
 
       {mode === 'expert' && (

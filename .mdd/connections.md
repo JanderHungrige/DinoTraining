@@ -1,8 +1,8 @@
 ---
-generated: 2026-08-21
-doc_count: 40
-connection_count: 90
-overlap_count: 56
+generated: 2026-08-26
+doc_count: 66
+connection_count: 148
+overlap_count: 100
 ---
 
 # Connections
@@ -12,19 +12,48 @@ Generated from feature-doc frontmatter only. Do not edit by hand — regenerate 
 ## Path Tree
 
 ```
+API/Guide
+└── 63-agent-api-guide  complete
+
+Admin / Models/Distribution
+└── 54-distribution-licensing  complete
+
+Admin / Models/GPU
+└── 57-gpu-support-download  complete
+
 Admin/Models
 ├── 02-model-manager  complete
-└── 35-model-licence-surfacing  complete
+├── 35-model-licence-surfacing  complete
+└── 65-starter-set  complete
 
 Annotation Studio/Head Mode
 ├── 32-shared-head-picker  complete
 └── 33-studio-head-annotator  complete
 
 Annotation Studio/Input
-└── 40-drag-and-drop-input  complete
+├── 40-drag-and-drop-input  complete
+├── 50-dataset-as-source  complete
+└── 59-reveal-dataset-folder  complete
+
+Annotation Studio/Prescan
+└── 53-prescan  complete
 
 Annotation Studio/Prompting
 └── 39-prompt-guidance  complete
+
+Annotation Studio/Proposals
+└── 42-foundation-boxes-everywhere  complete
+
+Annotation Studio/Review
+├── 47-box-review-list  complete
+├── 60-box-class-picker  complete
+└── 61-studio-mask-review  complete
+
+Connection/MCP
+└── 64-mcp-server  complete
+
+Dataset Generator/Input
+└── 46-generator-folder-picker  complete
 
 Dataset Generator/Proposals
 ├── 25-expert-annotator  complete
@@ -41,11 +70,34 @@ Dataset Generator/Save
 Dataset Store/Import
 └── 31-external-dataset-import  complete
 
+Datasets/Import
+└── 49-osdar23-rail  complete
+
+Head Trainer/Detection
+└── 43-detection-localisation  complete
+
+Head Trainer/Fine-tuning
+├── 44-finetune-rf-detr  complete
+└── 55-unfreezing  complete
+
+Head Trainer/Help
+└── 48-dataset-format-guide  complete
+
+Inference Viewer/Foundation models
+└── 45-concept-segmentation-everywhere  complete
+
+Inference Viewer/Picker
+└── 52-dataset-filter  complete
+
+Inference Viewer/Tiling
+└── 62-tiled-inference  complete
+
 Inference/Compare
 ├── 21-same-task-head-compare  complete
 ├── 34-inference-picker-upfront  complete
 ├── 36-depth-foundation-model  complete
-└── 37-foundation-model-in-viewer  complete
+├── 37-foundation-model-in-viewer  complete
+└── 41-rf-detr-detector  complete
 
 Inference/Compose
 └── 18-multi-head-compose  complete
@@ -61,6 +113,18 @@ Inference/Overlay
 
 Inference/Viewer
 └── 19-side-by-side-viewer  complete
+
+Library
+└── 51-library-tab  complete
+
+Meta/Schema
+└── 00-frontmatter-spec  complete
+
+Packaging/Installers
+└── 58-installers  complete
+
+Packaging/Sidecar
+└── 56-sidecar-bundling  complete
 
 Platform/Annotators
 └── 23-mask-annotator-registry  complete
@@ -110,205 +174,334 @@ Training/UI
 
 ```mermaid
 graph LR
-    d01["01-app-shell"]:::complete
-    d02["02-model-manager"]:::complete
-    d03["03-dataset-store"]:::complete
-    d04["04-grounding-dino-annotator"]:::complete
-    d05["05-annotation-canvas"]:::complete
-    d06["06-annotation-workflow"]:::complete
-    d07["07-backbone-feature-extractor"]:::complete
-    d08["08-head-registry"]:::complete
-    d09["09-head-implementations"]:::complete
-    d10["10-preprocessing-pipeline"]:::complete
-    d11["11-training-job-runner"]:::complete
-    d12["12-head-instance-registry"]:::complete
-    d13["13-training-metrics-stream"]:::complete
-    d14["14-trainer-config-ui"]:::complete
-    d15["15-head-catalog-import"]:::complete
-    d16["16-inference-engine"]:::complete
-    d17["17-image-input-source"]:::complete
-    d18["18-multi-head-compose"]:::complete
-    d19["19-side-by-side-viewer"]:::complete
-    d20["20-inference-overlay-render"]:::complete
-    d21["21-same-task-head-compare"]:::complete
-    d22["22-mask-dataset-store"]:::complete
-    d23["23-mask-annotator-registry"]:::complete
-    d24["24-hf-token-settings"]:::complete
-    d25["25-expert-annotator"]:::complete
-    d26["26-generator-review-ui"]:::complete
-    d27["27-grounded-sam-annotator"]:::complete
-    d28["28-mask-review-ui"]:::complete
-    d29["29-generated-dataset-writer"]:::complete
-    d30["30-sam3-annotator"]:::complete
-    d31["31-external-dataset-import"]:::complete
-    d32["32-shared-head-picker"]:::complete
-    d33["33-studio-head-annotator"]:::complete
-    d34["34-inference-picker-upfront"]:::complete
-    d35["35-model-licence-surfacing"]:::complete
-    d36["36-depth-foundation-model"]:::complete
-    d37["37-foundation-model-in-viewer"]:::complete
-    d38["38-intro-tab"]:::complete
-    d39["39-prompt-guidance"]:::complete
-    d40["40-drag-and-drop-input"]:::complete
-    d01 --> d02
-    d01 --> d03
-    d02 --> d04
-    d03 --> d04
-    d01 --> d05
-    d01 --> d06
-    d03 --> d06
-    d04 --> d06
-    d05 --> d06
-    d01 --> d07
-    d02 --> d07
-    d07 --> d08
-    d07 --> d09
-    d08 --> d09
-    d07 --> d10
-    d08 --> d10
-    d03 --> d11
-    d07 --> d11
-    d08 --> d11
-    d09 --> d11
-    d10 --> d11
-    d03 --> d12
-    d08 --> d12
-    d11 --> d12
-    d08 --> d13
-    d11 --> d13
-    d12 --> d13
-    d08 --> d14
-    d12 --> d14
-    d13 --> d14
-    d07 --> d15
-    d08 --> d15
-    d09 --> d15
-    d12 --> d15
-    d07 --> d16
-    d08 --> d16
-    d09 --> d16
-    d10 --> d16
-    d12 --> d16
-    d16 --> d17
-    d16 --> d18
-    d17 --> d19
-    d18 --> d20
-    d19 --> d20
-    d18 --> d21
-    d20 --> d21
-    d03 --> d22
-    d22 --> d23
-    d02 --> d23
-    d02 --> d24
-    d23 --> d24
-    d16 --> d25
-    d18 --> d25
-    d03 --> d25
-    d25 --> d26
-    d05 --> d26
-    d12 --> d26
-    d23 --> d27
-    d22 --> d27
-    d04 --> d27
-    d27 --> d28
-    d26 --> d28
-    d20 --> d28
-    d22 --> d29
-    d26 --> d29
-    d28 --> d29
-    d23 --> d30
-    d27 --> d30
-    d24 --> d30
-    d03 --> d31
-    d22 --> d31
-    d12 --> d32
-    d26 --> d32
-    d06 --> d33
-    d25 --> d33
-    d32 --> d33
-    d19 --> d34
-    d32 --> d34
-    d02 --> d35
-    d02 --> d36
-    d16 --> d36
-    d35 --> d36
-    d19 --> d37
-    d34 --> d37
-    d36 --> d37
-    d01 --> d38
-    d06 --> d39
-    d33 --> d39
-    d17 --> d40
-    d06 --> d40
-    classDef complete fill:#00e5cc,color:#000
-    classDef in_progress fill:#ffaa00,color:#000
-    classDef draft fill:#888,color:#fff
-    classDef deprecated fill:#555,color:#aaa
+  00_frontmatter_spec["00-frontmatter-spec"]:::complete
+  01_app_shell["01-app-shell"]:::complete
+  02_model_manager["02-model-manager"]:::complete
+  03_dataset_store["03-dataset-store"]:::complete
+  04_grounding_dino_annotator["04-grounding-dino-annotator"]:::complete
+  05_annotation_canvas["05-annotation-canvas"]:::complete
+  06_annotation_workflow["06-annotation-workflow"]:::complete
+  07_backbone_feature_extractor["07-backbone-feature-extractor"]:::complete
+  08_head_registry["08-head-registry"]:::complete
+  09_head_implementations["09-head-implementations"]:::complete
+  10_preprocessing_pipeline["10-preprocessing-pipeline"]:::complete
+  11_training_job_runner["11-training-job-runner"]:::complete
+  12_head_instance_registry["12-head-instance-registry"]:::complete
+  13_training_metrics_stream["13-training-metrics-stream"]:::complete
+  14_trainer_config_ui["14-trainer-config-ui"]:::complete
+  15_head_catalog_import["15-head-catalog-import"]:::complete
+  16_inference_engine["16-inference-engine"]:::complete
+  17_image_input_source["17-image-input-source"]:::complete
+  18_multi_head_compose["18-multi-head-compose"]:::complete
+  19_side_by_side_viewer["19-side-by-side-viewer"]:::complete
+  20_inference_overlay_render["20-inference-overlay-render"]:::complete
+  21_same_task_head_compare["21-same-task-head-compare"]:::complete
+  22_mask_dataset_store["22-mask-dataset-store"]:::complete
+  23_mask_annotator_registry["23-mask-annotator-registry"]:::complete
+  24_hf_token_settings["24-hf-token-settings"]:::complete
+  25_expert_annotator["25-expert-annotator"]:::complete
+  26_generator_review_ui["26-generator-review-ui"]:::complete
+  27_grounded_sam_annotator["27-grounded-sam-annotator"]:::complete
+  28_mask_review_ui["28-mask-review-ui"]:::complete
+  29_generated_dataset_writer["29-generated-dataset-writer"]:::complete
+  30_sam3_annotator["30-sam3-annotator"]:::complete
+  31_external_dataset_import["31-external-dataset-import"]:::complete
+  32_shared_head_picker["32-shared-head-picker"]:::complete
+  33_studio_head_annotator["33-studio-head-annotator"]:::complete
+  34_inference_picker_upfront["34-inference-picker-upfront"]:::complete
+  35_model_licence_surfacing["35-model-licence-surfacing"]:::complete
+  36_depth_foundation_model["36-depth-foundation-model"]:::complete
+  37_foundation_model_in_viewer["37-foundation-model-in-viewer"]:::complete
+  38_intro_tab["38-intro-tab"]:::complete
+  39_prompt_guidance["39-prompt-guidance"]:::complete
+  40_drag_and_drop_input["40-drag-and-drop-input"]:::complete
+  41_rf_detr_detector["41-rf-detr-detector"]:::complete
+  42_foundation_boxes_everywhere["42-foundation-boxes-everywhere"]:::complete
+  43_detection_localisation["43-detection-localisation"]:::complete
+  44_finetune_rf_detr["44-finetune-rf-detr"]:::complete
+  45_concept_segmentation_everywhere["45-concept-segmentation-everywhere"]:::complete
+  46_generator_folder_picker["46-generator-folder-picker"]:::complete
+  47_box_review_list["47-box-review-list"]:::complete
+  48_dataset_format_guide["48-dataset-format-guide"]:::complete
+  49_osdar23_rail["49-osdar23-rail"]:::complete
+  50_dataset_as_source["50-dataset-as-source"]:::complete
+  51_library_tab["51-library-tab"]:::complete
+  52_dataset_filter["52-dataset-filter"]:::complete
+  53_prescan["53-prescan"]:::complete
+  54_distribution_licensing["54-distribution-licensing"]:::complete
+  55_unfreezing["55-unfreezing"]:::complete
+  56_sidecar_bundling["56-sidecar-bundling"]:::complete
+  57_gpu_support_download["57-gpu-support-download"]:::complete
+  58_installers["58-installers"]:::complete
+  59_reveal_dataset_folder["59-reveal-dataset-folder"]:::complete
+  60_box_class_picker["60-box-class-picker"]:::complete
+  61_studio_mask_review["61-studio-mask-review"]:::complete
+  62_tiled_inference["62-tiled-inference"]:::complete
+  63_agent_api_guide["63-agent-api-guide"]:::complete
+  64_mcp_server["64-mcp-server"]:::complete
+  65_starter_set["65-starter-set"]:::complete
+  01_app_shell --> 02_model_manager
+  01_app_shell --> 03_dataset_store
+  02_model_manager --> 04_grounding_dino_annotator
+  03_dataset_store --> 04_grounding_dino_annotator
+  01_app_shell --> 05_annotation_canvas
+  01_app_shell --> 06_annotation_workflow
+  03_dataset_store --> 06_annotation_workflow
+  04_grounding_dino_annotator --> 06_annotation_workflow
+  05_annotation_canvas --> 06_annotation_workflow
+  01_app_shell --> 07_backbone_feature_extractor
+  02_model_manager --> 07_backbone_feature_extractor
+  07_backbone_feature_extractor --> 08_head_registry
+  07_backbone_feature_extractor --> 09_head_implementations
+  08_head_registry --> 09_head_implementations
+  07_backbone_feature_extractor --> 10_preprocessing_pipeline
+  08_head_registry --> 10_preprocessing_pipeline
+  03_dataset_store --> 11_training_job_runner
+  07_backbone_feature_extractor --> 11_training_job_runner
+  08_head_registry --> 11_training_job_runner
+  09_head_implementations --> 11_training_job_runner
+  10_preprocessing_pipeline --> 11_training_job_runner
+  03_dataset_store --> 12_head_instance_registry
+  08_head_registry --> 12_head_instance_registry
+  11_training_job_runner --> 12_head_instance_registry
+  08_head_registry --> 13_training_metrics_stream
+  11_training_job_runner --> 13_training_metrics_stream
+  12_head_instance_registry --> 13_training_metrics_stream
+  08_head_registry --> 14_trainer_config_ui
+  12_head_instance_registry --> 14_trainer_config_ui
+  13_training_metrics_stream --> 14_trainer_config_ui
+  07_backbone_feature_extractor --> 15_head_catalog_import
+  08_head_registry --> 15_head_catalog_import
+  09_head_implementations --> 15_head_catalog_import
+  12_head_instance_registry --> 15_head_catalog_import
+  07_backbone_feature_extractor --> 16_inference_engine
+  08_head_registry --> 16_inference_engine
+  09_head_implementations --> 16_inference_engine
+  10_preprocessing_pipeline --> 16_inference_engine
+  12_head_instance_registry --> 16_inference_engine
+  16_inference_engine --> 17_image_input_source
+  16_inference_engine --> 18_multi_head_compose
+  17_image_input_source --> 19_side_by_side_viewer
+  18_multi_head_compose --> 20_inference_overlay_render
+  19_side_by_side_viewer --> 20_inference_overlay_render
+  18_multi_head_compose --> 21_same_task_head_compare
+  20_inference_overlay_render --> 21_same_task_head_compare
+  03_dataset_store --> 22_mask_dataset_store
+  22_mask_dataset_store --> 23_mask_annotator_registry
+  02_model_manager --> 23_mask_annotator_registry
+  02_model_manager --> 24_hf_token_settings
+  23_mask_annotator_registry --> 24_hf_token_settings
+  16_inference_engine --> 25_expert_annotator
+  18_multi_head_compose --> 25_expert_annotator
+  03_dataset_store --> 25_expert_annotator
+  25_expert_annotator --> 26_generator_review_ui
+  05_annotation_canvas --> 26_generator_review_ui
+  12_head_instance_registry --> 26_generator_review_ui
+  23_mask_annotator_registry --> 27_grounded_sam_annotator
+  22_mask_dataset_store --> 27_grounded_sam_annotator
+  04_grounding_dino_annotator --> 27_grounded_sam_annotator
+  27_grounded_sam_annotator --> 28_mask_review_ui
+  26_generator_review_ui --> 28_mask_review_ui
+  20_inference_overlay_render --> 28_mask_review_ui
+  22_mask_dataset_store --> 29_generated_dataset_writer
+  26_generator_review_ui --> 29_generated_dataset_writer
+  28_mask_review_ui --> 29_generated_dataset_writer
+  23_mask_annotator_registry --> 30_sam3_annotator
+  27_grounded_sam_annotator --> 30_sam3_annotator
+  24_hf_token_settings --> 30_sam3_annotator
+  03_dataset_store --> 31_external_dataset_import
+  22_mask_dataset_store --> 31_external_dataset_import
+  12_head_instance_registry --> 32_shared_head_picker
+  26_generator_review_ui --> 32_shared_head_picker
+  06_annotation_workflow --> 33_studio_head_annotator
+  25_expert_annotator --> 33_studio_head_annotator
+  32_shared_head_picker --> 33_studio_head_annotator
+  19_side_by_side_viewer --> 34_inference_picker_upfront
+  32_shared_head_picker --> 34_inference_picker_upfront
+  02_model_manager --> 35_model_licence_surfacing
+  02_model_manager --> 36_depth_foundation_model
+  16_inference_engine --> 36_depth_foundation_model
+  35_model_licence_surfacing --> 36_depth_foundation_model
+  19_side_by_side_viewer --> 37_foundation_model_in_viewer
+  34_inference_picker_upfront --> 37_foundation_model_in_viewer
+  36_depth_foundation_model --> 37_foundation_model_in_viewer
+  01_app_shell --> 38_intro_tab
+  06_annotation_workflow --> 39_prompt_guidance
+  33_studio_head_annotator --> 39_prompt_guidance
+  17_image_input_source --> 40_drag_and_drop_input
+  06_annotation_workflow --> 40_drag_and_drop_input
+  02_model_manager --> 41_rf_detr_detector
+  35_model_licence_surfacing --> 41_rf_detr_detector
+  36_depth_foundation_model --> 41_rf_detr_detector
+  41_rf_detr_detector --> 42_foundation_boxes_everywhere
+  25_expert_annotator --> 42_foundation_boxes_everywhere
+  33_studio_head_annotator --> 42_foundation_boxes_everywhere
+  09_head_implementations --> 43_detection_localisation
+  11_training_job_runner --> 43_detection_localisation
+  41_rf_detr_detector --> 44_finetune_rf_detr
+  11_training_job_runner --> 44_finetune_rf_detr
+  12_head_instance_registry --> 44_finetune_rf_detr
+  23_mask_annotator_contract --> 45_concept_segmentation_everywhere
+  36_depth_foundation_model --> 45_concept_segmentation_everywhere
+  42_foundation_boxes_everywhere --> 45_concept_segmentation_everywhere
+  40_drag_and_drop_input --> 46_generator_folder_picker
+  04_annotation_canvas --> 47_box_review_list
+  42_foundation_boxes_everywhere --> 47_box_review_list
+  31_external_dataset_import --> 48_dataset_format_guide
+  31_external_dataset_import --> 49_osdar23_rail
+  43_detection_localisation --> 49_osdar23_rail
+  44_finetune_rf_detr --> 49_osdar23_rail
+  46_generator_folder_picker --> 50_dataset_as_source
+  17_image_source --> 50_dataset_as_source
+  12_head_instance_registry --> 51_library_tab
+  44_finetune_rf_detr --> 51_library_tab
+  34_inference_picker_upfront --> 52_dataset_filter
+  12_head_instance_registry --> 52_dataset_filter
+  32_studio_session_setup --> 53_prescan
+  42_foundation_boxes_everywhere --> 53_prescan
+  11_training_job_runner --> 53_prescan
+  35_model_licence_surfacing --> 54_distribution_licensing
+  51_library_tab --> 54_distribution_licensing
+  44_finetune_rf_detr --> 55_unfreezing
+  43_detection_localisation --> 55_unfreezing
+  49_osdar23_rail --> 55_unfreezing
+  56_sidecar_bundling --> 57_gpu_support_download
+  56_sidecar_bundling --> 58_installers
+  57_gpu_support_download --> 58_installers
+  50_dataset_as_source --> 59_reveal_dataset_folder
+  46_generator_folder_picker --> 59_reveal_dataset_folder
+  47_box_review_list --> 60_box_class_picker
+  03_dataset_store --> 60_box_class_picker
+  50_dataset_as_source --> 60_box_class_picker
+  45_concept_segmentation_everywhere --> 61_studio_mask_review
+  47_box_review_list --> 61_studio_mask_review
+  22_mask_dataset_store --> 61_studio_mask_review
+  28_mask_review_ui --> 61_studio_mask_review
+  49_osdar23_rail --> 62_tiled_inference
+  16_inference_engine --> 62_tiled_inference
+  18_multi_head_compose --> 62_tiled_inference
+  43_detection_localisation --> 62_tiled_inference
+  01_app_shell --> 63_agent_api_guide
+  38_intro_tab --> 63_agent_api_guide
+  63_agent_api_guide --> 64_mcp_server
+  01_app_shell --> 64_mcp_server
+  02_model_manager --> 65_starter_set
+  23_mask_annotator_registry --> 65_starter_set
+  35_model_licence_surfacing --> 65_starter_set
+  classDef complete fill:#00e5cc,color:#000
+  classDef in_progress fill:#ffaa00,color:#000
+  classDef draft fill:#888,color:#fff
+  classDef deprecated fill:#555,color:#aaa
 ```
 
 ## Source File Overlap
 
-Files referenced by more than one doc — change one, check the others.
+Files touched by more than one doc — the places where a change needs two docs read.
 
-| Source file | Docs |
-|---|---|
-| `apps/frontend/src/App.tsx` | 01-app-shell, 38-intro-tab |
-| `apps/frontend/src/api/client.ts` | 01-app-shell, 13-training-metrics-stream |
-| `apps/frontend/src/api/datasets.ts` | 06-annotation-workflow, 29-generated-dataset-writer, 31-external-dataset-import |
-| `apps/frontend/src/api/generate.ts` | 26-generator-review-ui, 28-mask-review-ui |
-| `apps/frontend/src/api/headInstances.ts` | 12-head-instance-registry, 15-head-catalog-import, 26-generator-review-ui, 32-shared-head-picker |
-| `apps/frontend/src/api/inference.ts` | 17-image-input-source, 20-inference-overlay-render, 37-foundation-model-in-viewer |
-| `apps/frontend/src/api/models.ts` | 02-model-manager, 24-hf-token-settings, 35-model-licence-surfacing |
-| `apps/frontend/src/api/types.ts` | 01-app-shell, 07-backbone-feature-extractor |
-| `apps/frontend/src/components/CounterBar.tsx` | 06-annotation-workflow, 29-generated-dataset-writer |
-| `apps/frontend/src/components/ExpertHeadPicker.tsx` | 26-generator-review-ui, 32-shared-head-picker |
-| `apps/frontend/src/components/GeneratorSetup.tsx` | 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input |
-| `apps/frontend/src/components/HeadRunPanel.tsx` | 20-inference-overlay-render, 21-same-task-head-compare, 32-shared-head-picker, 34-inference-picker-upfront, 37-foundation-model-in-viewer |
-| `apps/frontend/src/components/ImageSourcePicker.tsx` | 17-image-input-source, 40-drag-and-drop-input |
-| `apps/frontend/src/components/ModelCard.tsx` | 02-model-manager, 35-model-licence-surfacing |
-| `apps/frontend/src/components/SessionSetup.tsx` | 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator, 39-prompt-guidance, 40-drag-and-drop-input |
-| `apps/frontend/src/components/SideBySideViewer.tsx` | 19-side-by-side-viewer, 21-same-task-head-compare |
-| `apps/frontend/src/components/overlays/MapOverlay.tsx` | 20-inference-overlay-render, 28-mask-review-ui |
-| `apps/frontend/src/hooks/useAnnotationSession.ts` | 06-annotation-workflow, 33-studio-head-annotator |
-| `apps/frontend/src/hooks/useGeneratorSession.ts` | 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer |
-| `apps/frontend/src/hooks/useHeadRun.ts` | 20-inference-overlay-render, 21-same-task-head-compare, 37-foundation-model-in-viewer |
-| `apps/frontend/src/styles.css` | 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront, 35-model-licence-surfacing, 38-intro-tab, 39-prompt-guidance, 40-drag-and-drop-input |
-| `apps/frontend/src/tabs/AdminTab.tsx` | 01-app-shell, 02-model-manager, 15-head-catalog-import, 24-hf-token-settings |
-| `apps/frontend/src/tabs/AnnotationStudioTab.tsx` | 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator |
-| `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` | 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer |
-| `apps/frontend/src/tabs/HeadTrainerTab.tsx` | 01-app-shell, 14-trainer-config-ui |
-| `apps/frontend/src/tabs/InferenceViewerTab.tsx` | 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront |
-| `apps/frontend/src/tabs/tabs.ts` | 01-app-shell, 38-intro-tab |
-| `apps/frontend/src/types/annotation.ts` | 05-annotation-canvas, 26-generator-review-ui, 28-mask-review-ui, 31-external-dataset-import |
-| `backend/app/api/v1/datasets.py` | 03-dataset-store, 22-mask-dataset-store, 31-external-dataset-import |
-| `backend/app/api/v1/generate.py` | 25-expert-annotator, 27-grounded-sam-annotator, 29-generated-dataset-writer |
-| `backend/app/api/v1/heads.py` | 12-head-instance-registry, 26-generator-review-ui |
-| `backend/app/api/v1/inference.py` | 16-inference-engine, 17-image-input-source, 18-multi-head-compose |
-| `backend/app/api/v1/models.py` | 02-model-manager, 35-model-licence-surfacing |
-| `backend/app/api/v1/router.py` | 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import, 16-inference-engine, 23-mask-annotator-registry, 24-hf-token-settings, 25-expert-annotator, 36-depth-foundation-model |
-| `backend/app/core/config.py` | 01-app-shell, 24-hf-token-settings |
-| `backend/app/datasets/coco.py` | 03-dataset-store, 22-mask-dataset-store |
-| `backend/app/datasets/db.py` | 03-dataset-store, 12-head-instance-registry, 22-mask-dataset-store |
-| `backend/app/datasets/masks.py` | 22-mask-dataset-store, 29-generated-dataset-writer |
-| `backend/app/datasets/migrations.py` | 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import |
-| `backend/app/datasets/models.py` | 03-dataset-store, 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import |
-| `backend/app/datasets/schema.py` | 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import |
-| `backend/app/datasets/store.py` | 03-dataset-store, 29-generated-dataset-writer |
-| `backend/app/ml/annotators/build.py` | 27-grounded-sam-annotator, 30-sam3-annotator |
-| `backend/app/ml/annotators/expert.py` | 25-expert-annotator, 29-generated-dataset-writer |
-| `backend/app/ml/downloads.py` | 02-model-manager, 30-sam3-annotator |
-| `backend/app/ml/heads/builders.py` | 09-head-implementations, 15-head-catalog-import |
-| `backend/app/ml/heads/decode.py` | 16-inference-engine, 31-external-dataset-import |
-| `backend/app/ml/heads/registry.py` | 08-head-registry, 15-head-catalog-import |
-| `backend/app/ml/inference/engine.py` | 16-inference-engine, 18-multi-head-compose, 20-inference-overlay-render |
-| `backend/app/ml/inference/payloads.py` | 20-inference-overlay-render, 36-depth-foundation-model |
-| `backend/app/ml/inference/results.py` | 16-inference-engine, 25-expert-annotator |
-| `backend/app/ml/preprocess.py` | 10-preprocessing-pipeline, 16-inference-engine |
-| `backend/app/ml/registry.py` | 02-model-manager, 23-mask-annotator-registry, 35-model-licence-surfacing, 36-depth-foundation-model |
-| `backend/app/ml/segmenter.py` | 27-grounded-sam-annotator, 30-sam3-annotator |
-| `backend/app/ml/training/job.py` | 11-training-job-runner, 13-training-metrics-stream |
-| `backend/app/ml/training/runner.py` | 11-training-job-runner, 13-training-metrics-stream, 16-inference-engine |
+- `apps/desktop/src-tauri/BUNDLING.md` — 57-gpu-support-download, 58-installers
+- `apps/desktop/src-tauri/Cargo.toml` — 01-app-shell, 59-reveal-dataset-folder
+- `apps/desktop/src-tauri/capabilities/default.json` — 01-app-shell, 59-reveal-dataset-folder
+- `apps/desktop/src-tauri/src/lib.rs` — 01-app-shell, 56-sidecar-bundling, 58-installers, 59-reveal-dataset-folder
+- `apps/desktop/src-tauri/src/sidecar.rs` — 01-app-shell, 56-sidecar-bundling, 57-gpu-support-download, 58-installers
+- `apps/desktop/src-tauri/tauri.conf.json` — 01-app-shell, 56-sidecar-bundling
+- `apps/desktop/src-tauri/tauri.release.conf.json` — 57-gpu-support-download, 58-installers
+- `apps/frontend/src/App.tsx` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide
+- `apps/frontend/src/api/annotators.ts` — 27-grounded-sam-annotator, 28-mask-review-ui
+- `apps/frontend/src/api/client.ts` — 01-app-shell, 13-training-metrics-stream
+- `apps/frontend/src/api/datasets.ts` — 06-annotation-workflow, 29-generated-dataset-writer, 31-external-dataset-import, 50-dataset-as-source, 51-library-tab, 59-reveal-dataset-folder, 61-studio-mask-review
+- `apps/frontend/src/api/foundation.ts` — 37-foundation-model-in-viewer, 42-foundation-boxes-everywhere, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab, 55-unfreezing, 61-studio-mask-review
+- `apps/frontend/src/api/generate.ts` — 26-generator-review-ui, 28-mask-review-ui
+- `apps/frontend/src/api/headInstances.ts` — 12-head-instance-registry, 15-head-catalog-import, 26-generator-review-ui, 32-shared-head-picker, 62-tiled-inference
+- `apps/frontend/src/api/inference.ts` — 17-image-input-source, 20-inference-overlay-render, 37-foundation-model-in-viewer, 62-tiled-inference
+- `apps/frontend/src/api/models.ts` — 02-model-manager, 24-hf-token-settings, 35-model-licence-surfacing, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
+- `apps/frontend/src/api/types.ts` — 01-app-shell, 07-backbone-feature-extractor
+- `apps/frontend/src/components/AnnotationCanvas.tsx` — 05-annotation-canvas, 47-box-review-list, 61-studio-mask-review
+- `apps/frontend/src/components/BoxReviewList.tsx` — 47-box-review-list, 60-box-class-picker
+- `apps/frontend/src/components/CounterBar.tsx` — 06-annotation-workflow, 29-generated-dataset-writer
+- `apps/frontend/src/components/ExpertHeadPicker.tsx` — 26-generator-review-ui, 32-shared-head-picker
+- `apps/frontend/src/components/FinetunePanel.tsx` — 44-finetune-rf-detr, 55-unfreezing
+- `apps/frontend/src/components/FoundationPicker.tsx` — 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere
+- `apps/frontend/src/components/GeneratorSetup.tsx` — 26-generator-review-ui, 27-grounded-sam-annotator, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 46-generator-folder-picker, 50-dataset-as-source
+- `apps/frontend/src/components/HeadRunPanel.tsx` — 20-inference-overlay-render, 21-same-task-head-compare, 32-shared-head-picker, 34-inference-picker-upfront, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
+- `apps/frontend/src/components/ImageSourceField.tsx` — 50-dataset-as-source, 59-reveal-dataset-folder
+- `apps/frontend/src/components/ImageSourcePicker.tsx` — 17-image-input-source, 40-drag-and-drop-input, 50-dataset-as-source, 59-reveal-dataset-folder
+- `apps/frontend/src/components/MaskSourceFields.tsx` — 27-grounded-sam-annotator, 42-foundation-boxes-everywhere
+- `apps/frontend/src/components/ModelCard.tsx` — 02-model-manager, 35-model-licence-surfacing
+- `apps/frontend/src/components/SessionSetup.tsx` — 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 46-generator-folder-picker, 50-dataset-as-source
+- `apps/frontend/src/components/SideBySideViewer.tsx` — 19-side-by-side-viewer, 21-same-task-head-compare
+- `apps/frontend/src/components/overlays/MapOverlay.tsx` — 20-inference-overlay-render, 28-mask-review-ui, 61-studio-mask-review
+- `apps/frontend/src/hooks/useAnnotationSession.ts` — 06-annotation-workflow, 33-studio-head-annotator, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 50-dataset-as-source, 53-prescan, 61-studio-mask-review
+- `apps/frontend/src/hooks/useGeneratorSession.ts` — 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 42-foundation-boxes-everywhere, 50-dataset-as-source, 53-prescan
+- `apps/frontend/src/hooks/useHeadRun.ts` — 20-inference-overlay-render, 21-same-task-head-compare, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
+- `apps/frontend/src/hooks/useImageSource.ts` — 17-image-input-source, 50-dataset-as-source
+- `apps/frontend/src/hooks/useLibrary.ts` — 51-library-tab, 54-distribution-licensing
+- `apps/frontend/src/hooks/useSessionImages.ts` — 50-dataset-as-source, 61-studio-mask-review
+- `apps/frontend/src/lib/dialog.ts` — 17-image-input-source, 59-reveal-dataset-folder
+- `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront, 35-model-licence-surfacing, 38-intro-tab, 39-prompt-guidance, 40-drag-and-drop-input, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 47-box-review-list, 48-dataset-format-guide, 54-distribution-licensing, 57-gpu-support-download, 59-reveal-dataset-folder, 60-box-class-picker, 61-studio-mask-review, 62-tiled-inference, 63-agent-api-guide, 64-mcp-server, 65-starter-set
+- `apps/frontend/src/tabs/AdminTab.tsx` — 01-app-shell, 02-model-manager, 15-head-catalog-import, 24-hf-token-settings, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
+- `apps/frontend/src/tabs/AnnotationStudioTab.tsx` — 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator, 47-box-review-list, 53-prescan, 60-box-class-picker, 61-studio-mask-review
+- `apps/frontend/src/tabs/ApiTab.tsx` — 63-agent-api-guide, 64-mcp-server
+- `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` — 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 47-box-review-list, 53-prescan
+- `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui, 44-finetune-rf-detr, 48-dataset-format-guide
+- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront
+- `apps/frontend/src/tabs/LibraryTab.tsx` — 51-library-tab, 54-distribution-licensing
+- `apps/frontend/src/tabs/introContent.ts` — 38-intro-tab, 51-library-tab
+- `apps/frontend/src/tabs/tabs.ts` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 64-mcp-server
+- `apps/frontend/src/types/annotation.ts` — 05-annotation-canvas, 26-generator-review-ui, 28-mask-review-ui, 31-external-dataset-import, 42-foundation-boxes-everywhere, 61-studio-mask-review
+- `backend/app/api/v1/agent_docs.py` — 63-agent-api-guide, 64-mcp-server
+- `backend/app/api/v1/annotators.py` — 23-mask-annotator-registry, 27-grounded-sam-annotator
+- `backend/app/api/v1/datasets.py` — 03-dataset-store, 22-mask-dataset-store, 31-external-dataset-import, 50-dataset-as-source, 59-reveal-dataset-folder, 61-studio-mask-review
+- `backend/app/api/v1/foundation.py` — 36-depth-foundation-model, 41-rf-detr-detector, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab
+- `backend/app/api/v1/foundation_finetune.py` — 45-concept-segmentation-everywhere, 55-unfreezing
+- `backend/app/api/v1/generate.py` — 25-expert-annotator, 27-grounded-sam-annotator, 29-generated-dataset-writer, 62-tiled-inference
+- `backend/app/api/v1/generate_foundation.py` — 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 61-studio-mask-review
+- `backend/app/api/v1/heads.py` — 12-head-instance-registry, 26-generator-review-ui, 62-tiled-inference
+- `backend/app/api/v1/inference.py` — 16-inference-engine, 17-image-input-source, 18-multi-head-compose, 62-tiled-inference
+- `backend/app/api/v1/models.py` — 02-model-manager, 35-model-licence-surfacing, 54-distribution-licensing, 65-starter-set
+- `backend/app/api/v1/router.py` — 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import, 16-inference-engine, 23-mask-annotator-registry, 24-hf-token-settings, 25-expert-annotator, 36-depth-foundation-model, 45-concept-segmentation-everywhere, 53-prescan, 60-box-class-picker, 63-agent-api-guide
+- `backend/app/api/v1/system.py` — 02-model-manager, 57-gpu-support-download
+- `backend/app/core/config.py` — 01-app-shell, 24-hf-token-settings
+- `backend/app/datasets/coco.py` — 03-dataset-store, 22-mask-dataset-store
+- `backend/app/datasets/db.py` — 03-dataset-store, 12-head-instance-registry, 22-mask-dataset-store
+- `backend/app/datasets/masks.py` — 22-mask-dataset-store, 29-generated-dataset-writer, 61-studio-mask-review
+- `backend/app/datasets/migrations.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere
+- `backend/app/datasets/models.py` — 03-dataset-store, 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere
+- `backend/app/datasets/schema.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere, 60-box-class-picker
+- `backend/app/datasets/store.py` — 03-dataset-store, 29-generated-dataset-writer
+- `backend/app/main.py` — 01-app-shell, 64-mcp-server
+- `backend/app/ml/annotators/build.py` — 27-grounded-sam-annotator, 30-sam3-annotator
+- `backend/app/ml/annotators/expert.py` — 25-expert-annotator, 29-generated-dataset-writer, 42-foundation-boxes-everywhere
+- `backend/app/ml/annotators/foundation.py` — 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 61-studio-mask-review
+- `backend/app/ml/annotators/registry.py` — 23-mask-annotator-registry, 27-grounded-sam-annotator
+- `backend/app/ml/backbone.py` — 07-backbone-feature-extractor, 55-unfreezing
+- `backend/app/ml/downloads.py` — 02-model-manager, 30-sam3-annotator
+- `backend/app/ml/foundation/build.py` — 36-depth-foundation-model, 41-rf-detr-detector, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab
+- `backend/app/ml/foundation/concept.py` — 45-concept-segmentation-everywhere, 61-studio-mask-review
+- `backend/app/ml/foundation/detect.py` — 41-rf-detr-detector, 44-finetune-rf-detr
+- `backend/app/ml/foundation/finetune.py` — 44-finetune-rf-detr, 55-unfreezing
+- `backend/app/ml/foundation/finetune_runner.py` — 44-finetune-rf-detr, 55-unfreezing
+- `backend/app/ml/foundation/registry.py` — 27-grounded-sam-annotator, 36-depth-foundation-model, 41-rf-detr-detector, 44-finetune-rf-detr, 45-concept-segmentation-everywhere
+- `backend/app/ml/heads/builders.py` — 09-head-implementations, 15-head-catalog-import
+- `backend/app/ml/heads/decode.py` — 16-inference-engine, 31-external-dataset-import, 43-detection-localisation
+- `backend/app/ml/heads/modules.py` — 09-head-implementations, 43-detection-localisation
+- `backend/app/ml/heads/registry.py` — 08-head-registry, 15-head-catalog-import
+- `backend/app/ml/heads/store.py` — 12-head-instance-registry, 62-tiled-inference
+- `backend/app/ml/inference/compose.py` — 18-multi-head-compose, 62-tiled-inference
+- `backend/app/ml/inference/engine.py` — 16-inference-engine, 18-multi-head-compose, 20-inference-overlay-render
+- `backend/app/ml/inference/payloads.py` — 20-inference-overlay-render, 36-depth-foundation-model, 41-rf-detr-detector, 61-studio-mask-review
+- `backend/app/ml/inference/results.py` — 16-inference-engine, 25-expert-annotator
+- `backend/app/ml/preprocess.py` — 10-preprocessing-pipeline, 16-inference-engine
+- `backend/app/ml/registry.py` — 02-model-manager, 23-mask-annotator-registry, 27-grounded-sam-annotator, 35-model-licence-surfacing, 36-depth-foundation-model, 41-rf-detr-detector, 54-distribution-licensing, 65-starter-set
+- `backend/app/ml/segmenter.py` — 27-grounded-sam-annotator, 30-sam3-annotator
+- `backend/app/ml/training/config.py` — 11-training-job-runner, 55-unfreezing
+- `backend/app/ml/training/job.py` — 11-training-job-runner, 13-training-metrics-stream, 55-unfreezing
+- `backend/app/ml/training/losses.py` — 11-training-job-runner, 43-detection-localisation
+- `backend/app/ml/training/runner.py` — 11-training-job-runner, 13-training-metrics-stream, 16-inference-engine, 55-unfreezing
+- `backend/pyproject.toml` — 44-finetune-rf-detr, 58-installers, 64-mcp-server
 
 ## Warnings
 
-None — no broken `depends_on`, no cycles, every doc has a `path`.
+- `45-concept-segmentation-everywhere` depends on `23-mask-annotator-contract`, which does not exist
+- `47-box-review-list` depends on `04-annotation-canvas`, which does not exist
+- `50-dataset-as-source` depends on `17-image-source`, which does not exist
+- `53-prescan` depends on `32-studio-session-setup`, which does not exist

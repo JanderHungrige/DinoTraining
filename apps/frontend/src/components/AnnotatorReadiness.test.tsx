@@ -41,6 +41,7 @@ function annotator(over: Partial<annotators.AnnotatorInfo> = {}): annotators.Ann
     licence_url: '',
     gated: false,
     requires_access_request: false,
+    prompt_style: 'phrases',
     approx_size_mb: 834,
     ready: false,
     missing_model_ids: ['grounding-dino-tiny', 'sam2.1-hiera-small'],

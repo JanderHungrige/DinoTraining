@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from app.core.paths import is_installed, resolve_model_dir
 from app.ml.annotators import AnnotatorSpec, all_annotators, get_annotator
+from app.ml.annotators.registry import PromptStyle
 from app.ml.registry import licence_url
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,9 @@ class AnnotatorInfo(BaseModel):
     gated: bool
     requires_access_request: bool
     approx_size_mb: int
+    #: How this annotator wants its text: several phrases, or one concept. Carried so the
+    #: UI can word its prompt hint from data rather than from an id comparison (doc 27).
+    prompt_style: PromptStyle
     #: True only when every required model is installed.
     ready: bool
     #: Names of the models still to download — what to tell the user to do next.
@@ -78,6 +82,7 @@ def _describe(spec: AnnotatorSpec) -> AnnotatorInfo:
         licence_url=spec.licence_url,
         gated=spec.gated,
         requires_access_request=spec.requires_access_request,
+        prompt_style=spec.prompt_style,
         approx_size_mb=spec.approx_size_mb,
         # Every model, not any: a half-installed Grounded SAM cannot produce a mask.
         ready=not missing,

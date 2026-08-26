@@ -19,8 +19,18 @@ from app.ml.annotators.build import (
     implemented_annotator_ids,
 )
 from app.ml.annotators.grounded_sam import GroundedSamAnnotator, _to_xyxy
-from app.ml.annotators.registry import GROUNDED_SAM, SAM3
+from app.ml.annotators.registry import (
+    GROUNDED_SAM,
+    GROUNDED_SAM_BASE,
+    GROUNDED_SAM_LARGE,
+    SAM3,
+    get_annotator,
+)
 from app.ml.detector import Detection
+
+#: One box, so the pipeline reaches its segmenter stage. Below the detector threshold it
+#: would short-circuit and never load SAM at all.
+_DETECTION = Detection(x=1.0, y=2.0, w=3.0, h=4.0, score=0.9, text="a cat")
 
 
 class _Image:
@@ -174,6 +184,60 @@ class TestConversion:
 class TestBuilder:
     def test_grounded_sam_is_implemented(self) -> None:
         assert build_annotator(GROUNDED_SAM).annotator_id == GROUNDED_SAM
+
+    def test_every_tier_reports_its_own_id(self) -> None:
+        """`annotator_id` was a class attribute while one tier existed. Left that way, all
+        three would call themselves `grounded-sam` — and the mask output records it."""
+        for tier in (GROUNDED_SAM, GROUNDED_SAM_BASE, GROUNDED_SAM_LARGE):
+            assert build_annotator(tier).annotator_id == tier
+
+    def test_a_tier_loads_the_weights_its_catalogue_row_names(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The failure this rules out is the quiet one: a variant that runs perfectly well
+        on the default weights, so the masks look fine, the timings look fine, and the
+        gigabyte you downloaded is never touched."""
+        loaded: dict[str, str | None] = {}
+
+        def fake_load_detector(model_id=None):
+            loaded["detector"] = model_id
+            return object()
+
+        def fake_load_segmenter(model_id=None):
+            loaded["segmenter"] = model_id
+            return object()
+
+        monkeypatch.setattr(
+            "app.ml.annotators.grounded_sam.load_detector", fake_load_detector
+        )
+        monkeypatch.setattr(
+            "app.ml.annotators.grounded_sam.load_segmenter", fake_load_segmenter
+        )
+        monkeypatch.setattr(
+            "app.ml.annotators.grounded_sam.detect", lambda *a, **k: [_DETECTION]
+        )
+        monkeypatch.setattr(
+            "app.ml.annotators.grounded_sam.segment_boxes",
+            lambda *a: (np.zeros((1, 30, 40), dtype=bool), [0.9]),
+        )
+
+        build_annotator(GROUNDED_SAM_LARGE).propose(_Image(), "a cat")
+
+        spec = get_annotator(GROUNDED_SAM_LARGE)
+        assert spec is not None
+        assert (loaded["detector"], loaded["segmenter"]) == spec.model_ids
+
+    def test_the_default_tier_still_loads_the_default_weights(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """It passes its ids explicitly now rather than falling through to the loaders'
+        defaults. Same two models either way — this pins that they did not drift apart."""
+        spec = get_annotator(GROUNDED_SAM)
+        assert spec is not None
+        from app.ml.detector import DEFAULT_DETECTOR
+        from app.ml.segmenter import DEFAULT_SEGMENTER
+
+        assert spec.model_ids == (DEFAULT_DETECTOR, DEFAULT_SEGMENTER)
 
     def test_an_unknown_id_is_a_lookup_error(self) -> None:
         with pytest.raises(LookupError):

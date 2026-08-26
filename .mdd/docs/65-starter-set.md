@@ -5,8 +5,8 @@ edition: MDD
 initiative: dinotraining
 wave: unassigned
 wave_status: in_progress
-depends_on: [8-model-registry, 9-model-downloads, 35-model-licensing, 34-mask-annotators]
-relates: [56-sidecar-bundling, 58-installers, 23-admin-tab]
+depends_on: [02-model-manager, 23-mask-annotator-registry, 35-model-licence-surfacing]
+relates: [56-sidecar-bundling, 58-installers, 27-grounded-sam-annotator]
 source_files:
   - backend/app/ml/registry.py
   - backend/app/api/v1/models.py

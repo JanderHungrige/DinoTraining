@@ -259,6 +259,30 @@ _SPECS: tuple[ModelSpec, ...] = (
         ),
     ),
     ModelSpec(
+        id="sam2.1-hiera-base-plus",
+        repo_id="facebook/sam2.1-hiera-base-plus",
+        kind="segmenter",
+        family="sam2",
+        gated=False,
+        approx_size_mb=308,
+        description=(
+            "Larger SAM 2.1. Tighter mask edges than the small one, at roughly twice "
+            "the size and time. Same licence, still no account."
+        ),
+    ),
+    ModelSpec(
+        id="sam2.1-hiera-large",
+        repo_id="facebook/sam2.1-hiera-large",
+        kind="segmenter",
+        family="sam2",
+        gated=False,
+        approx_size_mb=856,
+        description=(
+            "The best masks SAM 2.1 makes. Worth it when an outline is the deliverable "
+            "rather than a box; it cannot find anything the detector missed."
+        ),
+    ),
+    ModelSpec(
         id="sam3",
         repo_id="facebook/sam3",
         kind="segmenter",
