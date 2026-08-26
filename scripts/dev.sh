@@ -23,8 +23,20 @@ fail() { printf '\033[0;31m[dev]\033[0m %s\n' "$*" >&2; exit 1; }
 
 preflight() {
   [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run: python3.12 -m venv backend/.venv && source backend/.venv/bin/activate && pip install -e 'backend[dev]'"
-  [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run: (cd apps/frontend && npm install --legacy-peer-deps)"
+  [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run: npm install --prefix apps/frontend --legacy-peer-deps"
   [ -f "$REPO_ROOT/.env" ] || log "WARNING: no .env at the repo root — copy .env.example and fill it in."
+}
+
+# Checked only for the desktop path, because `web` and `backend` never touch Tauri.
+#
+# It is separate from `preflight` because it was *missing* from it, and the failure was
+# ugly: the script printed "Launching Tauri", handed `npx` a package that was not
+# installed, and npx answered "could not determine executable to run" — which names
+# neither Tauri nor the directory. `apps/desktop` keeps its own package.json holding only
+# `@tauri-apps/cli`, and the README's setup never mentioned it.
+desktop_preflight() {
+  [ -d "$DESKTOP_DIR/node_modules" ] || fail "Tauri CLI missing. Run: npm install --prefix apps/desktop"
+  command -v cargo >/dev/null || fail "cargo not found — install Rust 1.85+ (brew install rust)."
 }
 
 start_backend() {
@@ -48,7 +60,7 @@ start_web() {
 
 start_desktop() {
   preflight
-  command -v cargo >/dev/null || fail "cargo not found — install Rust 1.85+ (brew install rust)."
+  desktop_preflight
   log "Launching Tauri (it spawns the backend itself; first build takes a few minutes)"
   cd "$DESKTOP_DIR"
   npx tauri dev
