@@ -21,9 +21,16 @@ VENV_PYTHON="$BACKEND_DIR/.venv/bin/python"
 log()  { printf '\033[0;36m[dev]\033[0m %s\n' "$*"; }
 fail() { printf '\033[0;31m[dev]\033[0m %s\n' "$*" >&2; exit 1; }
 
+# Every "Run: ..." below names **absolute** paths, and that is not pedantry. The script
+# itself works from any directory — `REPO_ROOT` comes from `BASH_SOURCE` — so it is
+# routinely run as `./dev.sh` from inside `scripts/`, and a message answering that with
+# `npm install --prefix apps/desktop` sends the reader to `scripts/apps/desktop` and an
+# ENOENT. A fix instruction that only works from one directory is half an instruction.
 preflight() {
-  [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run: python3.12 -m venv backend/.venv && source backend/.venv/bin/activate && pip install -e 'backend[dev]'"
-  [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run: npm install --prefix apps/frontend --legacy-peer-deps"
+  [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run:
+       python3.12 -m venv '$BACKEND_DIR/.venv' && source '$BACKEND_DIR/.venv/bin/activate' && pip install -e '$BACKEND_DIR'[dev]"
+  [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run:
+       npm install --prefix '$FRONTEND_DIR' --legacy-peer-deps"
   [ -f "$REPO_ROOT/.env" ] || log "WARNING: no .env at the repo root — copy .env.example and fill it in."
 }
 
@@ -35,7 +42,8 @@ preflight() {
 # neither Tauri nor the directory. `apps/desktop` keeps its own package.json holding only
 # `@tauri-apps/cli`, and the README's setup never mentioned it.
 desktop_preflight() {
-  [ -d "$DESKTOP_DIR/node_modules" ] || fail "Tauri CLI missing. Run: npm install --prefix apps/desktop"
+  [ -d "$DESKTOP_DIR/node_modules" ] || fail "Tauri CLI missing. Run:
+       npm install --prefix '$DESKTOP_DIR'"
   command -v cargo >/dev/null || fail "cargo not found — install Rust 1.85+ (brew install rust)."
   command -v rustc >/dev/null || fail "rustc not found — install Rust 1.85+ (brew install rust)."
 

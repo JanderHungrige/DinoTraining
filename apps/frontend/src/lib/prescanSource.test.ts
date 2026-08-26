@@ -41,6 +41,7 @@ describe('the Studio', () => {
     const source: ProposalSource = {
       kind: 'foundation',
       foundationId: 'rf-detr-nano',
+      concept: '',
       scoreThreshold: 0.3,
     };
     expect(prescanOptions(source, PATHS, [], 0.3)).toMatchObject({
@@ -65,6 +66,7 @@ describe('the Studio', () => {
     const source: ProposalSource = {
       kind: 'foundation',
       foundationId: 'rf-detr-nano',
+      concept: '',
       scoreThreshold: 0.3,
     };
     expect(prescanOptions(source, PATHS, [], 0.3)).not.toHaveProperty('concept');
@@ -124,11 +126,55 @@ describe('the Dataset Generator', () => {
     });
   });
 
+  it('carries a prompted detector\'s concept into the scan', () => {
+    // Doc 66 put Grounding DINO in the foundation catalogue, so a foundation run can now
+    // be prompted. Scanning without the concept matches nothing, every image is reported
+    // as a miss, and the filter hides the whole folder — indistinguishable from a folder
+    // with nothing in it.
+    const config: GeneratorConfig = {
+      ...base,
+      kind: 'foundation',
+      foundationId: 'grounding-dino-tiny',
+      concept: 'a bolt',
+      scoreThreshold: 0.3,
+    };
+    expect(generatorPrescanOptions(config, PATHS, [], 0.3)).toMatchObject({
+      kind: 'foundation',
+      foundationId: 'grounding-dino-tiny',
+      concept: 'a bolt',
+    });
+  });
+
+  it('sends no concept for an unprompted detector', () => {
+    // RF-DETR ignores it, but an empty string on the wire is indistinguishable from a
+    // prompt the user typed and cleared.
+    const config: GeneratorConfig = {
+      ...base,
+      kind: 'foundation',
+      foundationId: 'rf-detr-nano',
+      concept: '',
+      scoreThreshold: 0.3,
+    };
+    expect(generatorPrescanOptions(config, PATHS, [], 0.3)).not.toHaveProperty('concept');
+  });
+
+  it('suggests a prompted detector\'s phrases as scan labels', () => {
+    const config: GeneratorConfig = {
+      ...base,
+      kind: 'foundation',
+      foundationId: 'grounding-dino-tiny',
+      concept: 'a bolt. a nut.',
+      scoreThreshold: 0.3,
+    };
+    expect(generatorPrescanSuggestions(config)).toEqual(['a bolt', 'a nut']);
+  });
+
   it('scans a foundation run as a foundation model', () => {
     const config: GeneratorConfig = {
       ...base,
       kind: 'foundation',
       foundationId: 'rf-detr-nano',
+      concept: '',
       scoreThreshold: 0.3,
     };
     expect(generatorPrescanOptions(config, PATHS, [], 0.3)).toMatchObject({
@@ -170,6 +216,7 @@ describe('the Dataset Generator', () => {
       ...base,
       kind: 'foundation',
       foundationId: 'rf-detr-nano',
+      concept: '',
       scoreThreshold: 0.3,
     };
     expect(generatorPrescanOptions(config, PATHS, [], 0.3).imagePaths).toEqual(PATHS);

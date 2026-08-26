@@ -20,7 +20,7 @@ import { ImageSourceField, type ImageSource } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
 import { GeneratorModePicker, type GeneratorMode } from './GeneratorModePicker';
 import { MaskSourceFields } from './MaskSourceFields';
-import { listFoundations, type FoundationInfo } from '../api/foundation';
+import { listFoundations, proposesBoxes, type FoundationInfo } from '../api/foundation';
 import {
   GeneratorDestination,
   destinationReady,
@@ -114,12 +114,20 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   }, []);
 
   // Derived, never seeded from an async fetch — the rule this project keeps relearning.
-  // `render_hint`, not `task`: a depth model is a foundation model too and cannot be
-  // reviewed as boxes.
+  //
+  // `proposesBoxes`, not `render_hint === 'boxes'`, because that is what `FoundationPicker`
+  // renders by and the two lists disagreeing is a bug on its own: SAM 3 appeared in the
+  // picker and was absent from *this* list, so the default selection and the ready gate
+  // were reasoning about a different set of models than the user could see.
   const usableDetectors = foundations.filter(
-    (entry) => entry.render_hint === 'boxes' && entry.installed,
+    (entry) => proposesBoxes(entry) && entry.installed,
   );
   const selectedDetector = detectorOverride || usableDetectors[0]?.id || '';
+  // Whether the chosen detector needs a prompt. Read off the catalogue entry, never from
+  // its id (doc 66) — Grounding DINO, Grounded SAM and SAM 3 are all prompted and share no
+  // id pattern at all.
+  const detectorNeedsConcept =
+    usableDetectors.find((entry) => entry.id === selectedDetector)?.takes_concept === true;
 
   // Only annotators whose models are actually downloaded. SAM 3 is 3.2 GB behind a
   // manual approval, so it appears here the moment it is installed and not before —
@@ -146,7 +154,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
     destinationReady(datasetId, newName) &&
     (source.kind === 'dataset' ? source.datasetId !== '' : source.folder.trim() !== '') &&
     (mode === 'foundation'
-      ? selectedDetector !== ''
+      ? selectedDetector !== '' && (!detectorNeedsConcept || concept.trim().length > 0)
       : mode === 'expert'
         ? backboneId !== '' && instanceId !== ''
         : concept.trim().length > 0);
@@ -167,6 +175,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                     datasetId: resolvedId,
                     images: source,
                     foundationId: selectedDetector,
+                    concept: detectorNeedsConcept ? concept.trim() : '',
                     scoreThreshold: threshold,
                   }
                 : mode === 'expert'
@@ -249,6 +258,8 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
           onSelect={setDetectorOverride}
           legend="Detector"
           groupName="generator-detector"
+          concept={concept}
+          onConceptChange={setConcept}
         />
       )}
 

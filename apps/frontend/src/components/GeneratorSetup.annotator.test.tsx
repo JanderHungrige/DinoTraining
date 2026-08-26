@@ -26,6 +26,10 @@ vi.mock('../api/datasets', async () => {
   const actual = await vi.importActual<typeof import('../api/datasets')>('../api/datasets');
   return { ...actual, listDatasets: vi.fn(), createDataset: vi.fn() };
 });
+vi.mock('../api/foundation', async () => {
+  const actual = await vi.importActual<typeof import('../api/foundation')>('../api/foundation');
+  return { ...actual, listFoundations: vi.fn() };
+});
 vi.mock('../hooks/useTrainerOptions', async () => {
   const actual = await vi.importActual<typeof import('../hooks/useTrainerOptions')>(
     '../hooks/useTrainerOptions',
@@ -37,6 +41,7 @@ const annotatorsApi = await import('../api/annotators');
 const headsApi = await import('../api/headInstances');
 const datasetsApi = await import('../api/datasets');
 const options = await import('../hooks/useTrainerOptions');
+const foundationApi = await import('../api/foundation');
 
 const DETECTOR: HeadInstanceInfo = {
   id: 'h1',
@@ -62,6 +67,8 @@ const DETECTOR: HeadInstanceInfo = {
 };
 
 beforeEach(() => {
+  // Default: no foundation models. The tests below that care about them say so.
+  vi.mocked(foundationApi.listFoundations).mockResolvedValue([]);
   vi.mocked(headsApi.listHeadInstances).mockResolvedValue([DETECTOR]);
   vi.mocked(datasetsApi.listDatasets).mockResolvedValue([
     { id: 'd1', name: 'Bolts', counts: { images: 3 } } as never,
@@ -213,6 +220,130 @@ describe('GeneratorSetup — annotator choice', () => {
     await waitFor(() =>
       expect(onStart).toHaveBeenCalledWith(
         expect.objectContaining({ kind: 'masks', annotatorId: 'grounded-sam-base' }),
+      ),
+    );
+  });
+});
+
+describe('a prompted detector in foundation mode (doc 66)', () => {
+  /**
+   * Two reports, one cause. "Grounding DINO is not available in the Dataset Generator"
+   * and "choosing a concept model like SAM 3 does not open the concept line".
+   *
+   * `FoundationPicker` filters with `proposesBoxes`, so SAM 3 was already *listed* here —
+   * but the Generator mounted the picker without an `onConceptChange`, so the field never
+   * appeared, and its own `usableDetectors` filtered by `render_hint === 'boxes'`, a
+   * narrower list than the one on screen. Selectable, unpromptable, and the ready gate
+   * reasoning about a different set of models than the user could see.
+   */
+  function withDetectors(entries: unknown[]): void {
+    vi.mocked(foundationApi.listFoundations).mockResolvedValue(entries as never);
+  }
+
+  it('shows the prompt field for a prompted detector', async () => {
+    const user = userEvent.setup();
+    withDetectors([
+      {
+        id: 'grounding-dino-tiny',
+        title: 'Grounding DINO (tiny)',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: true,
+      },
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+
+    expect(await screen.findByLabelText(/what to find/i)).toBeInTheDocument();
+  });
+
+  it('shows it for a mask model listed as a detector too', async () => {
+    // SAM 3 reports `masks` but proposes boxes on the way there, which is why it is in
+    // this list at all — and exactly the case that had no prompt field.
+    const user = userEvent.setup();
+    withDetectors([
+      { id: 'sam3', title: 'SAM 3', render_hint: 'masks', installed: true, takes_concept: true },
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+
+    expect(await screen.findByRole('radio', { name: /SAM 3/ })).toBeInTheDocument();
+    expect(screen.getByLabelText(/what to find/i)).toBeInTheDocument();
+  });
+
+  it('shows no prompt field for RF-DETR, which ignores one', async () => {
+    const user = userEvent.setup();
+    withDetectors([
+      {
+        id: 'rf-detr-nano',
+        title: 'RF-DETR (nano)',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: false,
+      },
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+
+    expect(screen.queryByLabelText(/what to find/i)).not.toBeInTheDocument();
+  });
+
+  it('refuses to start a prompted detector with no prompt', async () => {
+    // It would run, succeed, and return nothing — the same shape as "found nothing here".
+    const user = userEvent.setup();
+    withDetectors([
+      {
+        id: 'grounding-dino-tiny',
+        title: 'Grounding DINO (tiny)',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: true,
+      },
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+
+    expect(screen.getByRole('button', { name: /start generating/i })).toBeDisabled();
+  });
+
+  it('starts with the prompt once one is typed', async () => {
+    const user = userEvent.setup();
+    withDetectors([
+      {
+        id: 'grounding-dino-tiny',
+        title: 'Grounding DINO (tiny)',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: true,
+      },
+    ]);
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.type(await screen.findByLabelText(/what to find/i), 'a bolt');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          kind: 'foundation',
+          foundationId: 'grounding-dino-tiny',
+          concept: 'a bolt',
+        }),
       ),
     );
   });

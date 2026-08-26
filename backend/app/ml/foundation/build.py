@@ -17,12 +17,15 @@ from app.core.paths import PathConfinementError
 from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.depth import DepthAnythingModel
 from app.ml.foundation.detect import RfDetrModel
+from app.ml.foundation.prompt_detect import PromptedDetector
 from app.ml.foundation.registry import FoundationSpec, get_foundation
 
 #: Every foundation implementation. A union rather than a Protocol: they share `predict`
 #: but not its signature — the detector takes a score threshold and the depth model has
 #: nothing to threshold — and a Protocol wide enough to cover both would describe neither.
-FoundationImplementation = ConceptSegmenter | DepthAnythingModel | RfDetrModel
+FoundationImplementation = (
+    ConceptSegmenter | DepthAnythingModel | PromptedDetector | RfDetrModel
+)
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +115,12 @@ def _implementation(
         return ConceptSegmenter(spec, settings)
     if spec.task == "depth":
         return DepthAnythingModel(spec, settings)
+    # Before the plain-detection case, and the ordering is the point: a prompted detector
+    # reports `task == "detection"` too, so falling through would hand Grounding DINO to
+    # RF-DETR's loader — which would fail on the checkpoint rather than silently, but only
+    # after the reader had gone looking in the wrong file.
+    if spec.prompted:
+        return PromptedDetector(spec, settings)
     if spec.task == "detection":
         return RfDetrModel(spec, settings)
     raise FoundationUnavailableError(f"No implementation for task {spec.task}")
