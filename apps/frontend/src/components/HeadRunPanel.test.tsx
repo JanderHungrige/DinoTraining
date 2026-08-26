@@ -8,6 +8,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import type { FoundationInfo } from '../api/foundation';
 import type { HeadInstanceInfo } from '../api/headInstances';
 import { NO_TILING } from '../api/inference';
 import type { HeadRunState } from '../hooks/useHeadRun';
@@ -69,6 +70,108 @@ function state(overrides: Partial<HeadRunState> = {}): HeadRunState {
     ...overrides,
   };
 }
+
+function foundation(overrides: Partial<FoundationInfo> = {}): FoundationInfo {
+  return {
+    id: 'rf-detr-nano',
+    title: 'RF-DETR (nano)',
+    description: 'General object detection.',
+    task: 'detection',
+    render_hint: 'boxes',
+    installed: true,
+    takes_concept: false,
+    licence: 'Apache-2.0',
+    non_commercial: false,
+    ...overrides,
+  } as FoundationInfo;
+}
+
+describe('with no heads installed', () => {
+  /**
+   * Reported as "in the inference tab no model shows up until you install a pretrained
+   * head, even though a foundation model is already installed".
+   *
+   * The panel returned early on `heads.length === 0`, before the Foundation models group
+   * rendered at all. So a fresh install — which the starter set fills with RF-DETR,
+   * Grounded SAM and Depth Anything, none of which needs a head — was told to go and
+   * install a head, and installing one made four models appear at once.
+   */
+  it('offers an installed foundation model with no head anywhere', () => {
+    render(
+      <HeadRunPanel
+        state={state({ heads: [], foundations: [foundation()] })}
+        onRun={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('checkbox', { name: /RF-DETR/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Nothing to run yet/)).not.toBeInTheDocument();
+  });
+
+  it('can select and run one', () => {
+    // The empty state was not only a wording problem: nothing was reachable to tick.
+    const toggleFoundation = vi.fn();
+    render(
+      <HeadRunPanel
+        state={state({ heads: [], foundations: [foundation()], toggleFoundation })}
+        onRun={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /RF-DETR/ }));
+
+    expect(toggleFoundation).toHaveBeenCalledWith('rf-detr-nano');
+  });
+
+  it('hides the Heads group rather than showing an empty one', () => {
+    // An empty bordered "Heads" box beside a populated list reads as a failed load.
+    render(
+      <HeadRunPanel
+        state={state({ heads: [], foundations: [foundation()] })}
+        onRun={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('group', { name: 'Heads' })).not.toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Foundation models' })).toBeInTheDocument();
+  });
+
+  it('hides the head filters, which would have nothing to filter', () => {
+    render(
+      <HeadRunPanel
+        state={state({ heads: [], foundations: [foundation()] })}
+        onRun={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Task')).not.toBeInTheDocument();
+  });
+
+  it('still says so when there is genuinely nothing installed', () => {
+    render(<HeadRunPanel state={state({ heads: [], foundations: [] })} onRun={vi.fn()} />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(/Nothing to run yet/);
+  });
+
+  it('asks for a concept when a concept model is the only thing selected', () => {
+    // Grounded SAM with no head installed is the exact fresh-install case, and a concept
+    // model with no concept returns an all-background mask that means nothing was asked.
+    render(
+      <HeadRunPanel
+        state={state({
+          heads: [],
+          foundations: [
+            foundation({ id: 'grounded-sam', title: 'Grounded SAM', takes_concept: true }),
+          ],
+          selectedFoundations: ['grounded-sam'],
+        })}
+        onRun={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText(/What to find/)).toBeInTheDocument();
+  });
+});
 
 const SEGMENTERS = [
   head({ id: 'a', name: 'ADE20k segmenter' }),

@@ -85,7 +85,15 @@ export function generatorPrescanOptions(
     };
   }
   if (config.kind === 'foundation') {
-    return { ...common, kind: 'foundation', foundationId: config.foundationId };
+    // The concept travels here too. A prompted detector (doc 66) scanned without one
+    // matches nothing, so every image is reported as a miss and the filter silently hides
+    // the whole folder — which looks exactly like a folder with nothing in it.
+    return {
+      ...common,
+      kind: 'foundation',
+      foundationId: config.foundationId,
+      ...(config.concept ? { concept: config.concept } : {}),
+    };
   }
   return {
     ...common,
@@ -98,7 +106,7 @@ export function generatorPrescanOptions(
 /** What to suggest in the Generator's "looking for" box. A mask run already names its
  *  concept; the other two know their classes but the config does not carry them. */
 export function generatorPrescanSuggestions(config: GeneratorConfig): string[] {
-  return config.kind === 'masks'
+  return config.kind === 'masks' || (config.kind === 'foundation' && config.concept)
     ? config.concept
         .split(/[.,]/)
         .map((part) => part.trim())

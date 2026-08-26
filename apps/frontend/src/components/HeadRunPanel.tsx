@@ -67,11 +67,16 @@ export function HeadRunPanel({
 
   if (loadingHeads) return <p role="status">Loading heads…</p>;
 
-  if (heads.length === 0) {
+  // **Both catalogues, not just heads.** This used to bail on `heads.length === 0` alone,
+  // which returned before the Foundation models group below ever rendered — so someone
+  // with RF-DETR, Grounded SAM and Depth Anything installed was told to go and install a
+  // head before anything would appear, and installing one made four models show up at
+  // once. A foundation model needs no head and never did.
+  if (heads.length === 0 && state.foundations.length === 0) {
     return (
       <p role="status">
-        No heads installed yet. Install a default from the Admin tab, or train one in the
-        Training tab.
+        Nothing to run yet. Install a foundation model or a ready-made head from the Admin
+        tab, or train a head in the Training tab.
       </p>
     );
   }
@@ -97,6 +102,10 @@ export function HeadRunPanel({
 
   return (
     <div className="runpanel">
+      {/* The filters filter *heads*. With none installed the task select offers only "All
+          tasks" and the dataset select is already hidden, so the row is two controls that
+          cannot change anything — noise above the one group that does. */}
+      {heads.length > 0 && (
       <div className="runpanel__filter">
         <label htmlFor="task-filter">Task</label>
         <select
@@ -140,7 +149,9 @@ export function HeadRunPanel({
           </span>
         )}
       </div>
+      )}
 
+      {heads.length > 0 && (
       <fieldset className="runpanel__heads">
         <legend>Heads</legend>
         {visible.map((head) => {
@@ -167,6 +178,7 @@ export function HeadRunPanel({
           );
         })}
       </fieldset>
+      )}
 
       {state.foundations.length > 0 && (
         <fieldset className="runpanel__heads">
