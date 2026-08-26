@@ -20,6 +20,8 @@ from app.core.config import Settings, get_settings
 from app.core.paths import ensure_within
 from app.datasets.db import data_root, transaction
 from app.ml.heads.instances import HeadInstance, HeadInstanceKind
+from app.ml.heads.labels import names_for
+from app.ml.heads.registry import get_head_type
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,25 @@ def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def _stored_class_names(head_type_id: str, num_classes: int, stored: str) -> tuple[str, ...]:
+    """Names as recorded, or the head type's fixed label set when nothing was recorded.
+
+    **Resolved on read, not by a migration.** Pretrained defaults installed before the
+    label sets existed hold an empty list, and rewriting those rows would fix only the rows
+    that happen to exist on one machine — every clone with an older install would still show
+    `class 705`. Reading through the registry fixes both at once and stays correct if a
+    label set is ever corrected upstream.
+
+    Recorded names always win. A head trained here has the user's own classes and no label
+    set, and a head type that gained one later must never overwrite them.
+    """
+    names = tuple(json.loads(stored))
+    if names:
+        return names
+    spec = get_head_type(head_type_id)
+    return names_for(spec.label_set, num_classes) if spec else ()
+
+
 def _row_to_instance(row: object) -> HeadInstance:
     data = dict(row)  # type: ignore[call-overload]
     return HeadInstance(
@@ -58,7 +79,9 @@ def _row_to_instance(row: object) -> HeadInstance:
         num_classes=int(data["num_classes"]),
         weights_path=str(data["weights_path"]),
         created_at=str(data["created_at"]),
-        class_names=tuple(json.loads(data["class_names"])),
+        class_names=_stored_class_names(
+            str(data["head_type_id"]), int(data["num_classes"]), data["class_names"]
+        ),
         dataset_ids=tuple(json.loads(data["dataset_ids"])),
         metrics=dict(json.loads(data["metrics"])),
         primary_metric=data["primary_metric"],
