@@ -84,6 +84,24 @@ npm install --prefix apps/frontend --legacy-peer-deps
 npm install --prefix apps/desktop
 ```
 
+**`rustc -vV` must print a `host:` line.** Check it before the first desktop run:
+
+```bash
+command -v rustc && rustc -vV
+```
+
+Without that line Tauri cannot work out what it is building for and aborts on an unwrap
+inside its own CLI, naming a line number in a Rust file you do not have.
+`./scripts/dev.sh` checks for it and prints what rustc actually said. Two ways to get
+there, and they need opposite fixes:
+
+- **`Symbol not found` / dyld abort** — a Rust install linked against a library that has
+  since moved, typically Homebrew rust after an `llvm` upgrade. `brew reinstall rust`.
+- **`no default toolchain`** — rustup has none selected. `rustup default stable`.
+
+Installing Rust *both* ways is the usual road into this, because the two `rustc` binaries
+compete on `PATH` and `rustup default` does not affect the Homebrew one. Keep one.
+
 Then run whichever loop you need:
 
 ```bash
