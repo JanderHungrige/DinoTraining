@@ -15,7 +15,14 @@ from collections.abc import Callable
 
 from app.ml.annotators.base import MaskAnnotator
 from app.ml.annotators.grounded_sam import GroundedSamAnnotator
-from app.ml.annotators.registry import GROUNDED_SAM, SAM3, get_annotator
+from app.ml.annotators.registry import (
+    GROUNDED_SAM,
+    GROUNDED_SAM_BASE,
+    GROUNDED_SAM_LARGE,
+    SAM3,
+    AnnotatorSpec,
+    get_annotator,
+)
 from app.ml.annotators.sam3 import Sam3Annotator
 
 
@@ -23,9 +30,25 @@ class AnnotatorUnavailableError(RuntimeError):
     """The annotator is in the catalogue but has no implementation yet."""
 
 
-_BUILDERS: dict[str, Callable[[], MaskAnnotator]] = {
-    GROUNDED_SAM: GroundedSamAnnotator,
-    SAM3: Sam3Annotator,
+def _grounded_sam(spec: AnnotatorSpec) -> MaskAnnotator:
+    """Build a Grounded SAM tier from its own catalogue row.
+
+    The model ids come **off the spec**, never from a table here. That is the whole reason
+    the builders take a spec: readiness is computed from `spec.model_ids`, so a builder
+    holding ids of its own would let the admin tab report a pipeline ready while this loaded
+    something else — a mismatch nothing would report, because both halves would work.
+    """
+    detector_id, segmenter_id = spec.model_ids
+    return GroundedSamAnnotator(spec.id, detector_id, segmenter_id)
+
+
+#: One row per runnable annotator. Every Grounded SAM tier shares a builder because they
+#: differ only in which weights they name, and that difference is data (doc 27).
+_BUILDERS: dict[str, Callable[[AnnotatorSpec], MaskAnnotator]] = {
+    GROUNDED_SAM: _grounded_sam,
+    GROUNDED_SAM_BASE: _grounded_sam,
+    GROUNDED_SAM_LARGE: _grounded_sam,
+    SAM3: lambda _spec: Sam3Annotator(),
 }
 
 
@@ -37,7 +60,8 @@ def build_annotator(annotator_id: str) -> MaskAnnotator:
     two different answers, because the first is a caller mistake and the second is a
     feature that has not shipped.
     """
-    if get_annotator(annotator_id) is None:
+    spec = get_annotator(annotator_id)
+    if spec is None:
         raise LookupError(f"Unknown annotator: {annotator_id}")
 
     builder = _BUILDERS.get(annotator_id)
@@ -45,7 +69,7 @@ def build_annotator(annotator_id: str) -> MaskAnnotator:
         raise AnnotatorUnavailableError(
             f"{annotator_id} is in the catalogue but cannot be run yet."
         )
-    return builder()
+    return builder(spec)
 
 
 def implemented_annotator_ids() -> frozenset[str]:

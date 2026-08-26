@@ -5,7 +5,7 @@ edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
 wave_status: complete
-depends_on: [04-annotation-canvas, 42-foundation-boxes-everywhere]
+depends_on: [05-annotation-canvas, 42-foundation-boxes-everywhere]
 relates: [32-studio-session-setup, 45-concept-segmentation-everywhere, 24-mask-review-canvas]
 source_files:
   - apps/frontend/src/lib/boxReview.ts

@@ -57,6 +57,11 @@ GET  /models/jobs/{job_id}            # poll until state != "running"
 segmentation needs `grounding-dino-tiny` **and** `sam2.1-hiera-small` — both, because the
 pipeline chains them. `dinov2-small` is the backbone every trained head runs on.
 
+The same pipeline comes in three sizes — `grounded-sam` (834 MB), `grounded-sam-base`
+(1.2 GB) and `grounded-sam-large` (1.7 GB) — and `GET /annotators` reports what each one
+needs and whether it is installed. Spend the first gigabyte on the **detector**: SAM cannot
+outline an object Grounding DINO never found, so recall comes before edge quality.
+
 **Gated models refuse rather than fail.** `sam3` and the DINOv3 backbones need a HuggingFace
 token and, for SAM 3, a manual access request Meta approves by hand. A download without one
 comes back `409` saying so. Do not retry it; it will not become approved.

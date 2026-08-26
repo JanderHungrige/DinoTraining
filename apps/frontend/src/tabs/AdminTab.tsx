@@ -3,7 +3,9 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { FAMILY_LABELS, type ModelFamily, type ModelInfo } from '../api/models';
+import { AnnotatorReadiness } from '../components/AnnotatorReadiness';
 import { HeadCatalogPanel } from '../components/HeadCatalogPanel';
+import { StarterSetPanel } from '../components/StarterSetPanel';
 import { DistributionNotice } from '../components/DistributionNotice';
 import { GpuPanel } from '../components/GpuPanel';
 import { ModelCard } from '../components/ModelCard';
@@ -109,6 +111,12 @@ export function AdminTab(): JSX.Element {
         </p>
       )}
 
+      {/* First, and above the catalogue: someone on a fresh install should not have to
+          work out which five of fifteen models matter before anything works. */}
+      {!loading && (
+        <StarterSetPanel models={models} jobs={jobs} onDownload={download} />
+      )}
+
       {loading ? (
         <p role="status">Loading model catalogue…</p>
       ) : (
@@ -134,6 +142,10 @@ export function AdminTab(): JSX.Element {
           );
         })
       )}
+
+      {/* After the models, because it explains how some of them combine — and it is
+          keyed on the job map so installing a part re-reads readiness. */}
+      <AnnotatorReadiness refreshKey={Object.keys(jobs).length} />
 
       <HeadCatalogPanel backbones={backbones} headTypes={headTypes} />
     </section>

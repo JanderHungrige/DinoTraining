@@ -5,7 +5,7 @@ edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
 wave_status: complete
-depends_on: [32-studio-session-setup, 42-foundation-boxes-everywhere, 11-training-job-runner]
+depends_on: [06-annotation-workflow, 42-foundation-boxes-everywhere, 11-training-job-runner]
 relates: [47-box-review-list, 49-osdar23-rail, 50-dataset-as-source]
 source_files:
   - backend/app/ml/annotators/prescan.py
