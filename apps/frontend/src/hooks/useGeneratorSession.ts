@@ -45,6 +45,10 @@ export interface FoundationConfig {
   readonly images: ImageSource;
   /** Catalogue id of an installed detector. No backbone: it brings its own. */
   readonly foundationId: string;
+  /** What to look for, when the chosen model is prompted (doc 66). Empty for RF-DETR,
+   *  which ignores it. Not optional: a field that is sometimes absent is a field every
+   *  caller has to remember, and the Studio already learned that with `concept`. */
+  readonly concept: string;
   readonly scoreThreshold: number;
 }
 

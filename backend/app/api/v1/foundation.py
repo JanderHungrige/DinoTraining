@@ -27,6 +27,7 @@ from app.ml.foundation.build import (
 from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
 from app.ml.foundation.instances import FoundationInstance, FoundationInstanceStore
+from app.ml.foundation.prompt_detect import PromptedDetector
 from app.ml.foundation.registry import FoundationSpec, all_foundations, get_foundation
 from app.ml.images import ImageReadError, read_image
 from app.ml.inference.results import Prediction
@@ -89,7 +90,12 @@ def _run(
     concept as well, and a depth map has nothing to threshold. A uniform signature would
     mean two of the three accepting an argument they ignore.
     """
-    if isinstance(model, ConceptSegmenter):
+    # Grounding DINO joins the concept branch rather than the detector one: it returns
+    # boxes like RF-DETR but is *prompted* like a segmenter, and the two axes are
+    # independent (doc 66). Sending it down the RF-DETR branch would drop the concept
+    # silently — the call succeeds, the model runs on an empty prompt, and the answer is
+    # an empty box list that looks exactly like "nothing matched".
+    if isinstance(model, ConceptSegmenter | PromptedDetector):
         return model.predict(image, request.concept, request.score_threshold)
     if isinstance(model, RfDetrModel):
         return model.predict(image, request.score_threshold)

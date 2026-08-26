@@ -44,11 +44,19 @@ class FoundationSpec:
     #: state and licence come from the several models the pipeline chains together, so
     #: `model_id` alone cannot answer either question.
     annotator_id: str | None = None
+    #: Set when a *single* checkpoint needs a text prompt — Grounding DINO (doc 66).
+    #:
+    #: Its own field because `takes_concept` used to be defined as `annotator_id is not
+    #: None`, which fused two independent axes: whether a model is prompted, and whether it
+    #: is a multi-model pipeline. That held while every prompted model produced masks, and
+    #: broke on the first one that produces boxes — the same defect as reading a head's
+    #: capability off its `task` label.
+    prompted: bool = False
 
     @property
     def takes_concept(self) -> bool:
         """True when this model needs a text prompt to predict anything at all."""
-        return self.annotator_id is not None
+        return self.annotator_id is not None or self.prompted
 
 
 _SPECS: tuple[FoundationSpec, ...] = (
@@ -74,6 +82,29 @@ _SPECS: tuple[FoundationSpec, ...] = (
         model_id="rf-detr-base",
         title="RF-DETR (base)",
         description="Largest RF-DETR offered here. Best accuracy, highest latency.",
+        task="detection",
+        render_hint="boxes",
+    ),
+    # --- concept-prompted detection (doc 66) --------------------------------------
+    # The Studio has offered Grounding DINO since Wave 1 as a mode of its own, which left
+    # it the one model the Inference Viewer and the Generator could not run. It is neither
+    # a plain detector (it needs a prompt) nor a mask annotator (it returns boxes), and the
+    # catalogue had no way to say that until `prompted` existed.
+    FoundationSpec(
+        id="grounding-dino-tiny",
+        model_id="grounding-dino-tiny",
+        prompted=True,
+        title="Grounding DINO (tiny)",
+        description="Type what to find and it finds it — boxes, no training, no masks.",
+        task="detection",
+        render_hint="boxes",
+    ),
+    FoundationSpec(
+        id="grounding-dino-base",
+        model_id="grounding-dino-base",
+        prompted=True,
+        title="Grounding DINO (base)",
+        description="Larger Grounding DINO. Better recall on hard prompts, slower.",
         task="detection",
         render_hint="boxes",
     ),

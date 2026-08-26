@@ -42,6 +42,9 @@ export async function proposeForGenerator(
     const response = await proposeWithFoundation({
       imagePath,
       foundationId: config.foundationId,
+      // Sent only when there is one. The API ignores it for an unprompted model, but an
+      // empty string on the wire is indistinguishable from a prompt the user cleared.
+      ...(config.concept ? { concept: config.concept } : {}),
       scoreThreshold: config.scoreThreshold,
     });
     return {
