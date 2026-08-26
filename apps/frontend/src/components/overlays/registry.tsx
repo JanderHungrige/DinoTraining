@@ -14,6 +14,7 @@ import type { RenderedImage } from '../../lib/geometry';
 import { classColour, depthColour, type Rgb } from '../../lib/overlayPalette';
 import { DEFAULT_VIEW, showsBoxes, showsMasks, type AnnotationView } from '../../types/annotationView';
 import { BoxOverlay } from './BoxOverlay';
+import { MaskLegend } from './MaskLegend';
 import { LabelOverlay } from './LabelOverlay';
 import { MapOverlay } from './MapOverlay';
 
@@ -118,6 +119,9 @@ const renderMask: OverlayRenderer = ({ prediction, rendered, view = DEFAULT_VIEW
         />
       )}
       {wantsBoxes && <BoxOverlay prediction={prediction} rendered={rendered} />}
+      {/* Names the colours that are actually on screen. Under a boxes-only view the boxes
+          carry their own labels, so a second key would say everything twice. */}
+      {wantsMask && <MaskLegend prediction={prediction} />}
     </>
   );
 };

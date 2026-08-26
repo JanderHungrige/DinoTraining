@@ -20,6 +20,7 @@ from app.core.config import Settings
 from app.ml.backbone import BackboneCapabilities
 from app.ml.heads.builders import build_head
 from app.ml.heads.instances import HeadInstance, HeadInstanceKind
+from app.ml.heads.labels import names_for
 from app.ml.heads.registry import HeadTypeSpec, check_compatibility, get_head_type
 from app.ml.heads.store import HeadInstanceStore
 
@@ -102,6 +103,13 @@ def register_head(
             f"(embed_dim {capabilities.embed_dim}): {exc}"
         ) from exc
 
+    # A pretrained default is a bare `.pth` — weights and nothing else, no `config.json`
+    # and no `id2label` — so its class names have to come from the vendored label set its
+    # head type names. Without this the store held an empty list and the viewer rendered
+    # `class 705` for `passenger car, coach, carriage`: the model was right and could not
+    # say so. A trained head has no label set and keeps recording the user's own classes.
+    names = names_for(spec.label_set, resolved)
+
     logger.info("Registering %s head %s for %s", kind, spec.id, capabilities.model_id)
     return HeadInstanceStore(settings).register(
         name=name,
@@ -112,6 +120,7 @@ def register_head(
         backbone_family=capabilities.family,
         embed_dim=capabilities.embed_dim,
         num_classes=resolved,
+        class_names=names,
         weights=weights,
         source_repo=source_repo,
         source_digest=source_digest,

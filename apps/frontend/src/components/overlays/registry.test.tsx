@@ -227,7 +227,9 @@ describe('dense maps', () => {
     render(<>{renderOverlayFor(item, RENDERED)}</>);
 
     // Provenance, never a filename — doc 12's contract reaching the overlay.
-    expect(screen.getByLabelText(/A head with provenance/)).toBeInTheDocument();
+    // Scoped to the map itself: the class legend beside it names the same head, which is
+    // correct for a screen reader comparing two panes but makes a bare text query ambiguous.
+    expect(screen.getByRole('img', { name: /A head with provenance/ })).toBeInTheDocument();
   });
 });
 
