@@ -1,9 +1,14 @@
 /**
- * The API tab (doc 63).
+ * The Connection tab (docs 63 and 64).
  *
- * The feature is "hand this to your AI", so the tests are about the handing over: the
- * document is fetched from the running backend rather than bundled, copying is the primary
- * action, and a webview that refuses the clipboard says so instead of pretending.
+ * Two ways to let an assistant drive the app, and the tab's job is that both are found.
+ * **MCP is the default** because it is the better one — typed tools beat a document the
+ * model has to interpret — and the manual document is a click away rather than buried,
+ * which is the mistake that hid fine-tuning for three waves.
+ *
+ * The manual half's own tests are about the handing over: the document is fetched from the
+ * running backend rather than bundled, copying leads, and a webview that refuses the
+ * clipboard says so instead of pretending.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -11,17 +16,24 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as agentGuide from '../api/agentGuide';
+import * as mcpInfo from '../api/mcpInfo';
 import { ApiTab } from './ApiTab';
 
 vi.mock('../api/agentGuide', async (original) => ({
   ...(await original<typeof agentGuide>()),
   fetchAgentGuide: vi.fn(),
 }));
+vi.mock('../api/mcpInfo');
 
 const GUIDE = '# DinoTraining API\n\nCall `GET /models` first.\n\n## 1. Install a model\n';
 
 beforeEach(() => {
   vi.mocked(agentGuide.fetchAgentGuide).mockResolvedValue(GUIDE);
+  vi.mocked(mcpInfo.fetchMcpInfo).mockResolvedValue({
+    url: 'http://127.0.0.1:8756/mcp',
+    command: 'claude mcp add --transport http dinotraining http://127.0.0.1:8756/mcp',
+    tools: [{ name: 'list_datasets', summary: 'List datasets.' }],
+  });
 });
 
 afterEach(() => {
@@ -40,8 +52,11 @@ function stubClipboard(writeText: ReturnType<typeof vi.fn>): void {
   });
 }
 
+/** Render and switch to the manual document, which is no longer the default mode. */
 async function renderTab() {
   render(<ApiTab />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('radio', { name: /Any assistant/ }));
   await waitFor(() => expect(screen.getByRole('heading', { name: /Install a model/ })).toBeInTheDocument());
   return userEvent.setup();
 }
@@ -64,8 +79,11 @@ describe('where the document comes from', () => {
   });
 
   it('says so when the backend cannot be reached', async () => {
+    // Rendered by hand rather than through `renderTab`, which waits for a heading that
+    // never arrives when the fetch fails.
     vi.mocked(agentGuide.fetchAgentGuide).mockRejectedValue(new Error('Backend is not running.'));
     render(<ApiTab />);
+    await userEvent.setup().click(await screen.findByRole('radio', { name: /Any assistant/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/not running/);
   });

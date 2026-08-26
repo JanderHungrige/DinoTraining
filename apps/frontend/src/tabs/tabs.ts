@@ -77,10 +77,10 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
   },
   {
     id: 'api',
-    // Last, and a destination rather than a setting: you come here to copy something out.
+    // Last, and a destination rather than a setting: you come here to connect something.
     // Burying it in Admin would repeat the mistake that hid fine-tuning for three waves.
-    label: 'API',
-    hint: 'Hand this to your own AI assistant and let it drive the app.',
+    label: 'Connection',
+    hint: 'Let your own AI assistant drive the app — over MCP, or with a document.',
     wave: 9,
   },
 ] as const);

@@ -1,5 +1,11 @@
 /**
- * The API tab (doc 63) — one document to hand your own AI assistant.
+ * The Connection tab (docs 63 and 64) — two ways to let an assistant drive this app.
+ *
+ * **Two modes, switched at the top**, for the reason the Training tab has them: the second
+ * option is the better one and would be invisible below the first. MCP leads because a
+ * typed tool an assistant cannot misuse beats a document it has to interpret correctly.
+ *
+ * The manual half is what remains for assistants without MCP, and is documented below.
  *
  * **Copy is the primary action, not download.** The stated use is pasting this into an
  * assistant's context so it can drive the app: "here is a dataset link, fine-tune RF-DETR
@@ -17,10 +23,29 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { fetchAgentGuide, GUIDE_FILENAME } from '../api/agentGuide';
 import { MarkdownView } from '../components/MarkdownView';
+import { McpPanel } from '../components/McpPanel';
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
+/** Which way of connecting is on screen. */
+type ConnectionMode = 'mcp' | 'manual';
+
+const MODES: readonly { id: ConnectionMode; name: string; hint: string }[] = Object.freeze([
+  {
+    id: 'mcp',
+    name: 'MCP',
+    hint: 'Typed tools your assistant calls directly. Best, if it supports MCP.',
+  },
+  {
+    id: 'manual',
+    name: 'Any assistant',
+    hint: 'One document to paste in. Works anywhere, including without MCP.',
+  },
+]);
+
 export function ApiTab(): JSX.Element {
+  // MCP first: it is the better path, and the one that needs finding.
+  const [mode, setMode] = useState<ConnectionMode>('mcp');
   const [guide, setGuide] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyState>('idle');
@@ -63,15 +88,41 @@ export function ApiTab(): JSX.Element {
 
   return (
     <section className="apidocs">
-      <div className="apidocs__head">
-        <div>
-          <h2 className="studio__title">API</h2>
-          <p className="studio__lead">
-            Everything this app does, it does through a local API — so your own AI assistant
-            can do it too. Hand it this document and describe what you want.
+      <h2 className="studio__title">Connection</h2>
+      <p className="studio__lead">
+        Everything this app does, it does through a local API — so your own AI assistant can
+        do it too. Two ways to give it access, and both run entirely on this machine.
+      </p>
+
+      <fieldset className="modeswitch">
+        <legend className="modeswitch__legend">How to connect</legend>
+        {MODES.map((entry) => (
+          <label
+            key={entry.id}
+            className={`modeswitch__option${mode === entry.id ? ' modeswitch__option--on' : ''}`}
+          >
+            <input
+              type="radio"
+              name="connection-mode"
+              value={entry.id}
+              checked={mode === entry.id}
+              onChange={() => setMode(entry.id)}
+            />
+            <span className="modeswitch__name">{entry.name}</span>
+            <span className="modeswitch__hint">{entry.hint}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      {mode === 'mcp' && <McpPanel />}
+
+      {mode === 'manual' && (
+        <div className="conn__mode">
+          <p className="intro__note">
+            Copy this document into your assistant and describe what you want. It documents
+            every workflow in order, with the traps named — which is the part a schema
+            cannot express. Use this when your assistant does not speak MCP.
           </p>
-        </div>
-      </div>
 
       <div className="apidocs__actions">
         <button
@@ -113,6 +164,8 @@ export function ApiTab(): JSX.Element {
         <article className="apidocs__doc" id="api-guide">
           <MarkdownView source={guide} />
         </article>
+      )}
+        </div>
       )}
     </section>
   );

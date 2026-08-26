@@ -16,6 +16,7 @@ from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
+from app.mcp.server import mount_mcp
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.api_prefix)
+
+    # Last, and after the router: the MCP mount composes itself into the app's lifespan,
+    # and the tool layer dispatches back into these routes in-process (doc 64).
+    mount_mcp(app, settings.api_host, settings.api_port)
 
     return app
 
