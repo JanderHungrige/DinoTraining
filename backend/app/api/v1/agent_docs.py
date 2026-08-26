@@ -20,9 +20,12 @@ import logging
 from typing import Literal
 
 from fastapi import APIRouter, Query, Request, Response
+from pydantic import BaseModel
 
+from app.core.config import get_settings
 from app.docs.reference import render_reference
 from app.docs.workflows import WORKED_EXAMPLE, WORKFLOWS
+from app.mcp.server import MCP_PATH, build
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -71,3 +74,52 @@ def build_guide(openapi: dict[str, object]) -> str:
 
 
 __all__ = ["agent_guide", "build_guide"]
+
+
+class McpTool(BaseModel):
+    """One tool as the Connection tab lists it."""
+
+    name: str
+    #: First line of the docstring. The full text is the model's prompt, not the user's.
+    summary: str
+
+
+class McpInfo(BaseModel):
+    """What a user needs to connect an assistant, and what it will get."""
+
+    url: str
+    #: Ready to paste. The single most common failure is a wrong URL, so it is generated
+    #: from the same settings the server binds to rather than written down twice.
+    command: str
+    tools: list[McpTool]
+
+
+@router.get(
+    "/docs/mcp",
+    response_model=McpInfo,
+    summary="How to connect an assistant over MCP, and the tools it gets",
+)
+async def mcp_info() -> McpInfo:
+    """The connection details and the live tool list.
+
+    **Generated from the running server**, for the same reason the endpoint reference is:
+    a hand-written tool list is wrong the first time one is added, and a user reading a
+    stale list has no way to tell which half to trust.
+    """
+    settings = get_settings()
+    url = f"http://{settings.api_host}:{settings.api_port}{MCP_PATH}"
+    tools = await build().list_tools()
+
+    return McpInfo(
+        url=url,
+        command=f"claude mcp add --transport http dinotraining {url}",
+        tools=[
+            McpTool(name=tool.name, summary=_first_line(tool.description or ""))
+            for tool in sorted(tools, key=lambda entry: entry.name)
+        ],
+    )
+
+
+def _first_line(description: str) -> str:
+    """The summary line. The rest of a tool's docstring is written for the model."""
+    return description.strip().splitlines()[0].strip() if description.strip() else ""

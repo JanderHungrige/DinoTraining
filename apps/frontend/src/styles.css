@@ -2774,6 +2774,79 @@ body {
    The API tab (doc 63) — one document to hand an assistant.
    --------------------------------------------------------------------------- */
 
+/* The Connection tab's two modes (doc 64). */
+.conn__mode {
+  margin-top: 0.5rem;
+}
+
+.conn__heading {
+  margin: 1.2rem 0 0.35rem;
+  font-size: 0.95rem;
+}
+
+.conn__body {
+  margin: 0 0 0.6rem;
+  font-size: 0.88rem;
+}
+
+/* The command is the point of the MCP panel, so it is set apart and selectable rather
+   than folded into a paragraph. */
+.conn__command {
+  margin: 0 0 0.6rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  user-select: all;
+}
+
+.conn__quote {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.9rem;
+  border-left: 3px solid var(--accent);
+  color: var(--text-dim);
+  font-size: 0.88rem;
+}
+
+.conn__tools {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.conn__tool {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: 0.15rem 0.75rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.83rem;
+}
+
+.conn__toolname {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent);
+}
+
+.conn__toolsummary {
+  color: var(--text-dim);
+}
+
+/* The loopback warning. Bordered rather than dim: it is the one thing on this tab a user
+   must not skim, because it is what makes "no authentication" safe. */
+.conn__note {
+  margin: 1.2rem 0 0;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.84rem;
+}
+
 .apidocs__actions {
   display: flex;
   flex-wrap: wrap;
