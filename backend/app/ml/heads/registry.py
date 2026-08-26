@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Literal
 
+from app.ml.heads.labels import ADE20K, IMAGENET_1K
 from app.ml.registry import ModelFamily
 
 if TYPE_CHECKING:
@@ -54,6 +55,15 @@ class HeadTypeSpec:
     primary_metric_mode: MetricMode | None
     render_hint: RenderHint
     compatible_families: frozenset[ModelFamily]
+    #: Which vendored label set names this head's classes, for a head whose label set is
+    #: fixed upstream (`app/ml/heads/labels.py`). `None` for a trainable head — its classes
+    #: are the user's and are recorded at save time.
+    #:
+    #: Declared here rather than per catalogue entry because all three backbone sizes of a
+    #: head share one label set, and rather than inferred from `num_classes` because 150
+    #: classes does not mean ADE20k: the next 150-class head would silently wear its names,
+    #: every one wrong and all of them plausible.
+    label_set: str | None = None
 
     def __post_init__(self) -> None:
         """Enforce the invariants rather than documenting them.
@@ -204,6 +214,7 @@ _SPECS: tuple[HeadTypeSpec, ...] = (
         primary_metric_mode=None,
         render_hint="labels",
         compatible_families=_DINOV2_ONLY,
+        label_set=IMAGENET_1K,
     ),
     HeadTypeSpec(
         id="dinov2-linear-segmenter-ade20k",
@@ -222,6 +233,7 @@ _SPECS: tuple[HeadTypeSpec, ...] = (
         primary_metric_mode=None,
         render_hint="masks",
         compatible_families=_DINOV2_ONLY,
+        label_set=ADE20K,
     ),
     HeadTypeSpec(
         id="dinov2-linear-depth-nyu",
