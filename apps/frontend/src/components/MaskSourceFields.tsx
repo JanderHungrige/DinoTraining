@@ -13,6 +13,7 @@ import type { JSX } from 'react';
 
 import type { AnnotatorInfo, PromptStyle } from '../api/annotators';
 import { FieldHint } from './FieldHint';
+import { describeOutput } from '../types/annotationView';
 import type { GeneratorMode } from './GeneratorModePicker';
 
 export interface MaskSourceFieldsProps {
@@ -71,6 +72,10 @@ export function MaskSourceFields({
               ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
               : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
           </FieldHint>
+          {/* Doc 67. Mask mode always writes masks, and the export derives a box from each
+              — which is the answer to "boxes, segmentations, or both?". Said here rather
+              than after the run, when it can still change the choice. */}
+          <p className="genpanel__output">{describeOutput('masks')}</p>
         </div>
   );
 }

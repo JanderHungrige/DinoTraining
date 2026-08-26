@@ -19,9 +19,14 @@
  *
  * **Masks are painted by `MaskLayer`, and the box stays the hit target** (doc 61). An
  * annotation that carries a segmentation gets its mask drawn and its rect hidden unless
- * `showBoxes` is on — the mask is the finer answer, and the rect is derivable from it. The
- * button is still there either way, transparent but focusable, because mask pixels cannot
- * be focused and every keyboard affordance here hangs off that button.
+ * the view asks for boxes — the mask is the finer answer, and the rect is derivable from
+ * it. The button is still there either way, transparent but focusable, because mask pixels
+ * cannot be focused and every keyboard affordance here hangs off that button.
+ *
+ * `view` replaced a `showBoxes` boolean in doc 67. The boolean could say "mask" and "mask
+ * + box" and never "box alone", so the one view for checking extents against a detector
+ * was unreachable. A box with no mask is drawn under every view — there is nothing else of
+ * it to draw.
  */
 
 import {
@@ -37,6 +42,7 @@ import { fitContain, toDisplay, type Rect, type RenderedImage } from '../lib/geo
 import { useBoxDraw } from '../hooks/useBoxDraw';
 import { inPaintOrder, type NumberedBox } from '../lib/boxReview';
 import { MaskLayer } from './MaskLayer';
+import { showsBoxes, showsMasks, type AnnotationView } from '../types/annotationView';
 import { LABEL_TITLES, nextLabel, type CanvasBox, type Label } from '../types/annotation';
 
 export interface AnnotationCanvasProps {
@@ -54,7 +60,8 @@ export interface AnnotationCanvasProps {
   /** Draw the rectangle over a segmented annotation as well as its mask (doc 61).
    *  Ignored by anything with no mask — a box with no segmentation is always drawn, or
    *  there would be nothing on screen at all. */
-  readonly showBoxes?: boolean;
+  /** Which half of a segmented annotation to draw (doc 67). */
+  readonly view?: AnnotationView;
   readonly disabled?: boolean;
 }
 
@@ -98,7 +105,7 @@ export function AnnotationCanvas({
   onBoxesChange,
   onSelect,
   hidden = EMPTY_HIDDEN,
-  showBoxes = true,
+  view = 'both',
   disabled = false,
 }: AnnotationCanvasProps): JSX.Element {
   const plain = boxes.map((entry) => entry.box);
@@ -204,7 +211,9 @@ export function AnnotationCanvas({
           onLoad={measure}
         />
 
-        <MaskLayer boxes={boxes} hidden={hidden} rendered={rendered} selectedId={selectedId} />
+        {showsMasks(view) && (
+          <MaskLayer boxes={boxes} hidden={hidden} rendered={rendered} selectedId={selectedId} />
+        )}
 
         {inPaintOrder(boxes)
           .filter(({ box }) => !hidden.has(box.id))
@@ -214,7 +223,7 @@ export function AnnotationCanvas({
             // A segmented annotation's rect is hidden unless asked for, but the button
             // stays: it is the only focusable thing a mask has, and removing it would
             // take the verdict keys and the accessibility tree with it.
-            const bare = box.mask !== undefined && !showBoxes;
+            const bare = box.mask !== undefined && !showsBoxes(view);
             const score =
               box.score === undefined ? '' : `, score ${(box.score * 100).toFixed(0)}%`;
             return (

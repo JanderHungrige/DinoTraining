@@ -635,6 +635,44 @@ body {
   color: var(--text-dim);
 }
 
+/* Doc 67 — the "what am I looking at" control, shared by all three review surfaces.
+   Inline rather than stacked: it sits in a view bar beside other small controls, and a
+   vertical radio list there reads as a form rather than as a switch. */
+.viewtoggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.viewtoggle__legend {
+  float: none;
+  padding: 0;
+  margin-right: 0.15rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.viewtoggle__option {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Stated where the run is configured, not after it. Reads as a note, not as an error. */
+.genpanel__output {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
 .canvas__draft {
   position: absolute;
   border: 2px dashed var(--focus);

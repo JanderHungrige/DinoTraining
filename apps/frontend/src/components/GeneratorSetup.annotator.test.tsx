@@ -348,3 +348,66 @@ describe('a prompted detector in foundation mode (doc 66)', () => {
     );
   });
 });
+
+describe('saying what will be saved (doc 67)', () => {
+  /**
+   * The correction that produced this: the request was for a "boxes, segmentations, or
+   * both" *storage* choice, and there is no such choice — a stored mask exports with a
+   * bbox derived from it, so storing a box too would put the object in the export twice.
+   * The app owes an explanation instead, before the run rather than after.
+   */
+  it('tells a mask run that it also gets boxes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true, prompt_style: 'phrases' } as never,
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+
+    expect(screen.getByText(/segmentation masks/i)).toBeInTheDocument();
+    expect(screen.getByText(/bounding box derived from each mask/i)).toBeInTheDocument();
+  });
+
+  it('tells a detector run it saves boxes', async () => {
+    const user = userEvent.setup();
+    vi.mocked(foundationApi.listFoundations).mockResolvedValue([
+      {
+        id: 'rf-detr-nano',
+        title: 'RF-DETR (nano)',
+        description: 'General detection.',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: false,
+      },
+    ] as never);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+
+    expect(await screen.findByText(/Saves bounding boxes/i)).toBeInTheDocument();
+  });
+
+  it('does not promise masks from a detector', async () => {
+    const user = userEvent.setup();
+    vi.mocked(foundationApi.listFoundations).mockResolvedValue([
+      {
+        id: 'rf-detr-nano',
+        title: 'RF-DETR (nano)',
+        description: 'General detection.',
+        render_hint: 'boxes',
+        installed: true,
+        takes_concept: false,
+      },
+    ] as never);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /general detector/i }));
+    await screen.findByText(/Saves bounding boxes/i);
+
+    expect(screen.queryByText(/segmentation masks/i)).not.toBeInTheDocument();
+  });
+});

@@ -14,6 +14,8 @@ import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
+import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 
 export function AnnotationStudioTab(): JSX.Element {
   const [config, setConfig] = useState<SessionConfig | null>(null);
@@ -24,7 +26,10 @@ export function AnnotationStudioTab(): JSX.Element {
   // Masks are the finer answer and the box is derivable from them, so the box is what you
   // opt into (doc 61). Not "hide the masks" — the two together are how you check that a
   // box is tight.
-  const [showBoxes, setShowBoxes] = useState(false);
+  // Doc 67 replaced a `showBoxes` boolean here. It could express "mask" and "mask + box"
+  // but never "box alone", which is the view for checking extents against a detector.
+  // A preference, not per-image state — it survives moving to the next image.
+  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
   /**
    * Ids hidden by hand, so the image is clear enough to draw on.
    *
@@ -180,7 +185,7 @@ export function AnnotationStudioTab(): JSX.Element {
                 selectedId={selectedId}
                 onBoxesChange={setBoxes}
                 onSelect={setSelectedId}
-                showBoxes={showBoxes || !anySegmented}
+                view={view}
                 disabled={session.busy}
               />
               <BoxReviewList
@@ -206,16 +211,14 @@ export function AnnotationStudioTab(): JSX.Element {
           )}
 
           <div className="studio__viewbar">
-            {anySegmented && (
-              <label className="studio__toggle">
-                <input
-                  type="checkbox"
-                  checked={showBoxes}
-                  onChange={(event) => setShowBoxes(event.target.checked)}
-                />
-                Show bounding boxes
-              </label>
-            )}
+            <AnnotationViewToggle
+              view={view}
+              onChange={setView}
+              hasMasks={anySegmented}
+              hasBoxes={boxes.length > 0}
+              disabled={session.busy}
+              groupName="studio-view"
+            />
 
             {/* Hiding what is already there is what makes drawing on a busy image
                 possible: thirty proposals cover the thing you wanted to add. Nothing is

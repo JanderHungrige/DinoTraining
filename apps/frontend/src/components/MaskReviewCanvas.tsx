@@ -27,6 +27,12 @@ import {
   type ReviewMask,
 } from '../types/annotation';
 import { CompositedMasks } from './overlays/CompositedMasks';
+import {
+  DEFAULT_VIEW,
+  showsBoxes,
+  showsMasks,
+  type AnnotationView,
+} from '../types/annotationView';
 
 export interface MaskReviewCanvasProps {
   readonly imageUrl: string;
@@ -36,6 +42,8 @@ export interface MaskReviewCanvasProps {
   readonly selectedId: string | null;
   readonly onMasksChange: (masks: ReviewMask[]) => void;
   readonly onSelect: (id: string | null) => void;
+  /** Which half to draw (doc 67). A mask proposal carries both, so all three apply. */
+  readonly view?: AnnotationView;
   readonly disabled?: boolean;
 }
 
@@ -56,6 +64,7 @@ export function MaskReviewCanvas({
   selectedId,
   onMasksChange,
   onSelect,
+  view = DEFAULT_VIEW,
   disabled = false,
 }: MaskReviewCanvasProps): JSX.Element {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +112,7 @@ export function MaskReviewCanvas({
         {/* One canvas for all of them, and no ARIA of its own — each mask's button below
             already announces its verdict, concept and score, so a per-canvas label would
             put two entries in the accessibility tree for one mask. */}
+        {showsMasks(view) && (
         <CompositedMasks
           masks={masks.map((mask) => ({
             id: mask.id,
@@ -114,6 +124,7 @@ export function MaskReviewCanvas({
           rendered={rendered}
           selectedId={selectedId}
         />
+        )}
 
         {masks.map((mask) => {
           const rect = toDisplay(mask, rendered);
@@ -123,9 +134,11 @@ export function MaskReviewCanvas({
             <button
               key={mask.id}
               type="button"
+              // The button stays under every view — mask pixels cannot be focused, and
+              // the verdict keys hang off it. What changes is whether its rect is painted.
               className={`canvas__box canvas__box--${mask.label}${
                 selected ? ' canvas__box--selected' : ''
-              } canvas__box--mask`}
+              } canvas__box--mask${showsBoxes(view) ? '' : ' canvas__box--bare'}`}
               style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
               aria-pressed={selected}
               aria-label={`${LABEL_TITLES[mask.label]} mask${
