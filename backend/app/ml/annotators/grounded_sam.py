@@ -28,15 +28,29 @@ logger = logging.getLogger(__name__)
 #: Provenance recorded for every mask this annotator produces. Not `sam3`: the masks came
 #: from a different pipeline under a different licence, and "which masks came from the
 #: ungated path" is a real question when comparing the two.
+#:
+#: **The same value for every tier**, deliberately. It names the pipeline, not the size:
+#: `datasets/schema.py` holds the provenance enum in a SQLite CHECK constraint, so one value
+#: per variant would mean a migration for every future size, and the question provenance
+#: answers is the ungated one — which all three answer identically.
 PROVENANCE = GROUNDED_SAM
 
 
 class GroundedSamAnnotator:
-    """Text concept in, masks and boxes out. Satisfies `MaskAnnotator`."""
+    """Text concept in, masks and boxes out. Satisfies `MaskAnnotator`.
 
-    annotator_id = GROUNDED_SAM
+    One class, three catalogue tiers (doc 27). The sizes differ only in which weights they
+    name, so `annotator_id` is per **instance** — it was a class attribute while a single
+    tier existed, and left that way every tier would report itself as the fast one.
+    """
 
-    def __init__(self, detector_id: str | None = None, segmenter_id: str | None = None) -> None:
+    def __init__(
+        self,
+        annotator_id: str = GROUNDED_SAM,
+        detector_id: str | None = None,
+        segmenter_id: str | None = None,
+    ) -> None:
+        self.annotator_id = annotator_id
         self._detector_id = detector_id
         self._segmenter_id = segmenter_id
 

@@ -6,24 +6,33 @@ initiative: dinotraining
 wave: dinotraining-wave-4
 wave_status: complete
 depends_on: [23-mask-annotator-registry, 22-mask-dataset-store, 04-grounding-dino-annotator]
-relates: [25-expert-annotator, 02-model-manager]
+relates: [25-expert-annotator, 02-model-manager, 65-starter-set]
 source_files:
   - backend/app/ml/segmenter.py
+  - backend/app/ml/registry.py
   - backend/app/ml/annotators/grounded_sam.py
+  - backend/app/ml/annotators/registry.py
   - backend/app/ml/annotators/build.py
+  - backend/app/ml/foundation/registry.py
   - backend/app/api/v1/generate.py
+  - backend/app/api/v1/annotators.py
+  - apps/frontend/src/api/annotators.ts
+  - apps/frontend/src/components/GeneratorSetup.tsx
+  - apps/frontend/src/components/MaskSourceFields.tsx
 routes:
   - POST /api/v1/generate/masks
 models: []
 test_files:
   - backend/tests/test_grounded_sam.py
   - backend/tests/test_generate_masks_api.py
+  - backend/tests/test_annotator_registry.py
+  - apps/frontend/src/components/GeneratorSetup.annotator.test.tsx
 data_flow: reads-existing
-last_synced: 2026-08-19
+last_synced: 2026-08-26
 status: complete
 phase: all
 mdd_version: 11
-tags: [grounded-sam, sam2, grounding-dino, segmentation, coco-rle, mask-annotator]
+tags: [grounded-sam, sam2, grounding-dino, segmentation, coco-rle, mask-annotator, model-variants]
 path: Dataset Generator/Proposals
 integration_contracts:
   - function: build_annotator(annotator_id)
@@ -142,6 +151,57 @@ device error — the `_to_numpy` discipline holding is the point of that observa
 
 This is the first Wave 4 feature whose success path is verified against real weights rather
 than a stub; docs 25 and 26 could not be, because no pretrained detection head exists.
+
+## The three sizes
+
+Both stages are swappable and always were: `GroundedSamAnnotator.__init__` takes a
+`detector_id` and a `segmenter_id`, and both loaders cache per `(model_id, device)` so two
+sizes can be live at once. Until 2026-08-26 nothing passed either, so the capability existed
+and was unreachable.
+
+**Exposed as three named tiers, not as a 2x3 matrix.**
+
+| id | detector | segmenter | download | what it buys |
+|---|---|---|---|---|
+| `grounded-sam` | grounding-dino-tiny | sam2.1-hiera-small | 834 MB | the starter set; fast |
+| `grounded-sam-base` | grounding-dino-base | sam2.1-hiera-base-plus | 1,199 MB | finds more of what you asked for |
+| `grounded-sam-large` | grounding-dino-base | sam2.1-hiera-large | 1,747 MB | the same recall, tighter mask edges |
+
+Two facts set that table's shape. **There is no larger Grounding DINO** — IDEA-Research
+published tiny and base as open weights, and 1.5 / Pro are API-only — so `-large` differs
+from `-base` on the SAM half alone, and the detector column stops at two. And the two halves
+answer different questions: Grounding DINO decides *what is found*, SAM decides *how well it
+is outlined*. SAM cannot outline what the detector missed, which is why recall is the first
+thing to spend a gigabyte on and edge quality the second.
+
+The dominated combinations are omitted rather than hidden. `tiny + large` is the defensible
+one of them — crisp edges on a smaller set of found objects — and anyone who wants it can
+say so; it is one registry row, not a redesign.
+
+### Why a variant is a registry row
+
+`build_annotator` maps an id to an implementation and takes no arguments, so the id is the
+only selector. That is the constraint, and it is the right one: **readiness is a property of
+a set of models**, and a row is what makes "is this ready to run?" answerable. Its builders
+now receive the `AnnotatorSpec` and read the model ids off it, so the pipeline can only ever
+load what the readiness check tested — a builder holding its own model ids would let Admin
+report ready while the annotator loaded something else.
+
+### Provenance stays `grounded-sam` for all three
+
+It names the **pipeline, not the size**. `datasets/schema.py` holds the provenance enum in a
+SQLite CHECK constraint, so a value per variant would need a migration on every future size —
+and the question provenance exists to answer is "which masks came from the ungated path",
+which all three answer the same way. Which tier produced a mask is a run-time choice, not a
+property of the annotation.
+
+### The prompt style is data, not an id comparison
+
+`GeneratorSetup` decided its prompt hint with `annotatorId === GROUNDED_SAM`, which is the
+exact defect doc 23 names — and it fails in the quiet direction: a new variant would have
+silently shown SAM 3's single-concept wording while accepting multi-phrase prompts. The
+trait is now `prompt_style` on the spec (`phrases` for the Grounded SAM tiers, `concept` for
+SAM 3), carried in the `/annotators` payload.
 
 ## Dependencies
 

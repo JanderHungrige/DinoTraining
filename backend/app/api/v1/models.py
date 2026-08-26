@@ -56,6 +56,9 @@ class ModelInfo(BaseModel):
     #: True when the licence forbids commercial use, so the admin panel can say so
     #: *before* the download rather than after. See `35-model-licence-surfacing`.
     non_commercial: bool
+    #: Part of the set a first run needs (doc 65). Surfaced so the admin panel can offer
+    #: them together rather than making a new user work out which five of fifteen matter.
+    starter: bool = False
     #: What redistributing this app with the model installed obliges (doc 54).
     redistribution: str
     #: The obligation in words, empty when there is none. Sent rather than composed
@@ -110,6 +113,7 @@ def _describe(spec: ModelSpec) -> ModelInfo:
         licence_url=licence_url(spec),
         requires_access_request=spec.requires_access_request,
         non_commercial=spec.non_commercial,
+        starter=spec.starter,
         redistribution=spec.redistribution,
         redistribution_note=REDISTRIBUTION_NOTES[spec.redistribution],
         installed=installed,

@@ -210,6 +210,143 @@ body {
   word-break: break-all;
 }
 
+/* The starter set (doc 65). Bordered and above the catalogue, because a fresh install
+   with nothing downloaded is the one state where the tab has a job to do. */
+.starter {
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* Once everything is in, it collapses to one reassuring line rather than a dead panel. */
+.starter--done {
+  border-color: var(--border);
+  background: var(--bg-raised);
+  font-size: 0.88rem;
+}
+
+.starter__title {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.starter__body {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+}
+
+.starter__list {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0 0 0.9rem;
+  padding: 0;
+  list-style: none;
+}
+
+.starter__item {
+  display: grid;
+  grid-template-columns: 1fr auto 4rem;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.83rem;
+}
+
+.starter__id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.starter__size,
+.starter__state {
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.starter__note {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+/* Concept segmenters — pipelines rather than models, which is the whole reason this
+   section exists separately from the catalogue above it. */
+.annot__list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.annot {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-raised);
+}
+
+.annot__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.annot__name {
+  font-weight: 600;
+}
+
+.annot__state {
+  font-size: 0.78rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+.annot__state--on {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.annot__state--off {
+  background: var(--bg);
+  color: var(--text-dim);
+}
+
+.annot__desc {
+  margin: 0.35rem 0 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.annot__parts {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.annot__part {
+  display: grid;
+  grid-template-columns: 1rem 1fr auto auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.annot__gated {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.annot__todo {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+}
+
 .admin__group {
   margin-bottom: 2rem;
 }

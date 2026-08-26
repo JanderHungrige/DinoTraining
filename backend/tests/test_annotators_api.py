@@ -35,9 +35,28 @@ def install(tmp_path: Path, model_id: str) -> None:
 
 
 class TestList:
-    def test_it_lists_both_annotators(self, client: TestClient) -> None:
+    def test_it_lists_every_annotator_ungated_first(self, client: TestClient) -> None:
+        """Order is the catalogue's, and the catalogue puts the open, smallest option
+        first — that is the one a picker opens on and the one the starter set installs."""
         body = client.get("/api/v1/annotators").json()
-        assert [a["id"] for a in body["annotators"]] == ["grounded-sam", "sam3"]
+        assert [a["id"] for a in body["annotators"]] == [
+            "grounded-sam",
+            "grounded-sam-base",
+            "grounded-sam-large",
+            "sam3",
+        ]
+
+    def test_it_reports_how_each_one_wants_its_prompt(self, client: TestClient) -> None:
+        """The UI words its hint from this. It used to compare ids, which was right for one
+        row and would have been quietly wrong for the two tiers added beside it."""
+        body = client.get("/api/v1/annotators").json()
+        styles = {a["id"]: a["prompt_style"] for a in body["annotators"]}
+        assert styles == {
+            "grounded-sam": "phrases",
+            "grounded-sam-base": "phrases",
+            "grounded-sam-large": "phrases",
+            "sam3": "concept",
+        }
 
     def test_nothing_is_ready_on_a_clean_install(self, client: TestClient) -> None:
         body = client.get("/api/v1/annotators").json()

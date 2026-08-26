@@ -157,8 +157,8 @@ describe('GeneratorSetup — annotator choice', () => {
     // so the guidance has to differ per annotator or it is wrong for one of them.
     const user = userEvent.setup();
     vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
-      { id: 'grounded-sam', name: 'Grounded SAM', ready: true } as never,
-      { id: 'sam3', name: 'SAM 3', ready: true } as never,
+      { id: 'grounded-sam', name: 'Grounded SAM', ready: true, prompt_style: 'phrases' } as never,
+      { id: 'sam3', name: 'SAM 3', ready: true, prompt_style: 'concept' } as never,
     ]);
     render(<GeneratorSetup onStart={vi.fn()} />);
     await screen.findByRole('radio', { name: /Bolt finder/ });
@@ -170,5 +170,50 @@ describe('GeneratorSetup — annotator choice', () => {
     await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'sam3');
     expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt');
     expect(screen.getByText(/one concept at a time/i)).toBeInTheDocument();
+  });
+
+  it('keeps the multi-phrase guidance on every Grounded SAM size', async () => {
+    // The guidance used to come from `annotatorId === 'grounded-sam'`, which was right for
+    // exactly one row. The bigger tiers are the same pipeline and take the same prompts, so
+    // an id comparison would have told the user to run phrases one at a time for no reason.
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM (fast)', ready: true, prompt_style: 'phrases' } as never,
+      { id: 'grounded-sam-large', name: 'Grounded SAM (large)', ready: true, prompt_style: 'phrases' } as never,
+    ]);
+    render(<GeneratorSetup onStart={vi.fn()} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'grounded-sam-large');
+
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt. a nut.');
+    expect(screen.getByText(/several phrases separated by full stops/i)).toBeInTheDocument();
+  });
+
+  it('starts the size that was chosen, not the default one', async () => {
+    // The whole point of the tiers: picking `large` must run large. Nothing downstream
+    // would notice if it silently ran the 834 MB pipeline instead.
+    const user = userEvent.setup();
+    vi.mocked(annotatorsApi.listAnnotators).mockResolvedValue([
+      { id: 'grounded-sam', name: 'Grounded SAM (fast)', ready: true, prompt_style: 'phrases' } as never,
+      { id: 'grounded-sam-base', name: 'Grounded SAM (base)', ready: true, prompt_style: 'phrases' } as never,
+    ]);
+    const onStart = vi.fn();
+    render(<GeneratorSetup onStart={onStart} />);
+    await screen.findByRole('radio', { name: /Bolt finder/ });
+
+    await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
+    await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
+    await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'grounded-sam-base');
+    await user.type(screen.getByLabelText(/image folder/i), '/photos');
+    await user.type(screen.getByLabelText(/^concept$/i), 'a bolt');
+    await user.click(screen.getByRole('button', { name: /start generating/i }));
+
+    await waitFor(() =>
+      expect(onStart).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: 'masks', annotatorId: 'grounded-sam-base' }),
+      ),
+    );
   });
 });

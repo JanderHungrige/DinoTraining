@@ -11,7 +11,7 @@
 
 import type { JSX } from 'react';
 
-import type { AnnotatorInfo } from '../api/annotators';
+import type { AnnotatorInfo, PromptStyle } from '../api/annotators';
 import { FieldHint } from './FieldHint';
 import type { GeneratorMode } from './GeneratorModePicker';
 
@@ -22,7 +22,8 @@ export interface MaskSourceFieldsProps {
   readonly onAnnotatorChange: (id: string) => void;
   readonly concept: string;
   readonly onConceptChange: (concept: string) => void;
-  readonly isGroundedSam: boolean;
+  /** Wording for the concept field. Comes from the annotator's catalogue row. */
+  readonly promptStyle: PromptStyle;
 }
 
 export function MaskSourceFields({
@@ -32,7 +33,7 @@ export function MaskSourceFields({
   onAnnotatorChange,
   concept,
   onConceptChange,
-  isGroundedSam,
+  promptStyle,
 }: MaskSourceFieldsProps): JSX.Element | null {
   if (mode !== 'masks') return null;
 
@@ -58,7 +59,7 @@ export function MaskSourceFields({
             <input
               type="text"
               value={concept}
-              placeholder={isGroundedSam ? 'a bolt. a nut.' : 'a bolt'}
+              placeholder={promptStyle === 'phrases' ? 'a bolt. a nut.' : 'a bolt'}
               aria-describedby="concept-hint"
               onChange={(event) => onConceptChange(event.target.value)}
             />
@@ -66,7 +67,7 @@ export function MaskSourceFields({
           {/* `FieldHint` renders outside the label, which is the rule this used to state
               inline — see doc 39 for why it matters to a screen reader. */}
           <FieldHint id="concept-hint">
-            {isGroundedSam
+            {promptStyle === 'phrases'
               ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
               : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
           </FieldHint>

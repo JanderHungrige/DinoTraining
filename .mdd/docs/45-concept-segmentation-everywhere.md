@@ -5,7 +5,7 @@ edition: MDD
 initiative: dinotraining
 wave: dinotraining-wave-7-5
 wave_status: complete
-depends_on: [23-mask-annotator-contract, 36-depth-foundation-model, 42-foundation-boxes-everywhere]
+depends_on: [23-mask-annotator-registry, 36-depth-foundation-model, 42-foundation-boxes-everywhere]
 relates: [37-foundation-model-in-viewer, 41-rf-detr-detector, 20-overlay-registry]
 source_files:
   - backend/app/ml/foundation/concept.py
