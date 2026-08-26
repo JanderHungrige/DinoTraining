@@ -78,11 +78,23 @@ class ModelSpec:
     #:   standard licence and this app should not pretend to summarise it.
     #: * `free` — Apache-2.0 and friends. Ship it.
     redistribution: Redistribution = "free"
+    #: Part of the set a first run needs to be useful (doc 65).
+    #:
+    #: **Not "small" and not "good"** — it is the smallest set that makes every tab do
+    #: something: a backbone for the heads, a detector, both halves of Grounded SAM, and a
+    #: depth model. Anything gated is excluded by definition, because the app cannot
+    #: install it without the user doing something on HuggingFace first.
+    #:
+    #: Declared on the model rather than listed in the admin panel, so "what a new user
+    #: needs" is answered once, next to the models, and the API and the UI cannot disagree
+    #: about it.
+    starter: bool = False
 
 
 _SPECS: tuple[ModelSpec, ...] = (
     ModelSpec(
         id="grounding-dino-tiny",
+        starter=True,
         repo_id="IDEA-Research/grounding-dino-tiny",
         kind="detector",
         family="grounding-dino",
@@ -101,6 +113,7 @@ _SPECS: tuple[ModelSpec, ...] = (
     ),
     ModelSpec(
         id="dinov2-small",
+        starter=True,
         repo_id="facebook/dinov2-small",
         kind="backbone",
         family="dinov2",
@@ -156,6 +169,7 @@ _SPECS: tuple[ModelSpec, ...] = (
     # what makes doc 44's fine-tuning a continuation rather than an exception.
     ModelSpec(
         id="rf-detr-nano",
+        starter=True,
         repo_id="Roboflow/rf-detr-nano",
         kind="detector",
         family="rf-detr",
@@ -196,6 +210,7 @@ _SPECS: tuple[ModelSpec, ...] = (
     # person downloading one is told before the download rather than after.
     ModelSpec(
         id="depth-anything-v2-small",
+        starter=True,
         repo_id="depth-anything/Depth-Anything-V2-Small-hf",
         kind="depth-estimator",
         family="depth-anything",
@@ -232,6 +247,7 @@ _SPECS: tuple[ModelSpec, ...] = (
     ),
     ModelSpec(
         id="sam2.1-hiera-small",
+        starter=True,
         repo_id="facebook/sam2.1-hiera-small",
         kind="segmenter",
         family="sam2",

@@ -47,6 +47,9 @@ export interface ModelInfo {
   readonly requires_access_request: boolean;
   /** True when the licence forbids commercial use. Authoritative — never parsed from `licence`. */
   readonly non_commercial: boolean;
+  /** Part of the set a first run needs (doc 65) — a backbone, a detector, both halves of
+   *  Grounded SAM, and depth. Declared in the catalogue, never decided in the UI. */
+  readonly starter?: boolean;
   /** What redistributing this app with the model installed obliges (doc 54). */
   readonly redistribution: 'free' | 'non-commercial' | 'copyleft' | 'restricted';
   /** The obligation in words, empty when there is none. */

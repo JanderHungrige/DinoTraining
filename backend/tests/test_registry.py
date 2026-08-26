@@ -216,3 +216,84 @@ class TestLicensingIsStatedPerEntry:
         assert spec.licence == "Apache-2.0"
         assert spec.non_commercial is False
 
+
+
+class TestTheStarterSet:
+    """What a first run downloads (doc 65).
+
+    Reported as "there are no preinstalled models", and there cannot be: this set is ~1.1 GB,
+    which is too much for a git clone and several times the whole installer. So the flag does
+    not make anything smaller — it makes the choice for someone who has just cloned the repo
+    and is looking at fifteen models with no way to tell which five matter.
+    """
+
+    def test_it_covers_every_feature_rather_than_every_model(self) -> None:
+        """The set is pinned by id on purpose. Adding a sixth is a size decision — a
+        gigabyte is already a real one on a tether — and it should not happen by someone
+        typing `starter=True` while adding an unrelated model."""
+        starter = {spec.id for spec in all_models() if spec.starter}
+        assert starter == {
+            "dinov2-small",  # the backbone every trained head runs on
+            "rf-detr-nano",  # the general detector, and the one to fine-tune
+            "grounding-dino-tiny",  # half of Grounded SAM
+            "sam2.1-hiera-small",  # the other half
+            "depth-anything-v2-small",
+        }
+
+    def test_grounded_sam_is_starter_as_a_whole_or_not_at_all(self) -> None:
+        """Its two models are useless apart. Marking one and not the other would download
+        658 MB and still leave concept segmentation unavailable — which is the confusing
+        half-installed state this feature exists to remove."""
+        from app.ml.annotators.registry import get_annotator
+
+        grounded = get_annotator("grounded-sam")
+        assert grounded is not None
+        for model_id in grounded.model_ids:
+            spec = get_model(model_id)
+            assert spec is not None and spec.starter, f"{model_id} missing from the starter set"
+
+    def test_nothing_gated_is_in_it(self) -> None:
+        """One click has to actually work. A gated model needs a HuggingFace token and, for
+        SAM 3, an access request approved by hand — so including one turns "download all"
+        into a run that stops partway with a 409 nobody was expecting."""
+        for spec in all_models():
+            if spec.starter:
+                assert not spec.gated, f"{spec.id} is gated and cannot be part of one click"
+                assert not spec.requires_access_request
+
+    def test_it_is_the_smallest_of_its_family(self) -> None:
+        """`-small`/`-nano` throughout: this is the set that makes the app work, not the set
+        that makes it good. Someone who wants base or large can see them in the list."""
+        for spec in all_models():
+            if spec.starter:
+                siblings = [other for other in all_models() if other.family == spec.family]
+                assert spec.approx_size_mb == min(other.approx_size_mb for other in siblings), (
+                    f"{spec.id} is not the smallest {spec.family}"
+                )
+
+    def test_the_download_stays_within_what_a_user_will_sit_through(self) -> None:
+        """A bound, not a target. The panel quotes this figure before the click, and if a
+        catalogue edit doubles it the quote is still honest but the feature is not."""
+        megabytes = sum(spec.approx_size_mb for spec in all_models() if spec.starter)
+        assert 800 < megabytes < 1500, f"starter set is {megabytes} MB"
+
+    def test_it_is_a_fraction_of_the_full_catalogue(self) -> None:
+        # The point of a starter set: ~1.1 GB instead of the ~8 GB everything would cost.
+        full = sum(spec.approx_size_mb for spec in all_models())
+        starter = sum(spec.approx_size_mb for spec in all_models() if spec.starter)
+        assert starter < full / 4
+
+    def test_the_api_reports_the_flag(self) -> None:
+        """The UI reads the set from the catalogue rather than holding a list of its own,
+        so dropping this field from the DTO silently empties the panel."""
+        from fastapi.testclient import TestClient
+
+        from app.main import create_app
+
+        with TestClient(create_app()) as test_client:
+            response = test_client.get("/api/v1/models")
+
+        assert response.status_code == 200
+        by_id = {entry["id"]: entry for entry in response.json()["models"]}
+        assert by_id["dinov2-small"]["starter"] is True
+        assert by_id["dinov2-large"]["starter"] is False
