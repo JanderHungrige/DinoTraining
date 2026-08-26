@@ -79,6 +79,9 @@ pip install -e "backend[dev]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps
+
+# Desktop shell — only if you want the Tauri window. `web` and `backend` do not need it.
+npm install --prefix apps/desktop
 ```
 
 Then run whichever loop you need:
