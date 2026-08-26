@@ -12,6 +12,11 @@ dependencies = [
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
     "python-multipart>=0.0.9",
+    # MCP tool server, mounted on this same app (doc 64). Pure Python and small — the
+    # sidecar's size is torch, not this. Pinned to 2.x: 1.x named the server `FastMCP`
+    # and every call site here would fail to import against it.
+    "mcp>=2.1,<3",
+
     # --- ML ---
     # NOTE: install torch/torchvision per-platform (CUDA/MPS/CPU) — see project-docs.
     "torch>=2.2",
