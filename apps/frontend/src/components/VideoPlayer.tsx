@@ -12,11 +12,11 @@
  * that.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 
-import { fitContain, type RenderedImage } from '../lib/geometry';
-
-import { describeEstimate, estimateSeconds, frameUrl, type SequenceInfo } from '../api/video';
+import { FrameCanvas } from './FrameCanvas';
+import type { RenderedImage } from '../lib/geometry';
+import { describeEstimate, estimateSeconds, type SequenceInfo } from '../api/video';
 import type { SequenceRunState } from '../hooks/useSequenceRun';
 
 export interface VideoPlayerProps {
@@ -39,14 +39,6 @@ export interface VideoPlayerProps {
    *  in the wrong place, which reads as a broken model rather than a layout bug. */
   readonly renderOverlay: (index: number, rendered: RenderedImage) => JSX.Element | null;
 }
-
-/**
- * How many frames to fetch ahead of the one on screen.
- *
- * Enough to cover a slow frame — a decoded video frame is far slower than a folder's file
- * — without asking for a hundred images the viewer may never reach if they pause.
- */
-const PREFETCH_AHEAD = 12;
 
 /** Seconds, when the source has a rate to convert with. */
 function asTime(frames: number, fps: number | null): string {
@@ -79,65 +71,8 @@ export function VideoPlayer({
   // every box collapses to a point in the corner. Found exactly that way, live. A callback
   // ref fires when the node actually attaches, which is the moment there is something to
   // measure.
-  const stageRef = useRef<HTMLDivElement | null>(null);
-  const observerRef = useRef<ResizeObserver | null>(null);
-  const [rendered, setRendered] = useState<RenderedImage>({
-    width: 0,
-    height: 0,
-    offsetX: 0,
-    offsetY: 0,
-    naturalWidth: info.width,
-    naturalHeight: info.height,
-  });
-
-  const measure = useCallback((): void => {
-    const node = stageRef.current;
-    if (!node) return;
-    const box = node.getBoundingClientRect();
-    setRendered(fitContain(box.width, box.height, info.width, info.height));
-  }, [info.width, info.height]);
-
-  const attachStage = useCallback(
-    (node: HTMLDivElement | null): void => {
-      observerRef.current?.disconnect();
-      stageRef.current = node;
-      if (!node) return;
-      measure();
-      if (typeof ResizeObserver === 'undefined') return;
-      const observer = new ResizeObserver(() => measure());
-      observer.observe(node);
-      observerRef.current = observer;
-    },
-    [measure],
-  );
-
-  // The source can change under a mounted stage — a different video, a different size —
-  // and the letterbox with it.
-  useEffect(() => measure(), [measure]);
-  useEffect(() => () => observerRef.current?.disconnect(), []);
-
   const analysedCount = run?.total ?? 0;
   const runStart = run?.start ?? start;
-
-  // **Fetch the next frames before they are needed.**
-  //
-  // Without this, playback did not play: each frame was requested only when the clock
-  // reached it, the request took longer than the frame interval, and the `<img>` never
-  // finished loading before the next `src` replaced it — so the browser kept showing the
-  // last frame that *had* decoded, which is the first one. Measured live: the counter
-  // advanced 1,3,5,7,9,11 while `img.complete` stayed false the whole way.
-  //
-  // `new Image()` rather than a hidden element: the point is to warm the browser's cache,
-  // not to render anything, and the frame route sends a long `max-age` so the real `<img>`
-  // then loads from memory.
-  useEffect(() => {
-    if (analysedCount === 0) return;
-    const ahead = Math.min(PREFETCH_AHEAD, analysedCount - index - 1);
-    for (let offset = 1; offset <= ahead; offset += 1) {
-      const preloaded = new Image();
-      preloaded.src = frameUrl(info.source, runStart + index + offset);
-    }
-  }, [index, analysedCount, runStart, info.source]);
 
   // Clamped the way the backend clamps it, so the estimate describes the run that will
   // actually happen rather than the one that was typed.
@@ -234,16 +169,17 @@ export function VideoPlayer({
             {run.unreadable > 0 && ` · ${run.unreadable} could not be read`}
           </p>
 
-          <div className="player__stage" ref={attachStage}>
-            <img
-              className="player__frame"
-              src={frameUrl(info.source, absolute)}
-              alt={`Frame ${absolute}`}
-              draggable={false}
-              onLoad={measure}
-            />
-            <div className="overlay">{renderOverlay(index, rendered)}</div>
-          </div>
+          <FrameCanvas
+            source={info.source}
+            index={index}
+            runStart={runStart}
+            frames={analysedCount}
+            naturalWidth={info.width}
+            naturalHeight={info.height}
+            generation={run.job_id}
+            label={`Frame ${absolute}`}
+            renderOverlay={(geometry) => renderOverlay(index, geometry)}
+          />
 
           <div className="player__transport">
             <button
