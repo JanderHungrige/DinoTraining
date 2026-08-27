@@ -30,6 +30,7 @@ from app.api.v1 import (
     settings,
     system,
     training,
+    video,
 )
 
 api_router = APIRouter()
@@ -54,3 +55,4 @@ api_router.include_router(dataset_image_masks.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])
 api_router.include_router(prescan.router, tags=["generate"])
+api_router.include_router(video.router, tags=["video"])
