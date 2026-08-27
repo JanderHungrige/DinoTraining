@@ -15,6 +15,7 @@ source_files:
   - apps/frontend/src/api/video.ts
   - apps/frontend/src/hooks/useSequenceRun.ts
   - apps/frontend/src/components/VideoPlayer.tsx
+  - apps/frontend/src/components/SequencePanel.tsx
   - apps/frontend/src/tabs/InferenceViewerTab.tsx
 routes:
   - GET /api/v1/video/probe
@@ -169,6 +170,40 @@ the boxes would still be 12 apart and the whole series would be shifted.
 In the browser, scrubbing 0 → 3 → 6 → 9 moves the box 205 → 256 → 306 → 357 px: 16.9 px per
 frame on screen, against 12 in the source at a letterbox scale of 1.408. The overlay is in
 the same coordinates as the picture.
+
+## Two modes, chosen rather than inferred
+
+The viewer offers **A single image** and **A video or a folder** as two buttons, the same
+shape the Training tab uses. The player used to appear on its own whenever a path happened
+to probe as playable, which meant a folder could not be stepped through image by image
+without the player also being there — two surfaces for one source, neither of them chosen.
+
+## Why playback did not play
+
+Reported as *"the video is not really playing, more the initial image"*, on a folder.
+
+The clock was fine and the index advanced. What did not happen was **loading**: each frame
+was requested only when the clock reached it, a request took ~120 ms, and the frame interval
+at 10 fps is 100 ms — so the `<img>`'s `src` was replaced before it had finished decoding,
+every time, and the browser went on showing the last frame that *had* decoded. Measured in
+the running app: the counter advanced 1, 3, 5, 7, 9, 11 while `img.complete` was `false` on
+every single sample.
+
+Two fixes, and both were needed:
+
+**A folder frame is a file, so it is sent as one.** Decoding it with PIL and re-encoding it
+as PNG was pure cost: ~120 ms and ~320 KB per frame. `FileResponse` is **~8 ms**, measured.
+A video frame still has to be encoded, and goes out as JPEG rather than PNG — the source was
+lossy already, so PNG spends two to three times the bytes preserving detail the codec never
+recorded.
+
+**Frames are fetched ahead of the clock.** The player preloads the next twelve, which is
+what makes this robust rather than merely faster: a video frame is slower than a folder's
+file no matter what the encoder does, and a fix that only works when frames are cheap is a
+fix that breaks again on the next 4K clip.
+
+Verified after: 26 distinct frames displayed over four seconds, running frame 1 to 38, with
+`img.complete` false **zero** times.
 
 ## Known Issues
 

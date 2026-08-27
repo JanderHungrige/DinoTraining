@@ -40,6 +40,14 @@ export interface VideoPlayerProps {
   readonly renderOverlay: (index: number, rendered: RenderedImage) => JSX.Element | null;
 }
 
+/**
+ * How many frames to fetch ahead of the one on screen.
+ *
+ * Enough to cover a slow frame — a decoded video frame is far slower than a folder's file
+ * — without asking for a hundred images the viewer may never reach if they pause.
+ */
+const PREFETCH_AHEAD = 12;
+
 /** Seconds, when the source has a rate to convert with. */
 function asTime(frames: number, fps: number | null): string {
   return fps ? `${(frames / fps).toFixed(1)}s` : `${frames} frames`;
@@ -108,6 +116,29 @@ export function VideoPlayer({
   useEffect(() => measure(), [measure]);
   useEffect(() => () => observerRef.current?.disconnect(), []);
 
+  const analysedCount = run?.total ?? 0;
+  const runStart = run?.start ?? start;
+
+  // **Fetch the next frames before they are needed.**
+  //
+  // Without this, playback did not play: each frame was requested only when the clock
+  // reached it, the request took longer than the frame interval, and the `<img>` never
+  // finished loading before the next `src` replaced it — so the browser kept showing the
+  // last frame that *had* decoded, which is the first one. Measured live: the counter
+  // advanced 1,3,5,7,9,11 while `img.complete` stayed false the whole way.
+  //
+  // `new Image()` rather than a hidden element: the point is to warm the browser's cache,
+  // not to render anything, and the frame route sends a long `max-age` so the real `<img>`
+  // then loads from memory.
+  useEffect(() => {
+    if (analysedCount === 0) return;
+    const ahead = Math.min(PREFETCH_AHEAD, analysedCount - index - 1);
+    for (let offset = 1; offset <= ahead; offset += 1) {
+      const preloaded = new Image();
+      preloaded.src = frameUrl(info.source, runStart + index + offset);
+    }
+  }, [index, analysedCount, runStart, info.source]);
+
   // Clamped the way the backend clamps it, so the estimate describes the run that will
   // actually happen rather than the one that was typed.
   const planned = Math.max(0, Math.min(count, info.frames - start));
@@ -116,8 +147,7 @@ export function VideoPlayer({
     [planned, foundationIds, headCount],
   );
 
-  const analysed = run?.total ?? 0;
-  const absolute = (run?.start ?? start) + index;
+  const absolute = runStart + index;
   const nothingSelected = foundationIds.length === 0 && headCount === 0;
 
   return (
@@ -228,7 +258,7 @@ export function VideoPlayer({
               className="player__scrub"
               type="range"
               min={0}
-              max={Math.max(0, analysed - 1)}
+              max={Math.max(0, analysedCount - 1)}
               value={index}
               aria-label="Frame"
               onChange={(event) => {

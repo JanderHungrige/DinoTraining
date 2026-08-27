@@ -12,7 +12,7 @@ import io
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.api.v1.inference import PredictionResponse, describe
@@ -94,12 +94,30 @@ async def probe_source(path: str = Query(min_length=1)) -> SequenceInfo:
     )
 
 
-@router.get("/video/frame", summary="One frame of a folder or video, as PNG")
+@router.get("/video/frame", summary="One frame of a folder or video")
 async def get_frame(
     path: str = Query(min_length=1), index: int = Query(ge=0)
-) -> StreamingResponse:
+) -> Response:
     """The webview cannot load file:// URLs, and a video frame has no file at all."""
     sequence = _open(path)
+    if not 0 <= index < sequence.frames:
+        raise HTTPException(
+            status_code=404, detail=f"Frame {index} is outside 0..{sequence.frames - 1}"
+        )
+
+    # Frames are immutable for a given (path, index), so let the webview keep them —
+    # scrubbing backwards is otherwise a re-fetch, and for a video a re-decode, per frame.
+    cacheable = {"Cache-Control": "private, max-age=3600"}
+
+    # **A folder frame is already a file: send it.** Decoding it with PIL and re-encoding
+    # it as PNG cost ~120 ms and ~320 KB per frame, which is more than the 100 ms budget a
+    # 10 fps playback has — so the `<img>` never finished loading before the next frame was
+    # asked for, and the browser kept showing the last one that had. Measured live: the
+    # index advanced 1,3,5,7,9,11 while `img.complete` stayed false throughout, which looks
+    # exactly like playback not working at all.
+    if sequence.kind == "folder":
+        return FileResponse(sequence.paths[index], headers=cacheable)
+
     try:
         image = frame_image(sequence, index)
     except IndexError as error:
@@ -108,15 +126,12 @@ async def get_frame(
         raise HTTPException(status_code=415, detail=str(error)) from None
 
     buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
+    # JPEG, not PNG: a video frame came from a lossy codec already, so PNG spends two to
+    # three times the bytes preserving detail the source never had. The overlays are drawn
+    # in the browser and are unaffected.
+    image.save(buffer, format="JPEG", quality=88)
     buffer.seek(0)
-    # Frames are immutable for a given (path, index), so let the webview keep them —
-    # scrubbing backwards over a decoded video is otherwise a re-decode per frame.
-    return StreamingResponse(
-        buffer,
-        media_type="image/png",
-        headers={"Cache-Control": "private, max-age=3600"},
-    )
+    return StreamingResponse(buffer, media_type="image/jpeg", headers=cacheable)
 
 
 def _describe(run: SequenceRun, since: int, until: int) -> SequenceRunResponse:

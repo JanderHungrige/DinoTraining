@@ -145,6 +145,36 @@ class TestFrame:
         )
         assert response.status_code == 404
 
+    def test_a_folder_frame_is_sent_as_the_file_itself(
+        self, client: TestClient, folder: Path
+    ) -> None:
+        """Reported as "the video is not really playing, more the initial image".
+
+        Decoding a folder image and re-encoding it as PNG cost ~120 ms a frame, which is
+        more than the whole budget 10 fps playback has — so the `<img>` never finished
+        loading before the next frame replaced its `src`, and the browser kept showing the
+        last frame that had decoded. Measured live: the counter advanced 1,3,5,7,9,11 while
+        `img.complete` stayed false throughout. Sending the file is ~8 ms.
+        """
+        response = client.get(
+            "/api/v1/video/frame", params={"path": str(folder), "index": 2}
+        )
+
+        assert response.status_code == 200
+        assert response.content == (folder / "f02.png").read_bytes()
+
+    def test_a_video_frame_is_jpeg_rather_than_png(
+        self, client: TestClient, clip: Path
+    ) -> None:
+        """A video frame has no file to send, so it is encoded — as JPEG, because the
+        source was lossy already and PNG spends two to three times the bytes preserving
+        detail the codec never recorded. Overlays are drawn in the browser regardless."""
+        response = client.get(
+            "/api/v1/video/frame", params={"path": str(clip), "index": 1}
+        )
+
+        assert response.headers["content-type"] == "image/jpeg"
+
     def test_frames_are_cacheable(self, client: TestClient, clip: Path) -> None:
         """A given (path, index) is immutable, and scrubbing backwards over a video is
         otherwise a full re-decode per frame."""
