@@ -16,15 +16,34 @@ import { HeadRunPanel } from '../components/HeadRunPanel';
 import { ImageSourcePicker } from '../components/ImageSourcePicker';
 import { SideBySideViewer } from '../components/SideBySideViewer';
 import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { SequencePanel } from '../components/SequencePanel';
 import { renderOverlayFor } from '../components/overlays/registry';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
 import { useImageSource } from '../hooks/useImageSource';
-import { useSequenceRun } from '../hooks/useSequenceRun';
-import { VideoPlayer } from '../components/VideoPlayer';
-import { DEFAULT_FPS, probeSequence, type SequenceInfo } from '../api/video';
+
+/** The two things this tab does. Same shape as the Training tab's switch. */
+const MODES = [
+  {
+    id: 'image' as const,
+    name: 'A single image',
+    hint: 'One picture, every selected model, side by side.',
+  },
+  {
+    id: 'video' as const,
+    name: 'A video or a folder',
+    hint: 'Analyse a range of frames once, then play it back with the annotations.',
+  },
+];
+
+type ViewerMode = (typeof MODES)[number]['id'];
 
 export function InferenceViewerTab(): JSX.Element {
+  // Explicit rather than inferred from what the path turns out to be. The player used to
+  // appear on its own whenever a folder probed as playable, which meant a folder could not
+  // be stepped through image by image without the player also being there — two surfaces
+  // for one source, neither of them chosen.
+  const [mode, setMode] = useState<ViewerMode>('image');
   const [path, setPath] = useState<string | null>(null);
   // Read from the image itself rather than from any prediction: the tiling hint has to be
   // available *before* a run, which is exactly when there is no prediction to ask.
@@ -38,34 +57,6 @@ export function InferenceViewerTab(): JSX.Element {
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const source = useImageSource(path, datasetId);
 
-  // --- playback (doc 68) --------------------------------------------------------
-  // `null` until the path turns out to be something playable. A single image is not, and
-  // asking it to play would be offering a control that cannot do anything.
-  const [sequence, setSequence] = useState<SequenceInfo | null>(null);
-  const [rangeStart, setRangeStart] = useState(0);
-  const [rangeCount, setRangeCount] = useState(60);
-  const [playFps, setPlayFps] = useState(DEFAULT_FPS);
-  const playback = useSequenceRun(playFps);
-
-  useEffect(() => {
-    if (!path) {
-      setSequence(null);
-      return;
-    }
-    const controller = new AbortController();
-    void probeSequence(path, controller.signal)
-      .then((info) => {
-        if (controller.signal.aborted) return;
-        setSequence(info);
-        // A folder has no rate of its own, so the player counts at its own default rather
-        // than at a number invented for the folder.
-        setPlayFps(Math.round(info.fps ?? DEFAULT_FPS));
-      })
-      // Not an error: a single image probes as unplayable, which is simply the answer.
-      .catch(() => setSequence(null));
-    return () => controller.abort();
-  }, [path]);
-
   useEffect(() => {
     const controller = new AbortController();
     void listDatasets(controller.signal)
@@ -73,6 +64,7 @@ export function InferenceViewerTab(): JSX.Element {
       .catch(() => setDatasets([]));
     return () => controller.abort();
   }, []);
+
   const { current } = source;
   // The hook needs to know which image is on screen, or a result outlives the image it
   // describes — doc 21's stale-result bug.
@@ -87,6 +79,26 @@ export function InferenceViewerTab(): JSX.Element {
         Point at a single image or a folder, pick one or more heads, and compare the
         original against what they predicted.
       </p>
+
+      <fieldset className="modeswitch">
+        <legend className="modeswitch__legend">What to look at</legend>
+        {MODES.map((entry) => (
+          <label
+            key={entry.id}
+            className={`modeswitch__option${mode === entry.id ? ' modeswitch__option--on' : ''}`}
+          >
+            <input
+              type="radio"
+              name="viewer-mode"
+              value={entry.id}
+              checked={mode === entry.id}
+              onChange={() => setMode(entry.id)}
+            />
+            <span className="modeswitch__name">{entry.name}</span>
+            <span className="modeswitch__hint">{entry.hint}</span>
+          </label>
+        ))}
+      </fieldset>
 
       <ImageSourcePicker
         onPick={(picked) => {
@@ -105,45 +117,14 @@ export function InferenceViewerTab(): JSX.Element {
 
       {/* Doc 68. Offered only when the source is a sequence — a single image probes as
           unplayable, and a play button that cannot play is worse than none. */}
-      {sequence && sequence.frames > 1 && (
-        <VideoPlayer
-          info={sequence}
-          state={playback}
-          start={rangeStart}
-          count={rangeCount}
-          fps={playFps}
-          onStartChange={setRangeStart}
-          onCountChange={setRangeCount}
-          onFpsChange={setPlayFps}
+      {mode === 'video' && (
+        <SequencePanel
+          path={path}
+          view={view}
           foundationIds={run.selectedFoundations}
-          headCount={run.selected.length}
-          onRun={() =>
-            void playback.start({
-              source: sequence.source,
-              start: rangeStart,
-              count: rangeCount,
-              backboneId: run.backboneId ?? '',
-              instanceIds: run.selected,
-              foundationIds: run.selectedFoundations,
-              concept: run.concept,
-              scoreThreshold: 0.3,
-            })
-          }
-          renderOverlay={(index, rendered) => {
-            const frame = playback.byFrame.get(index);
-            if (!frame || frame.length === 0) return null;
-            // Every prediction for the frame, stacked — the same thing the single-image
-            // panes show side by side, which is what keeps the two surfaces agreeing.
-            return (
-              <>
-                {frame.map((prediction) => (
-                  <div key={prediction.instance_id} className="overlay">
-                    {renderOverlayFor(prediction, rendered, view)}
-                  </div>
-                ))}
-              </>
-            );
-          }}
+          instanceIds={run.selected}
+          backboneId={run.backboneId ?? ''}
+          concept={run.concept}
         />
       )}
 
@@ -172,13 +153,15 @@ export function InferenceViewerTab(): JSX.Element {
         imageWidth={imageWidth}
       />
 
-      {!current && !source.loading && (
+      {mode === 'image' && !current && !source.loading && (
         <p role="status" className="studio__hint">
           Pick an image or a folder above to run the selected head{run.selected.length === 1 ? '' : 's'}.
         </p>
       )}
 
-      {current && (
+      {/* One surface at a time. Showing the single-image panes under the player would run
+          the same models twice over the same pixels and invite comparing the two. */}
+      {mode === 'image' && current && (
         <>
           <p className="studio__path" title={current.path}>
             {current.name} — {source.index + 1} of {source.items.length}
