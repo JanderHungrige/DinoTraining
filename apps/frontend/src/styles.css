@@ -638,6 +638,98 @@ body {
 /* Doc 67 — the "what am I looking at" control, shared by all three review surfaces.
    Inline rather than stacked: it sits in a view bar beside other small controls, and a
    vertical radio list there reads as a form rather than as a switch. */
+/* --- Video playback (doc 68) --- */
+.player {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 0.9rem;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.player__range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+}
+
+.player__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.player__field input {
+  width: 8rem;
+}
+
+.player__estimate,
+.player__progress {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.player__hint {
+  color: var(--text-dim);
+  opacity: 0.8;
+}
+
+.player__error {
+  margin: 0;
+  color: var(--danger, #c0392b);
+  font-size: 0.85rem;
+}
+
+.player__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+/* The frame and its overlays share one positioned box, so an overlay's coordinates and
+   the picture's are the same coordinates. */
+.player__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--surface-sunken, #000);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.player__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* The overlays above are the interactive layer; the picture never swallows a click. */
+  pointer-events: none;
+}
+
+.player__transport {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.player__scrub {
+  flex: 1;
+}
+
+.player__counter {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .viewtoggle {
   display: flex;
   align-items: center;

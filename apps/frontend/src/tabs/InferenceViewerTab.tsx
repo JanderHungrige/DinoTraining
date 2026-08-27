@@ -20,6 +20,9 @@ import { renderOverlayFor } from '../components/overlays/registry';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
 import { useImageSource } from '../hooks/useImageSource';
+import { useSequenceRun } from '../hooks/useSequenceRun';
+import { VideoPlayer } from '../components/VideoPlayer';
+import { DEFAULT_FPS, probeSequence, type SequenceInfo } from '../api/video';
 
 export function InferenceViewerTab(): JSX.Element {
   const [path, setPath] = useState<string | null>(null);
@@ -34,6 +37,34 @@ export function InferenceViewerTab(): JSX.Element {
   const [datasetId, setDatasetId] = useState<string | null>(null);
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const source = useImageSource(path, datasetId);
+
+  // --- playback (doc 68) --------------------------------------------------------
+  // `null` until the path turns out to be something playable. A single image is not, and
+  // asking it to play would be offering a control that cannot do anything.
+  const [sequence, setSequence] = useState<SequenceInfo | null>(null);
+  const [rangeStart, setRangeStart] = useState(0);
+  const [rangeCount, setRangeCount] = useState(60);
+  const [playFps, setPlayFps] = useState(DEFAULT_FPS);
+  const playback = useSequenceRun(playFps);
+
+  useEffect(() => {
+    if (!path) {
+      setSequence(null);
+      return;
+    }
+    const controller = new AbortController();
+    void probeSequence(path, controller.signal)
+      .then((info) => {
+        if (controller.signal.aborted) return;
+        setSequence(info);
+        // A folder has no rate of its own, so the player counts at its own default rather
+        // than at a number invented for the folder.
+        setPlayFps(Math.round(info.fps ?? DEFAULT_FPS));
+      })
+      // Not an error: a single image probes as unplayable, which is simply the answer.
+      .catch(() => setSequence(null));
+    return () => controller.abort();
+  }, [path]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,6 +102,50 @@ export function InferenceViewerTab(): JSX.Element {
           setDatasetId(picked || null);
         }}
       />
+
+      {/* Doc 68. Offered only when the source is a sequence — a single image probes as
+          unplayable, and a play button that cannot play is worse than none. */}
+      {sequence && sequence.frames > 1 && (
+        <VideoPlayer
+          info={sequence}
+          state={playback}
+          start={rangeStart}
+          count={rangeCount}
+          fps={playFps}
+          onStartChange={setRangeStart}
+          onCountChange={setRangeCount}
+          onFpsChange={setPlayFps}
+          foundationIds={run.selectedFoundations}
+          headCount={run.selected.length}
+          onRun={() =>
+            void playback.start({
+              source: sequence.source,
+              start: rangeStart,
+              count: rangeCount,
+              backboneId: run.backboneId ?? '',
+              instanceIds: run.selected,
+              foundationIds: run.selectedFoundations,
+              concept: run.concept,
+              scoreThreshold: 0.3,
+            })
+          }
+          renderOverlay={(index, rendered) => {
+            const frame = playback.byFrame.get(index);
+            if (!frame || frame.length === 0) return null;
+            // Every prediction for the frame, stacked — the same thing the single-image
+            // panes show side by side, which is what keeps the two surfaces agreeing.
+            return (
+              <>
+                {frame.map((prediction) => (
+                  <div key={prediction.instance_id} className="overlay">
+                    {renderOverlayFor(prediction, rendered, view)}
+                  </div>
+                ))}
+              </>
+            );
+          }}
+        />
+      )}
 
       {source.error && (
         <p className="admin__error" role="alert">

@@ -27,10 +27,11 @@ test_files:
   - backend/tests/test_video_decode.py
   - backend/tests/test_video_sequence.py
   - backend/tests/test_video_api.py
+  - apps/frontend/src/api/video.test.ts
   - apps/frontend/src/components/VideoPlayer.test.tsx
 data_flow: reads-existing
 last_synced: 2026-08-27
-status: draft
+status: complete
 phase: all
 mdd_version: 11
 tags: [video, playback, inference-viewer, frame-sequence, prepass, pyav, osdar23]
@@ -152,6 +153,22 @@ range-checked against the probe rather than trusted.
 - **No export.** The run is for looking at. Saving a sequence into a dataset is what the
   Dataset Generator does, and it works frame by frame.
 - **No audio.** Nothing here needs it.
+
+## Verified end to end
+
+A 40-frame clip in which a circle moves **12 px per frame**, run through Grounding DINO:
+
+| frame | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+|---|---|---|---|---|---|---|---|---|
+| box x | 39 | 51 | 63 | 75 | 87 | 99 | 111 | 123 |
+
+Exactly +12 per frame, starting at the true position for frame 0. That is the doc's central
+claim measured rather than asserted: if frames and predictions were misaligned by even one,
+the boxes would still be 12 apart and the whole series would be shifted.
+
+In the browser, scrubbing 0 → 3 → 6 → 9 moves the box 205 → 256 → 306 → 357 px: 16.9 px per
+frame on screen, against 12 in the source at a letterbox scale of 1.408. The overlay is in
+the same coordinates as the picture.
 
 ## Known Issues
 
