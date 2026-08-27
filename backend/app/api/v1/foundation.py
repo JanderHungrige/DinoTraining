@@ -24,11 +24,10 @@ from app.ml.foundation.build import (
     build_foundation,
     forget_foundation,
 )
-from app.ml.foundation.concept import ConceptSegmenter
-from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
+from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD
 from app.ml.foundation.instances import FoundationInstance, FoundationInstanceStore
-from app.ml.foundation.prompt_detect import PromptedDetector
 from app.ml.foundation.registry import FoundationSpec, all_foundations, get_foundation
+from app.ml.foundation.run import predict_with
 from app.ml.images import ImageReadError, read_image
 from app.ml.inference.results import Prediction
 from app.ml.registry import get_model
@@ -90,16 +89,11 @@ def _run(
     concept as well, and a depth map has nothing to threshold. A uniform signature would
     mean two of the three accepting an argument they ignore.
     """
-    # Grounding DINO joins the concept branch rather than the detector one: it returns
-    # boxes like RF-DETR but is *prompted* like a segmenter, and the two axes are
-    # independent (doc 66). Sending it down the RF-DETR branch would drop the concept
-    # silently — the call succeeds, the model runs on an empty prompt, and the answer is
-    # an empty box list that looks exactly like "nothing matched".
-    if isinstance(model, ConceptSegmenter | PromptedDetector):
-        return model.predict(image, request.concept, request.score_threshold)
-    if isinstance(model, RfDetrModel):
-        return model.predict(image, request.score_threshold)
-    return model.predict(image)
+    # One capability check for every caller, shared with the sequence runner (doc 68).
+    # Grounding DINO belongs to the concept branch: it returns boxes like RF-DETR but is
+    # *prompted* like a segmenter, and sending it down the detector branch would drop the
+    # concept silently — a successful call over an empty prompt, answering nothing.
+    return predict_with(model, image, request.concept, request.score_threshold)
 
 
 def _describe(spec_id: str) -> FoundationInfo:
