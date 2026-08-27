@@ -1,7 +1,7 @@
 ---
-generated: 2026-08-26
-doc_count: 68
-connection_count: 155
+generated: 2026-08-27
+doc_count: 69
+connection_count: 159
 overlap_count: 103
 ---
 
@@ -92,6 +92,9 @@ Inference Viewer/Foundation models
 
 Inference Viewer/Picker
 └── 52-dataset-filter  complete
+
+Inference Viewer/Playback
+└── 68-video-playback  complete
 
 Inference Viewer/Tiling
 └── 62-tiled-inference  complete
@@ -246,6 +249,7 @@ graph LR
   65_starter_set["65-starter-set"]:::complete
   66_prompted_detection_everywhere["66-prompted-detection-everywhere"]:::complete
   67_annotation_view_and_output["67-annotation-view-and-output"]:::complete
+  68_video_playback["68-video-playback"]:::complete
   01_app_shell --> 02_model_manager
   01_app_shell --> 03_dataset_store
   02_model_manager --> 04_grounding_dino_annotator
@@ -401,6 +405,10 @@ graph LR
   28_mask_review_ui --> 67_annotation_view_and_output
   45_concept_segmentation_everywhere --> 67_annotation_view_and_output
   61_studio_mask_review --> 67_annotation_view_and_output
+  16_inference_engine --> 68_video_playback
+  17_image_input_source --> 68_video_playback
+  18_multi_head_compose --> 68_video_playback
+  53_prescan --> 68_video_playback
   classDef complete fill:#00e5cc,color:#000
   classDef in_progress fill:#ffaa00,color:#000
   classDef draft fill:#888,color:#fff
@@ -459,7 +467,7 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/frontend/src/tabs/ApiTab.tsx` — 63-agent-api-guide, 64-mcp-server
 - `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` — 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 47-box-review-list, 53-prescan
 - `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui, 44-finetune-rf-detr, 48-dataset-format-guide
-- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront, 67-annotation-view-and-output
+- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront, 67-annotation-view-and-output, 68-video-playback
 - `apps/frontend/src/tabs/LibraryTab.tsx` — 51-library-tab, 54-distribution-licensing
 - `apps/frontend/src/tabs/introContent.ts` — 38-intro-tab, 51-library-tab
 - `apps/frontend/src/tabs/tabs.ts` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 64-mcp-server

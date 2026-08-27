@@ -30,6 +30,14 @@ dependencies = [
     # never touches it. Verified against numpy 2.5 and torch 2.13, unlike the
     # `depth-anything-3` package Wave 6 rejected for pinning numpy<2.
     "scipy>=1.11",
+    # --- Video (doc 68) ---
+    # Decoding an mp4 into frames. PyAV rather than opencv or imageio because its wheels
+    # bundle the ffmpeg libraries, so playback does not become a system-ffmpeg prerequisite
+    # the installer cannot satisfy. torchvision is not an option: its video APIs were
+    # removed before 0.28, which is the version this app pins.
+    #
+    # Costs roughly 35 MB in the sidecar, against doc 56's measured 636 MB.
+    "av>=13",
     # --- Data / metadata ---
     # SQLite via stdlib; SQLAlchemy optional if the store grows.
 ]
