@@ -708,6 +708,8 @@ body {
   inset: 0;
   width: 100%;
   height: 100%;
+  /* `contain`, matching `fitContain` in the overlay geometry — the two must agree or every
+     box is offset by the letterbox. */
   object-fit: contain;
   /* The overlays above are the interactive layer; the picture never swallows a click. */
   pointer-events: none;

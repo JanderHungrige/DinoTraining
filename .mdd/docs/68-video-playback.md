@@ -16,6 +16,8 @@ source_files:
   - apps/frontend/src/hooks/useSequenceRun.ts
   - apps/frontend/src/components/VideoPlayer.tsx
   - apps/frontend/src/components/SequencePanel.tsx
+  - apps/frontend/src/components/FrameCanvas.tsx
+  - apps/desktop/src-tauri/tauri.conf.json
   - apps/frontend/src/tabs/InferenceViewerTab.tsx
 routes:
   - GET /api/v1/video/probe
@@ -197,13 +199,29 @@ A video frame still has to be encoded, and goes out as JPEG rather than PNG — 
 lossy already, so PNG spends two to three times the bytes preserving detail the codec never
 recorded.
 
-**Frames are fetched ahead of the clock.** The player preloads the next twelve, which is
-what makes this robust rather than merely faster: a video frame is slower than a folder's
-file no matter what the encoder does, and a fix that only works when frames are cheap is a
-fix that breaks again on the next 4K clip.
+**Frames are decoded ahead of the clock, into a cache, and painted to a canvas.** The
+player holds the next twelve as decoded `Image` objects and draws the current one with
+`drawImage`.
 
-Verified after: 26 distinct frames displayed over four seconds, running frame 1 to 38, with
-`img.complete` false **zero** times.
+Prefetching alone was not enough, and the reason is the point: whether a half-loaded
+`<img>` shows the old frame, the new one or nothing is the engine's choice, and this project
+has already been caught by exactly that difference between the dev browser and the packaged
+WebKit. `drawImage` is synchronous — what is on screen is the frame that was asked for, or
+the previous one deliberately held, never whichever the loader happened to finish.
+
+**No `crossOrigin` on those images.** The canvas is therefore tainted and its pixels cannot
+be read back, which costs nothing because nothing reads them. Setting it costs a great deal:
+a CORS request for a URL already in the HTTP cache from a non-CORS fetch fails outright,
+`Vary: Origin` notwithstanding. Measured while verifying this — every prefetch came back
+`net::ERR_FAILED` while the identical URLs had returned 200 moments earlier, and the canvas
+stayed blank. It was added only so a test probe could read pixels, which is the tail wagging
+the dog.
+
+**The packaged app's CSP did not allow the frames at all.** `img-src` listed `'self'`,
+`asset:`, `data:` and `blob:` — not `http://127.0.0.1:8756`, where every frame comes from.
+`tauri dev` serves the page from Vite and never applies that CSP, so this was invisible in
+development and would have blocked every frame in an installed build. `connect-src` already
+named the sidecar; `img-src` now does too.
 
 ## Known Issues
 

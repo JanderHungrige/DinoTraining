@@ -161,9 +161,13 @@ describe('watching it', () => {
   it('shows the frame at the run\'s own offset', () => {
     // The player counts from 0; the source counts from `run.start`. Confusing the two puts
     // frame 0's picture under frame 200's boxes.
+    //
+    // Queried by role rather than by alt text: the picture is a `<canvas>` now, painted
+    // from a decode cache instead of an `<img>` whose src is swapped on a clock. The
+    // property is the same — which frame this claims to be.
     renderPlayer({ run: runOf({ start: 200 }), index: 3, byFrame: analysed });
 
-    expect(screen.getByAltText('Frame 203')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Frame 203' })).toBeInTheDocument();
   });
 
   it('draws the overlay over the frame', () => {
