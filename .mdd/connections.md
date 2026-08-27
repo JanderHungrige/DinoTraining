@@ -424,7 +424,7 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/desktop/src-tauri/capabilities/default.json` — 01-app-shell, 59-reveal-dataset-folder
 - `apps/desktop/src-tauri/src/lib.rs` — 01-app-shell, 56-sidecar-bundling, 58-installers, 59-reveal-dataset-folder
 - `apps/desktop/src-tauri/src/sidecar.rs` — 01-app-shell, 56-sidecar-bundling, 57-gpu-support-download, 58-installers
-- `apps/desktop/src-tauri/tauri.conf.json` — 01-app-shell, 56-sidecar-bundling
+- `apps/desktop/src-tauri/tauri.conf.json` — 01-app-shell, 56-sidecar-bundling, 68-video-playback
 - `apps/desktop/src-tauri/tauri.release.conf.json` — 57-gpu-support-download, 58-installers
 - `apps/frontend/src/App.tsx` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide
 - `apps/frontend/src/api/annotators.ts` — 27-grounded-sam-annotator, 28-mask-review-ui
