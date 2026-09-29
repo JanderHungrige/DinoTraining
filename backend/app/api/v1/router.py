@@ -30,6 +30,7 @@ from app.api.v1 import (
     prep_audit,
     prep_fixes,
     prep_intake,
+    prep_split,
     prescan,
     settings,
     system,
@@ -66,3 +67,4 @@ api_router.include_router(video_extract.router, tags=["video"])
 api_router.include_router(prep_audit.router, tags=["prepare-data"])
 api_router.include_router(prep_intake.router, tags=["prepare-data"])
 api_router.include_router(prep_fixes.router, tags=["prepare-data"])
+api_router.include_router(prep_split.router, tags=["prepare-data"])

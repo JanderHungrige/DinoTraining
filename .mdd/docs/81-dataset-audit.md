@@ -115,7 +115,7 @@ unexplained.
 |---|---|---|
 | Chess pieces (289) | RF-DETR nano | **problem:** class `bishop` has **1** example, next to `black-bishop` and `white-bishop`, which is almost certainly a mislabel in the source data. **problem:** 659× imbalance, from the same cause. **warn:** 13 real copies, one checked by eye (same white knight, same square, same box). **info:** 271 images in 25 shared scenes. |
 | Blood cells (364) | DINOv2 detection head | **warn:** 12× imbalance (RBC 4,153 vs platelets 361) |
-| Wave 9 autoplay check (50) | RF-DETR nano | **warn:** only 50 images. **info:** 33 frames in 4 shared scenes |
+| Wave 9 autoplay check (50) | RF-DETR nano | **warn:** only 50 images. **info:** 33 frames in 4 shared scenes (re-audited 19:25; an earlier stored report had none, see doc 84) |
 
 The same chess audit over HTTP ran as a job through 289 of 289 images, with identical
 findings.

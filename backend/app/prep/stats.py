@@ -22,6 +22,9 @@ class ImageFacts:
     width: int
     height: int
     sequence: str | None
+    frame_index: int | None = None
+    #: The split already stored for this image: from an import (doc 82) or doc 84.
+    split: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +118,7 @@ def collect(
     mapping = class_map or {}
     with transaction(settings) as connection:
         images = connection.execute(
-            "SELECT id, path, width, height, sequence FROM images i"
+            "SELECT id, path, width, height, sequence, frame_index, split FROM images i"
             f" WHERE dataset_id = ? AND {_INCLUDED} ORDER BY id",
             (dataset_id,),
         ).fetchall()
@@ -134,6 +137,8 @@ def collect(
                 width=int(row["width"]),
                 height=int(row["height"]),
                 sequence=row["sequence"],
+                frame_index=row["frame_index"],
+                split=row["split"],
             )
             for row in images
         ],
