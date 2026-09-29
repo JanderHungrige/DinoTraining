@@ -97,9 +97,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function startMaskSession(): Promise<void> {
+async function startMaskSession(
+  onInspect?: (datasetId: string, sequence: string | null) => void,
+): Promise<void> {
   const user = userEvent.setup();
-  render(<DatasetGeneratorTab />);
+  render(<DatasetGeneratorTab {...(onInspect ? { onInspect } : {})} />);
   await screen.findByRole('status');
 
   await user.selectOptions(screen.getByLabelText(/save into/i), 'd1');
@@ -245,6 +247,23 @@ describe('DatasetGeneratorTab — asking when unclear (doc 72)', () => {
     expect(await screen.findByText(/stopped here/)).toBeInTheDocument();
     expect(datasetsApi.saveImageMasks).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: /play/i })).toBeEnabled();
+  });
+});
+
+describe('DatasetGeneratorTab — inspect what I just annotated (doc 74)', () => {
+  it('jumps with this run\'s dataset and the folder its frames came from', async () => {
+    const user = userEvent.setup();
+    const onInspect = vi.fn();
+    await startMaskSession(onInspect);
+    await user.click(screen.getByRole('button', { name: /inspect what i just annotated/i }));
+    expect(onInspect).toHaveBeenCalledWith('d1', '/photos');
+  });
+
+  it('is not offered mid-run, where leaving would stop autoplay unasked', async () => {
+    const user = userEvent.setup();
+    await startMaskSession(vi.fn());
+    await user.click(screen.getByRole('button', { name: /play/i }));
+    expect(screen.getByRole('button', { name: /inspect what i just annotated/i })).toBeDisabled();
   });
 });
 

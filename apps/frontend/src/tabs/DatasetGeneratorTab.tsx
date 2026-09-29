@@ -33,7 +33,19 @@ import {
 
 const isBand = isShapeOf(DEFAULT_BAND);
 
-export function DatasetGeneratorTab(): JSX.Element {
+export interface DatasetGeneratorTabProps {
+  /** Doc 74: jump to Inspect at this run's dataset, and at its video or folder. */
+  readonly onInspect?: (datasetId: string, sequence: string | null) => void;
+}
+
+/** The sequence a run's frames were recorded under (doc 73), for Inspect to open at. */
+function sequenceOf(config: GeneratorConfig): string | null {
+  if (config.images.kind === 'video') return config.images.path;
+  if (config.images.kind === 'folder') return config.images.folder;
+  return null;
+}
+
+export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}): JSX.Element {
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A preference across the whole folder, not per-image state.
@@ -86,9 +98,21 @@ export function DatasetGeneratorTab(): JSX.Element {
     <section className="studio">
       <div className="studio__head">
         <h2 className="studio__title">Dataset Generator</h2>
-        <button type="button" className="btn" onClick={() => setConfig(null)}>
-          Change setup
-        </button>
+        <span className="studio__headactions">
+          {onInspect && (
+            <button
+              type="button"
+              className="btn"
+              disabled={autoplay.running}
+              onClick={() => onInspect(config.datasetId, sequenceOf(config))}
+            >
+              Inspect what I just annotated
+            </button>
+          )}
+          <button type="button" className="btn" onClick={() => setConfig(null)}>
+            Change setup
+          </button>
+        </span>
       </div>
 
       <CounterBar

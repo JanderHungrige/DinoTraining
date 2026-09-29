@@ -36,6 +36,8 @@ export interface PaintedMask {
   readonly label: Label;
   /** Base64 PNG, no data: prefix. 0 = background, 255 = this object. */
   readonly png: string;
+  /** Doc 74: paint in this colour instead of the verdict's (Inspect colours by class). */
+  readonly rgb?: Rgb;
 }
 
 export interface CompositedMasksProps {
@@ -80,7 +82,12 @@ export function CompositedMasks({
   // would leave the old colour on screen; with the mask objects themselves it would
   // re-decode every PNG on every render.
   const signature = masks
-    .map((mask) => `${mask.id}:${mask.label}:${mask.id === selectedId ? 1 : 0}`)
+    .map(
+      (mask) =>
+        `${mask.id}:${mask.label}:${mask.id === selectedId ? 1 : 0}:${
+          mask.rgb ? `${mask.rgb.r},${mask.rgb.g},${mask.rgb.b}` : ''
+        }`,
+    )
     .join('|');
 
   useEffect(() => {
@@ -99,7 +106,7 @@ export function CompositedMasks({
         if (cancelled) return;
         if (!decoded) continue;
 
-        const { r, g, b } = VERDICT_RGB[mask.label];
+        const { r, g, b } = mask.rgb ?? VERDICT_RGB[mask.label];
         const alpha = mask.id === selectedId ? ALPHA_SELECTED : ALPHA;
         for (let p = 0, i = 0; p < decoded.values.length; p += 1, i += 4) {
           if ((decoded.values[p] ?? 0) < FOREGROUND) continue;

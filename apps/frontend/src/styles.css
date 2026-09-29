@@ -1175,6 +1175,25 @@ body {
   height: 0.75rem;
 }
 
+/* Doc 74: Inspect datasets. */
+.inspect__pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.studio__headactions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.player__fps input {
+  width: 4.5rem;
+  margin-right: 0.3rem;
+}
+
 /* Doc 73: a video as the Generator's source. */
 .videosrc__range {
   display: flex;

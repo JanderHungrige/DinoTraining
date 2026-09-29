@@ -10,8 +10,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.datasets.models import Box
-from app.datasets.sequences import image_frames
-from app.datasets.store import DatasetStore
+from app.datasets.sequences import SequenceFrame, dataset_sequences, image_frames
+from app.datasets.store import DatasetStore, dataset_dir
 
 router = APIRouter()
 
@@ -71,3 +71,68 @@ async def list_dataset_images(dataset_id: str) -> DatasetImagesResponse:
             )
         )
     return DatasetImagesResponse(dataset_id=dataset_id, images=images)
+
+
+class SequenceFrameInfo(BaseModel):
+    index: int
+    path: str
+    #: False for a frame that exists on disk but was never saved (nothing found there).
+    annotated: bool
+    #: Classes with a positive box or mask on this frame. What the timeline draws.
+    classes: list[str]
+
+
+class SequenceInfo(BaseModel):
+    source: str
+    kind: str
+    frames: list[SequenceFrameInfo]
+
+
+class DatasetSequencesResponse(BaseModel):
+    dataset_id: str
+    #: Every class that appears anywhere, sorted: one index per class, so a colour means
+    #: the same class in every sequence of the dataset.
+    class_names: list[str]
+    sequences: list[SequenceInfo]
+    #: Images that are not frames of anything, in the order they were saved.
+    loose: list[SequenceFrameInfo]
+
+
+@router.get(
+    "/datasets/{dataset_id}/sequences",
+    response_model=DatasetSequencesResponse,
+    summary="A dataset's videos and folders, each complete and in order (docs 74, 75)",
+)
+async def list_dataset_sequences(dataset_id: str) -> DatasetSequencesResponse:
+    """Frames per sequence with the classes annotated on each.
+
+    Complete, not only the annotated frames: autoplay saves nothing where nothing was
+    found, and playing the saved frames alone would cut every empty stretch out of the
+    video. The rest are merged back from disk, unannotated.
+    """
+    if not DatasetStore().exists(dataset_id):
+        raise HTTPException(status_code=404, detail=f"Dataset not found: {dataset_id}")
+    sequences, loose = dataset_sequences(dataset_id, dataset_dir(dataset_id))
+
+    def frame_info(frame: SequenceFrame) -> SequenceFrameInfo:
+        return SequenceFrameInfo(
+            index=frame.index, path=frame.path, annotated=frame.annotated, classes=frame.classes
+        )
+
+    names = sorted(
+        {name for sequence in sequences for frame in sequence.frames for name in frame.classes}
+        | {name for frame in loose for name in frame.classes}
+    )
+    return DatasetSequencesResponse(
+        dataset_id=dataset_id,
+        class_names=names,
+        sequences=[
+            SequenceInfo(
+                source=sequence.source,
+                kind=sequence.kind,
+                frames=[frame_info(frame) for frame in sequence.frames],
+            )
+            for sequence in sequences
+        ],
+        loose=[frame_info(frame) for frame in loose],
+    )
