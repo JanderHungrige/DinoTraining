@@ -1123,6 +1123,22 @@ body {
   flex: 1;
 }
 
+/* Doc 70: Propose and Save beside Previous/Next, each with its "auto" box. */
+.genbar__pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.genbar__auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
 .btn--primary {
   border-color: var(--accent);
   color: var(--accent);

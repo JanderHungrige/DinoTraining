@@ -17,7 +17,9 @@ import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import { usePersistentState } from '../hooks/usePersistentState';
-import { isAnnotationView } from '../lib/persisted';
+import { isAnnotationView, isBoolean } from '../lib/persisted';
+import { useAutoPropose } from '../hooks/useAutoPropose';
+import { GeneratorActionBar } from '../components/GeneratorActionBar';
 import {
   useGeneratorSession,
   type GeneratorConfig,
@@ -34,6 +36,10 @@ export function DatasetGeneratorTab(): JSX.Element {
   );
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useGeneratorSession(config);
+  // Doc 70: both on by default, and remembered.
+  const [autoPropose, setAutoPropose] = usePersistentState('generator.autoPropose', true, isBoolean);
+  const [autoSave, setAutoSave] = usePersistentState('generator.autoSave', true, isBoolean);
+  useAutoPropose(session, config !== null && autoPropose);
   const prescan = usePrescan();
 
   const startScan = useCallback(
@@ -184,45 +190,22 @@ export function DatasetGeneratorTab(): JSX.Element {
             />
           </div>
 
-          <div className="studio__actions">
-            <button
-              type="button"
-              className="btn btn--primary"
-              disabled={session.proposing}
-              onClick={() => void session.propose()}
-            >
-              {session.proposing
-                ? 'Proposing…'
-                : config.kind === 'masks'
-                  ? 'Propose masks'
-                  : 'Propose boxes'}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={session.saving || session.proposing || !session.dirty}
-              onClick={() => void session.save()}
-            >
-              {session.saving ? 'Saving…' : 'Save to dataset'}
-            </button>
-            <span className="studio__spacer" />
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoPrevious || session.proposing}
-              onClick={session.previous}
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoNext || session.proposing}
-              onClick={session.next}
-            >
-              Next →
-            </button>
-          </div>
+          <GeneratorActionBar
+            proposeLabel={config.kind === 'masks' ? 'Propose masks' : 'Propose boxes'}
+            proposing={session.proposing}
+            saving={session.saving}
+            dirty={session.dirty}
+            canGoPrevious={session.canGoPrevious}
+            canGoNext={session.canGoNext}
+            autoPropose={autoPropose}
+            autoSave={autoSave}
+            onAutoProposeChange={setAutoPropose}
+            onAutoSaveChange={setAutoSave}
+            onPropose={() => void session.propose()}
+            onSave={() => void session.save()}
+            onPrevious={() => void session.previous({ autoSave })}
+            onNext={() => void session.next({ autoSave })}
+          />
 
         </>
       )}

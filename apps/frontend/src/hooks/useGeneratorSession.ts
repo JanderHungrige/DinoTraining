@@ -1,58 +1,36 @@
 /**
  * The dataset-generator session: image list, current index, proposals, review state.
  *
- * Two ways to propose, and the config is a **discriminated union** rather than one object
- * with half its fields null. An expert head needs a backbone and an instance; a mask
- * annotator needs a concept and an annotator id, and neither set is meaningful to the
- * other. A single flat shape would make every reader check which half is populated.
+ * Three ways to propose; the config union lives in `types/generatorConfig.ts`.
  *
- * There is no save here on purpose — writing reviewed proposals back is feature 8. A
- * disabled Save button would read as broken rather than absent.
+ * Doc 70: `propose` returns what it proposed and `save` takes an explicit review, so
+ * autoplay can save what it has just proposed without waiting on a render. The session also
+ * remembers what it saved per image, so going back shows the saved review rather than a
+ * blank canvas that auto-propose would fill and auto-save would then write over.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 
 import { ApiError } from '../api/client';
-import { EMPTY_COUNTS, saveImageBoxes, saveImageMasks, type DatasetCounts } from '../api/datasets';
+import { EMPTY_COUNTS, type DatasetCounts } from '../api/datasets';
 import type { MaskProposalResponse } from '../api/generate';
-import type { ImageSource } from '../components/ImageSourceField';
 import { proposeForGenerator } from '../lib/generatorProposal';
+import { saveReview, type ImageReview } from '../lib/generatorSave';
+import type { GeneratorConfig } from '../types/generatorConfig';
 import { resolveImageSource, sourceNoun } from '../lib/imageSource';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
-export interface ExpertConfig {
-  readonly kind: 'expert';
-  readonly datasetId: string;
-  readonly images: ImageSource;
-  readonly backboneId: string;
-  readonly instanceId: string;
-  readonly scoreThreshold: number;
-}
+export type {
+  ExpertConfig,
+  FoundationConfig,
+  GeneratorConfig,
+  MaskConfig,
+} from '../types/generatorConfig';
 
-export interface MaskConfig {
-  readonly kind: 'masks';
-  readonly datasetId: string;
-  readonly images: ImageSource;
-  readonly annotatorId: string;
-  readonly concept: string;
-  readonly scoreThreshold: number;
+export interface MoveOptions {
+  readonly autoSave?: boolean;
 }
-
-export interface FoundationConfig {
-  readonly kind: 'foundation';
-  readonly datasetId: string;
-  readonly images: ImageSource;
-  /** Catalogue id of an installed detector. No backbone: it brings its own. */
-  readonly foundationId: string;
-  /** What to look for, when the chosen model is prompted (doc 66). Empty for RF-DETR,
-   *  which ignores it. Not optional: a field that is sometimes absent is a field every
-   *  caller has to remember, and the Studio already learned that with `concept`. */
-  readonly concept: string;
-  readonly scoreThreshold: number;
-}
-
-export type GeneratorConfig = ExpertConfig | MaskConfig | FoundationConfig;
 
 export interface GeneratorSession {
   readonly images: readonly string[];
@@ -78,29 +56,22 @@ export interface GeneratorSession {
   readonly setBoxes: (boxes: CanvasBox[]) => void;
   readonly setMasks: (masks: ReviewMask[]) => void;
   readonly reportImageSize: (width: number, height: number) => void;
-  readonly propose: () => Promise<void>;
-  readonly save: () => Promise<void>;
-  readonly next: () => void;
-  readonly previous: () => void;
+  /** Resolves to what was proposed, or null when it failed or the image changed meanwhile. */
+  readonly propose: () => Promise<ImageReview | null>;
+  /** Saves the given review, or the one on screen. False when the save failed. */
+  readonly save: (review?: ImageReview) => Promise<boolean>;
+  /** Moves on, saving a dirty image first when asked. False when that save failed and the
+   *  session stayed where it was, so the review is not lost. */
+  readonly next: (options?: MoveOptions) => Promise<boolean>;
+  readonly previous: (options?: MoveOptions) => Promise<boolean>;
+  /** What this session saved for an image, if anything. */
+  readonly saved: (path: string) => ImageReview | undefined;
   readonly canGoNext: boolean;
   readonly canGoPrevious: boolean;
 }
 
 function describe(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
-}
-
-async function saveMasks(
-  datasetId: string,
-  proposal: MaskProposalResponse | null,
-  reviewed: readonly ReviewMask[],
-): Promise<DatasetCounts> {
-  if (!proposal) {
-    // Reachable by pressing Save before proposing anything. Refusing beats inventing an
-    // empty proposal, which would wipe whatever the image already had stored.
-    throw new Error('Propose masks before saving.');
-  }
-  return saveImageMasks(datasetId, proposal, reviewed);
 }
 
 export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSession {
@@ -124,6 +95,9 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   // The mask proposal is kept whole because saving needs the RLE, which deliberately
   // never enters the review type. Verdicts are paired back to it by index.
   const lastMaskProposal = useRef<MaskProposalResponse | null>(null);
+  // What this session wrote, per image path (doc 70). Session memory only; reloading
+  // stored annotations from the dataset is doc 74's job.
+  const savedReviews = useRef(new Map<string, ImageReview>());
 
   // Guards a late response from a previous image overwriting the current one's review.
   const requestId = useRef(0);
@@ -145,6 +119,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setMasks([]);
     setImageSize(null);
     setFilterState(null);
+    savedReviews.current = new Map();
     setLoading(true);
     setError(null);
 
@@ -167,8 +142,8 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   const images = kept === null ? allImages : allImages.filter((path) => kept.has(path));
   const currentImage = images[index] ?? null;
 
-  const propose = useCallback(async (): Promise<void> => {
-    if (!config || !currentImage) return;
+  const propose = useCallback(async (): Promise<ImageReview | null> => {
+    if (!config || !currentImage) return null;
     const ticket = ++requestId.current;
 
     setProposing(true);
@@ -178,63 +153,103 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       // A response for an image the user has already navigated away from must not land:
       // its boxes and masks are in that image's coordinate space and would look plausible
       // here. The ticket stays in the hook precisely so this check cannot be extracted.
-      if (ticket !== requestId.current) return;
+      if (ticket !== requestId.current) return null;
 
+      const review: ImageReview = {
+        path: currentImage,
+        boxes: proposed.boxes,
+        masks: proposed.masks,
+        maskResponse: proposed.maskResponse,
+        imageSize: { width: proposed.width, height: proposed.height },
+      };
       lastMaskProposal.current = proposed.maskResponse;
-      setBoxes(proposed.boxes);
-      setMasks(proposed.masks);
-      setImageSize({ width: proposed.width, height: proposed.height });
+      setBoxes(review.boxes);
+      setMasks(review.masks);
+      setImageSize(review.imageSize);
       setProducerName(proposed.producerName);
       setProducerDetail(proposed.producerDetail);
       setDirty(proposed.found);
+      return review;
     } catch (caught) {
       if (ticket === requestId.current) {
         setError(describe(caught, 'Nothing could be proposed for this image.'));
       }
+      return null;
     } finally {
       if (ticket === requestId.current) setProposing(false);
     }
   }, [config, currentImage]);
 
-  const save = useCallback(async (): Promise<void> => {
-    if (!config || !currentImage || !imageSize) return;
+  const save = useCallback(
+    async (explicit?: ImageReview): Promise<boolean> => {
+      if (!config) return false;
+      const review: ImageReview | null =
+        explicit ??
+        (currentImage
+          ? { path: currentImage, boxes, masks, maskResponse: lastMaskProposal.current, imageSize }
+          : null);
+      if (!review) return false;
 
-    setSaving(true);
-    setError(null);
-    try {
-      const next =
-        config.kind === 'masks'
-          ? await saveMasks(config.datasetId, lastMaskProposal.current, masks)
-          : await saveImageBoxes(
-              config.datasetId,
-              { path: currentImage, width: imageSize.width, height: imageSize.height },
-              boxes,
-            );
-      setCounts(next);
-      setDirty(false);
-    } catch (caught) {
-      setError(describe(caught, 'Could not save to the dataset.'));
-    } finally {
-      setSaving(false);
-    }
-  }, [config, currentImage, imageSize, boxes, masks]);
+      setSaving(true);
+      setError(null);
+      try {
+        setCounts(await saveReview(config, review));
+        savedReviews.current.set(review.path, review);
+        if (review.path === currentImage) setDirty(false);
+        return true;
+      } catch (caught) {
+        setError(
+          caught instanceof Error && !(caught instanceof ApiError)
+            ? caught.message
+            : describe(caught, 'Could not save to the dataset.'),
+        );
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [config, currentImage, imageSize, boxes, masks],
+  );
+
+  // A hand edit is a review: drawing a box the model missed, rejecting one it found, or
+  // relabelling one. Before doc 70 only a proposal with results set `dirty`, so a box drawn
+  // on an image where the model found nothing could never be saved.
+  const editBoxes = useCallback((next: CanvasBox[]) => {
+    setBoxes(next);
+    setDirty(true);
+  }, []);
+  const editMasks = useCallback((next: ReviewMask[]) => {
+    setMasks(next);
+    setDirty(true);
+  }, []);
+
+  // Stable, so effects that ask it (auto-propose) do not re-run on every render.
+  const saved = useCallback((path: string) => savedReviews.current.get(path), []);
+
+  /** Shows an image: what this session saved for it, or a clean slate. */
+  const arrive = useCallback((path: string | undefined): void => {
+    const saved = path === undefined ? undefined : savedReviews.current.get(path);
+    setBoxes(saved?.boxes ?? []);
+    setMasks(saved?.masks ?? []);
+    setImageSize(saved?.imageSize ?? null);
+    lastMaskProposal.current = saved?.maskResponse ?? null;
+    setDirty(false);
+  }, []);
 
   const move = useCallback(
-    (delta: number) => {
+    async (delta: number, options: MoveOptions = {}): Promise<boolean> => {
+      const target = index + delta;
+      if (target < 0 || target >= images.length) return false;
+      // Leaving is the one moment auto-save cannot catch a correction half-made (doc 70).
+      if (options.autoSave && dirty && !(await save())) return false;
       // Invalidates any proposal still in flight for the image being left.
       requestId.current += 1;
-      setIndex((current) => {
-        const next = current + delta;
-        if (next < 0 || next >= images.length) return current;
-        setBoxes([]);
-        setMasks([]);
-        setImageSize(null);
-        setDirty(false);
-        lastMaskProposal.current = null;
-        return next;
-      });
+      setProposing(false);
+      setIndex(target);
+      arrive(images[target]);
+      return true;
     },
-    [images.length],
+    [index, images, dirty, save, arrive],
   );
 
   /** Show only these images, or all of them when given null (doc 53).
@@ -271,13 +286,14 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     dirty,
     counts,
     error,
-    setBoxes,
-    setMasks,
+    setBoxes: editBoxes,
+    setMasks: editMasks,
     reportImageSize,
     propose,
     save,
-    next: () => move(1),
-    previous: () => move(-1),
+    next: (options?: MoveOptions) => move(1, options),
+    previous: (options?: MoveOptions) => move(-1, options),
+    saved,
     canGoNext: index < images.length - 1,
     canGoPrevious: index > 0,
   };
