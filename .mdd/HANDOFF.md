@@ -4,10 +4,46 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-08-25, after a round of **Annotation Studio work** that was not a
-wave: four bugs Jan reported from using the app, and two features (docs **60** and **61**)
-built out of them. Waves 1–8 are merged. **Only Wave 9 (Website & hyperscaler compute)
-remains** as planned work, plus the three features deferred out of Wave 8.
+**Last updated:** 2026-09-29. It catches up on two rounds of work that were not waves:
+the **Studio round** (2026-08-25, docs 60–62) and the **agent, first-run and video round**
+(2026-08-26/27, docs 63–68). Everything below is merged to `dev` and `main`, and `main`
+is at `d47ed26`. Nothing has been pushed since 2026-08-27. Waves 1–8 are merged.
+**Only Wave 9 (Website & hyperscaler compute) remains** as planned work, plus the three
+features deferred out of Wave 8.
+
+---
+
+## What landed after the Studio round — 2026-08-26/27
+
+Most of it came from two sources. Jan used the app, and he made **a fresh clone on a second
+machine**. That was the first time anyone set this project up anywhere except the machine
+it was built on.
+
+| | |
+|---|---|
+| 63 | **An API guide an AI assistant can follow.** The API already covered the whole workflow (51 paths). What was missing was the *order* things have to happen in. The guide is prose for the order and generated from `/openapi.json` for the endpoints, so it cannot go stale. "Copy for your AI" is the main button; PDF comes from `window.print()`. |
+| 64 | **An MCP server at `/mcp`** on the sidecar that already runs. It exposes 15 tools shaped around tasks, and each tool dispatches into the app's own routes in-process. The "API" tab is now **Connection**, showing MCP first. |
+| 65 | **A starter set** ("one click from clone to usable"). Five models, 1.1 GB, downloaded one after another from Admin. Grounded SAM is listed by name, with the parts it is built from. |
+| 27↑ | **Grounded SAM in three sizes.** tiny+small 834 MB, base+base-plus 1,199 MB, base+large 1,747 MB. There is no larger open Grounding DINO. Provenance stays `grounded-sam` for all three. |
+| 66 | **Grounding DINO everywhere.** `takes_concept` is its own field now instead of being read off `annotator_id`, and `PromptedDetector` is the fourth kind of foundation model. Also fixed: the Inference Viewer showed no models until a head was installed. |
+| 67 | **Show masks, boxes or both**, with one `AnnotationView` toggle across three surfaces. The app now *says* what gets saved. Storage is not a choice: a mask exports with a bbox derived from it. |
+| — | **Pretrained heads name their classes.** A bare `.pth` has no labels, so the ImageNet-1k and ADE20k label sets are vendored, declared per head type and resolved on read. `MaskLegend` finally uses `present_classes`, which had been on the wire since Wave 3. |
+| 68 | **Video playback in the Inference Viewer.** Plays a folder or a video file (PyAV, about 35 MB). The chosen models run first as a job over a chosen frame range, with a cost estimate shown before the click, and the player reads from that cache. Frames are decoded linearly rather than seeked, so each overlay sits on exactly its own frame. There are two explicit modes: "A single image" and "A video or a folder". |
+| fix | **Playback did not play, twice.** First, each frame was fetched only when the clock reached it, and the `<img>` src was swapped before the frame finished decoding. Frames are now prefetched 12 ahead, and folder frames go out as files. Second, frames are now painted to a canvas, because an `<img>` swapped on a clock is the engine's choice. **The packaged app's CSP `img-src` did not allow the sidecar**, so an installed build would have drawn nothing. `tauri dev` never applies that CSP. |
+| fix | **Admin hid RF-DETR and Depth Anything.** `FAMILY_ORDER` was a hand-written subset that still typechecked. Order is now derived from the label record, and backend tests check the TypeScript union. |
+| fix | **`dev.sh` on a clean clone.** It now checks for the Tauri CLI (`npm install --prefix apps/desktop`). If `rustc` prints no `host:` line, it prints rustc's own stderr instead of letting Tauri panic. |
+
+**The ones to carry forward:**
+
+- **`tauri dev` does not apply the packaged app's CSP.** Anything the page loads from the
+  sidecar has to be in `tauri.conf.json`'s CSP, or it works in development and fails when
+  installed. This belongs with the WebKit colour-management finding below: the dev loop and
+  the shipped app are different engines under different rules.
+- **Two lists that must agree should be one list.** `FAMILY_ORDER` failed this way, and so
+  did the frontend's `ModelFamily` union, twice (`segmenter` in Wave 4, then `rf-detr`).
+  Derive one from the other, or add a test that fails when they drift.
+- **Don't let a probe change the product.** `crossOrigin` was added only so a verification
+  probe could read the canvas back. It broke every prefetch with `ERR_FAILED`.
 
 ---
 
@@ -46,6 +82,14 @@ the Inference Viewer were both confirmed fixed on 2026-08-25 — the Viewer by t
 The Generator was the third surface to show the same speckle, because each had grown its own
 compositor; they share one now (`CompositedMasks`), so this should be the last of it.
 
+**0b. Confirm video playback in the packaged app** (doc 68). It was verified in `tauri dev`
+and the dev browser. Neither applies the CSP that the `img-src` fix changed, so a built
+`.app` is the only real evidence that frames draw.
+
+**0c. Connect a real MCP client once** (doc 64). Every test drives the JSON-RPC endpoint
+directly. The `claude mcp add` command in the Connection tab has been written but never
+executed. Also still open: whether PyInstaller picks up `mcp` in the frozen sidecar.
+
 **1. Certificates — the one thing that cannot be done here.** Signing needs an Apple
 Developer ID and a Windows code-signing certificate. Until they exist:
 
@@ -55,8 +99,10 @@ Developer ID and a Windows code-signing certificate. Until they exist:
   unsigned build cannot reach anyone by accident. **Keep that guard until signing lands.**
 
 **2. Nobody has ever installed this app.** The macOS `.app` was launched from its own build
-directory, on the machine that built it — sharing that machine's model cache and data
-directory. Windows and Linux **build** and have never been run at all. Installing each
+directory, on the machine that built it, and shared that machine's model cache and data
+directory. Windows and Linux **build** and have never been run at all. *(On 2026-08-26 a
+fresh **clone** on a second machine did happen, and it paid off at once: docs 65 and the
+`dev.sh` fixes came out of it. But that was the developer path, not an installer.)* Installing each
 artefact on a clean machine is the highest-value hour available right now, and it needs
 machines rather than code.
 
@@ -125,8 +171,9 @@ distributions that do not take one.
 3. **The GPU sidecar has no artefact** (doc 57). Detection works and tells the user their
    GPU is idle; there is nothing to download yet, because that is a second CI matrix leg.
 4. **A random split leaks on video** (doc 49, backlog). `split_indices` splits by image,
-   which is right for photos and wrong for a 10 Hz sequence — it inflated a reported mAP by
-   42%. Nothing warns.
+   which is right for photos and wrong for a 10 Hz sequence. It inflated a reported mAP by
+   42%, and nothing warns. **More urgent since doc 68** made video a first-class input,
+   which makes the gap easier to walk into. Segment-aware splitting needs its own doc.
 5. **Prescan shares one runner** across the Studio and the Generator (doc 53).
 6. **Renaming is missing from the Library** (doc 51). *(Per-class rename from box review
    was the other half of this line and shipped in doc 60 on 2026-08-25.)*
@@ -135,14 +182,11 @@ distributions that do not take one.
    only a real run caught. The vocabulary is per task rather than unioned, so a segmenter
    never sees a box-only class — which was worth more than it sounded: dropping one dead
    channel took epoch-1 loss from 3.16 to 0.70 and best mIoU from 0.263 to 0.539.
-
-   *(original)* **`linear-segmenter` is declared trainable but cannot run.** `trainable=True`,
-   `target_format="masks"`, with `segmentation_loss` and `segmentation_metrics` both
-   registered — but `build_samples` reads only boxes, `TrainingSample` has no mask field,
-   and `build_targets` has no segmentation branch, so `targets["mask"]` is never produced.
-   Selecting it in the Head Trainer raises `KeyError: 'mask'` on the first batch; nothing
-   guards it upfront. Its description still names a blocker doc 61 removed. **Now the
-   cheapest route to a segmenter trained on your own classes**, because the masks exist.
+8. **The MCP server and the API guide are local only, with no auth** (docs 63, 64). That is
+   fine on one machine. Remote access needs authentication and path confinement first; see the
+   hosted-GUI entry in the backlog. Jobs are poll-only, with no MCP progress notifications.
+9. **`window.print()` for the guide's PDF is unverified in WKWebView** (doc 63). The
+   Markdown path, which is the one that matters for an assistant, does not depend on it.
 
 ---
 
@@ -150,7 +194,8 @@ distributions that do not take one.
 
 Read `.mdd/.startup.md` for the map, then `.mdd/waves/dinotraining-wave-8.md`, then docs
 **56** and **58** (what packaging actually costs), **55** (why a head is a head), and **49**
-(the hardest data problem in the project).
+(the hardest data problem in the project). For the newest surface, video, read **68**,
+including its "Why playback did not play" section.
 
 **MDD hashes** must be recomputed after any initiative/wave edit:
 
@@ -160,6 +205,8 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, all green as of 2026-08-25: `1262` backend tests, `685` frontend, `ruff` +
-`mypy` + `tsc` clean, no source file over 300 lines. (`cargo check` last run 2026-08-21 —
-nothing since has touched `apps/desktop`.)
+**Gates**, as last reported by the commit that closed doc 68 (2026-08-27): `1431` backend
+tests, `842` frontend, and no source file over 300 lines. They were not re-run when this
+handoff was rewritten on 2026-09-29. `apps/desktop` **has** changed since the last
+`cargo check` (2026-08-21): the CSP in `tauri.conf.json` changed on 2026-08-27. That is config,
+not Rust, but `cargo check` / a packaged build is the next check worth running.
