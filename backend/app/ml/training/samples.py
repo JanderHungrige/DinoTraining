@@ -24,10 +24,15 @@ import logging
 from dataclasses import dataclass, field
 
 from app.datasets.class_names import UNNAMED_CLASS as UNNAMED_CLASS  # re-exported
-from app.datasets.class_names import normalise_class_name
 from app.datasets.masks import MaskStore
 from app.datasets.models import Box, Mask
 from app.datasets.store import DatasetStore
+from app.ml.training.sample_prep import load_preparation, prepared_rows
+from app.ml.training.vocabulary import (
+    build_class_vocabulary as build_class_vocabulary,  # re-exported
+)
+from app.ml.training.vocabulary import build_mask_vocabulary as build_mask_vocabulary  # re-exported
+from app.ml.training.vocabulary import class_name
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +88,10 @@ class TrainingSample:
     #: that whatever is in it is background. Rejecting a mask keeps it as a `negative`
     #: precisely so the trainer can tell — see the Dataset Generator's own hint.
     segmented: bool = False
+    #: The stored split side (doc 84), used when training from a recipe (doc 90).
+    split: str | None = None
+    #: A tile of the image, (x, y, width, height), when training on tiles (doc 90).
+    crop: tuple[int, int, int, int] | None = None
 
 
 @dataclass
@@ -101,56 +110,6 @@ class SampleSet:
     @property
     def num_classes(self) -> int:
         return len(self.class_names)
-
-
-def _class_name(annotation: Box | Mask) -> str:
-    """A positive annotation's class is its prompt, normalised.
-
-    Box and Mask deliberately share this: they carry the class in the same field, for the
-    same reason, and a dataset with both must not end up with `signal` twice.
-    """
-    return normalise_class_name(annotation.prompt)
-
-
-def build_class_vocabulary(
-    annotations: list[tuple[int, str, int, int, list[Box]]],
-) -> tuple[str, ...]:
-    """Distinct classes across all positive **boxes**, sorted.
-
-    Sorted for determinism. A class order that shifts between runs makes saved weights
-    uninterpretable — index 3 would mean a different thing than it did at training time,
-    and nothing about the checkpoint would reveal it.
-    """
-    names = {
-        _class_name(box)
-        for _, _, _, _, boxes in annotations
-        for box in boxes
-        if box.label == "positive"
-    }
-    return tuple(sorted(names))
-
-
-def build_mask_vocabulary(
-    masks: list[tuple[int, str, int, int, list[Mask]]],
-) -> tuple[str, ...]:
-    """Distinct classes across all positive **masks**, sorted.
-
-    Its own vocabulary rather than a union with the boxes', because the two supervise
-    different heads. A dataset can hold both — thirteen box classes from a COCO import and
-    one segmented class from a Grounded SAM run — and unioning them gives a segmentation
-    head twelve output channels nothing can ever supervise. Harmless in that the model
-    never predicts them, and confusing in the class list, the metrics and the head's name.
-
-    The mirror is true too: a mask-only dataset has no box classes, so a detection run over
-    it correctly refuses rather than training on nothing.
-    """
-    names = {
-        _class_name(mask)
-        for _, _, _, _, image_masks in masks
-        for mask in image_masks
-        if mask.label == "positive"
-    }
-    return tuple(sorted(names))
 
 
 def learnable_classes(sample_set: SampleSet, task: str) -> tuple[str, ...]:
@@ -195,9 +154,13 @@ def build_samples(
 
     annotations: list[tuple[int, str, int, int, list[Box]]] = []
     stored_masks: list[tuple[int, str, int, int, list[Mask]]] = []
+    splits: dict[int, str] = {}
     for dataset_id in dataset_ids:
-        annotations.extend(store.image_annotations(dataset_id))
-        stored_masks.extend(mask_store.image_masks(dataset_id))
+        # Doc 90: excluded images left out, the class map applied, the stored split read.
+        prep = load_preparation(dataset_id, store.settings)
+        annotations.extend(prepared_rows(store.image_annotations(dataset_id), prep))
+        stored_masks.extend(prepared_rows(mask_store.image_masks(dataset_id), prep))
+        splits.update(prep.split)
 
     masks_by_image = {image_id: image_masks for image_id, _, _, _, image_masks in stored_masks}
 
@@ -216,7 +179,7 @@ def build_samples(
 
         for box in boxes:
             if box.label == "positive":
-                class_index = index_of[_class_name(box)]
+                class_index = index_of[class_name(box)]
                 targets.append((class_index, box.x, box.y, box.w, box.h))
                 present.add(class_index)
             elif box.label == "unclear":
@@ -239,7 +202,7 @@ def build_samples(
             target = MaskTarget(
                 # Into the **mask** vocabulary, which is why it is a separate lookup: a
                 # box index would point at a different class, or at none.
-                class_index=mask_index_of.get(_class_name(mask), 0),
+                class_index=mask_index_of.get(class_name(mask), 0),
                 size=mask.rle.size,
                 counts=tuple(mask.rle.counts),
             )
@@ -261,6 +224,7 @@ def build_samples(
                 masks=tuple(positive_masks),
                 ignore_masks=tuple(ignored_masks),
                 segmented=bool(image_masks),
+                split=splits.get(image_id),
             )
         )
 

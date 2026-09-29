@@ -17,9 +17,11 @@ from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from app.ml.heads.registry import get_head_type
 from app.ml.training.config import TrainingConfig
 from app.ml.training.job import TrainingJob
 from app.ml.training.runner import get_job_runner
+from app.prep.recipe_use import RecipeOutOfDateError, resolve_recipe, training_fields
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -50,8 +52,11 @@ class TrainingRequest(BaseModel):
     #: Doc 87. A preset id from GET /prep/augmentation-presets; "none" by default.
     augmentation: str = "none"
     augment_copies: int = Field(default=2, ge=0, le=8)
+    #: Doc 90. A recipe from the Prepare data tab: its split, class map, tiles, imbalance
+    #: and augmentation are applied, and it overrides the three fields above.
+    recipe_id: str | None = None
 
-    def to_config(self) -> TrainingConfig:
+    def to_config(self, recipe: dict[str, object] | None = None) -> TrainingConfig:
         return TrainingConfig(
             head_type_id=self.head_type_id,
             backbone_id=self.backbone_id,
@@ -69,7 +74,7 @@ class TrainingRequest(BaseModel):
             imbalance=self.imbalance,
             augmentation=self.augmentation,
             augment_copies=self.augment_copies,
-        )
+        ).with_recipe(recipe or {})
 
 
 class EpochInfo(BaseModel):
@@ -96,6 +101,9 @@ class JobInfo(BaseModel):
     primary_metric: str | None
     message: str
     notes: list[str] = Field(default_factory=list)
+    #: The best weights scored on the test side (doc 90); empty without one.
+    test_metrics: dict[str, float] = Field(default_factory=dict)
+    recipe_id: str | None = None
     head_instance_id: str | None
     history: list[EpochInfo]
 
@@ -128,6 +136,8 @@ def _describe(job: TrainingJob) -> JobInfo:
         primary_metric=spec.primary_metric if spec else None,
         message=job.message,
         notes=list(job.notes),
+        test_metrics=dict(job.test_metrics),
+        recipe_id=job.config.recipe_id,
         head_instance_id=job.head_instance_id,
         history=[
             EpochInfo(
@@ -148,6 +158,22 @@ def _require_job(job_id: str) -> TrainingJob:
     return job
 
 
+def _recipe_fields(request: TrainingRequest) -> dict[str, object] | None:
+    """The recipe's training fields; 404/409 when it is missing or out of date."""
+    if request.recipe_id is None:
+        return None
+    spec = get_head_type(request.head_type_id)
+    try:
+        recipe = resolve_recipe(
+            request.dataset_ids, request.recipe_id, spec.task if spec else "unknown"
+        )
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from None
+    except RecipeOutOfDateError as exc:  # before ValueError: it is one
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+    return training_fields(recipe)
+
+
 def _frame(event: str, payload: object) -> str:
     return f"event: {event}\ndata: {json.dumps(payload)}\n\n"
 
@@ -160,7 +186,7 @@ def _frame(event: str, payload: object) -> str:
 )
 async def start_training(request: TrainingRequest) -> JobInfo:
     try:
-        config = request.to_config()
+        config = request.to_config(_recipe_fields(request))
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None
 

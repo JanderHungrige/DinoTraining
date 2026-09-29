@@ -23,7 +23,7 @@ from statistics import median
 
 from pydantic import BaseModel
 
-from app.datasets.tiling import DEFAULT_OVERLAP, plan_tiles
+from app.datasets.tiling import DEFAULT_OVERLAP, grid_for, plan_tiles
 from app.prep.profiles import ModelProfile
 from app.prep.stats import AnnotationFacts, DatasetFacts, ImageFacts
 
@@ -72,12 +72,6 @@ class InputPlan(BaseModel):
 
 def fit_of(profile: ModelProfile) -> str:
     return "center-crop" if profile.task == "classification" else profile.fit
-
-
-def grid_for(width: int, height: int, long_edge_tiles: int) -> tuple[int, int]:
-    """(columns, rows): `long_edge_tiles` along the long edge, square-ish tiles."""
-    short = max(1, round(long_edge_tiles * min(width, height) / max(1, max(width, height))))
-    return (long_edge_tiles, short) if width >= height else (short, long_edge_tiles)
 
 
 def _scale(profile: ModelProfile, image: ImageFacts, columns: int, rows: int) -> float:

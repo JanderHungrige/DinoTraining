@@ -60,6 +60,19 @@ function Sparkline({ values, accent }: { values: readonly number[]; accent: bool
   );
 }
 
+/** Doc 90: the best weights on pictures neither training nor model selection saw. */
+function TestScore({ metrics }: { readonly metrics: Readonly<Record<string, number>> }): JSX.Element | null {
+  const entries = Object.entries(metrics);
+  if (entries.length === 0) return null;
+  return (
+    <p className="run__message">
+      <strong>On the test pictures:</strong>{' '}
+      {entries.map(([key, value]) => `${key} ${value.toFixed(3)}`).join(' · ')} — the honest
+      number: these pictures were not used to train or to pick the best round.
+    </p>
+  );
+}
+
 export function TrainingProgress({ job, history, onCancel }: TrainingProgressProps): JSX.Element {
   const keys = metricKeys(history);
   const running = job.state === 'running' || job.state === 'pending';
@@ -87,6 +100,12 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
       </div>
 
       {job.message && <p className="run__message">{job.message}</p>}
+      {(job.notes ?? []).map((note) => (
+        <p key={note} className="trainer__hint">
+          {note}
+        </p>
+      ))}
+      <TestScore metrics={job.test_metrics ?? {}} />
 
       {job.skipped_mixed_class_images > 0 && (
         /* Surfaced, never silent: training on fewer images than the user annotated is

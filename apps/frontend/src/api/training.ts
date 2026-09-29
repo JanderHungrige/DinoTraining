@@ -42,6 +42,11 @@ export interface JobInfo {
   readonly message: string;
   readonly head_instance_id: string | null;
   readonly history: readonly EpochInfo[];
+  /** What preparation did on this run that the user should know (docs 87, 90). */
+  readonly notes?: readonly string[];
+  /** The best weights scored on the test side (doc 90); empty without one. */
+  readonly test_metrics?: Readonly<Record<string, number>>;
+  readonly recipe_id?: string | null;
 }
 
 export interface TrainingRequest {
@@ -58,6 +63,8 @@ export interface TrainingRequest {
   readonly save_best_only?: boolean;
   readonly early_stopping_patience?: number;
   readonly augment?: boolean;
+  /** Doc 90: train as a saved preparation recipe says. */
+  readonly recipe_id?: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

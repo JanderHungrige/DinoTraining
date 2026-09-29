@@ -13,13 +13,16 @@ import { IntroTab } from './tabs/IntroTab';
 import { LibraryTab } from './tabs/LibraryTab';
 import { PrepareTab } from './tabs/PrepareTab';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
-import type { InspectRequest } from './types/navigation';
+import type { InspectRequest, TrainRequest } from './types/navigation';
 
 interface Navigation {
   readonly onNavigate: (next: TabId) => void;
   /** Doc 74: open Inspect at a dataset (and, when known, one of its sequences). */
   readonly onInspect: (datasetId: string, sequence: string | null) => void;
   readonly inspectRequest: InspectRequest | null;
+  /** Doc 90: open Training at a dataset with a recipe chosen. */
+  readonly onTrain: (datasetId: string, recipeId: string) => void;
+  readonly trainRequest: TrainRequest | null;
 }
 
 function renderTab(tab: TabId, nav: Navigation): JSX.Element {
@@ -29,9 +32,9 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
     case 'studio':
       return <AnnotationStudioTab />;
     case 'trainer':
-      return <HeadTrainerTab />;
+      return <HeadTrainerTab request={nav.trainRequest} />;
     case 'prepare':
-      return <PrepareTab />;
+      return <PrepareTab onTrain={nav.onTrain} />;
     case 'inference':
       return <InferenceViewerTab />;
     case 'generator':
@@ -52,11 +55,17 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
 export function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
   const [inspectRequest, setInspectRequest] = useState<InspectRequest | null>(null);
+  const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
   const nonce = useRef(0);
   const onInspect = useCallback((datasetId: string, sequence: string | null) => {
     nonce.current += 1;
     setInspectRequest({ datasetId, sequence, nonce: nonce.current });
     setActiveTab('inspect');
+  }, []);
+  const onTrain = useCallback((datasetId: string, recipeId: string) => {
+    nonce.current += 1;
+    setTrainRequest({ datasetId, recipeId, nonce: nonce.current });
+    setActiveTab('trainer');
   }, []);
 
   return (
@@ -75,7 +84,7 @@ export function App(): JSX.Element {
         aria-labelledby={`tab-${activeTab}`}
         tabIndex={0}
       >
-        {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest })}
+        {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest, onTrain, trainRequest })}
       </main>
     </div>
   );

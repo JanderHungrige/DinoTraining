@@ -21,6 +21,8 @@ export interface SaveStepProps {
   readonly choices: SaveChoices;
   readonly recipes: readonly RecipeInfo[];
   readonly onSaved: () => void;
+  /** Doc 90: open Training with a recipe chosen. */
+  readonly onTrain?: ((recipeId: string) => void) | undefined;
 }
 
 const STRATEGY_LABEL: Readonly<Record<Strategy, string>> = {
@@ -46,7 +48,23 @@ function RecipeList({ recipes }: { readonly recipes: readonly RecipeInfo[] }): J
   );
 }
 
-export function SaveStep({ datasetId, datasetName, choices, recipes, onSaved }: SaveStepProps): JSX.Element {
+function TrainButton(props: {
+  readonly recipes: readonly RecipeInfo[];
+  readonly target: string;
+  readonly onTrain: (recipeId: string) => void;
+}): JSX.Element | null {
+  const latest = [...props.recipes]
+    .reverse()
+    .find((info) => info.recipe.target === props.target && info.out_of_date.length === 0);
+  if (!latest) return null;
+  return (
+    <button type="button" className="btn btn--primary" onClick={() => props.onTrain(latest.recipe.id)}>
+      Train with {latest.recipe.name} · v{latest.recipe.version}
+    </button>
+  );
+}
+
+export function SaveStep({ datasetId, datasetName, choices, recipes, onSaved, onTrain }: SaveStepProps): JSX.Element {
   const [nameOverride, setNameOverride] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -87,6 +105,7 @@ export function SaveStep({ datasetId, datasetName, choices, recipes, onSaved }: 
       </button>
       {error && <p className="admin__error" role="alert">{error}</p>}
       {recipes.length > 0 && <RecipeList recipes={recipes} />}
+      {onTrain && <TrainButton recipes={recipes} target={choices.target} onTrain={onTrain} />}
     </div>
   );
 }

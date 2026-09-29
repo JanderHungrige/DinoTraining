@@ -33,6 +33,8 @@ export interface PrepareStepsProps {
   readonly plans: { readonly balance: BalancePlan | null; readonly augmentation: AugmentationPlan | null };
   readonly choices: Choices;
   readonly onChoose: (change: Omit<Choices, 'key'>) => void;
+  /** Doc 90: go to Training with this dataset and recipe. */
+  readonly onTrain?: ((datasetId: string, recipeId: string) => void) | undefined;
 }
 
 export function statusesFor(data: PrepareData, target: string): Record<StepId, StepStatus> {
@@ -69,7 +71,7 @@ export function PrepareSteps(props: PrepareStepsProps): JSX.Element {
 }
 
 function StepBody(props: PrepareStepsProps & { step: StepId; strategy: Strategy; preset: string }): JSX.Element {
-  const { datasetId, datasetName, target, data, plans, choices, onChoose, step, strategy, preset } = props;
+  const { datasetId, datasetName, target, data, plans, choices, onChoose, onTrain, step, strategy, preset } = props;
   const targetId = target?.id ?? '';
   const grid = choices.grid ?? null;
   switch (step) {
@@ -103,6 +105,7 @@ function StepBody(props: PrepareStepsProps & { step: StepId; strategy: Strategy;
           choices={{ target: targetId, targetLabel: target?.label ?? targetId, grid, strategy, preset }}
           recipes={data.recipes}
           onSaved={data.reloadRecipes}
+          onTrain={onTrain ? (recipeId) => onTrain(datasetId, recipeId) : undefined}
         />
       );
   }

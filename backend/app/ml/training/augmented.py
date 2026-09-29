@@ -29,7 +29,7 @@ from app.ml.augment import PRESETS, Preset, Variant, augment, meaning_guard
 from app.ml.backbone import Backbone, extract
 from app.ml.heads.registry import HeadTypeSpec
 from app.ml.preprocess import PreprocessPlan, apply_geometry, to_pixel_values
-from app.ml.training.loop import CachedSample, build_targets, load_image, to_device
+from app.ml.training.loop import CachedSample, build_targets, load_sample_image, to_device
 from app.ml.training.samples import MaskTarget, TrainingSample
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ def cache_variants(
         logger.info(variants.note)
     rng = random.Random(seed)
     for index in train:
-        image = load_image(samples[index].path)
+        image = load_sample_image(samples[index])
         if image is None:
             continue
         for _ in range(copies):

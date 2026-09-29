@@ -59,6 +59,10 @@ class DatasetStore:
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings
 
+    @property
+    def settings(self) -> Settings | None:
+        return self._settings
+
     # --- creation and listing -------------------------------------------------
 
     def create(self, name: str, prompt: str | None, copy_images: bool) -> DatasetInfo:

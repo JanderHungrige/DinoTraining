@@ -73,7 +73,11 @@ function Pickers(props: {
   );
 }
 
-export function PrepareTab(): JSX.Element {
+export function PrepareTab({
+  onTrain,
+}: {
+  readonly onTrain?: ((datasetId: string, recipeId: string) => void) | undefined;
+}): JSX.Element {
   const lists = useLists();
   const [datasetChoice, setDatasetChoice] = usePersistentState('prepare.dataset', '', isString);
   const [targetChoice, setTargetChoice] = usePersistentState('prepare.target', '', isString);
@@ -117,6 +121,7 @@ export function PrepareTab(): JSX.Element {
           plans={plans}
           choices={own}
           onChoose={choose}
+          onTrain={onTrain}
         />
       )}
     </section>

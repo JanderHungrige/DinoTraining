@@ -8,7 +8,7 @@ backbone features — see :mod:`app.ml.training.runner`.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +51,15 @@ class TrainingConfig:
     augmentation: str = "none"
     #: Changed copies cached per training image when the feature cache is used.
     augment_copies: int = 2
+    #: The preparation recipe this run follows (doc 90). With one, the stored split is used
+    #: instead of `split_indices`, and its id is part of the saved provenance.
+    recipe_id: str | None = None
+    #: Tiles along the long edge (doc 85's plan); 0 or 1 trains on whole pictures.
+    tile_long_edge: int = 0
+
+    def with_recipe(self, fields: dict[str, object]) -> TrainingConfig:
+        """This config with a recipe's fields applied (doc 90); validated like any other."""
+        return replace(self, **fields) if fields else self  # type: ignore[arg-type]
 
     def __post_init__(self) -> None:
         if not self.dataset_ids:

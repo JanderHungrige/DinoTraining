@@ -50,6 +50,15 @@ def load_image(path: str) -> Image.Image | None:
         return None
 
 
+def load_sample_image(sample: TrainingSample) -> Image.Image | None:
+    """The picture a sample trains on: its tile when it has one (doc 90)."""
+    image = load_image(sample.path)
+    if image is None or sample.crop is None:
+        return image
+    x, y, width, height = sample.crop
+    return image.crop((x, y, x + width, y + height))
+
+
 def build_targets(
     spec: HeadTypeSpec,
     sample: TrainingSample,
@@ -162,7 +171,7 @@ def precompute_cache(
     """
     cached: list[CachedSample] = []
     for position, sample in enumerate(samples):
-        image = load_image(sample.path)
+        image = load_sample_image(sample)
         if image is None:
             continue
         if kept is not None:

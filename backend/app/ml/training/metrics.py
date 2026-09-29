@@ -123,7 +123,11 @@ def average_precision(
     same object count as false positives. Without that rule a model that emits the same
     box fifty times would score a perfect AP.
     """
-    classes = {cls for _, cls in ground_truth} | {cls for _, _, cls in predictions}
+    # Classes with ground truth on this side only, as COCO does: a class absent from the
+    # evaluation side has no AP to measure, and counting its false positives as AP 0 pulled
+    # the mean down by a third per missing class. A leak-free split (doc 84) makes a class
+    # missing from val or test common, and says so; the metric must not also punish it.
+    classes = {cls for _, cls in ground_truth}
     if not classes:
         return 0.0
 
@@ -135,10 +139,6 @@ def average_precision(
             key=lambda item: item[0],
             reverse=True,
         )
-        if not truths:
-            per_class.append(0.0)
-            continue
-
         matched = [False] * len(truths)
         true_positives: list[float] = []
         false_positives: list[float] = []

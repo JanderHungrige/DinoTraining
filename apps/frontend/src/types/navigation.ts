@@ -12,3 +12,10 @@ export interface InspectRequest {
   readonly sequence: string | null;
   readonly nonce: number;
 }
+
+/** Doc 90: open Training at a dataset with a preparation recipe chosen. */
+export interface TrainRequest {
+  readonly datasetId: string;
+  readonly recipeId: string;
+  readonly nonce: number;
+}

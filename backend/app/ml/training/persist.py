@@ -66,7 +66,9 @@ def register_trained_head(
         weights=job.best_state,
         class_names=job.class_names,
         dataset_ids=job.config.dataset_ids,
-        metrics=final_metrics,
+        # The test score next to the validation one: the number that was not used to pick
+        # the weights, and so the honest one (doc 90).
+        metrics={**final_metrics, **{f"test_{k}": v for k, v in job.test_metrics.items()}},
         primary_metric=spec.primary_metric,
         primary_metric_value=job.best_metric,
         # The config snapshot is what makes a run reproducible; without it a checkpoint

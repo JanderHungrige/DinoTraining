@@ -18,7 +18,10 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
 import { FinetunePanel } from '../components/FinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
+import { RecipePicker } from '../components/RecipePicker';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
+import { useRecipeChoice } from '../hooks/useRecipeChoice';
+import type { TrainRequest } from '../types/navigation';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { isOneOf, isShapeOf, stillListed } from '../lib/persisted';
 import { TrainingProgress } from '../components/TrainingProgress';
@@ -58,7 +61,7 @@ type TrainingMode = 'head' | 'finetune';
 
 const isTrainingMode = isOneOf<TrainingMode>(['head', 'finetune']);
 
-export function HeadTrainerTab(): JSX.Element {
+export function HeadTrainerTab({ request = null }: { readonly request?: TrainRequest | null }): JSX.Element {
   // Defaults to the head path: it is the cheaper one, the one the rest of the app is
   // built around, and the one a first-time user has the data for.
   // Doc 69: the mode and the whole selection are remembered across tab switches.
@@ -69,6 +72,16 @@ export function HeadTrainerTab(): JSX.Element {
     isShapeOf(DEFAULTS),
   );
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
+  // Doc 90: '' follows the latest up-to-date recipe, 'none' is none, else a recipe id.
+  const [recipeChoice, setRecipeChoice] = useState('');
+  // "Train with this recipe" from Prepare data is an instruction, not a default: it wins
+  // over what was remembered, and pressing it again applies again (the nonce).
+  useEffect(() => {
+    if (!request) return;
+    setMode('head');
+    setSelection((current) => ({ ...current, datasetIds: [request.datasetId] }));
+    setRecipeChoice(request.recipeId);
+  }, [request, setMode, setSelection]);
   const finetune = useFinetune();
 
   useEffect(() => {
@@ -100,6 +113,8 @@ export function HeadTrainerTab(): JSX.Element {
   }, [refreshHeads]);
 
   const installed = installedOnly(backbones);
+  const recipes = useRecipeChoice(selection.datasetIds, recipeChoice);
+  const recipeId = recipes.chosen?.recipe.id ?? '';
 
   // What the remembered selection still refers to. A dataset, backbone or head type may be
   // gone since it was remembered; the form and the run see only what still exists, while
@@ -188,6 +203,8 @@ export function HeadTrainerTab(): JSX.Element {
               and wants to know whether it will load. */}
           <DatasetFormatPanel />
 
+          <RecipePicker datasetIds={live.datasetIds} {...recipes} onChoice={setRecipeChoice} />
+
           <TrainerForm
         datasets={datasets}
         backbones={installed}
@@ -204,6 +221,7 @@ export function HeadTrainerTab(): JSX.Element {
                 epochs: live.epochs,
                 learning_rate: live.learningRate,
                 early_stopping_patience: live.earlyStoppingPatience,
+                ...(recipeId ? { recipe_id: recipeId } : {}),
               })
             }
           />

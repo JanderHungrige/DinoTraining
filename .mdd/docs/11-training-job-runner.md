@@ -189,4 +189,19 @@ registry. Image paths come from the store's own rows, written by Wave 1's confin
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+**2026-09-30: mAP counted classes absent from the evaluation side as AP 0** (found by
+doc 90 on OSDaR).
+- **The rule before:** `average_precision` averaged over every class that was either
+  annotated *or predicted*. A class with no ground truth on the validation or test side,
+  but with some false positives, scored 0 and pulled the mean down by 1/n.
+- **Why it now mattered:** doc 84's leak-free split makes a class missing from a side
+  common, and says so. With two of three classes absent, a perfect detector of the third
+  scored at most 0.33.
+- **The fix:** COCO's rule, classes with ground truth only. A test pins a perfect detection
+  plus a stray class at 1.0.
+- **Effect on old numbers:** results recorded before this change understate mAP wherever a
+  class was predicted but absent. Random splits rarely lacked a class, so earlier
+  comparisons are largely unaffected.
+
+**2026-09-30: `split.test` was computed and never used.** Doc 90 scores the best weights
+on it once, after the loop (`test_metrics`).

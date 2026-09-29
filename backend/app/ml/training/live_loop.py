@@ -33,7 +33,7 @@ from app.ml.training.loop import (
     LossFn,
     batched,
     build_targets,
-    load_image,
+    load_sample_image,
     to_device,
 )
 from app.ml.training.samples import TrainingSample
@@ -71,7 +71,7 @@ def forward_one(
     deriving the grid separately is how the two loops would drift into disagreeing about
     where a box belongs.
     """
-    image = load_image(sample.path)
+    image = load_sample_image(sample)
     if image is None:
         return None
     if rng is not None and live.augmentation is not None:

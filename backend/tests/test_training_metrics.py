@@ -130,6 +130,15 @@ class TestAveragePrecision:
         assert average_precision(clean, gt, 0.5) == pytest.approx(1.0)
         assert average_precision(duplicated, gt, 0.5) < 0.9
 
+    def test_a_class_absent_from_the_evaluation_side_is_not_scored(self) -> None:
+        """COCO's rule, and the leak-free split makes it matter (doc 90): a class with no
+        ground truth on this side has no AP. Scoring its false positives as 0 used to cut
+        a perfect detector's mAP to a half here."""
+        gt = [((0.0, 0.0, 10.0, 10.0), 0)]
+        pred = [(0.9, (0.0, 0.0, 10.0, 10.0), 0), (0.8, (50.0, 50.0, 10.0, 10.0), 1)]
+        assert average_precision(pred, gt, 0.5) == pytest.approx(1.0)
+        assert average_precision(pred, [], 0.5) == 0.0
+
     def test_wrong_class_does_not_match(self) -> None:
         gt = [((0.0, 0.0, 10.0, 10.0), 0)]
         pred = [(0.9, (0.0, 0.0, 10.0, 10.0), 1)]
