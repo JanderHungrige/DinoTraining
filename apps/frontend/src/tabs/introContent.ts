@@ -76,6 +76,17 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
       'first pass on the next batch, and you correct it instead of starting from nothing.',
   },
   {
+    tab: 'inspect',
+    title: 'Watch what you annotated',
+    what:
+      'Open a dataset and play its videos and image folders back with every stored box ' +
+      'and mask drawn on, with a coloured bar per class showing where each one appears.',
+    why:
+      'A dataset is easier to trust once you have watched it. Gaps, drift and a class that ' +
+      'only ever appears in one stretch of a ride show up in seconds on a timeline and ' +
+      'take an afternoon to find image by image.',
+  },
+  {
     tab: 'library',
     title: 'Keep track of it all',
     what:

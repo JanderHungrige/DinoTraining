@@ -75,6 +75,18 @@ describe('TokenPanel', () => {
     expect(screen.getByRole('button', { name: /save token/i })).toBeEnabled();
   });
 
+  it('never remembers a typed token — unlike every other entry (doc 69)', async () => {
+    // localStorage is plain text on disk. Every other field in the app is remembered
+    // across tab switches; this one must not be, or the secret outlives the session.
+    const user = userEvent.setup();
+    render(<TokenPanel />);
+    await screen.findByRole('button', { name: /save token/i });
+    await user.type(screen.getByLabelText(/access token/i), 'hf_secret_value_1234');
+
+    const stored = Object.keys(localStorage).map((key) => localStorage.getItem(key) ?? '');
+    expect(stored.some((value) => value.includes('hf_secret'))).toBe(false);
+  });
+
   it('sends the token and clears the field afterwards', async () => {
     const user = userEvent.setup();
     render(<TokenPanel />);

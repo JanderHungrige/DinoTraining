@@ -57,7 +57,7 @@ A browser drop has nothing the backend can open. The alternative was an upload e
 a second input contract, the one doc 17 deliberately avoided, plus a temp-file lifecycle to
 own. Instead the affordance is **not offered** where it cannot work, which is the pattern
 `hasNativeDialog` already set: the browse buttons disappear, the path field never does. If
-browser input is ever wanted it belongs in Wave 9, where server-side files are already part
+browser input is ever wanted it belongs in Wave 10, where server-side files are already part
 of the deal.
 
 ```

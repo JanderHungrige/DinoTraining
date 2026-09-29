@@ -8,7 +8,10 @@
  * returns rather than asserting it.
  */
 
-import { useState, type JSX } from 'react';
+import { type JSX } from 'react';
+
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isNumber, isString, isStringArray, stillListed } from '../lib/persisted';
 
 import type { DatasetInfo } from '../api/datasets';
 import type { FinetuneJob, FoundationInfo } from '../api/foundation';
@@ -45,13 +48,24 @@ export function FinetunePanel({
   onStart,
   onCancel,
 }: FinetunePanelProps): JSX.Element {
-  const [name, setName] = useState('');
-  const [epochs, setEpochs] = useState(DEFAULT_EPOCHS);
+  // Doc 69: remembered across tab switches and restarts.
+  const [name, setName] = usePersistentState('finetune.name', '', isString);
+  const [epochs, setEpochs] = usePersistentState('finetune.epochs', DEFAULT_EPOCHS, isNumber);
   // Off by default: freezing is the founding rule, the fastest run, and the right
   // choice unless placement is the thing that is wrong.
-  const [unfreezeBlocks, setUnfreezeBlocks] = useState(0);
-  const [selected, setSelected] = useState<readonly string[]>([]);
-  const [baseOverride, setBaseOverride] = useState('');
+  const [unfreezeBlocks, setUnfreezeBlocks] = usePersistentState(
+    'finetune.unfreezeBlocks',
+    0,
+    isNumber,
+  );
+  const [remembered, setSelected] = usePersistentState<readonly string[]>(
+    'finetune.datasets',
+    [],
+    isStringArray,
+  );
+  // Only the datasets that still exist; a remembered one may have been deleted since.
+  const selected = remembered.filter((id) => datasets.some((entry) => entry.id === id));
+  const [baseOverride, setBaseOverride] = usePersistentState('finetune.base', '', isString);
 
   // Only the *catalogue* detectors can be fine-tuned: an instance is already a fine-tune,
   // and training one again would compound its drift from the COCO weights it started at.
@@ -59,7 +73,7 @@ export function FinetunePanel({
     (entry) => entry.render_hint === 'boxes' && entry.installed && entry.approx_size_mb > 0,
   );
   // Derived, never seeded from an async fetch — the rule this project keeps relearning.
-  const baseId = baseOverride || bases[0]?.id || '';
+  const baseId = stillListed(baseOverride, bases.map((entry) => entry.id)) || bases[0]?.id || '';
   const ready = baseId !== '' && selected.length > 0 && name.trim().length > 0;
 
   if (bases.length === 0) {

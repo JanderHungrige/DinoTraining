@@ -194,7 +194,7 @@ None — this is the wave's root feature. Everything else in Wave 1 depends on i
 
 The sidecar binds **loopback only** (`127.0.0.1`), never `0.0.0.0` — it is an in-process
 implementation detail of a desktop app, not a network service. No auth is therefore
-required in Wave 1, and this is the assumption that must be revisited in Wave 9 (website),
+required in Wave 1, and this is the assumption that must be revisited in Wave 10 (website),
 where the same FastAPI core becomes genuinely remote.
 
 `HF_TOKEN` is read from `.env` into settings and is never logged, never echoed by any

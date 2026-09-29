@@ -20,6 +20,7 @@ import {
 } from '../api/generate';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
+import type { ImageReview } from './generatorSave';
 
 export interface GeneratorProposal {
   readonly boxes: readonly CanvasBox[];
@@ -94,4 +95,23 @@ export async function proposeForGenerator(
     found: response.masks.length > 0,
     maskResponse: response,
   };
+}
+
+/** A proposal as a review of one image — the shape the session shows and saves (doc 70). */
+export function toReview(path: string, proposed: GeneratorProposal): ImageReview {
+  return {
+    path,
+    boxes: proposed.boxes,
+    masks: proposed.masks,
+    maskResponse: proposed.maskResponse,
+    imageSize: { width: proposed.width, height: proposed.height },
+  };
+}
+
+/** Proposes for one image and returns it as a review. Autoplay's proposer (doc 71). */
+export async function proposeReview(
+  config: GeneratorConfig,
+  imagePath: string,
+): Promise<ImageReview> {
+  return toReview(imagePath, await proposeForGenerator(config, imagePath));
 }

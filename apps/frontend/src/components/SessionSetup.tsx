@@ -9,22 +9,24 @@
  * caller from constructing both at once.
  *
  * The folder is a text field with an optional native picker. Under Tauri the dialog
- * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 9) there is
+ * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 10) there is
  * none, so the field is always editable rather than being disabled without one.
  */
 
 import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
-import { DEFAULT_BOX_THRESHOLD, DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
+import { DEFAULT_TEXT_THRESHOLD } from '../api/annotate';
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import { listFoundations, proposesBoxes, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
+import { useStudioEntries } from '../hooks/useStudioEntries';
+import { stillListed } from '../lib/persisted';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
-import { ImageSourceField, type ImageSource } from './ImageSourceField';
+import { ImageSourceField } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
-import { ProposalModePicker, type ProposalMode } from './ProposalModePicker';
+import { ProposalModePicker } from './ProposalModePicker';
 import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
 
 /** Matches the Dataset Generator's default, and the only backbone a head can be run on. */
@@ -36,24 +38,34 @@ export interface SessionSetupProps {
 }
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
-  const [images, setImages] = useState<ImageSource>({ kind: 'folder', folder: '' });
-  const [mode, setMode] = useState<ProposalMode>('prompt');
+  // Doc 69: every entry is remembered across tab switches and restarts.
+  const {
+    images,
+    setImages,
+    mode,
+    setMode,
+    prompt,
+    setPrompt,
+    concept,
+    setConcept,
+    newName,
+    setNewName,
+    boxThreshold,
+    setBoxThreshold,
+    datasetOverride,
+    setDatasetOverride,
+    foundationOverride,
+    setFoundationOverride,
+    headOverride,
+    setHeadOverride,
+  } = useStudioEntries();
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
-  const [foundationOverride, setFoundationOverride] = useState('');
-  const [prompt, setPrompt] = useState('');
-  // Separate from `prompt` — that one is Grounding DINO's. One shared string would
-  // carry a stale prompt into a detector run the moment the user switched modes.
-  const [concept, setConcept] = useState('');
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [loadingHeads, setLoadingHeads] = useState(true);
-  // Only the user's override is stored; the effective head falls back to the first
-  // compatible one. Seeding useState from an async fetch leaves it '' forever — the
-  // form looks filled in and the submit button never enables. See CLAUDE.md.
-  const [headOverride, setHeadOverride] = useState('');
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
-  const [datasetId, setDatasetId] = useState('');
-  const [newName, setNewName] = useState('');
-  const [boxThreshold, setBoxThreshold] = useState(DEFAULT_BOX_THRESHOLD);
+  // '' means "create a new one". A remembered id for a dataset deleted since falls back to
+  // that, never to a write into something the backend no longer has.
+  const datasetId = stillListed(datasetOverride, datasets.map((entry) => entry.id));
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     void listDatasets()
@@ -73,10 +85,17 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   const annotatable = heads.filter(
     (head) => head.render_hint === 'boxes' && head.backbone_id === BACKBONE_ID,
   );
-  const selectedHead = headOverride || annotatable[0]?.id || '';
+  // Only the user's override is stored; the effective head falls back to the first
+  // compatible one. Seeding useState from an async fetch leaves it '' forever — the
+  // form looks filled in and the submit button never enables. See CLAUDE.md.
+  const selectedHead =
+    stillListed(headOverride, annotatable.map((head) => head.id)) || annotatable[0]?.id || '';
   // Derived, never seeded — the same rule, for the same reason.
   const usableDetectors = foundations.filter((e) => proposesBoxes(e) && e.installed);
-  const selectedDetector = foundationOverride || usableDetectors[0]?.id || '';
+  const selectedDetector =
+    stillListed(foundationOverride, usableDetectors.map((entry) => entry.id)) ||
+    usableDetectors[0]?.id ||
+    '';
   // Asking the *selected* entry is what stops the field lingering after a switch back.
   const detectorNeedsConcept =
     usableDetectors.find((entry) => entry.id === selectedDetector)?.takes_concept === true;
@@ -118,7 +137,10 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         const created = await createDataset(newName.trim(), prompt || null);
         targetId = created.id;
         setDatasets((current) => [created, ...current]);
-        setDatasetId(created.id);
+        // Remember the dataset itself, not the name that created it: a remembered name
+        // would create a second dataset of that name on the next start.
+        setDatasetOverride(created.id);
+        setNewName('');
       } catch {
         setError('Could not create the dataset.');
         return;
@@ -171,7 +193,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
             <select
               id="dataset"
               value={datasetId}
-              onChange={(event) => setDatasetId(event.target.value)}
+              onChange={(event) => setDatasetOverride(event.target.value)}
             >
               <option value="">Create a new one…</option>
               {datasets.map((dataset) => (

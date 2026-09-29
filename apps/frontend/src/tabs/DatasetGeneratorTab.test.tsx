@@ -63,6 +63,9 @@ const MASK_RESPONSE = {
 let consoleError: MockInstance<(...args: unknown[]) => void>;
 
 beforeEach(() => {
+  // These tests drive the manual flow. Auto-propose is on by default (doc 70) and has its
+  // own test below; left on here, a proposal would race every "before proposing" check.
+  localStorage.setItem('dinotraining.v1.generator.autoPropose', 'false');
   vi.mocked(annotate.listFolderImages).mockResolvedValue(['/photos/a.png']);
   vi.mocked(generate.proposeMasks).mockResolvedValue(MASK_RESPONSE);
   vi.mocked(headsApi.listHeadInstances).mockResolvedValue([]);
@@ -140,6 +143,13 @@ describe('DatasetGeneratorTab', () => {
     await user.click(screen.getByRole('button', { name: /propose masks/i }));
 
     await waitFor(() => expect(screen.getByText(/Grounded SAM/)).toBeInTheDocument());
+  });
+
+  it('proposes on its own when the session starts, with the default settings (doc 70)', async () => {
+    localStorage.removeItem('dinotraining.v1.generator.autoPropose');
+    await startMaskSession();
+    await waitFor(() => expect(generate.proposeMasks).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole('button', { name: /Positive mask/ })).toBeInTheDocument();
   });
 
   it('cannot save before anything has been proposed', async () => {

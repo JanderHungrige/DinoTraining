@@ -15,6 +15,7 @@ from app.api.v1 import (
     backbones,
     dataset_classes,
     dataset_image_masks,
+    dataset_images,
     datasets,
     foundation,
     foundation_finetune,
@@ -31,6 +32,7 @@ from app.api.v1 import (
     system,
     training,
     video,
+    video_extract,
 )
 
 api_router = APIRouter()
@@ -52,7 +54,9 @@ api_router.include_router(settings.router, tags=["settings"])
 api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])
+api_router.include_router(dataset_images.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])
 api_router.include_router(prescan.router, tags=["generate"])
 api_router.include_router(video.router, tags=["video"])
+api_router.include_router(video_extract.router, tags=["video"])

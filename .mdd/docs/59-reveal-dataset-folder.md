@@ -87,7 +87,7 @@ The last one is a dataset selection too. "Where does this go" is worth opening a
 
 ## Business Rules
 
-1. **Tauri only.** There is no file manager to open in the browser dev mode or in Wave 9,
+1. **Tauri only.** There is no file manager to open in the browser dev mode or in Wave 10,
    so the button is absent — the same rule the folder pickers follow, and the reason
    `hasNativeDialog` is read in an effect rather than at module scope.
 2. **Absent when nothing is selected.** An id of `''` means no dataset, and a button that

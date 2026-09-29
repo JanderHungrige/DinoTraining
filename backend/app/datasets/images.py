@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.core.paths import ensure_within
+from app.datasets.models import FramePosition
 
 logger = logging.getLogger(__name__)
 
@@ -29,21 +30,37 @@ def upsert_image(
     stored_path: str,
     width: int,
     height: int,
+    frame: FramePosition | None = None,
 ) -> int:
     """Insert or refresh one image row and return its id.
 
     Shared by the box and mask write paths, so saving masks for an image the user already
     boxed reuses the same row rather than creating a second one — ``UNIQUE (dataset_id,
     path)`` is what makes both paths agree.
+
+    A frame position (doc 73) is written when given and **kept when not**: re-reviewing a
+    frame through the dataset-as-source path knows nothing about the video it came from,
+    and must not erase what the Generator recorded.
     """
     connection.execute(
-        "INSERT INTO images (dataset_id, path, width, height, annotated_at)"
-        " VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO images"
+        " (dataset_id, path, width, height, annotated_at, sequence, frame_index)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)"
         " ON CONFLICT(dataset_id, path) DO UPDATE SET"
         "   width = excluded.width,"
         "   height = excluded.height,"
-        "   annotated_at = excluded.annotated_at",
-        (dataset_id, stored_path, width, height, now()),
+        "   annotated_at = excluded.annotated_at,"
+        "   sequence = COALESCE(excluded.sequence, images.sequence),"
+        "   frame_index = COALESCE(excluded.frame_index, images.frame_index)",
+        (
+            dataset_id,
+            stored_path,
+            width,
+            height,
+            now(),
+            frame.sequence if frame else None,
+            frame.frame_index if frame else None,
+        ),
     )
     row = connection.execute(
         "SELECT id FROM images WHERE dataset_id = ? AND path = ?",
@@ -66,6 +83,10 @@ def store_image_file(
         return source_path
 
     source = Path(source_path)
+    if source.resolve().is_relative_to(dataset_dir.resolve()):
+        # Already the dataset's own file (doc 73: frames decoded into the dataset). Copying
+        # it into images/ would store every frame twice.
+        return source_path
     if not source.is_file():
         # Reference it anyway: a missing source is the caller's problem to report, and
         # failing the whole save would lose the labels the user just made.

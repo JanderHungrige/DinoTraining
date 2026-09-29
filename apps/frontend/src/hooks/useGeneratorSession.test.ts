@@ -111,7 +111,9 @@ describe('useGeneratorSession', () => {
     });
     expect(result.current.boxes).toHaveLength(1);
 
-    act(() => result.current.next());
+    act(() => {
+      void result.current.next();
+    });
 
     expect(result.current.currentImage).toBe('/photos/b.png');
     expect(result.current.boxes).toHaveLength(0);
@@ -130,11 +132,13 @@ describe('useGeneratorSession', () => {
     const { result } = renderHook(() => useGeneratorSession(CONFIG));
     await waitFor(() => expect(result.current.currentImage).not.toBeNull());
 
-    let pending: Promise<void> = Promise.resolve();
+    let pending: Promise<unknown> = Promise.resolve();
     act(() => {
       pending = result.current.propose();
     });
-    act(() => result.current.next());
+    act(() => {
+      void result.current.next();
+    });
 
     await act(async () => {
       resolveLate(proposal());
@@ -194,11 +198,17 @@ describe('useGeneratorSession', () => {
     const { result } = renderHook(() => useGeneratorSession(CONFIG));
     await waitFor(() => expect(result.current.images).toHaveLength(2));
 
-    act(() => result.current.previous());
+    act(() => {
+      void result.current.previous();
+    });
     expect(result.current.index).toBe(0);
 
-    act(() => result.current.next());
-    act(() => result.current.next());
+    act(() => {
+      void result.current.next();
+    });
+    act(() => {
+      void result.current.next();
+    });
     expect(result.current.index).toBe(1);
     expect(result.current.canGoNext).toBe(false);
   });

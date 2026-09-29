@@ -42,6 +42,9 @@ PROVENANCE_TABLES = ("boxes", "masks")
 ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "boxes": {"producer": "TEXT"},
     "masks": {"producer": "TEXT"},
+    # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a
+    # photo, which is not part of any sequence.
+    "images": {"sequence": "TEXT", "frame_index": "INTEGER"},
 }
 
 _PROVENANCE_CHECK = ", ".join(f"'{value}'" for value in PROVENANCE_VALUES)
@@ -118,6 +121,8 @@ CREATE TABLE IF NOT EXISTS images (
     width        INTEGER NOT NULL,
     height       INTEGER NOT NULL,
     annotated_at TEXT NOT NULL,
+    sequence     TEXT,
+    frame_index  INTEGER,
     UNIQUE (dataset_id, path)
 );
 

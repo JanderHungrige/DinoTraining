@@ -17,6 +17,7 @@ import { listFolderImages } from '../api/annotate';
 import { listDatasetImages, storedToCanvasBoxes } from '../api/datasets';
 import type { ImageSource } from '../components/ImageSourceField';
 import type { CanvasBox } from '../types/annotation';
+import { sourceKey, VIDEO_NEEDS_DECODING } from '../lib/imageSource';
 
 export interface SessionImages {
   readonly images: readonly string[];
@@ -34,8 +35,7 @@ export interface SessionImages {
 /** A stable key. Two sources of different kinds must never compare equal, or switching
  *  between them would not reload. */
 function keyOf(source: ImageSource | null): string {
-  if (source === null) return '';
-  return source.kind === 'dataset' ? `dataset:${source.datasetId}` : `folder:${source.folder}`;
+  return sourceKey(source);
 }
 
 export function useSessionImages(
@@ -88,6 +88,8 @@ export function useSessionImages(
             entries.map((entry) => [entry.path, storedToCanvasBoxes(entry.boxes)]),
           );
           found = entries.map((entry) => entry.path);
+        } else if (source.kind === 'video') {
+          throw new Error(VIDEO_NEEDS_DECODING);
         } else {
           found = await listFolderImages(source.folder, controller.signal);
         }

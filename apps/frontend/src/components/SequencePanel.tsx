@@ -11,6 +11,9 @@
 
 import { useEffect, useState, type JSX } from 'react';
 
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isNumber } from '../lib/persisted';
+
 import { DEFAULT_FPS, probeSequence, type SequenceInfo } from '../api/video';
 import { renderOverlayFor } from './overlays/registry';
 import { useSequenceRun } from '../hooks/useSequenceRun';
@@ -41,7 +44,9 @@ export function SequencePanel({
   // `null` until the path turns out to be something playable. A single image is not.
   const [sequence, setSequence] = useState<SequenceInfo | null>(null);
   const [start, setStart] = useState(0);
-  const [count, setCount] = useState(DEFAULT_COUNT);
+  // Remembered (doc 69). `start` is not: it belongs to one clip, and `fps` is re-read
+  // from each clip on probe anyway.
+  const [count, setCount] = usePersistentState('viewer.sequence.count', DEFAULT_COUNT, isNumber);
   const [fps, setFps] = useState(DEFAULT_FPS);
   const playback = useSequenceRun(fps);
 

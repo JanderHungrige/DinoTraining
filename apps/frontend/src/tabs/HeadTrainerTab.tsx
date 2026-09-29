@@ -19,6 +19,8 @@ import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '..
 import { FinetunePanel } from '../components/FinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isOneOf, isShapeOf, stillListed } from '../lib/persisted';
 import { TrainingProgress } from '../components/TrainingProgress';
 import { DatasetFormatPanel } from '../components/DatasetFormatPanel';
 import { listFoundations, type FoundationInfo } from '../api/foundation';
@@ -54,11 +56,18 @@ const DEFAULTS: TrainerSelection = {
 /** Which of the two things this tab does. */
 type TrainingMode = 'head' | 'finetune';
 
+const isTrainingMode = isOneOf<TrainingMode>(['head', 'finetune']);
+
 export function HeadTrainerTab(): JSX.Element {
   // Defaults to the head path: it is the cheaper one, the one the rest of the app is
   // built around, and the one a first-time user has the data for.
-  const [mode, setMode] = useState<TrainingMode>('head');
-  const [selection, setSelection] = useState<TrainerSelection>(DEFAULTS);
+  // Doc 69: the mode and the whole selection are remembered across tab switches.
+  const [mode, setMode] = usePersistentState<TrainingMode>('trainer.mode', 'head', isTrainingMode);
+  const [selection, setSelection] = usePersistentState<TrainerSelection>(
+    'trainer.selection',
+    DEFAULTS,
+    isShapeOf(DEFAULTS),
+  );
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const finetune = useFinetune();
 
@@ -92,13 +101,23 @@ export function HeadTrainerTab(): JSX.Element {
 
   const installed = installedOnly(backbones);
 
+  // What the remembered selection still refers to. A dataset, backbone or head type may be
+  // gone since it was remembered; the form and the run see only what still exists, while
+  // the stored selection keeps the rest in case a list merely failed to load.
+  const live: TrainerSelection = {
+    ...selection,
+    datasetIds: selection.datasetIds.filter((id) => datasets.some((entry) => entry.id === id)),
+    backboneId: stillListed(selection.backboneId, installed.map((entry) => entry.id)),
+    headTypeId: stillListed(selection.headTypeId, headTypes.map((entry) => entry.id)),
+  };
+
   // Preselect the only installed backbone: making the user pick from a list of one is
   // friction with no decision in it.
   useEffect(() => {
-    if (!selection.backboneId && installed.length === 1) {
+    if (!live.backboneId && installed.length === 1) {
       setSelection((current) => ({ ...current, backboneId: installed[0]!.id }));
     }
-  }, [installed, selection.backboneId]);
+  }, [installed, live.backboneId, setSelection]);
 
   const remove = async (id: string): Promise<void> => {
     setBusy((current) => ({ ...current, [id]: true }));
@@ -173,18 +192,18 @@ export function HeadTrainerTab(): JSX.Element {
         datasets={datasets}
         backbones={installed}
         headTypes={headTypes}
-        value={selection}
+        value={live}
         disabled={run.running}
         starting={run.starting}
         onChange={setSelection}
             onSubmit={() =>
               void run.start({
-                head_type_id: selection.headTypeId,
-                backbone_id: selection.backboneId,
-                dataset_ids: selection.datasetIds,
-                epochs: selection.epochs,
-                learning_rate: selection.learningRate,
-                early_stopping_patience: selection.earlyStoppingPatience,
+                head_type_id: live.headTypeId,
+                backbone_id: live.backboneId,
+                dataset_ids: live.datasetIds,
+                epochs: live.epochs,
+                learning_rate: live.learningRate,
+                early_stopping_patience: live.earlyStoppingPatience,
               })
             }
           />
