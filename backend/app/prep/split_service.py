@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import logging
 from collections import Counter
 from typing import Literal
 
@@ -9,10 +11,13 @@ from pydantic import BaseModel, Field
 
 from app.core.config import Settings
 from app.datasets.db import transaction
+from app.datasets.store import dataset_dir
 from app.prep.audit import last_audit
 from app.prep.split import BUFFER, SIDES, assign, build_groups, mark_buffers
 from app.prep.state import load_state
 from app.prep.stats import DatasetFacts, collect
+
+logger = logging.getLogger(__name__)
 
 SplitMode = Literal["auto", "keep-source"]
 
@@ -120,11 +125,60 @@ def make_split(
     }
     sides = mark_buffers(facts, assign(groups, fractions, seed))
     _store(dataset_id, sides, settings)
+    save_split_settings(
+        dataset_id,
+        SplitSettings(mode=mode, seed=seed, val_fraction=val_fraction, test_fraction=test_fraction),
+        settings,
+    )
     largest = max(len(g.image_ids) for g in groups)
     report = _report(facts, sides, mode, seed, len(groups), largest)
     if audit is None:
         report.warnings.insert(0, NO_AUDIT_WARNING)
     return report
+
+
+SPLIT_FILE = "split.json"
+
+
+class SplitSettings(BaseModel):
+    """How the stored split was made, so a recipe (doc 88) can make it again."""
+
+    mode: str
+    seed: int
+    val_fraction: float
+    test_fraction: float
+
+
+def save_split_settings(
+    dataset_id: str, split: SplitSettings, settings: Settings | None = None
+) -> None:
+    directory = dataset_dir(dataset_id, settings)
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / SPLIT_FILE).write_text(split.model_dump_json(indent=2), encoding="utf-8")
+
+
+def load_split_settings(dataset_id: str, settings: Settings | None = None) -> SplitSettings | None:
+    path = dataset_dir(dataset_id, settings) / SPLIT_FILE
+    if not path.is_file():
+        return None
+    try:
+        return SplitSettings.model_validate_json(path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        logger.warning("Ignoring an unreadable %s: %s", path, error)
+        return None
+
+
+def split_hash(dataset_id: str, settings: Settings | None = None) -> str | None:
+    """A fingerprint of the stored assignment: which image is on which side."""
+    with transaction(settings) as connection:
+        rows = connection.execute(
+            "SELECT id, split FROM images WHERE dataset_id = ? AND split IS NOT NULL ORDER BY id",
+            (dataset_id,),
+        ).fetchall()
+    if not rows:
+        return None
+    digest = hashlib.sha256("".join(f"{r[0]}:{r[1]}\n" for r in rows).encode())
+    return digest.hexdigest()[:16]
 
 
 def _store(dataset_id: str, sides: dict[int, str], settings: Settings | None) -> None:
@@ -144,4 +198,12 @@ def current_split(dataset_id: str, settings: Settings | None = None) -> SplitRep
     return _report(facts, sides, "stored", 0, 0, 0)
 
 
-__all__ = ["SplitRefusedError", "SplitReport", "current_split", "make_split"]
+__all__ = [
+    "SplitRefusedError",
+    "SplitReport",
+    "SplitSettings",
+    "current_split",
+    "load_split_settings",
+    "make_split",
+    "split_hash",
+]

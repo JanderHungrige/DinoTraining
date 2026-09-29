@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 from collections.abc import AsyncIterator
+from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
@@ -44,6 +45,11 @@ class TrainingRequest(BaseModel):
     save_best_only: bool = True
     early_stopping_patience: int = Field(default=5, ge=1)
     augment: bool = False
+    #: Doc 86. "none" trains exactly as before; the Prepare flow recommends one.
+    imbalance: Literal["none", "weighted-loss", "balanced-sampling"] = "none"
+    #: Doc 87. A preset id from GET /prep/augmentation-presets; "none" by default.
+    augmentation: str = "none"
+    augment_copies: int = Field(default=2, ge=0, le=8)
 
     def to_config(self) -> TrainingConfig:
         return TrainingConfig(
@@ -60,6 +66,9 @@ class TrainingRequest(BaseModel):
             save_best_only=self.save_best_only,
             early_stopping_patience=self.early_stopping_patience,
             augment=self.augment,
+            imbalance=self.imbalance,
+            augmentation=self.augmentation,
+            augment_copies=self.augment_copies,
         )
 
 
@@ -86,6 +95,7 @@ class JobInfo(BaseModel):
     best_epoch: int | None
     primary_metric: str | None
     message: str
+    notes: list[str] = Field(default_factory=list)
     head_instance_id: str | None
     history: list[EpochInfo]
 
@@ -117,6 +127,7 @@ def _describe(job: TrainingJob) -> JobInfo:
         best_epoch=job.best_epoch,
         primary_metric=spec.primary_metric if spec else None,
         message=job.message,
+        notes=list(job.notes),
         head_instance_id=job.head_instance_id,
         history=[
             EpochInfo(

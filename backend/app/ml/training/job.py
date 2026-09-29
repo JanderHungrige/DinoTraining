@@ -51,6 +51,9 @@ class TrainingJob:
     frozen_parameters: int = 0
     trainable_parameters: int = 0
     message: str = ""
+    #: What preparation did on this run that the user should know (doc 87): flips turned
+    #: off for a class, fewer augmented copies than asked for.
+    notes: list[str] = field(default_factory=list)
     #: Set once the run is saved as a head instance, so the UI can link straight to it.
     head_instance_id: str | None = None
     cancel_requested: threading.Event = field(default_factory=threading.Event, repr=False)

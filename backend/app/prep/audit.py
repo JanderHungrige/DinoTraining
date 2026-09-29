@@ -50,7 +50,7 @@ class DatasetAudit(BaseModel):
     excluded: int = 0
 
 
-def _facts_hash(facts: DatasetFacts) -> str:
+def facts_hash(facts: DatasetFacts) -> str:
     digest = hashlib.sha256()
     for image in facts.images:
         digest.update(f"{image.id}|{image.path}|{image.width}x{image.height}\n".encode())
@@ -117,7 +117,7 @@ def run_audit(
             warnings=sum(1 for f in findings if f.severity == "warn"),
         ),
         findings=findings,
-        facts_hash=_facts_hash(facts),
+        facts_hash=facts_hash(facts),
         copy_groups=copies,
         scene_groups=scene_groups,
         unreadable=unreadable,

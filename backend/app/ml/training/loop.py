@@ -152,6 +152,7 @@ def precompute_cache(
     spec: HeadTypeSpec,
     samples: list[TrainingSample],
     num_classes: int,
+    kept: list[int] | None = None,
 ) -> list[CachedSample]:
     """One backbone pass over the dataset.
 
@@ -160,10 +161,14 @@ def precompute_cache(
     why the caller gates on that rather than exposing it as a user setting.
     """
     cached: list[CachedSample] = []
-    for sample in samples:
+    for position, sample in enumerate(samples):
         image = load_image(sample.path)
         if image is None:
             continue
+        if kept is not None:
+            # Unreadable images are skipped, so cache index i is not sample i. Doc 86
+            # needs each cached sample's annotations, and this is the one place that knows.
+            kept.append(position)
         resized, transform = apply_geometry(plan, image)
         features = extract(backbone, to_pixel_values(plan, [resized]))
         targets = build_targets(

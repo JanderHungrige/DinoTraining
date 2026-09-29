@@ -23,14 +23,23 @@ LossFn = Callable[[dict[str, Tensor], dict[str, Tensor]], Tensor]
 IGNORE_INDEX = 255
 
 
+def _on(weights: Tensor | None, like: Tensor) -> Tensor | None:
+    return None if weights is None else weights.to(device=like.device, dtype=like.dtype)
+
+
 def classification_loss(
-    outputs: dict[str, Tensor], targets: dict[str, Tensor]
+    outputs: dict[str, Tensor], targets: dict[str, Tensor], class_weights: Tensor | None = None
 ) -> Tensor:
-    """Cross-entropy over image-level class logits."""
-    return torch_functional.cross_entropy(outputs["logits"], targets["labels"])
+    """Cross-entropy over image-level class logits. `class_weights` is doc 86's."""
+    logits = outputs["logits"]
+    return torch_functional.cross_entropy(
+        logits, targets["labels"], weight=_on(class_weights, logits)
+    )
 
 
-def segmentation_loss(outputs: dict[str, Tensor], targets: dict[str, Tensor]) -> Tensor:
+def segmentation_loss(
+    outputs: dict[str, Tensor], targets: dict[str, Tensor], class_weights: Tensor | None = None
+) -> Tensor:
     """Per-pixel cross-entropy against a label mask, skipping unannotated pixels.
 
     ``ignore_index`` is what makes letterbox padding harmless: padded regions carry 255
@@ -44,7 +53,9 @@ def segmentation_loss(outputs: dict[str, Tensor], targets: dict[str, Tensor]) ->
         logits = torch_functional.interpolate(
             logits, size=mask.shape[-2:], mode="bilinear", align_corners=False
         )
-    return torch_functional.cross_entropy(logits, mask.long(), ignore_index=IGNORE_INDEX)
+    return torch_functional.cross_entropy(
+        logits, mask.long(), weight=_on(class_weights, logits), ignore_index=IGNORE_INDEX
+    )
 
 
 def assign_detection_targets(
@@ -158,7 +169,20 @@ def giou_from_ltrb(predicted: Tensor, target: Tensor) -> Tensor:
     return iou - (enclosing - union) / (enclosing + epsilon)
 
 
-def detection_loss(outputs: dict[str, Tensor], targets: dict[str, Tensor]) -> Tensor:
+def _class_term(logits: Tensor, one_hot: Tensor, class_weights: Tensor | None) -> Tensor:
+    """Per-class BCE. Weights (doc 86) scale only the *positive* terms of each class: a
+    rare class's misses cost more, and the background every cell also votes on does not."""
+    if class_weights is None:
+        return torch_functional.binary_cross_entropy_with_logits(logits, one_hot, reduction="mean")
+    weight = 1.0 + one_hot * (_on(class_weights, logits) - 1.0)  # type: ignore[operator]
+    return torch_functional.binary_cross_entropy_with_logits(
+        logits, one_hot, weight=weight, reduction="mean"
+    )
+
+
+def detection_loss(
+    outputs: dict[str, Tensor], targets: dict[str, Tensor], class_weights: Tensor | None = None
+) -> Tensor:
     """Classification + **GIoU** box regression + **continuous** centerness.
 
     Classification is computed over every non-ignored cell (background included, which
@@ -185,9 +209,7 @@ def detection_loss(outputs: dict[str, Tensor], targets: dict[str, Tensor]) -> Te
     if bool(labelled.any()):
         one_hot[labelled, flat_target[labelled]] = 1.0
 
-    cls_loss = torch_functional.binary_cross_entropy_with_logits(
-        flat_logits[keep], one_hot[keep], reduction="mean"
-    )
+    cls_loss = _class_term(flat_logits[keep], one_hot[keep], class_weights)
 
     positive_count = int(positive.sum())
     if positive_count == 0:

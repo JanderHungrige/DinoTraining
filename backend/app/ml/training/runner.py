@@ -28,8 +28,8 @@ from app.ml.training.loop import (
     precompute_cache,
     run_epoch,
 )
-from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
+from app.ml.training.preparation import prepare
 from app.ml.training.samples import (
     build_samples,
     classes_for_task,
@@ -180,7 +180,6 @@ class LocalJobRunner:
             config.weight_decay,
             config.backbone_lr_scale,
         )
-        compute_loss = loss_for(spec)
         compute_metrics = metrics_for(spec)
         decode = decode_for(spec)
 
@@ -192,7 +191,9 @@ class LocalJobRunner:
         live: LivePass | None = None
         cache: list[CachedSample] = []
         if caching_is_valid(config.unfreeze_blocks):
-            cache = precompute_cache(backbone, plan, spec, usable, num_classes)
+            kept: list[int] = []
+            cache = precompute_cache(backbone, plan, spec, usable, num_classes, kept)
+            usable = [usable[position] for position in kept]
             if not cache:
                 raise ValueError("None of the selected images could be read")
             total = len(cache)
@@ -206,9 +207,13 @@ class LocalJobRunner:
             )
             total = len(usable)
 
-        split = split_indices(
-            total, config.val_fraction, config.test_fraction, config.split_seed
-        )
+        split = split_indices(total, config.val_fraction, config.test_fraction, config.split_seed)
+        # `usable` lines up with the cache here (see `kept` above) and with the live pass.
+        prepared = prepare(
+            job, spec, backbone, plan, usable, cache, live, split, num_classes
+        )  # fmt: skip
+        live = prepared.live
+        compute_loss = prepared.balance.loss
         assert spec.primary_metric is not None  # 08 guarantees this for trainable heads
         mode = spec.primary_metric_mode or "max"
         patience = 0
@@ -219,13 +224,15 @@ class LocalJobRunner:
                 return
 
             if live is None:
-                train_loss = run_epoch(head, optimiser, compute_loss, cache, split.train)
+                order = prepared.order(split.train, epoch)
+                train_loss = run_epoch(head, optimiser, compute_loss, cache, order)
                 val_loss, outputs, targets = evaluate(head, compute_loss, cache, split.val)
             else:
-                train_loss = run_live_epoch(live, head, optimiser, compute_loss, split.train)
-                val_loss, outputs, targets = evaluate_live(
-                    live, head, compute_loss, split.val
+                order = prepared.order(split.train, epoch)
+                train_loss = run_live_epoch(
+                    live, head, optimiser, compute_loss, order, prepared.rng(epoch)
                 )
+                val_loss, outputs, targets = evaluate_live(live, head, compute_loss, split.val)
             # Decode before metrics: detection metrics need boxes, not per-cell logits.
             decoded = [decode(out, plan.patch_size) for out in outputs]
             metrics = compute_metrics(decoded, targets) if decoded else {}

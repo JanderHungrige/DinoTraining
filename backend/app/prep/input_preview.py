@@ -197,32 +197,46 @@ def render(
     if tile is not None:
         picture = picture.crop((tile.x, tile.y, tile.x + tile.width, tile.y + tile.height))
         offset = (tile.x, tile.y)
-    fitted = _fit(profile, picture)
-    draw = ImageDraw.Draw(fitted.image)
-    lost = too_small = 0
     # A whole-image label has no boxes to learn from, so none are drawn or judged.
     boxes = [a for a in annotations if a.kind == "box" and profile.annotation_kind != "labels"]
-    moved, kept = fitted.boxes(
-        [(a.x - offset[0], a.y - offset[1], a.width, a.height) for a in boxes]
+    fitted, lost, too_small = fit_and_draw(
+        profile,
+        picture,
+        [(a.cls, a.x - offset[0], a.y - offset[1], a.width, a.height) for a in boxes],
+        colours,
     )
-    lost += len(boxes) - len(kept)
-    for (x, y, w, h), index in zip(moved, kept, strict=True):
-        small = (w * h) ** 0.5 < profile.min_visible_px
-        too_small += small
-        colour = TOO_SMALL_COLOUR if small else colours.get(boxes[index].cls, _PALETTE[0])
-        draw.rectangle((x, y, x + w, y + h), outline=colour, width=1 if small else 2)
     if profile.annotation_kind == "masks" and any(a.kind == "mask" for a in annotations):
         lost += _draw_masks(facts, image, tile, fitted, colours, class_map)
     return PreviewImage(
         path=image.path,
         tile=(tile.x, tile.y, tile.width, tile.height) if tile else None,
-        data_url=_data_url(fitted.image),
+        data_url=data_url(fitted.image),
         width=fitted.image.width,
         height=fitted.image.height,
         objects=len(annotations),
         lost=lost,
         too_small=too_small,
     )
+
+
+def fit_and_draw(
+    profile: ModelProfile,
+    picture: Image.Image,
+    boxes: list[tuple[str, float, float, float, float]],
+    colours: dict[str, str],
+) -> tuple[_Fitted, int, int]:
+    """The picture as the model gets it, with (class, x, y, w, h) boxes drawn on it.
+    Returns it with how many boxes the fit lost and how many are too small to see."""
+    fitted = _fit(profile, picture)
+    draw = ImageDraw.Draw(fitted.image)
+    moved, kept = fitted.boxes([box[1:] for box in boxes])
+    too_small = 0
+    for (x, y, w, h), index in zip(moved, kept, strict=True):
+        small = (w * h) ** 0.5 < profile.min_visible_px
+        too_small += small
+        colour = TOO_SMALL_COLOUR if small else colours.get(boxes[index][0], _PALETTE[0])
+        draw.rectangle((x, y, x + w, y + h), outline=colour, width=1 if small else 2)
+    return fitted, len(boxes) - len(kept), too_small
 
 
 def _draw_masks(
@@ -253,10 +267,19 @@ def _draw_masks(
     return lost
 
 
-def _data_url(picture: Image.Image) -> str:
+def data_url(picture: Image.Image) -> str:
     buffer = io.BytesIO()
     picture.save(buffer, format="JPEG", quality=90)
     return "data:image/jpeg;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
-__all__ = ["MAX_PREVIEWS", "InputPreview", "PreviewImage", "colours_for", "render", "sample"]
+__all__ = [
+    "MAX_PREVIEWS",
+    "InputPreview",
+    "PreviewImage",
+    "colours_for",
+    "data_url",
+    "fit_and_draw",
+    "render",
+    "sample",
+]
