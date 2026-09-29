@@ -3,11 +3,11 @@ id: dinotraining-wave-11
 title: "Wave 11: Guided Data Preparation"
 initiative: dinotraining
 initiative_version: 10
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-10
 demo_state: "A user with no data-science background imports an external dataset and follows a guided flow. The app audits it and explains in plain language what is wrong, fixes what can safely be fixed, splits it without leakage, shows exactly what the chosen model will see, sets how class imbalance is handled, and hands a saved, reproducible preparation recipe to training. An AI assistant over MCP can run the same steps and gets the same explanations."
 created: 2026-09-29
-hash: 58869633
+hash: 30a10806
 ---
 
 # Wave 11: Guided Data Preparation
@@ -75,7 +75,7 @@ parameters; external data is where this matters most.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | dataset-audit | — | planned | — |
+| 1 | dataset-audit | docs/81-dataset-audit.md | complete | — |
 | 2 | external-data-intake | — | planned | dataset-audit |
 | 3 | safe-fixes | — | planned | dataset-audit |
 | 4 | leakage-safe-split | — | planned | dataset-audit |

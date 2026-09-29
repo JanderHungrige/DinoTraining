@@ -23,14 +23,13 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 
+from app.datasets.class_names import UNNAMED_CLASS as UNNAMED_CLASS  # re-exported
+from app.datasets.class_names import normalise_class_name
 from app.datasets.masks import MaskStore
 from app.datasets.models import Box, Mask
 from app.datasets.store import DatasetStore
 
 logger = logging.getLogger(__name__)
-
-#: Prompt used when a positive annotation carries none, so it still forms a usable class.
-UNNAMED_CLASS = "object"
 
 #: Index 0 of a segmentation vocabulary. A segmenter must be able to predict "none of the
 #: above" for every pixel that is not an object, and most pixels are not — without it the
@@ -110,8 +109,7 @@ def _class_name(annotation: Box | Mask) -> str:
     Box and Mask deliberately share this: they carry the class in the same field, for the
     same reason, and a dataset with both must not end up with `signal` twice.
     """
-    prompt = (annotation.prompt or "").strip().lower().rstrip(".")
-    return prompt or UNNAMED_CLASS
+    return normalise_class_name(annotation.prompt)
 
 
 def build_class_vocabulary(
