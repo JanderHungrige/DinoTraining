@@ -40,4 +40,35 @@ describe('usePersistentState', () => {
     const { result } = renderHook(() => usePersistentState('t.threshold', 0.3, isNumber));
     expect(result.current[0]).toBe(0.3);
   });
+
+  it('writes even when the component unmounts in the same breath', () => {
+    // Found in the running app: Start sets the remembered dataset and clears the name,
+    // then unmounts the setup form at once. React drops a queued updater for a component
+    // that never renders again, so writing *inside* the updater lost both — and the next
+    // Start created a second dataset of the same name.
+    // Two setters on one component, as in GeneratorSetup: React computes the first update
+    // eagerly, so it takes the second — queued behind it — to show the loss.
+    const { result, unmount } = renderHook(() => ({
+      dataset: usePersistentState('t.dataset', '', isString),
+      name: usePersistentState('t.name', 'Rail run 1', isString),
+    }));
+    act(() => {
+      result.current.dataset[1]('new-1');
+      result.current.name[1]('');
+      unmount();
+    });
+    expect(localStorage.getItem('dinotraining.v1.t.dataset')).toBe('"new-1"');
+    expect(localStorage.getItem('dinotraining.v1.t.name')).toBe('""');
+  });
+
+  it('applies consecutive updaters to the latest value, even before a render', () => {
+    const { result } = renderHook(() => usePersistentState('t.n', 0, isNumber));
+    act(() => {
+      result.current[1]((n) => n + 1);
+      result.current[1]((n) => n + 1);
+    });
+    expect(result.current[0]).toBe(2);
+    expect(localStorage.getItem('dinotraining.v1.t.n')).toBe('2');
+  });
 });
+

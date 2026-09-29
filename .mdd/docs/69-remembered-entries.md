@@ -148,4 +148,17 @@ overrides, extended to survive a restart.
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+- **2026-09-29 — Start lost the remembered dataset and kept the name, so the next Start
+  created a duplicate dataset.** Found while verifying doc 70 in the running app: two
+  datasets called "Wave 9 action bar check". The first version wrote to `localStorage`
+  *inside* the `setState` updater. React runs the first update on an idle component
+  eagerly, but a second update in the same event is queued, and a queued updater runs only
+  when the component renders again. Start sets the dataset, clears the name, and unmounts
+  the setup form, so it never rendered again and the second write was dropped.
+  - **Fix:** write when the setter is called, keeping a ref of the latest value so two
+    updaters in one event still compose.
+  - **Test:** two setters on one component, then an unmount in the same `act`. A single
+    setter passes against the bug because of the eager path, which is why the first test
+    missed it.
+  - **Verified live:** Start, then Change setup. The new dataset was selected and the name
+    was cleared. Start again produced no second dataset.
