@@ -15,10 +15,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, type DatasetCounts } from '../api/datasets';
 import type { MaskProposalResponse } from '../api/generate';
-import { proposeForGenerator } from '../lib/generatorProposal';
+import { proposeForGenerator, toReview } from '../lib/generatorProposal';
 import { saveReview, type ImageReview } from '../lib/generatorSave';
+import { useGeneratorImages } from './useGeneratorImages';
+import type { GeneratorSession, MoveOptions } from '../types/generatorSession';
 import type { GeneratorConfig } from '../types/generatorConfig';
-import { resolveImageSource, sourceNoun } from '../lib/imageSource';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 export type {
@@ -28,69 +29,29 @@ export type {
   MaskConfig,
 } from '../types/generatorConfig';
 
-export interface MoveOptions {
-  readonly autoSave?: boolean;
-}
-
-export interface GeneratorSession {
-  readonly images: readonly string[];
-  /** Every image the source holds, ignoring any prescan filter. */
-  readonly allImages: readonly string[];
-  readonly filtered: boolean;
-  readonly setFilter: (paths: readonly string[] | null) => void;
-  readonly index: number;
-  readonly currentImage: string | null;
-  readonly boxes: readonly CanvasBox[];
-  readonly masks: readonly ReviewMask[];
-  readonly imageSize: { width: number; height: number } | null;
-  /** What produced the current proposals — a head's name, or an annotator's. */
-  readonly producerName: string | null;
-  readonly producerDetail: string | null;
-  readonly loading: boolean;
-  readonly proposing: boolean;
-  readonly saving: boolean;
-  /** True when there is something reviewed that has not been written yet. */
-  readonly dirty: boolean;
-  readonly counts: DatasetCounts;
-  readonly error: string | null;
-  readonly setBoxes: (boxes: CanvasBox[]) => void;
-  readonly setMasks: (masks: ReviewMask[]) => void;
-  readonly reportImageSize: (width: number, height: number) => void;
-  /** Resolves to what was proposed, or null when it failed or the image changed meanwhile. */
-  readonly propose: () => Promise<ImageReview | null>;
-  /** Saves the given review, or the one on screen. False when the save failed. */
-  readonly save: (review?: ImageReview) => Promise<boolean>;
-  /** Moves on, saving a dirty image first when asked. False when that save failed and the
-   *  session stayed where it was, so the review is not lost. */
-  readonly next: (options?: MoveOptions) => Promise<boolean>;
-  readonly previous: (options?: MoveOptions) => Promise<boolean>;
-  /** What this session saved for an image, if anything. */
-  readonly saved: (path: string) => ImageReview | undefined;
-  readonly canGoNext: boolean;
-  readonly canGoPrevious: boolean;
-}
+export type { GeneratorSession, MoveOptions } from '../types/generatorSession';
 
 function describe(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback;
 }
 
 export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSession {
-  const [allImages, setImages] = useState<readonly string[]>([]);
-  // A prescan's hits (doc 53). Null means no filter. The full list stays loaded, so
-  // turning the filter off costs nothing and re-reads nothing.
-  const [filter, setFilterState] = useState<readonly string[] | null>(null);
+  const { images, allImages, filtered, setFilter: setImageFilter, loading, listError } =
+    useGeneratorImages(config);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxes] = useState<readonly CanvasBox[]>([]);
   const [masks, setMasks] = useState<readonly ReviewMask[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [producerName, setProducerName] = useState<string | null>(null);
   const [producerDetail, setProducerDetail] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [proposing, setProposing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [counts, setCounts] = useState<DatasetCounts>(EMPTY_COUNTS);
   const [error, setError] = useState<string | null>(null);
+  // Which image the review on screen was proposed for (doc 71). Auto-propose skips an image
+  // that already has one, so stopping autoplay mid-hold does not re-propose over it.
+  const [proposedFor, setProposedFor] = useState<string | null>(null);
 
   // The mask proposal is kept whole because saving needs the RLE, which deliberately
   // never enters the review type. Verdicts are paired back to it by index.
@@ -102,44 +63,17 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   // Guards a late response from a previous image overwriting the current one's review.
   const requestId = useRef(0);
 
+  // A new config is a new run: nothing reviewed under the old one carries over.
   useEffect(() => {
-    if (!config) {
-      setImages([]);
-      setIndex(0);
-      return;
-    }
-    const controller = new AbortController();
-    // Cleared before the new listing is asked for, not after it arrives (doc 50, bug 1). A source
-    // that fails to load must not leave the previous one's images on screen: they render
-    // fully interactive, so the user reviews the old folder's pictures while the boxes
-    // save into the newly chosen dataset, with only an error message to say otherwise.
-    setImages([]);
     setIndex(0);
     setBoxes([]);
     setMasks([]);
     setImageSize(null);
-    setFilterState(null);
+    setProposedFor(null);
     savedReviews.current = new Map();
-    setLoading(true);
     setError(null);
-
-    resolveImageSource(config.images, controller.signal)
-      .then((found) => {
-        setImages(found);
-      })
-      .catch((caught: unknown) => {
-        if (controller.signal.aborted) return;
-        setError(describe(caught, `Could not list that ${sourceNoun(config.images)}.`));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-
-    return () => controller.abort();
   }, [config]);
 
-  const kept = filter === null ? null : new Set(filter);
-  const images = kept === null ? allImages : allImages.filter((path) => kept.has(path));
   const currentImage = images[index] ?? null;
 
   const propose = useCallback(async (): Promise<ImageReview | null> => {
@@ -155,13 +89,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       // here. The ticket stays in the hook precisely so this check cannot be extracted.
       if (ticket !== requestId.current) return null;
 
-      const review: ImageReview = {
-        path: currentImage,
-        boxes: proposed.boxes,
-        masks: proposed.masks,
-        maskResponse: proposed.maskResponse,
-        imageSize: { width: proposed.width, height: proposed.height },
-      };
+      const review = toReview(currentImage, proposed);
       lastMaskProposal.current = proposed.maskResponse;
       setBoxes(review.boxes);
       setMasks(review.masks);
@@ -169,6 +97,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       setProducerName(proposed.producerName);
       setProducerDetail(proposed.producerDetail);
       setDirty(proposed.found);
+      setProposedFor(currentImage);
       return review;
     } catch (caught) {
       if (ticket === requestId.current) {
@@ -233,7 +162,31 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setMasks(saved?.masks ?? []);
     setImageSize(saved?.imageSize ?? null);
     lastMaskProposal.current = saved?.maskResponse ?? null;
+    setProposedFor(saved ? saved.path : null);
     setDirty(false);
+  }, []);
+
+  /** Jumps straight to an image, without saving the one being left (doc 71: autoplay has
+   *  already saved it, or deliberately did not). */
+  const goTo = useCallback(
+    (target: number): void => {
+      if (target < 0 || target >= images.length) return;
+      requestId.current += 1;
+      setProposing(false);
+      setIndex(target);
+      arrive(images[target]);
+    },
+    [images, arrive],
+  );
+
+  /** Puts a review produced elsewhere (autoplay) on screen, as if it had been proposed here. */
+  const show = useCallback((review: ImageReview): void => {
+    lastMaskProposal.current = review.maskResponse;
+    setBoxes(review.boxes);
+    setMasks(review.masks);
+    setImageSize(review.imageSize);
+    setProposedFor(review.path);
+    setDirty(review.boxes.length > 0 || review.masks.length > 0);
   }, []);
 
   const move = useCallback(
@@ -256,13 +209,14 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
    *
    *  Resets to the first, because position 7 of the filtered list is not position 7 of the
    *  full one and nothing on screen would explain the jump. */
-  const setFilter = useCallback((paths: readonly string[] | null): void => {
-    setFilterState(paths);
-    setIndex(0);
-    setBoxes([]);
-    setMasks([]);
-    setImageSize(null);
-  }, []);
+  const setFilter = useCallback(
+    (paths: readonly string[] | null): void => {
+      setImageFilter(paths);
+      setIndex(0);
+      arrive(undefined);
+    },
+    [setImageFilter, arrive],
+  );
 
   const reportImageSize = useCallback((width: number, height: number) => {
     setImageSize((current) => current ?? { width, height });
@@ -271,7 +225,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
   return {
     images,
     allImages,
-    filtered: filter !== null,
+    filtered,
     setFilter,
     index,
     currentImage,
@@ -285,7 +239,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     saving,
     dirty,
     counts,
-    error,
+    error: error ?? listError,
     setBoxes: editBoxes,
     setMasks: editMasks,
     reportImageSize,
@@ -294,6 +248,9 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     next: (options?: MoveOptions) => move(1, options),
     previous: (options?: MoveOptions) => move(-1, options),
     saved,
+    goTo,
+    show,
+    proposedFor,
     canGoNext: index < images.length - 1,
     canGoPrevious: index > 0,
   };

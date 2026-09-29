@@ -18,6 +18,7 @@ function target(overrides: Partial<AutoProposeTarget> = {}): AutoProposeTarget {
     proposing: false,
     propose: vi.fn().mockResolvedValue(null),
     saved: () => undefined,
+    proposedFor: null,
     ...overrides,
   };
 }
@@ -66,4 +67,13 @@ describe('useAutoPropose (doc 70)', () => {
     rerender({ s: { ...session, proposing: false } });
     expect(session.propose).toHaveBeenCalledTimes(1);
   });
+
+  it('leaves an image alone that already has a proposal on screen (doc 71)', () => {
+    // Autoplay stopped during its hold: the proposal on screen is the one the user stopped
+    // to correct. Re-proposing would replace it with a fresh copy of the same mistake.
+    const session = target({ proposedFor: '/photos/a.png' });
+    renderHook(() => useAutoPropose(session, true));
+    expect(session.propose).not.toHaveBeenCalled();
+  });
 });
+

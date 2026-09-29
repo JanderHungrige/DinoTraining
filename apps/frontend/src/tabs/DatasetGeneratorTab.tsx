@@ -19,6 +19,9 @@ import { GeneratorSetup } from '../components/GeneratorSetup';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { isAnnotationView, isBoolean } from '../lib/persisted';
 import { useAutoPropose } from '../hooks/useAutoPropose';
+import { useAutoplay } from '../hooks/useAutoplay';
+import { AutoplayControls } from '../components/AutoplayControls';
+import { AutoplayBar, AutoplaySummary } from '../components/AutoplayProgress';
 import { GeneratorActionBar } from '../components/GeneratorActionBar';
 import {
   useGeneratorSession,
@@ -39,7 +42,10 @@ export function DatasetGeneratorTab(): JSX.Element {
   // Doc 70: both on by default, and remembered.
   const [autoPropose, setAutoPropose] = usePersistentState('generator.autoPropose', true, isBoolean);
   const [autoSave, setAutoSave] = usePersistentState('generator.autoSave', true, isBoolean);
-  useAutoPropose(session, config !== null && autoPropose);
+  const autoplay = useAutoplay(config, session);
+  // Autoplay proposes for itself; a second proposer racing it would be a second opinion.
+  useAutoPropose(session, config !== null && autoPropose && !autoplay.running);
+  const locked = autoplay.running;
   const prescan = usePrescan();
 
   const startScan = useCallback(
@@ -148,7 +154,9 @@ export function DatasetGeneratorTab(): JSX.Element {
           {/* Which review surface is a property of the config, not of what happens to
               be in state: an empty mask list must still show the mask canvas, or "found
               nothing" would silently render the box canvas instead. */}
-          {imageSize ? (
+          {locked && autoplay.hidden ? (
+            <AutoplayBar progress={autoplay.progress} />
+          ) : imageSize ? (
             config.kind === 'masks' ? (
               <MaskReviewCanvas
                 imageUrl={imageUrl(currentImage)}
@@ -159,7 +167,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 onMasksChange={session.setMasks}
                 onSelect={setSelectedId}
                 view={view}
-                disabled={session.proposing}
+                disabled={session.proposing || locked}
               />
             ) : (
               <AnnotationCanvas
@@ -170,7 +178,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 selectedId={selectedId}
                 onBoxesChange={session.setBoxes}
                 onSelect={setSelectedId}
-                disabled={session.proposing}
+                disabled={session.proposing || locked}
               />
             )
           ) : (
@@ -205,7 +213,15 @@ export function DatasetGeneratorTab(): JSX.Element {
             onSave={() => void session.save()}
             onPrevious={() => void session.previous({ autoSave })}
             onNext={() => void session.next({ autoSave })}
-          />
+            locked={locked}
+          >
+            <AutoplayControls
+              autoplay={autoplay}
+              canPlay={!session.proposing && !session.saving && session.images.length > 0}
+            />
+          </GeneratorActionBar>
+
+          {!locked && autoplay.report && <AutoplaySummary report={autoplay.report} />}
 
         </>
       )}

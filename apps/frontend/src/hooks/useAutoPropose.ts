@@ -17,17 +17,22 @@ export interface AutoProposeTarget {
   readonly proposing: boolean;
   readonly propose: () => Promise<ImageReview | null>;
   readonly saved: (path: string) => ImageReview | undefined;
+  /** The image the review on screen was proposed for (doc 71). */
+  readonly proposedFor: string | null;
 }
 
 export function useAutoPropose(session: AutoProposeTarget, enabled: boolean): void {
   const askedFor = useRef<string | null>(null);
-  const { currentImage, proposing, propose, saved } = session;
+  const { currentImage, proposing, propose, saved, proposedFor } = session;
 
   useEffect(() => {
     if (!enabled || currentImage === null || proposing) return;
     if (askedFor.current === currentImage) return;
     if (saved(currentImage) !== undefined) return;
+    // Already has a proposal on screen, e.g. autoplay was stopped during its hold. That
+    // proposal is what the user stopped to correct; replacing it would lose the reason.
+    if (proposedFor === currentImage) return;
     askedFor.current = currentImage;
     void propose();
-  }, [enabled, currentImage, proposing, propose, saved]);
+  }, [enabled, currentImage, proposing, propose, saved, proposedFor]);
 }

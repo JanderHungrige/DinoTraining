@@ -1130,6 +1130,51 @@ body {
   gap: 0.35rem;
 }
 
+/* Doc 71: autoplay. Stop is loud on purpose — it is the control that must be found fast. */
+.genbar__autoplay {
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border);
+}
+
+.genbar__stop {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.genbar__count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.autoplay {
+  display: grid;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.autoplay__head,
+.autoplay__tally {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplay__tally,
+.autoplay__summary {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.autoplay__bar {
+  width: 100%;
+  height: 0.75rem;
+}
+
 .genbar__auto {
   display: inline-flex;
   align-items: center;
