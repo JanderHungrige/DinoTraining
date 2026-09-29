@@ -1,8 +1,8 @@
 ---
-generated: 2026-08-27
-doc_count: 69
-connection_count: 159
-overlap_count: 103
+generated: 2026-09-29
+doc_count: 76
+connection_count: 171
+overlap_count: 121
 ---
 
 # Connections
@@ -50,8 +50,18 @@ Annotation Studio/Review
 ├── 61-studio-mask-review  complete
 └── 67-annotation-view-and-output  complete
 
+App Shell/Remembered Entries
+└── 69-remembered-entries  complete
+
 Connection/MCP
 └── 64-mcp-server  complete
+
+Dataset Generator/Action Bar
+└── 70-generator-action-bar  complete
+
+Dataset Generator/Autoplay
+├── 71-generator-autoplay  complete
+└── 72-unclear-band-pause  complete
 
 Dataset Generator/Input
 └── 46-generator-folder-picker  complete
@@ -67,6 +77,9 @@ Dataset Generator/Review
 
 Dataset Generator/Save
 └── 29-generated-dataset-writer  complete
+
+Dataset Generator/Video Source
+└── 73-generator-video-source  complete
 
 Dataset Store/Import
 └── 31-external-dataset-import  complete
@@ -121,6 +134,12 @@ Inference/Overlay
 Inference/Viewer
 └── 19-side-by-side-viewer  complete
 
+Inspect Datasets
+└── 74-inspect-datasets-tab  complete
+
+Inspect Datasets/Timeline
+└── 75-annotation-timeline  complete
+
 Library
 └── 51-library-tab  complete
 
@@ -174,7 +193,6 @@ Training/Runner
 
 Training/UI
 └── 14-trainer-config-ui  complete
-
 ```
 
 ## Dependency Graph
@@ -250,6 +268,13 @@ graph LR
   66_prompted_detection_everywhere["66-prompted-detection-everywhere"]:::complete
   67_annotation_view_and_output["67-annotation-view-and-output"]:::complete
   68_video_playback["68-video-playback"]:::complete
+  69_remembered_entries["69-remembered-entries"]:::complete
+  70_generator_action_bar["70-generator-action-bar"]:::complete
+  71_generator_autoplay["71-generator-autoplay"]:::complete
+  72_unclear_band_pause["72-unclear-band-pause"]:::complete
+  73_generator_video_source["73-generator-video-source"]:::complete
+  74_inspect_datasets_tab["74-inspect-datasets-tab"]:::complete
+  75_annotation_timeline["75-annotation-timeline"]:::complete
   01_app_shell --> 02_model_manager
   01_app_shell --> 03_dataset_store
   02_model_manager --> 04_grounding_dino_annotator
@@ -409,6 +434,18 @@ graph LR
   17_image_input_source --> 68_video_playback
   18_multi_head_compose --> 68_video_playback
   53_prescan --> 68_video_playback
+  69_remembered_entries --> 70_generator_action_bar
+  70_generator_action_bar --> 71_generator_autoplay
+  69_remembered_entries --> 71_generator_autoplay
+  71_generator_autoplay --> 72_unclear_band_pause
+  69_remembered_entries --> 72_unclear_band_pause
+  68_video_playback --> 73_generator_video_source
+  70_generator_action_bar --> 73_generator_video_source
+  69_remembered_entries --> 73_generator_video_source
+  73_generator_video_source --> 74_inspect_datasets_tab
+  68_video_playback --> 74_inspect_datasets_tab
+  67_annotation_view_and_output --> 74_inspect_datasets_tab
+  74_inspect_datasets_tab --> 75_annotation_timeline
   classDef complete fill:#00e5cc,color:#000
   classDef in_progress fill:#ffaa00,color:#000
   classDef draft fill:#888,color:#fff
@@ -426,10 +463,10 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/desktop/src-tauri/src/sidecar.rs` — 01-app-shell, 56-sidecar-bundling, 57-gpu-support-download, 58-installers
 - `apps/desktop/src-tauri/tauri.conf.json` — 01-app-shell, 56-sidecar-bundling, 68-video-playback
 - `apps/desktop/src-tauri/tauri.release.conf.json` — 57-gpu-support-download, 58-installers
-- `apps/frontend/src/App.tsx` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide
+- `apps/frontend/src/App.tsx` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 74-inspect-datasets-tab
 - `apps/frontend/src/api/annotators.ts` — 27-grounded-sam-annotator, 28-mask-review-ui
 - `apps/frontend/src/api/client.ts` — 01-app-shell, 13-training-metrics-stream
-- `apps/frontend/src/api/datasets.ts` — 06-annotation-workflow, 29-generated-dataset-writer, 31-external-dataset-import, 50-dataset-as-source, 51-library-tab, 59-reveal-dataset-folder, 61-studio-mask-review
+- `apps/frontend/src/api/datasets.ts` — 06-annotation-workflow, 29-generated-dataset-writer, 31-external-dataset-import, 50-dataset-as-source, 51-library-tab, 59-reveal-dataset-folder, 61-studio-mask-review, 73-generator-video-source
 - `apps/frontend/src/api/foundation.ts` — 37-foundation-model-in-viewer, 42-foundation-boxes-everywhere, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab, 55-unfreezing, 61-studio-mask-review
 - `apps/frontend/src/api/generate.ts` — 26-generator-review-ui, 28-mask-review-ui
 - `apps/frontend/src/api/headInstances.ts` — 12-head-instance-registry, 15-head-catalog-import, 26-generator-review-ui, 32-shared-head-picker, 62-tiled-inference
@@ -437,44 +474,60 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `apps/frontend/src/api/models.ts` — 02-model-manager, 24-hf-token-settings, 35-model-licence-surfacing, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
 - `apps/frontend/src/api/types.ts` — 01-app-shell, 07-backbone-feature-extractor
 - `apps/frontend/src/components/AnnotationCanvas.tsx` — 05-annotation-canvas, 47-box-review-list, 61-studio-mask-review, 67-annotation-view-and-output
+- `apps/frontend/src/components/AutoplayProgress.tsx` — 71-generator-autoplay, 72-unclear-band-pause
 - `apps/frontend/src/components/BoxReviewList.tsx` — 47-box-review-list, 60-box-class-picker
 - `apps/frontend/src/components/CounterBar.tsx` — 06-annotation-workflow, 29-generated-dataset-writer
 - `apps/frontend/src/components/ExpertHeadPicker.tsx` — 26-generator-review-ui, 32-shared-head-picker
-- `apps/frontend/src/components/FinetunePanel.tsx` — 44-finetune-rf-detr, 55-unfreezing
+- `apps/frontend/src/components/FinetunePanel.tsx` — 44-finetune-rf-detr, 55-unfreezing, 69-remembered-entries
 - `apps/frontend/src/components/FoundationPicker.tsx` — 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 66-prompted-detection-everywhere
-- `apps/frontend/src/components/GeneratorSetup.tsx` — 26-generator-review-ui, 27-grounded-sam-annotator, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 46-generator-folder-picker, 50-dataset-as-source, 66-prompted-detection-everywhere, 67-annotation-view-and-output
+- `apps/frontend/src/components/FrameCanvas.tsx` — 68-video-playback, 74-inspect-datasets-tab
+- `apps/frontend/src/components/GeneratorSetup.tsx` — 26-generator-review-ui, 27-grounded-sam-annotator, 28-mask-review-ui, 29-generated-dataset-writer, 30-sam3-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 46-generator-folder-picker, 50-dataset-as-source, 66-prompted-detection-everywhere, 67-annotation-view-and-output, 69-remembered-entries, 73-generator-video-source
+- `apps/frontend/src/components/HeadImportForm.tsx` — 15-head-catalog-import, 69-remembered-entries
 - `apps/frontend/src/components/HeadRunPanel.tsx` — 20-inference-overlay-render, 21-same-task-head-compare, 32-shared-head-picker, 34-inference-picker-upfront, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
-- `apps/frontend/src/components/ImageSourceField.tsx` — 50-dataset-as-source, 59-reveal-dataset-folder
+- `apps/frontend/src/components/ImageSourceField.tsx` — 50-dataset-as-source, 59-reveal-dataset-folder, 69-remembered-entries, 73-generator-video-source
 - `apps/frontend/src/components/ImageSourcePicker.tsx` — 17-image-input-source, 40-drag-and-drop-input, 50-dataset-as-source, 59-reveal-dataset-folder
 - `apps/frontend/src/components/MaskReviewCanvas.tsx` — 28-mask-review-ui, 67-annotation-view-and-output
 - `apps/frontend/src/components/MaskSourceFields.tsx` — 27-grounded-sam-annotator, 42-foundation-boxes-everywhere
 - `apps/frontend/src/components/ModelCard.tsx` — 02-model-manager, 35-model-licence-surfacing
-- `apps/frontend/src/components/SessionSetup.tsx` — 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 46-generator-folder-picker, 50-dataset-as-source
+- `apps/frontend/src/components/PrescanPanel.tsx` — 53-prescan, 69-remembered-entries
+- `apps/frontend/src/components/SequencePanel.tsx` — 68-video-playback, 69-remembered-entries
+- `apps/frontend/src/components/SessionSetup.tsx` — 06-annotation-workflow, 17-image-input-source, 33-studio-head-annotator, 39-prompt-guidance, 40-drag-and-drop-input, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 46-generator-folder-picker, 50-dataset-as-source, 69-remembered-entries
 - `apps/frontend/src/components/SideBySideViewer.tsx` — 19-side-by-side-viewer, 21-same-task-head-compare
 - `apps/frontend/src/components/overlays/MapOverlay.tsx` — 20-inference-overlay-render, 28-mask-review-ui, 61-studio-mask-review
 - `apps/frontend/src/components/overlays/registry.tsx` — 20-inference-overlay-render, 67-annotation-view-and-output
 - `apps/frontend/src/hooks/useAnnotationSession.ts` — 06-annotation-workflow, 33-studio-head-annotator, 42-foundation-boxes-everywhere, 45-concept-segmentation-everywhere, 50-dataset-as-source, 53-prescan, 61-studio-mask-review
-- `apps/frontend/src/hooks/useGeneratorSession.ts` — 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 42-foundation-boxes-everywhere, 50-dataset-as-source, 53-prescan, 66-prompted-detection-everywhere
+- `apps/frontend/src/hooks/useAutoPropose.ts` — 70-generator-action-bar, 71-generator-autoplay
+- `apps/frontend/src/hooks/useAutoplay.ts` — 71-generator-autoplay, 72-unclear-band-pause
+- `apps/frontend/src/hooks/useGeneratorImages.ts` — 71-generator-autoplay, 73-generator-video-source
+- `apps/frontend/src/hooks/useGeneratorSession.ts` — 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 42-foundation-boxes-everywhere, 50-dataset-as-source, 53-prescan, 66-prompted-detection-everywhere, 70-generator-action-bar, 71-generator-autoplay, 72-unclear-band-pause, 73-generator-video-source
 - `apps/frontend/src/hooks/useHeadRun.ts` — 20-inference-overlay-render, 21-same-task-head-compare, 37-foundation-model-in-viewer, 45-concept-segmentation-everywhere, 52-dataset-filter, 62-tiled-inference
 - `apps/frontend/src/hooks/useImageSource.ts` — 17-image-input-source, 50-dataset-as-source
 - `apps/frontend/src/hooks/useLibrary.ts` — 51-library-tab, 54-distribution-licensing
-- `apps/frontend/src/hooks/useSessionImages.ts` — 50-dataset-as-source, 61-studio-mask-review
-- `apps/frontend/src/lib/dialog.ts` — 17-image-input-source, 59-reveal-dataset-folder
-- `apps/frontend/src/lib/generatorProposal.ts` — 53-prescan, 66-prompted-detection-everywhere
-- `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront, 35-model-licence-surfacing, 38-intro-tab, 39-prompt-guidance, 40-drag-and-drop-input, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 47-box-review-list, 48-dataset-format-guide, 54-distribution-licensing, 57-gpu-support-download, 59-reveal-dataset-folder, 60-box-class-picker, 61-studio-mask-review, 62-tiled-inference, 63-agent-api-guide, 64-mcp-server, 65-starter-set
+- `apps/frontend/src/hooks/useSessionImages.ts` — 50-dataset-as-source, 61-studio-mask-review, 73-generator-video-source
+- `apps/frontend/src/lib/autoplay.ts` — 71-generator-autoplay, 72-unclear-band-pause
+- `apps/frontend/src/lib/dialog.ts` — 17-image-input-source, 59-reveal-dataset-folder, 73-generator-video-source
+- `apps/frontend/src/lib/generatorProposal.ts` — 53-prescan, 66-prompted-detection-everywhere, 71-generator-autoplay
+- `apps/frontend/src/lib/generatorSave.ts` — 70-generator-action-bar, 73-generator-video-source
+- `apps/frontend/src/lib/imageSource.ts` — 50-dataset-as-source, 73-generator-video-source
+- `apps/frontend/src/lib/persisted.ts` — 69-remembered-entries, 73-generator-video-source
+- `apps/frontend/src/styles.css` — 01-app-shell, 05-annotation-canvas, 06-annotation-workflow, 14-trainer-config-ui, 15-head-catalog-import, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 26-generator-review-ui, 28-mask-review-ui, 32-shared-head-picker, 34-inference-picker-upfront, 35-model-licence-surfacing, 38-intro-tab, 39-prompt-guidance, 40-drag-and-drop-input, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 47-box-review-list, 48-dataset-format-guide, 54-distribution-licensing, 57-gpu-support-download, 59-reveal-dataset-folder, 60-box-class-picker, 61-studio-mask-review, 62-tiled-inference, 63-agent-api-guide, 64-mcp-server, 65-starter-set, 70-generator-action-bar, 71-generator-autoplay, 72-unclear-band-pause, 74-inspect-datasets-tab, 75-annotation-timeline
 - `apps/frontend/src/tabs/AdminTab.tsx` — 01-app-shell, 02-model-manager, 15-head-catalog-import, 24-hf-token-settings, 54-distribution-licensing, 57-gpu-support-download, 65-starter-set
 - `apps/frontend/src/tabs/AnnotationStudioTab.tsx` — 01-app-shell, 06-annotation-workflow, 33-studio-head-annotator, 47-box-review-list, 53-prescan, 60-box-class-picker, 61-studio-mask-review, 67-annotation-view-and-output
 - `apps/frontend/src/tabs/ApiTab.tsx` — 63-agent-api-guide, 64-mcp-server
-- `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` — 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 47-box-review-list, 53-prescan
-- `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui, 44-finetune-rf-detr, 48-dataset-format-guide
-- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront, 67-annotation-view-and-output, 68-video-playback
+- `apps/frontend/src/tabs/DatasetGeneratorTab.tsx` — 01-app-shell, 26-generator-review-ui, 28-mask-review-ui, 29-generated-dataset-writer, 47-box-review-list, 53-prescan, 69-remembered-entries, 70-generator-action-bar, 71-generator-autoplay, 72-unclear-band-pause, 73-generator-video-source, 74-inspect-datasets-tab
+- `apps/frontend/src/tabs/HeadTrainerTab.tsx` — 01-app-shell, 14-trainer-config-ui, 44-finetune-rf-detr, 48-dataset-format-guide, 69-remembered-entries
+- `apps/frontend/src/tabs/InferenceViewerTab.tsx` — 01-app-shell, 17-image-input-source, 19-side-by-side-viewer, 20-inference-overlay-render, 21-same-task-head-compare, 34-inference-picker-upfront, 67-annotation-view-and-output, 68-video-playback, 69-remembered-entries
+- `apps/frontend/src/tabs/InspectTab.tsx` — 74-inspect-datasets-tab, 75-annotation-timeline
 - `apps/frontend/src/tabs/LibraryTab.tsx` — 51-library-tab, 54-distribution-licensing
-- `apps/frontend/src/tabs/introContent.ts` — 38-intro-tab, 51-library-tab
-- `apps/frontend/src/tabs/tabs.ts` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 64-mcp-server
+- `apps/frontend/src/tabs/introContent.ts` — 38-intro-tab, 51-library-tab, 74-inspect-datasets-tab
+- `apps/frontend/src/tabs/tabs.ts` — 01-app-shell, 38-intro-tab, 51-library-tab, 63-agent-api-guide, 64-mcp-server, 74-inspect-datasets-tab
+- `apps/frontend/src/test-setup.ts` — 01-app-shell, 69-remembered-entries
 - `apps/frontend/src/types/annotation.ts` — 05-annotation-canvas, 26-generator-review-ui, 28-mask-review-ui, 31-external-dataset-import, 42-foundation-boxes-everywhere, 61-studio-mask-review
+- `apps/frontend/src/types/generatorSession.ts` — 71-generator-autoplay, 72-unclear-band-pause
 - `backend/app/api/v1/agent_docs.py` — 63-agent-api-guide, 64-mcp-server
 - `backend/app/api/v1/annotators.py` — 23-mask-annotator-registry, 27-grounded-sam-annotator
-- `backend/app/api/v1/datasets.py` — 03-dataset-store, 22-mask-dataset-store, 31-external-dataset-import, 50-dataset-as-source, 59-reveal-dataset-folder, 61-studio-mask-review
+- `backend/app/api/v1/dataset_images.py` — 73-generator-video-source, 74-inspect-datasets-tab
+- `backend/app/api/v1/datasets.py` — 03-dataset-store, 22-mask-dataset-store, 31-external-dataset-import, 50-dataset-as-source, 59-reveal-dataset-folder, 61-studio-mask-review, 73-generator-video-source
 - `backend/app/api/v1/foundation.py` — 36-depth-foundation-model, 41-rf-detr-detector, 44-finetune-rf-detr, 45-concept-segmentation-everywhere, 51-library-tab, 66-prompted-detection-everywhere
 - `backend/app/api/v1/foundation_finetune.py` — 45-concept-segmentation-everywhere, 55-unfreezing
 - `backend/app/api/v1/generate.py` — 25-expert-annotator, 27-grounded-sam-annotator, 29-generated-dataset-writer, 62-tiled-inference
@@ -482,16 +535,18 @@ Files touched by more than one doc — the places where a change needs two docs 
 - `backend/app/api/v1/heads.py` — 12-head-instance-registry, 26-generator-review-ui, 62-tiled-inference
 - `backend/app/api/v1/inference.py` — 16-inference-engine, 17-image-input-source, 18-multi-head-compose, 62-tiled-inference
 - `backend/app/api/v1/models.py` — 02-model-manager, 35-model-licence-surfacing, 54-distribution-licensing, 65-starter-set
-- `backend/app/api/v1/router.py` — 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import, 16-inference-engine, 23-mask-annotator-registry, 24-hf-token-settings, 25-expert-annotator, 36-depth-foundation-model, 45-concept-segmentation-everywhere, 53-prescan, 60-box-class-picker, 63-agent-api-guide
+- `backend/app/api/v1/router.py` — 01-app-shell, 07-backbone-feature-extractor, 08-head-registry, 12-head-instance-registry, 13-training-metrics-stream, 15-head-catalog-import, 16-inference-engine, 23-mask-annotator-registry, 24-hf-token-settings, 25-expert-annotator, 36-depth-foundation-model, 45-concept-segmentation-everywhere, 53-prescan, 60-box-class-picker, 63-agent-api-guide, 73-generator-video-source
 - `backend/app/api/v1/system.py` — 02-model-manager, 57-gpu-support-download
 - `backend/app/core/config.py` — 01-app-shell, 24-hf-token-settings
 - `backend/app/datasets/coco.py` — 03-dataset-store, 22-mask-dataset-store
 - `backend/app/datasets/db.py` — 03-dataset-store, 12-head-instance-registry, 22-mask-dataset-store
-- `backend/app/datasets/masks.py` — 22-mask-dataset-store, 29-generated-dataset-writer, 61-studio-mask-review
-- `backend/app/datasets/migrations.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere
-- `backend/app/datasets/models.py` — 03-dataset-store, 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere
-- `backend/app/datasets/schema.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere, 60-box-class-picker
-- `backend/app/datasets/store.py` — 03-dataset-store, 29-generated-dataset-writer
+- `backend/app/datasets/images.py` — 22-mask-dataset-store, 73-generator-video-source
+- `backend/app/datasets/masks.py` — 22-mask-dataset-store, 29-generated-dataset-writer, 61-studio-mask-review, 73-generator-video-source
+- `backend/app/datasets/migrations.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere, 73-generator-video-source
+- `backend/app/datasets/models.py` — 03-dataset-store, 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere, 73-generator-video-source
+- `backend/app/datasets/schema.py` — 22-mask-dataset-store, 23-mask-annotator-registry, 29-generated-dataset-writer, 31-external-dataset-import, 42-foundation-boxes-everywhere, 60-box-class-picker, 73-generator-video-source
+- `backend/app/datasets/sequences.py` — 73-generator-video-source, 74-inspect-datasets-tab
+- `backend/app/datasets/store.py` — 03-dataset-store, 29-generated-dataset-writer, 73-generator-video-source
 - `backend/app/main.py` — 01-app-shell, 64-mcp-server
 - `backend/app/ml/annotators/build.py` — 27-grounded-sam-annotator, 30-sam3-annotator
 - `backend/app/ml/annotators/expert.py` — 25-expert-annotator, 29-generated-dataset-writer, 42-foundation-boxes-everywhere
@@ -525,4 +580,5 @@ Files touched by more than one doc — the places where a change needs two docs 
 
 ## Warnings
 
-(none)
+- Frontmatter is not valid YAML (read leniently): 19-side-by-side-viewer
+- Frontmatter is not valid YAML (read leniently): 31-external-dataset-import

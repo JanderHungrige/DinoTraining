@@ -4,13 +4,78 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-29. It catches up on two rounds of work that were not waves:
-the **Studio round** (2026-08-25, docs 60–62) and the **agent, first-run and video round**
-(2026-08-26/27, docs 63–68). Everything below is merged to `dev` and `main`, and `main`
-is at `d47ed26`. Nothing has been pushed since 2026-08-27. Waves 1–8 are merged.
-**Wave 9 (Generator Autopilot & Dataset Inspection) was inserted on 2026-09-29 and is
-in progress on `feat/dinotraining-wave-9`**; the website wave is now **Wave 10**. Plus the three
-features deferred out of Wave 8.
+**Last updated:** 2026-09-29, at the end of the **Wave 9 build**. Waves 1–8 and docs
+60–68 are merged to `dev` and `main`. **Wave 9 (Generator Autopilot & Dataset Inspection,
+docs 69–75) is built, verified in the running app, and pushed on
+`feat/dinotraining-wave-9`, but not merged.** Its status stays `in_progress` until Jan has
+seen the demo-state. The website wave is now **Wave 10**. The three features deferred out
+of Wave 8 are still open.
+
+---
+
+## Wave 9 — what was built (2026-09-29)
+
+Inserted ahead of the website wave at Jan's request, **by renumbering** (9 → 10, 40
+references). Every feature was verified in the running app: web mode, with real Grounding
+DINO and RF-DETR weights.
+
+| | |
+|---|---|
+| 69 | **Remembered entries.** Every path, name, prompt and model choice survives a tab switch and a restart (`localStorage`, guarded reads, `stillListed` for ids that may be gone). The HF token draft is deliberately excluded. |
+| 70 | **Generator action bar.** *auto* boxes beside Propose and Save (on by default), with everything beside Previous/Next. Auto-save fires on *leaving* an image. The session remembers what it saved, so going back shows it. |
+| 71 | **Autoplay.** Propose → hold 0.5 s → save → next, from the current image, stoppable at any point without saving the image it stops on. *Hidden* mode shows only a percentage. |
+| 72 | **Ask when unclear.** A user-set score band pauses autoplay and marks those proposals *unclear*. Continue saves the user's verdict. |
+| 73 | **A video as the Generator's source.** The chosen range is decoded to JPEGs inside the dataset (a polled job), and every save records `sequence` + `frame_index` (schema **v8**). |
+| 74 | **Inspect datasets tab.** Plays a dataset's videos, folders and loose images with the stored annotations, coloured by class. The Generator jumps there with the dataset open. Frames never saved (nothing found) are merged back from disk, so playback keeps real time. |
+| 75 | **Annotation timeline.** One coloured bar per class under the player. Click a bar to select its class, then ⇤ First / ◀ Previous / Next ▶. |
+
+**Pre-existing bugs found and fixed on the way:**
+- **Grounding DINO could not propose in the Generator or the Studio.** Doc 66 offered it,
+  and `propose_foundation_boxes` refused it with "does not predict boxes". It is fixed in
+  its own commit.
+- **A hand-drawn box in the Generator could never be saved.** Only a proposal with results
+  set `dirty`.
+
+**The results worth carrying forward:**
+- **The migration version gate struck a fourth time** (doc 22's bug). New `ADDED_COLUMNS`
+  never reached a real install, because `run_migrations` returned early at
+  `LATEST_VERSION`, and every test builds a fresh DB. The gate now also checks for missing
+  added columns, so this cannot recur for columns. It still can for CHECK widening, which
+  keeps needing the version bump.
+- **React drops a queued updater for a component that unmounts in the same event.** The
+  first cut of `usePersistentState` wrote to `localStorage` inside the updater. Start
+  (remember the dataset, clear the name, unmount) lost the second write, and the next Start
+  created a duplicate dataset. A single-setter test passes against the bug because of
+  React's eager path; it takes two setters to reproduce it.
+- **An autoplay loop must live outside React.** After every `await`, state is stale. A loop
+  reading `session.save()` would write the previous image's boxes under the next image's
+  path. The runner owns its position and passes reviews explicitly.
+
+## Waiting on Jan — Wave 9
+
+**A. See the demo-state yourself**, then say whether Wave 9 is done. PE4 flips it to
+`complete` only on your word. The whole demo runs in `./scripts/dev.sh web`:
+1. Generator → *A video file* → Play.
+2. Stop during a hold, correct the frame, then Next.
+3. Tick *Ask me when a score is between* and Play again.
+4. *Inspect what I just annotated*, then click a bar and press ⇤ First.
+
+**B. macOS privacy prompt.** A Python process started from the desktop app asked for
+**~/Downloads** (the OSDaR23 data) and blocked the backend until it was answered. A
+separate task is offered for moving that file IO off the event loop.
+
+**C. Test data this build left behind**, for you to delete in Library if unwanted:
+- Datasets: "Wave 9 action bar check" ×2, "Wave 9 dup check", "Wave 9 autoplay check" (50
+  images) and "Wave 9 video check" (30 decoded frames).
+- The test clip itself is in the session scratchpad, not the repo.
+
+**D. Packaged-app checks.** Web mode is Chromium. Inspect paints through doc 68's
+`FrameCanvas`, from `annotate/image` URLs that the packaged CSP already allows (doc 68's
+`img-src` fix). That has not been seen in WebKit.
+
+**E. Two tasks were offered out of scope:**
+- Blocking file IO on the backend's event loop.
+- Doc 68's claim of a `resolve_user_path` that does not exist.
 
 ---
 
@@ -206,8 +271,11 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, as last reported by the commit that closed doc 68 (2026-08-27): `1431` backend
-tests, `842` frontend, and no source file over 300 lines. They were not re-run when this
-handoff was rewritten on 2026-09-29. `apps/desktop` **has** changed since the last
-`cargo check` (2026-08-21): the CSP in `tauri.conf.json` changed on 2026-08-27. That is config,
-not Rust, but `cargo check` / a packaged build is the next check worth running.
+**Gates**, all green on `feat/dinotraining-wave-9` as of 2026-09-29: `1471` backend tests,
+`970` frontend, `ruff` + `mypy` + `tsc` clean. Files over 300 lines predate Wave 9
+(`app/ml/registry.py`, `app/ml/heads/registry.py`, four test files). `cargo check` was not
+run: nothing in Wave 9 touched `apps/desktop`.
+
+**Worktree note:** this session worked in a git worktree with `node_modules`, `backend/.venv`
+and `.env` **symlinked** from the main checkout (all gitignored, all excluded from git
+status). A fresh worktree needs the same, or `npm ci --legacy-peer-deps` plus a venv.
