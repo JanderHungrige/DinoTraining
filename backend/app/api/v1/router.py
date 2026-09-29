@@ -17,6 +17,7 @@ from app.api.v1 import (
     dataset_image_masks,
     dataset_images,
     datasets,
+    finetune_requirements,
     foundation,
     foundation_finetune,
     generate,
@@ -76,3 +77,4 @@ api_router.include_router(prep_input.router, tags=["prepare-data"])
 api_router.include_router(prep_balance.router, tags=["prepare-data"])
 api_router.include_router(prep_augment.router, tags=["prepare-data"])
 api_router.include_router(prep_recipes.router, tags=["prepare-data"])
+api_router.include_router(finetune_requirements.router, tags=["fine-tuning"])

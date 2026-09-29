@@ -3,11 +3,11 @@ id: dinotraining-wave-12
 title: "Wave 12: Fine-Tuning SAM 2, SAM 3 and DINOv3"
 initiative: dinotraining
 initiative_version: 10
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-11
 demo_state: "A user picks SAM 2 in Training, sees exactly what training data it needs and whether their prepared dataset meets it, fine-tunes it on their own masks, and sees held-out mIoU improve over the base model. The same works for DINOv3. SAM 3 either fine-tunes or states precisely why it cannot on this machine. An assistant over MCP asks for each model's data requirements and gets the same answer the user sees."
 created: 2026-09-29
-hash: 6b4e49ce
+hash: 95bec5eb
 ---
 
 # Wave 12: Fine-Tuning SAM 2, SAM 3 and DINOv3
@@ -59,7 +59,7 @@ input plan, imbalance) rather than inventing a second, weaker version of it.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | data-requirements-contract | — | planned | — |
+| 1 | data-requirements-contract | docs/92-data-requirements-contract.md | complete | — |
 | 2 | finetune-framework | — | planned | data-requirements-contract |
 | 3 | sam2-finetune | — | planned | finetune-framework |
 | 4 | dinov3-finetune | — | planned | finetune-framework |
