@@ -21,6 +21,7 @@ import { getAccelerator, type AcceleratorInfo } from '../api/models';
  *  for it. Update alongside the release. */
 const CUDA_SIDECAR_MB = 2400;
 import { TokenPanel } from '../components/TokenPanel';
+import { AppearancePanel } from '../components/AppearancePanel';
 import { useModels } from '../hooks/useModels';
 import { useTrainerOptions } from '../hooks/useTrainerOptions';
 
@@ -101,6 +102,7 @@ export function AdminTab(): JSX.Element {
       <DistributionNotice models={models} />
 
       <TokenPanel />
+      <AppearancePanel />
 
       {error && (
         <p className="admin__error" role="alert">

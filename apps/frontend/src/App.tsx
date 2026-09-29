@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { BackendStatus } from './components/BackendStatus';
+import { BackgroundVideo } from './components/BackgroundVideo';
+import { LookProvider } from './lib/look';
 import { TabBar } from './components/TabBar';
 import { AdminTab } from './tabs/AdminTab';
 import { ApiTab } from './tabs/ApiTab';
@@ -57,23 +59,26 @@ export function App(): JSX.Element {
   }, []);
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <h1 className="app__title">DinoTraining</h1>
-        <BackendStatus />
-      </header>
+    <LookProvider>
+      <BackgroundVideo />
+      <div className="app">
+        <header className="app__header">
+          <h1 className="app__title">DinoTraining</h1>
+          <BackendStatus />
+        </header>
 
-      <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
+        <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      <main
-        className="app__panel"
-        id={`panel-${activeTab}`}
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        tabIndex={0}
-      >
-        {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest })}
-      </main>
-    </div>
+        <main
+          className="app__panel"
+          id={`panel-${activeTab}`}
+          role="tabpanel"
+          aria-labelledby={`tab-${activeTab}`}
+          tabIndex={0}
+        >
+          {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest })}
+        </main>
+      </div>
+    </LookProvider>
   );
 }

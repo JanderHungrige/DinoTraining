@@ -1,0 +1,73 @@
+/* Wave 10 — Look & Feel (docs 77–80).
+   Kept apart from styles.css: that file is the app's structure, this is its skin, and a
+   later change of skin should touch one file. */
+
+/* --- Doc 77: the loop behind every tab ------------------------------------------ */
+
+:root {
+  /* The surfaces carry the contrast; the video is only atmosphere. */
+  --surface: color-mix(in srgb, var(--bg) 52%, transparent);
+  --surface-raised: color-mix(in srgb, var(--bg-raised) 70%, transparent);
+  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.5), rgb(10 11 14 / 0.38));
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --scrim: linear-gradient(180deg, rgb(246 247 249 / 0.62), rgb(246 247 249 / 0.5));
+  }
+}
+
+.bgvideo {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+.bgvideo__media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bgvideo__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--scrim);
+}
+
+/* Everything the user reads sits on a surface above the loop. */
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+.app__header,
+.tabbar {
+  background: var(--surface-raised);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.app__panel {
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* --- Admin › Appearance ------------------------------------------------------------ */
+
+.appearance__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.appearance__hint {
+  margin: 0.4rem 0 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
