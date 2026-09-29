@@ -25,13 +25,14 @@ from app.mcp import client
 
 #: Which poll route a job id belongs to. Three different endpoints, one tool, because the
 #: assistant should not have to remember which kind of job it started.
-JobKind = Literal["download", "training", "finetune", "audit"]
+JobKind = Literal["download", "training", "finetune", "audit", "foundation-finetune"]
 
 _JOB_PATHS: dict[str, str] = {
     "download": "/models/jobs/{job_id}",
     "training": "/training/jobs/{job_id}",
     "finetune": "/foundation/finetune/{job_id}",
     "audit": "/prep/audits/{job_id}",
+    "foundation-finetune": "/finetune/jobs/{job_id}",
 }
 
 
@@ -113,8 +114,8 @@ def register(mcp: MCPServer) -> None:
         `dense-detector` needs boxes, `linear-segmenter` needs masks. A mismatch is refused
         with a message saying which.
 
-        For boxes, `finetune_model` is usually the better answer — measured here at mAP
-        0.96 against 0.5-0.6 for a detector head on the same data.
+        For boxes, `start_finetune` with `rf-detr-nano` is usually the better answer:
+        measured here on a leak-free split, 0.62 test mAP against 0.41 for a detector head.
 
         Pass `recipe_id` from `save_recipe` (one dataset only): its leak-free split, tiles
         and class handling are applied, and the job reports `test_metrics` — the honest
@@ -129,42 +130,6 @@ def register(mcp: MCPServer) -> None:
                 "dataset_ids": dataset_ids,
                 "epochs": epochs,
                 "learning_rate": learning_rate,
-                **({"recipe_id": recipe_id} if recipe_id else {}),
-            },
-        )
-
-    @mcp.tool()
-    async def finetune_model(
-        foundation_id: str,
-        dataset_ids: list[str],
-        name: str,
-        epochs: int = 20,
-        learning_rate: float = 0.0001,
-        unfreeze_blocks: int = 0,
-        recipe_id: str | None = None,
-    ) -> Any:
-        """Fine-tune a whole detector on your classes. Returns a job id — poll with
-        `get_job`.
-
-        Needs the model installed (`install_model`) and a dataset with boxes. This is the
-        strong option for detection.
-
-        `unfreeze_blocks` opens the last N backbone blocks. Measured here: 4 blocks cost
-        19% more time and moved holdout mAP 0.78 to 0.84 — almost all of it tighter boxes
-        rather than more detections. Use it when localisation matters.
-
-        `recipe_id` (from `save_recipe`) makes it use the recipe's leak-free split.
-        """
-        return await client.call(
-            "POST",
-            "/foundation/finetune",
-            json={
-                "foundation_id": foundation_id,
-                "dataset_ids": dataset_ids,
-                "name": name,
-                "epochs": epochs,
-                "learning_rate": learning_rate,
-                "unfreeze_blocks": unfreeze_blocks,
                 **({"recipe_id": recipe_id} if recipe_id else {}),
             },
         )

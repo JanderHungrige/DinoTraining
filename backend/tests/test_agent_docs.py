@@ -179,8 +179,10 @@ class TestTheWrittenHalf:
     ) -> None:
         """"Fine-tuning is better" is an opinion an assistant may or may not act on. The
         numbers are what make it choose, and they were measured in this app."""
-        assert "0.96" in guide
-        assert "0.5" in guide
+        # Wave 12: measured on a leak-free split (the rail 0.96 came from a random one).
+        assert "0.62 test mAP" in guide and "0.41" in guide
+        # And the case where fine-tuning made a model worse, which an assistant must report.
+        assert "0.957 → 0.936" in guide
 
     def test_it_explains_the_empty_result_a_tiled_head_gives(self, guide: str) -> None:
         # The silent failure. An agent that gets an empty list and reports "no objects

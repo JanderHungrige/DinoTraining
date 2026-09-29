@@ -1,0 +1,70 @@
+/* Fine-tune a model (doc 97). The app's own tokens only, as prepare.css. */
+
+.ft {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 62rem;
+}
+
+.ft-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: var(--bg-raised);
+}
+
+.ft-card__title {
+  margin: 0 0 0.5rem;
+}
+
+.ft-card__facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.ft-card__facts dt {
+  color: var(--text-dim);
+}
+
+.ft-card__facts dd {
+  margin: 0;
+}
+
+.ft-card p {
+  margin: 0.4rem 0 0;
+}
+
+.ft-card__why {
+  color: var(--text-dim);
+  font-size: 0.9em;
+}
+
+.ft-checks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ft-checks__ok > span:first-child {
+  color: var(--accent);
+}
+
+.ft-checks__fail > span:first-child {
+  color: var(--danger);
+}
+
+.ft-checks__fix {
+  color: var(--text-dim);
+}
+
+.ft-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

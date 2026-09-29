@@ -179,7 +179,7 @@ def register(mcp: MCPServer) -> None:
         grid: int | None = None,
     ) -> Any:
         """Save the preparation as a recipe, then pass its id as `recipe_id` to
-        `train_head` or `finetune_model`.
+        `train_head` or `start_finetune`.
 
         Left out, `imbalance` and `augmentation` take the recommendations. Refused (409)
         with the missing step named when there is no audit, the data changed since it, or

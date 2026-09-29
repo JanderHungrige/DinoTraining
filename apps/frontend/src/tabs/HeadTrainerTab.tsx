@@ -4,7 +4,7 @@
  * **Two modes, switched by a control rather than by scrolling.** Fine-tuning used to sit
  * at the bottom of this tab under an `<h3>`, below the head form, the progress panel and
  * the list of trained heads — which meant that the model that actually wins at detection
- * (RF-DETR, 0.96 mAP on rail against 0.5-0.6 for a DINO head) was the one nobody found.
+ * (RF-DETR: 0.62 test mAP against 0.41 for a DINO head, leak-free split) was the one nobody found.
  * A tab called "Head Trainer" naming only half of what it did did not help.
  *
  * The two are genuinely different things, not two forms of one: a head trains against a
@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
-import { FinetunePanel } from '../components/FinetunePanel';
+import { FoundationFinetunePanel } from '../components/finetune/FoundationFinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
 import { RecipePicker } from '../components/RecipePicker';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
@@ -26,8 +26,6 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { isOneOf, isShapeOf, stillListed } from '../lib/persisted';
 import { TrainingProgress } from '../components/TrainingProgress';
 import { DatasetFormatPanel } from '../components/DatasetFormatPanel';
-import { listFoundations, type FoundationInfo } from '../api/foundation';
-import { useFinetune } from '../hooks/useFinetune';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { useTrainingRun } from '../hooks/useTrainingRun';
 
@@ -41,7 +39,7 @@ const MODES: readonly { id: TrainingMode; name: string; hint: string }[] = Objec
   {
     id: 'finetune',
     name: 'Fine-tune a model',
-    hint: 'Adapts a whole detector. Slower, and much stronger at boxes.',
+    hint: 'Adapts a whole model — a detector, SAM or a DINO backbone. Slower, often much stronger.',
   },
 ]);
 
@@ -71,7 +69,6 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
     DEFAULTS,
     isShapeOf(DEFAULTS),
   );
-  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   // Doc 90: '' follows the latest up-to-date recipe, 'none' is none, else a recipe id.
   const [recipeChoice, setRecipeChoice] = useState('');
   // "Train with this recipe" from Prepare data is an instruction, not a default: it wins
@@ -82,16 +79,6 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
     setSelection((current) => ({ ...current, datasetIds: [request.datasetId] }));
     setRecipeChoice(request.recipeId);
   }, [request, setMode, setSelection]);
-  const finetune = useFinetune();
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // Non-fatal: head training still works if the catalogue is unhappy.
-    void listFoundations(controller.signal)
-      .then(setFoundations)
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [finetune.job?.instance_id]);
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
 
@@ -176,20 +163,12 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
       {mode === 'finetune' ? (
         <>
           <p className="trainer__hint">
-            Trains the whole model on your classes, weights and all — not a head on top of
-            a frozen one. Slower, and much stronger at detection: measured here at mAP 0.96
-            on rail against 0.5–0.6 for a DINO head on the same data.
+            Adapts a whole foundation model to your data — a detector, SAM, or a DINO backbone
+            — rather than training a small head on a frozen one. Slower, and often much
+            stronger: on Blood cells with a leak-free split, RF-DETR reached 0.62 test mAP
+            against 0.41 for a DINO head. Every run is compared with the model it started from.
           </p>
-          <FinetunePanel
-            datasets={datasets}
-            foundations={foundations}
-            job={finetune.job}
-            starting={finetune.starting}
-            running={finetune.running}
-            error={finetune.error}
-            onStart={(options) => void finetune.start(options)}
-            onCancel={() => void finetune.cancel()}
-          />
+          <FoundationFinetunePanel datasets={datasets} />
         </>
       ) : (
         <>

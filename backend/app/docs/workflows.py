@@ -15,6 +15,7 @@ numbered steps, real calls, and the trap named beside the step that springs it.
 
 from __future__ import annotations
 
+from app.docs.workflows_finetune import FINETUNE
 from app.docs.workflows_prepare import PREPARE
 
 BASE_URL = "http://127.0.0.1:8756/api/v1"
@@ -119,36 +120,6 @@ segmenter produces (workflow 5). Training a segmenter on a box-only dataset is r
 a message saying exactly that.
 
 The finished run reports `head_instance_id`. That is what you run for inference.
-"""
-
-FINETUNE = """## 4. Fine-tune a detector — the strong option for boxes
-
-This adapts a whole detector to your classes rather than fitting a head on frozen features.
-Slower, and much better: measured in this app at **mAP 0.96** on rail data against
-**0.5–0.6** for a DINO detector head on the same images.
-
-```
-POST /foundation/finetune
-{
-  "foundation_id": "rf-detr-nano",
-  "dataset_ids": ["<id from step 2>"],
-  "name": "Rail detector",
-  "epochs": 20,
-  "learning_rate": 0.0001,
-  "unfreeze_blocks": 0
-}
-GET  /foundation/finetune/{job_id}    # poll until state != "running"
-```
-
-**Preconditions:** `rf-detr-nano` installed (step 1), and a dataset with **boxes**.
-
-**`unfreeze_blocks`** opens the last N backbone blocks to training. Measured here: 4 blocks
-cost 19% more time and moved holdout mAP 0.78 → 0.84. Almost all of that is tighter boxes,
-not more detections — mAP@50 barely moved while mAP@75 rose 20%. Use it when localisation
-matters; skip it otherwise.
-
-The result is a **fine-tuned instance**, listed by `GET /foundation` alongside the base
-models, and runnable exactly like one.
 """
 
 GENERATE = """## 5. Generate a dataset with what you have

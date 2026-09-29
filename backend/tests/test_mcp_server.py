@@ -134,7 +134,6 @@ class TestTheToolContract:
             "install_model",
             "get_job",
             "train_head",
-            "finetune_model",
             "import_coco_dataset",
             "create_dataset",
             "list_folder_images",
@@ -150,6 +149,10 @@ class TestTheToolContract:
             "plan_preparation",
             "save_recipe",
             "list_recipes",
+            # Doc 98: fine-tuning any foundation model, with its data requirements.
+            "get_finetune_requirements",
+            "check_dataset_for",
+            "start_finetune",
         }
 
     async def test_every_tool_describes_itself(
@@ -187,7 +190,7 @@ class TestTheToolContract:
         async with running_app(tmp_path, monkeypatch) as app:
             described = await descriptions(app)
 
-        for name in ("install_model", "train_head", "finetune_model", "audit_dataset"):
+        for name in ("install_model", "train_head", "start_finetune", "audit_dataset"):
             assert "get_job" in described[name], f"{name} does not point at get_job"
 
     async def test_parameters_are_typed_rather_than_free_text(
@@ -257,7 +260,13 @@ class TestTheClientLayer:
     def test_every_job_kind_maps_to_a_route(self) -> None:
         from app.mcp.tools import _JOB_PATHS
 
-        assert set(_JOB_PATHS) == {"download", "training", "finetune", "audit"}
+        assert set(_JOB_PATHS) == {
+            "download",
+            "training",
+            "finetune",
+            "audit",
+            "foundation-finetune",
+        }
         assert all("{job_id}" in path for path in _JOB_PATHS.values())
 
     def test_the_server_carries_instructions(self) -> None:
@@ -314,3 +323,38 @@ class TestPreparationTools:
         # No audit yet: the refusal names the step, and reaches the model as a failure.
         assert refused["result"].get("isError") is True
         assert "Audit step" in str(refused["result"])
+
+
+class TestFinetuneTools:
+    async def test_an_assistant_gets_the_same_requirements_and_the_same_refusal(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            requirements = await rpc(
+                app,
+                "tools/call",
+                {"name": "get_finetune_requirements", "arguments": {"finetune_id": "sam3"}},
+            )
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Empty"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            refused = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "start_finetune",
+                    "arguments": {
+                        "finetune_id": "sam2.1-hiera-small",
+                        "dataset_ids": [dataset_id],
+                        "name": "x",
+                    },
+                },
+            )
+
+        spec = json.loads(requirements["result"]["content"][0]["text"])
+        assert spec["prompt_kind"] == "noun-phrase" and "phrase" in spec["data_format"]
+        # The rules the data breaks, in the words the Training tab uses (doc 92).
+        assert refused["result"].get("isError") is True
+        text = str(refused["result"])
+        assert "outline" in text and "Prepare data" in text

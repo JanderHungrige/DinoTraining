@@ -256,7 +256,8 @@ export const MODEL_GUIDE: readonly ModelGuideEntry[] = Object.freeze([
     ],
     measured:
       'mAP 0.61 on chess pieces, 0.55 on blood cells, 0.50-0.58 on OSDaR23 rail — against ' +
-      '0.96 for a fine-tuned RF-DETR on that same rail data.',
+      '0.96 for a fine-tuned RF-DETR on that same rail data. Those splits were random; on a ' +
+      'leak-free split (Prepare data) blood cells scored 0.41 on test pictures.',
   },
   {
     name: 'RF-DETR (fine-tuned)',
@@ -273,7 +274,9 @@ export const MODEL_GUIDE: readonly ModelGuideEntry[] = Object.freeze([
     ],
     measured:
       'mAP 0.96 on OSDaR23 rail, against 0.50-0.58 for a DINO detector head on the same ' +
-      'data. Unfreezing 4 blocks moved the holdout from 0.78 to 0.84.',
+      'data (random splits). On blood cells with a leak-free split: 0.62 test mAP after 2 ' +
+      'rounds, against 0.41 for a DINO head. Unfreezing 4 blocks moved the holdout from ' +
+      '0.78 to 0.84.',
   },
   {
     name: 'Grounded SAM / SAM 3 (no training)',

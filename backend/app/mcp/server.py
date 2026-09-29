@@ -30,7 +30,7 @@ from fastapi import FastAPI
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
-from app.mcp import client, prep_tools, tools
+from app.mcp import client, finetune_tools, prep_tools, tools
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +67,7 @@ def build() -> MCPServer:
     mcp = MCPServer("dinotraining", instructions=INSTRUCTIONS)
     tools.register(mcp)
     prep_tools.register(mcp)
+    finetune_tools.register(mcp)
     return mcp
 
 
