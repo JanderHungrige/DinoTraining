@@ -135,4 +135,8 @@ findings.
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+- **2026-09-29: RF-DETR and SAM 2 were sized as letterboxed; their processors stretch to a
+  square.** The object-size finding for those targets was computed with the long-edge
+  scale; it now uses the stretch (doc 85, Bugs). The RF-DETR figures in the table above
+  predate the fix. Its grid suggestion now comes from doc 85's planner, and says so
+  honestly when even the largest grid leaves objects too small.

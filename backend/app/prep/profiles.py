@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -38,6 +39,7 @@ class ModelProfile:
     annotation_kind: str
     #: "letterbox": scale the longest edge to `input_size`, pad to a square.
     #: "shortest-edge": scale the shortest edge to `input_size`, capped at `max_long_edge`.
+    #: "stretch": resize to an `input_size` square, aspect ratio not kept.
     fit: str
     input_size: int
     #: One feature-map cell, in input pixels (the patch size or the detector's finest stride).
@@ -52,7 +54,13 @@ class ModelProfile:
         return 2 * self.cell_px
 
     def scale_for(self, width: int, height: int) -> float:
-        """Source pixels → input pixels, for an image of this size."""
+        """Source pixels → input pixels, for an image of this size.
+
+        For a stretch x and y scale apart, and this is their geometric mean: exact for an
+        object's size measured as the square root of its area, which is how it is measured.
+        """
+        if self.fit == "stretch":
+            return self.input_size / math.sqrt(max(1, width) * max(1, height))
         if self.fit == "shortest-edge":
             scale = self.input_size / max(1, min(width, height))
             if self.max_long_edge is not None:
@@ -105,7 +113,7 @@ PROFILES: tuple[ModelProfile, ...] = (
         "Fine-tune RF-DETR (nano)",
         "detection",
         "boxes",
-        "letterbox",
+        "stretch",
         384,
         8,
         model_id="rf-detr-nano",
@@ -115,7 +123,7 @@ PROFILES: tuple[ModelProfile, ...] = (
         "Fine-tune SAM 2.1 (small)",
         "segmentation",
         "masks",
-        "letterbox",
+        "stretch",
         1024,
         16,
         model_id="sam2.1-hiera-small",
@@ -142,7 +150,10 @@ def _from_processor(profile: ModelProfile, config: dict[str, object]) -> ModelPr
     if not isinstance(size, dict):
         return profile
     if isinstance(size.get("height"), int) and isinstance(size.get("width"), int):
-        return replace(profile, fit="letterbox", input_size=max(size["height"], size["width"]))
+        # {height, width} is an exact size: the processor stretches, it does not pad
+        # (transformers: "Do NOT keep the aspect ratio"). Read as a letterbox until
+        # 2026-09-29, which misjudged every object in a wide frame.
+        return replace(profile, fit="stretch", input_size=max(size["height"], size["width"]))
     if isinstance(size.get("shortest_edge"), int):
         long_edge = size.get("longest_edge")
         return replace(

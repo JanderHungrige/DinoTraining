@@ -29,6 +29,7 @@ from app.api.v1 import (
     models,
     prep_audit,
     prep_fixes,
+    prep_input,
     prep_intake,
     prep_split,
     prescan,
@@ -68,3 +69,4 @@ api_router.include_router(prep_audit.router, tags=["prepare-data"])
 api_router.include_router(prep_intake.router, tags=["prepare-data"])
 api_router.include_router(prep_fixes.router, tags=["prepare-data"])
 api_router.include_router(prep_split.router, tags=["prepare-data"])
+api_router.include_router(prep_input.router, tags=["prepare-data"])

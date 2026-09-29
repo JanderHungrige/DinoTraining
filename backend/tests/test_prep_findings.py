@@ -31,13 +31,15 @@ def test_a_healthy_dataset_has_no_problems() -> None:
 
 
 def test_objects_that_vanish_at_the_model_input_are_a_problem_with_a_grid() -> None:
-    # Doc 49's case: ~11 px signals in 2464 px frames, which is 1.7 px at 384 px.
+    # Doc 49's case: ~11 px signals in 2464x1642 frames, 2.1 px once stretched to 384 px.
     boxes = [(i, "signal", 11) for i in range(150)]
     ctx = AuditContext(facts(150, boxes), get_profile("rf-detr-nano"))
     finding = next(f for f in evaluate(ctx) if f.id == "objects-too-small")
     assert finding.severity == "problem"
-    assert finding.metrics["median_px"] < 2
-    assert finding.metrics["suggested_grid"] >= 2
+    assert finding.metrics["median_px"] < 2.5
+    assert finding.metrics["suggested_columns"] >= 2
+    # Even the largest worthwhile grid leaves 11 px signals too small, and it says so.
+    assert "still too small" in finding.action
 
 
 def test_a_class_with_a_single_example_is_flagged_and_named() -> None:

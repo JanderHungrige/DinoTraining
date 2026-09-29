@@ -9,7 +9,6 @@ Pure functions over `AuditContext`, so every rule is testable without a database
 
 from __future__ import annotations
 
-import math
 from collections import Counter
 from statistics import median
 
@@ -23,6 +22,7 @@ from app.prep.findings_quality import (
     spelling,
     unreadable,
 )
+from app.prep.input_plan import decide_tiling, object_sizes
 
 
 def _size(ctx: AuditContext) -> Finding | None:
@@ -90,28 +90,30 @@ def _imbalance(ctx: AuditContext) -> Finding | None:
 
 def _object_size(ctx: AuditContext) -> Finding | None:
     profile = ctx.profile
-    positives = ctx.facts.positives()
-    if profile is None or profile.annotation_kind == "labels" or not positives:
+    if profile is None or profile.annotation_kind == "labels":
         return None
-    sizes: list[float] = []
-    examples: list[tuple[float, str]] = []
-    for annotation in positives:
-        image = ctx.facts.image(annotation.image_id)
-        if image is None:
-            continue
-        size = math.sqrt(annotation.width * annotation.height) * profile.scale_for(
-            image.width, image.height
-        )
-        sizes.append(size)
-        examples.append((size, image.path))
-    if not sizes:
+    # The plan's arithmetic (doc 85), so the grid suggested here is the grid planned there.
+    sized = object_sizes(ctx.facts, profile)
+    if not sized:
         return None
-    sizes.sort()
+    sizes = [size for size, _ in sized]
     p50, p10 = median(sizes), sizes[len(sizes) // 10]
     limit = profile.min_visible_px
     if p10 >= limit:
         return None
-    grid = max(2, math.ceil(limit / max(p50, 0.1)))
+    tiling = decide_tiling(ctx.facts, profile, None)
+    action = (
+        f"{tiling.reason} The Model step sets tiling up and shows you what the model sees."
+        if tiling.recommended
+        else tiling.reason
+    )
+    examples: list[str] = []
+    for _, annotation in sized:
+        image = ctx.facts.image(annotation.image_id)
+        if image is not None and image.path not in examples:
+            examples.append(image.path)
+        if len(examples) == 6:
+            break
     return Finding(
         id="objects-too-small",
         severity="problem" if p50 < limit else "warn",
@@ -122,14 +124,14 @@ def _object_size(ctx: AuditContext) -> Finding | None:
         why="The model shrinks every picture to a fixed size before looking at it. Objects "
         "that end up smaller than its finest detail become invisible, so it cannot learn "
         "them, however well they are labelled.",
-        action=f"Train on tiles: cut each image into about a {grid}×{grid} grid so objects "
-        "stay large enough. The Model step sets this up and shows you what the model sees.",
-        examples=[path for _, path in sorted(examples)[:6]],
+        action=action,
+        examples=examples,
         metrics={
             "median_px": round(p50, 1),
             "p10_px": round(p10, 1),
             "needed_px": limit,
-            "suggested_grid": grid,
+            "suggested_columns": tiling.columns,
+            "suggested_rows": tiling.rows,
         },
     )
 
