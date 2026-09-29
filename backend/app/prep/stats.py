@@ -46,6 +46,9 @@ class DatasetFacts:
     dataset_id: str
     images: list[ImageFacts] = field(default_factory=list)
     annotations: list[AnnotationFacts] = field(default_factory=list)
+    #: Images a safe fix took out (doc 83). Not in `images`: everything downstream of a fix
+    #: should see the dataset as training will.
+    excluded: int = 0
 
     def positives(self) -> list[AnnotationFacts]:
         return [a for a in self.annotations if a.label == "positive"]
@@ -91,24 +94,39 @@ class DatasetFacts:
         return {image.id: image for image in self.images}
 
 
-_ANNOTATIONS = """
+_INCLUDED = "COALESCE(i.excluded, 0) = 0"
+
+_ANNOTATIONS = f"""
 SELECT b.image_id, 'box' AS kind, b.label, b.prompt, b.x, b.y, b.w, b.h
-  FROM boxes b JOIN images i ON i.id = b.image_id WHERE i.dataset_id = ?
+  FROM boxes b JOIN images i ON i.id = b.image_id WHERE i.dataset_id = ? AND {_INCLUDED}
 UNION ALL
 SELECT m.image_id, 'mask', m.label, m.prompt, m.x, m.y, m.w, m.h
-  FROM masks m JOIN images i ON i.id = m.image_id WHERE i.dataset_id = ?
+  FROM masks m JOIN images i ON i.id = m.image_id WHERE i.dataset_id = ? AND {_INCLUDED}
 """
 
 
-def collect(dataset_id: str, settings: Settings | None = None) -> DatasetFacts:
+def collect(
+    dataset_id: str,
+    settings: Settings | None = None,
+    class_map: dict[str, str | None] | None = None,
+) -> DatasetFacts:
+    """The dataset as training will see it: excluded images left out, the class map applied
+    (a class mapped to None is left out too)."""
+    mapping = class_map or {}
     with transaction(settings) as connection:
         images = connection.execute(
-            "SELECT id, path, width, height, sequence FROM images WHERE dataset_id = ? ORDER BY id",
+            "SELECT id, path, width, height, sequence FROM images i"
+            f" WHERE dataset_id = ? AND {_INCLUDED} ORDER BY id",
             (dataset_id,),
         ).fetchall()
+        excluded = connection.execute(
+            f"SELECT COUNT(*) FROM images i WHERE dataset_id = ? AND NOT {_INCLUDED}",
+            (dataset_id,),
+        ).fetchone()[0]
         annotations = connection.execute(_ANNOTATIONS, (dataset_id, dataset_id)).fetchall()
     return DatasetFacts(
         dataset_id=dataset_id,
+        excluded=int(excluded),
         images=[
             ImageFacts(
                 id=int(row["id"]),
@@ -124,7 +142,7 @@ def collect(dataset_id: str, settings: Settings | None = None) -> DatasetFacts:
                 image_id=int(row["image_id"]),
                 kind=str(row["kind"]),
                 label=str(row["label"]),
-                cls=normalise_class_name(row["prompt"]),
+                cls=cls,
                 raw=str(row["prompt"] or ""),
                 x=float(row["x"]),
                 y=float(row["y"]),
@@ -132,8 +150,14 @@ def collect(dataset_id: str, settings: Settings | None = None) -> DatasetFacts:
                 height=float(row["h"]),
             )
             for row in annotations
+            if (cls := _mapped(row["prompt"], mapping)) is not None
         ],
     )
+
+
+def _mapped(prompt: str | None, mapping: dict[str, str | None]) -> str | None:
+    name = normalise_class_name(prompt)
+    return mapping.get(name, name) if name in mapping else name
 
 
 __all__ = ["AnnotationFacts", "DatasetFacts", "ImageFacts", "collect"]

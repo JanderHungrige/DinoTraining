@@ -16,6 +16,7 @@ from app.prep.duplicates import clusters, dhash
 from app.prep.findings import AuditContext, Finding, evaluate
 from app.prep.jobs import Progress
 from app.prep.profiles import get_profile
+from app.prep.state import load_state
 from app.prep.stats import DatasetFacts, collect
 
 logger = logging.getLogger(__name__)
@@ -40,6 +41,13 @@ class DatasetAudit(BaseModel):
     findings: list[Finding] = Field(default_factory=list)
     #: Content hash of the facts audited, recorded by a preparation recipe (doc 88).
     facts_hash: str
+    #: In full, not as examples: doc 83 excludes all but one of each copy group, and doc 84
+    #: keeps each scene group on one side of the split.
+    copy_groups: list[list[str]] = Field(default_factory=list)
+    scene_groups: list[list[str]] = Field(default_factory=list)
+    unreadable: list[str] = Field(default_factory=list)
+    #: Images a fix has taken out of training; the audit describes the rest (doc 83).
+    excluded: int = 0
 
 
 def _facts_hash(facts: DatasetFacts) -> str:
@@ -89,7 +97,7 @@ def run_audit(
     settings: Settings | None = None,
 ) -> DatasetAudit:
     profile = get_profile(target, settings) if target else None
-    facts = collect(dataset_id, settings)
+    facts = collect(dataset_id, settings, load_state(dataset_id, settings).class_map)
     unreadable, scene_groups = _check_files(facts, progress)
     copies = copy_groups(facts, scene_groups)
     findings = evaluate(AuditContext(facts, profile, unreadable, copies, scene_groups))
@@ -110,6 +118,10 @@ def run_audit(
         ),
         findings=findings,
         facts_hash=_facts_hash(facts),
+        copy_groups=copies,
+        scene_groups=scene_groups,
+        unreadable=unreadable,
+        excluded=facts.excluded,
     )
     _save(audit, settings)
     return audit
