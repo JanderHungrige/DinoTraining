@@ -29,6 +29,7 @@ from app.core.config import Settings
 from app.core.paths import resolve_model_dir
 from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState
 from app.ml.backbone import Backbone, read_capabilities
+from app.ml.foundation.variant import BACKBONE_DIR, HEAD_FILE
 from app.ml.heads.builders import build_head
 from app.ml.heads.decode import decode_for
 from app.ml.heads.registry import HeadTypeSpec, get_head_type
@@ -43,8 +44,6 @@ logger = logging.getLogger(__name__)
 
 HEAD_FOR_TASK = {"classification": "linear-classifier", "segmentation": "linear-segmenter"}
 DEFAULT_UNFROZEN = 4
-HEAD_FILE = "head.pt"
-BACKBONE_DIR = "backbone"
 
 
 @dataclass
@@ -153,4 +152,4 @@ class BackboneAdapter:
         torch.save({k: v.cpu() for k, v in state.head.state_dict().items()}, directory / HEAD_FILE)
 
 
-__all__ = ["BACKBONE_DIR", "HEAD_FILE", "BackboneAdapter", "fresh_backbone"]
+__all__ = ["BackboneAdapter", "fresh_backbone"]

@@ -199,12 +199,17 @@ def _describe_instance(instance: FoundationInstance) -> FoundationInfo:
                     "description": instance.summary, "approx_size_mb": 0}
         )  # fmt: skip
     base = get_model(instance.base_model_id)
+    if instance.weights_kind == "backbone-variant":
+        segmenting = instance.finetune_id.endswith("segmentation")
+        task, hint = ("segmentation", "masks") if segmenting else ("classification", "labels")
+    else:
+        task, hint = "detection", "boxes"
     return FoundationInfo(
         id=instance.id,
         title=instance.name,
         description=instance.summary,
-        task="detection",
-        render_hint="boxes",
+        task=task,
+        render_hint=hint,
         model_id=instance.base_model_id,
         # A fine-tune inherits its base model's licence: it *is* that model's weights,
         # moved. Training on your own data does not relicense someone else's checkpoint.

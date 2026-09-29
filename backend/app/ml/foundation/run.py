@@ -21,6 +21,7 @@ from app.ml.foundation.build import FoundationImplementation
 from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.detect import RfDetrModel
 from app.ml.foundation.prompt_detect import PromptedDetector
+from app.ml.foundation.variant import BackboneVariantModel
 from app.ml.inference.results import Prediction
 
 
@@ -35,7 +36,7 @@ def predict_with(
     # RF-DETR first would hand Grounding DINO to the branch that drops the concept.
     if isinstance(model, ConceptSegmenter | PromptedDetector):
         return model.predict(image, concept, score_threshold)
-    if isinstance(model, RfDetrModel):
+    if isinstance(model, RfDetrModel | BackboneVariantModel):
         return model.predict(image, score_threshold)
     return model.predict(image)
 
