@@ -6,7 +6,10 @@
  * not as a deliberate refusal to run someone else's pickle.
  */
 
-import { useState, type FormEvent, type JSX } from 'react';
+import { type FormEvent, type JSX } from 'react';
+
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isString, stillListed } from '../lib/persisted';
 
 import type { ImportRequest } from '../api/headCatalog';
 import type { BackboneInfo } from '../api/backbones';
@@ -25,17 +28,28 @@ export function HeadImportForm({
   busy,
   onImport,
 }: HeadImportFormProps): JSX.Element {
-  const [repoId, setRepoId] = useState('');
-  const [numClasses, setNumClasses] = useState('');
+  // Doc 69: remembered across tab switches and restarts.
+  const [repoId, setRepoId] = usePersistentState('headImport.repoId', '', isString);
+  const [numClasses, setNumClasses] = usePersistentState('headImport.numClasses', '', isString);
   // Only the user's *override* is stored; the effective value falls back to the first
   // option. Seeding state from headTypes[0] instead looks equivalent but is not: both
   // lists arrive asynchronously, so the initialiser runs against an empty array and
   // the state stays "". The <select> then renders its first option while React still
   // believes nothing is selected — which silently disabled the submit button forever.
-  const [headTypeOverride, setHeadTypeOverride] = useState('');
-  const [backboneOverride, setBackboneOverride] = useState('');
-  const headTypeId = headTypeOverride || headTypes[0]?.id || '';
-  const backboneId = backboneOverride || backbones[0]?.id || '';
+  const [headTypeOverride, setHeadTypeOverride] = usePersistentState(
+    'headImport.headType',
+    '',
+    isString,
+  );
+  const [backboneOverride, setBackboneOverride] = usePersistentState(
+    'headImport.backbone',
+    '',
+    isString,
+  );
+  const headTypeId =
+    stillListed(headTypeOverride, headTypes.map((entry) => entry.id)) || headTypes[0]?.id || '';
+  const backboneId =
+    stillListed(backboneOverride, backbones.map((entry) => entry.id)) || backbones[0]?.id || '';
 
   const ready = repoId.trim() !== '' && headTypeId !== '' && backboneId !== '';
 

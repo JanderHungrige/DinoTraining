@@ -14,6 +14,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import type { DatasetInfo } from '../api/datasets';
+import { stillListed } from '../lib/persisted';
 import { FolderField } from './FolderField';
 import { RevealDatasetButton } from './RevealDatasetButton';
 
@@ -53,7 +54,12 @@ export function ImageSourceField({
   // empty id — which is what the very first switch produces, before the list has loaded —
   // would then never fall back, and the form would sit there pointing at no dataset while
   // rendering a select full of them.
-  const chosen = value.kind === 'dataset' ? value.datasetId : override;
+  // `stillListed` because the id may be remembered (doc 69) and deleted since. Once the
+  // list arrives without it, the effect below moves the source onto the first usable one.
+  const chosen = stillListed(
+    value.kind === 'dataset' ? value.datasetId : override,
+    usable.map((entry) => entry.id),
+  );
   const selected = chosen || usable[0]?.id || '';
 
   // A dataset that is chosen and then emptied elsewhere must not leave the form pointing

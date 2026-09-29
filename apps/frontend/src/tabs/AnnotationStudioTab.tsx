@@ -141,6 +141,7 @@ export function AnnotationStudioTab(): JSX.Element {
       {currentImage && (
         <>
           <PrescanPanel
+            storageKey="studio.prescan"
             total={session.allImages.length}
             job={prescan.job}
             starting={prescan.starting}

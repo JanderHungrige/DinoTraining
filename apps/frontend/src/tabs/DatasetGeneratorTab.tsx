@@ -16,6 +16,8 @@ import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { GeneratorSetup } from '../components/GeneratorSetup';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isAnnotationView } from '../lib/persisted';
 import {
   useGeneratorSession,
   type GeneratorConfig,
@@ -25,7 +27,11 @@ export function DatasetGeneratorTab(): JSX.Element {
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A preference across the whole folder, not per-image state.
-  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
+  const [view, setView] = usePersistentState<AnnotationView>(
+    'generator.view',
+    DEFAULT_VIEW,
+    isAnnotationView,
+  );
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useGeneratorSession(config);
   const prescan = usePrescan();
@@ -91,6 +97,7 @@ export function DatasetGeneratorTab(): JSX.Element {
           ballast is the same wasted afternoon. */}
       {!session.loading && session.allImages.length > 0 && (
         <PrescanPanel
+          storageKey="generator.prescan"
           total={session.allImages.length}
           job={prescan.job}
           starting={prescan.starting}

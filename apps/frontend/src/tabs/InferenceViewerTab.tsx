@@ -21,6 +21,14 @@ import { renderOverlayFor } from '../components/overlays/registry';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
 import { useImageSource } from '../hooks/useImageSource';
+import { usePersistentState } from '../hooks/usePersistentState';
+import {
+  isAnnotationView,
+  isNullable,
+  isOneOf,
+  isString,
+  stillListed,
+} from '../lib/persisted';
 
 /** The two things this tab does. Same shape as the Training tab's switch. */
 const MODES = [
@@ -38,24 +46,42 @@ const MODES = [
 
 type ViewerMode = (typeof MODES)[number]['id'];
 
+const isViewerMode = isOneOf<ViewerMode>(MODES.map((entry) => entry.id));
+
 export function InferenceViewerTab(): JSX.Element {
   // Explicit rather than inferred from what the path turns out to be. The player used to
   // appear on its own whenever a folder probed as playable, which meant a folder could not
   // be stepped through image by image without the player also being there — two surfaces
   // for one source, neither of them chosen.
-  const [mode, setMode] = useState<ViewerMode>('image');
-  const [path, setPath] = useState<string | null>(null);
+  // Doc 69: the mode, path, dataset and view are remembered across tab switches.
+  const [mode, setMode] = usePersistentState<ViewerMode>('viewer.mode', 'image', isViewerMode);
+  const [path, setPath] = usePersistentState<string | null>(
+    'viewer.path',
+    null,
+    isNullable(isString),
+  );
   // Read from the image itself rather than from any prediction: the tiling hint has to be
   // available *before* a run, which is exactly when there is no prediction to ask.
   const [imageWidth, setImageWidth] = useState<number | null>(null);
   // A preference, not per-image state: it survives moving to the next image, because
   // re-choosing "boxes" on every frame of a folder is the opposite of a convenience.
-  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
+  const [view, setView] = usePersistentState<AnnotationView>(
+    'viewer.view',
+    DEFAULT_VIEW,
+    isAnnotationView,
+  );
   // Mutually exclusive by construction rather than by a mode flag: choosing one clears
   // the other, so there is never a state where both claim to be the source.
-  const [datasetId, setDatasetId] = useState<string | null>(null);
+  const [datasetId, setDatasetId] = usePersistentState<string | null>(
+    'viewer.dataset',
+    null,
+    isNullable(isString),
+  );
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
-  const source = useImageSource(path, datasetId);
+  // A remembered dataset may have been deleted since: it is used only once the list
+  // confirms it, so a stale id never reaches the image listing as a 404.
+  const liveDataset = stillListed(datasetId ?? '', datasets.map((entry) => entry.id)) || null;
+  const source = useImageSource(path, liveDataset);
 
   useEffect(() => {
     const controller = new AbortController();
