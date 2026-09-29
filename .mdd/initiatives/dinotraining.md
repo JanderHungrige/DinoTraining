@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 8
-hash: 941bcdba
+version: 9
+hash: 0ca2becc
 created: 2026-08-14
 ---
 
@@ -121,7 +121,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
       — Wave 4 is dataset-generator only. Video is unassigned and tracked in
       `.mdd/BACKLOG.md` until a wave claims it.
 - [ ] Code-signing / notarization for macOS + Windows installers (Wave 8).
-- [ ] Which hyperscaler(s) to support first for the website (Wave 9).
+- [ ] Which hyperscaler(s) to support first for the website (Wave 10).
 
 ## Waves
 
@@ -130,6 +130,10 @@ Renumbering would invalidate every cross-reference in forty feature docs and in 
 comments — the initiative already paid that cost once, when it grew from six waves to nine
 on 2026-08-19 and every reference had to be retargeted by hand. A fractional wave is uglier
 and cheaper.
+
+**Wave 9 was inserted on 2026-09-29 by renumbering**, at Jan's explicit request: the website
+wave moved 9 → 10. The cost above was paid once more — 40 references in docs and source
+comments, retargeted mechanically and checked with a grep that came back empty.
 
 
 | Wave | File | Demo-state | Status |
@@ -141,6 +145,7 @@ and cheaper.
 | Wave 5 | waves/dinotraining-wave-5.md | In the Annotation Studio the user picks a trained backbone + head instead of writing a Grounding DINO prompt, and the expert model proposes boxes they refine by hand — the same head picker, reading identically, in both the Studio and the Inference Viewer. | complete |
 | Wave 6 | waves/dinotraining-wave-6.md | The user downloads Depth Anything 3 from the admin panel and runs it in the Inference Viewer beside the DINOv2 heads, comparing a foundation depth model against a trained one on the same image — with every catalogue entry stating its licence. | complete |
 | Wave 7 | waves/dinotraining-wave-7.md | Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window. | complete |
-| Wave 7.5 | waves/dinotraining-wave-7-5.md | The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads. | planned |
-| Wave 8 | waves/dinotraining-wave-8.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | planned |
-| Wave 9 | waves/dinotraining-wave-9.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
+| Wave 7.5 | waves/dinotraining-wave-7-5.md | The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads. | complete |
+| Wave 8 | waves/dinotraining-wave-8.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | complete |
+| Wave 9 | waves/dinotraining-wave-9.md | In the Dataset Generator the user picks a video, presses Play and watches it propose and save frame by frame, stopping only on predictions inside their 'unclear' score band. They then open the dataset in 'Inspect datasets', play it back with coloured per-class bars under it, and jump to a class's first annotation. Every entry they typed survives a tab switch or restart. | planned |
+| Wave 10 | waves/dinotraining-wave-10.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

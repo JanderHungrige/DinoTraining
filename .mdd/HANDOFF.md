@@ -8,7 +8,8 @@ do not read it for current state.
 the **Studio round** (2026-08-25, docs 60–62) and the **agent, first-run and video round**
 (2026-08-26/27, docs 63–68). Everything below is merged to `dev` and `main`, and `main`
 is at `d47ed26`. Nothing has been pushed since 2026-08-27. Waves 1–8 are merged.
-**Only Wave 9 (Website & hyperscaler compute) remains** as planned work, plus the three
+**Wave 9 (Generator Autopilot & Dataset Inspection) was inserted on 2026-09-29 and is
+in progress on `feat/dinotraining-wave-9`**; the website wave is now **Wave 10**. Plus the three
 features deferred out of Wave 8.
 
 ---

@@ -68,7 +68,7 @@ describe('the pickers', () => {
   });
 
   it('hides both buttons in a browser, leaving the field typable', async () => {
-    // Wave 9's `web` mode has no native dialog. A disabled field with no picker would
+    // Wave 10's `web` mode has no native dialog. A disabled field with no picker would
     // leave no way in at all.
     dialog.hasNativeDialog.mockReturnValue(false);
     render(<FolderField id="folder" value="" onChange={vi.fn()} />);
