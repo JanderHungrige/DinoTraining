@@ -19,14 +19,28 @@ textarea {
 /* --- Doc 77: the loop behind every tab ------------------------------------------ */
 
 :root {
-  /* The surfaces carry the contrast; the video is only atmosphere. */
-  --surface: color-mix(in srgb, var(--bg) 52%, transparent);
-  --surface-raised: color-mix(in srgb, var(--bg-raised) 70%, transparent);
-  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.5), rgb(10 11 14 / 0.38));
+  /* The surfaces carry the contrast; the video is only atmosphere. Values from doc 80's
+     measurement: the lowest that keep every text colour at WCAG AA (4.5:1) over the
+     brightest pixel anywhere in the loop, composited exactly as the browser stacks it. */
+  --surface: color-mix(in srgb, var(--bg) 60%, transparent);
+  --surface-raised: color-mix(in srgb, var(--bg-raised) 78%, transparent);
+  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.5), rgb(10 11 14 / 0.45));
+}
+
+/* Doc 80: two dark-mode colours failed AA over the loop's brightest frame (dim text
+   2.97:1, danger 2.76:1). A shade lighter each clears 5:1 there, and reads as the same
+   colour on the solid cards. */
+@media not (prefers-color-scheme: light) {
+  :root {
+    --text-dim: #b3bac6;
+    --danger: #fca5a5;
+  }
 }
 
 @media (prefers-color-scheme: light) {
   :root {
+    /* Doc 80: the light amber measured 4.4997:1 over the loop's brightest frame. */
+    --pending: #8f5708;
     --scrim: linear-gradient(180deg, rgb(246 247 249 / 0.62), rgb(246 247 249 / 0.5));
   }
 }
