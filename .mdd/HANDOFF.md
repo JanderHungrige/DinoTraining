@@ -6,9 +6,9 @@ do not read it for current state.
 
 **Last updated:** 2026-09-29, at the end of the **Wave 9 build**. Waves 1–8 and docs
 60–68 are merged to `dev` and `main`. **Wave 9 (Generator Autopilot & Dataset Inspection,
-docs 69–75) is built, verified in the running app, and pushed on
-`feat/dinotraining-wave-9`, but not merged.** Its status stays `in_progress` until Jan has
-seen the demo-state. The website wave is now **Wave 10**. The three features deferred out
+docs 69–75) is built, verified in the running app, and merged into `dev` (`076f56a`) for
+Jan to test. `main` waits for his release.** Its status stays `in_progress` until Jan has
+seen the demo-state. The website wave is now **Wave 13**. The three features deferred out
 of Wave 8 are still open.
 
 ---
