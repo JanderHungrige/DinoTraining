@@ -2,6 +2,20 @@
    Kept apart from styles.css: that file is the app's structure, this is its skin, and a
    later change of skin should touch one file. */
 
+/* --- Doc 78: Lato -------------------------------------------------------------------- */
+
+:root {
+  --font-ui: 'Lato', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui);
+}
+
 /* --- Doc 77: the loop behind every tab ------------------------------------------ */
 
 :root {

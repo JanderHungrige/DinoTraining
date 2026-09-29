@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-9
 demo_state: "The app opens over a seamlessly looping particle background with no visible jump at the loop point. Every button has NinaNatur's hand-drawn outline, all text is set in Lato, and every screen stays legible, and calm under reduced motion, in the packaged app and not only the dev browser."
 created: 2026-09-29
-hash: 9b0d7740
+hash: b47b92a3
 ---
 
 # Wave 10: Look & Feel
@@ -46,7 +46,7 @@ Planned with Jan's choices:
 |---|---------|-----|--------|------------|
 | 1 | background-video-asset | docs/76-background-video-asset.md | complete | — |
 | 2 | app-background-layer | docs/77-app-background-layer.md | complete | background-video-asset |
-| 3 | lato-typography | — | planned | — |
+| 3 | lato-typography | docs/78-lato-typography.md | complete | — |
 | 4 | draft-sketch-controls | — | planned | lato-typography |
 | 5 | legibility-and-motion-pass | — | planned | app-background-layer, draft-sketch-controls |
 
