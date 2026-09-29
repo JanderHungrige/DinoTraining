@@ -28,6 +28,7 @@ from app.api.v1 import (
     inference,
     models,
     prep_audit,
+    prep_intake,
     prescan,
     settings,
     system,
@@ -62,3 +63,4 @@ api_router.include_router(prescan.router, tags=["generate"])
 api_router.include_router(video.router, tags=["video"])
 api_router.include_router(video_extract.router, tags=["video"])
 api_router.include_router(prep_audit.router, tags=["prepare-data"])
+api_router.include_router(prep_intake.router, tags=["prepare-data"])

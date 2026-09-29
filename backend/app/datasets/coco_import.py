@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from app.core.paths import ensure_within
+from app.datasets.bbox_conventions import Convention, to_xywh
 from app.datasets.models import Box, ImageAnnotation
 from app.datasets.store import DatasetStore
 
@@ -50,6 +51,33 @@ class ImportSummary:
     sources: tuple[str, ...] = ()
     skipped_images: int = 0
     skipped_boxes: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class ImportOptions:
+    """How to read an export, as decided by doc 82's intake (or the defaults: plain COCO)."""
+
+    convention: Convention = "xywh"
+    #: Written name -> the class to store it as. Merges spellings; unmapped names pass.
+    class_map: dict[str, str] | None = None
+    #: Keep the export's own train/valid/test folders as the stored split (doc 84).
+    keep_source_split: bool = False
+
+
+#: Folder names that mean a split, as Roboflow and HuggingFace exports name them.
+SPLIT_FOLDERS = {
+    "train": "train",
+    "training": "train",
+    "valid": "val",
+    "val": "val",
+    "validation": "val",
+    "test": "test",
+    "testing": "test",
+}
+
+
+def split_of(folder: str) -> str | None:
+    return SPLIT_FOLDERS.get(folder.strip().lower())
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,6 +162,7 @@ def _boxes_for_image(
     categories: dict[int, str],
     width: int,
     height: int,
+    options: ImportOptions,
 ) -> tuple[list[Box], int]:
     """Build boxes for one image; return them with the number skipped.
 
@@ -148,17 +177,17 @@ def _boxes_for_image(
         if not isinstance(bbox, list) or len(bbox) != 4 or name is None:
             skipped += 1
             continue
-        x, y, w, h = (float(value) for value in bbox)
+        a, b, c, d = (float(value) for value in bbox)
+        x, y, w, h = to_xywh((a, b, c, d), options.convention, width, height)
+        name = (options.class_map or {}).get(name, name)
         if w <= 0 or h <= 0 or x < 0 or y < 0 or x + w > width or y + h > height:
             skipped += 1
             continue
-        boxes.append(
-            Box(label="positive", provenance="imported", x=x, y=y, w=w, h=h, prompt=name)
-        )
+        boxes.append(Box(label="positive", provenance="imported", x=x, y=y, w=w, h=h, prompt=name))
     return boxes, skipped
 
 
-def load_split(coco_path: Path) -> LoadedSplit:
+def load_split(coco_path: Path, options: ImportOptions | None = None) -> LoadedSplit:
     """Parse one ``_annotations.coco.json`` into store-ready annotations."""
     try:
         payload = json.loads(coco_path.read_text())
@@ -167,6 +196,8 @@ def load_split(coco_path: Path) -> LoadedSplit:
     if not isinstance(payload, dict):
         raise ValueError(f"{coco_path.name} is not a COCO object")
 
+    options = options or ImportOptions()
+    split = split_of(coco_path.parent.name) if options.keep_source_split else None
     categories = _category_names(payload, coco_path)
     images = _image_records(payload, coco_path)
     grouped = _group_by_image(payload, coco_path)
@@ -189,12 +220,16 @@ def load_split(coco_path: Path) -> LoadedSplit:
             skipped_images += 1
             continue
 
-        boxes, skipped = _boxes_for_image(grouped.get(image_id, []), categories, width, height)
+        boxes, skipped = _boxes_for_image(
+            grouped.get(image_id, []), categories, width, height, options
+        )
         skipped_boxes += skipped
         # Images with no boxes are kept: a background image is real supervision for a
         # detector, so dropping them would quietly change the dataset.
         annotations.append(
-            ImageAnnotation(path=str(image_path), width=width, height=height, boxes=boxes)
+            ImageAnnotation(
+                path=str(image_path), width=width, height=height, boxes=boxes, split=split
+            )
         )
 
     return LoadedSplit(
@@ -206,7 +241,11 @@ def load_split(coco_path: Path) -> LoadedSplit:
 
 
 def import_coco_dataset(
-    store: DatasetStore, name: str, directory: Path, copy_images: bool = False
+    store: DatasetStore,
+    name: str,
+    directory: Path,
+    copy_images: bool = False,
+    options: ImportOptions | None = None,
 ) -> tuple[str, ImportSummary]:
     """Create a dataset from a COCO export and fill it. Returns its id and a summary.
 
@@ -216,11 +255,9 @@ def import_coco_dataset(
     """
     coco_files = find_coco_files(directory)
     if not coco_files:
-        raise ValueError(
-            f"No {COCO_FILENAME} in {directory} or its subdirectories"
-        )
+        raise ValueError(f"No {COCO_FILENAME} in {directory} or its subdirectories")
 
-    splits = [load_split(path) for path in coco_files]
+    splits = [load_split(path, options) for path in coco_files]
     dataset = store.create(name=name, prompt=None, copy_images=copy_images)
 
     images = boxes = 0

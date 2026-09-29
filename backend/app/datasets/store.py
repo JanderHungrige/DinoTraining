@@ -171,6 +171,7 @@ class DatasetStore:
                 annotation.width,
                 annotation.height,
                 annotation.frame,
+                annotation.split,
             )
 
             connection.execute("DELETE FROM boxes WHERE image_id = ?", (image_id,))

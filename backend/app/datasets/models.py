@@ -84,6 +84,9 @@ class ImageAnnotation(BaseModel):
     prompt: str | None = None
     #: Doc 73. Omitted for a photo; omitting it never clears a position already stored.
     frame: FramePosition | None = None
+    #: Doc 82: the split a published dataset assigned (its train/valid/test folders).
+    #: Omitted means "none given", and never clears one already stored.
+    split: Literal["train", "val", "test"] | None = None
 
     @model_validator(mode="after")
     def _boxes_fit_the_image(self) -> ImageAnnotation:

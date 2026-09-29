@@ -31,6 +31,7 @@ def upsert_image(
     width: int,
     height: int,
     frame: FramePosition | None = None,
+    split: str | None = None,
 ) -> int:
     """Insert or refresh one image row and return its id.
 
@@ -44,14 +45,15 @@ def upsert_image(
     """
     connection.execute(
         "INSERT INTO images"
-        " (dataset_id, path, width, height, annotated_at, sequence, frame_index)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?)"
+        " (dataset_id, path, width, height, annotated_at, sequence, frame_index, split)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         " ON CONFLICT(dataset_id, path) DO UPDATE SET"
         "   width = excluded.width,"
         "   height = excluded.height,"
         "   annotated_at = excluded.annotated_at,"
         "   sequence = COALESCE(excluded.sequence, images.sequence),"
-        "   frame_index = COALESCE(excluded.frame_index, images.frame_index)",
+        "   frame_index = COALESCE(excluded.frame_index, images.frame_index),"
+        "   split = COALESCE(excluded.split, images.split)",
         (
             dataset_id,
             stored_path,
@@ -60,6 +62,7 @@ def upsert_image(
             now(),
             frame.sequence if frame else None,
             frame.frame_index if frame else None,
+            split,
         ),
     )
     row = connection.execute(

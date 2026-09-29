@@ -8,8 +8,9 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from app.datasets.bbox_conventions import Convention
 from app.datasets.coco import build_coco, write_coco
-from app.datasets.coco_import import import_coco_dataset
+from app.datasets.coco_import import ImportOptions, import_coco_dataset
 from app.datasets.masks import MaskStore
 from app.datasets.models import (
     DatasetCounts,
@@ -49,6 +50,12 @@ class ImportCocoRequest(BaseModel):
         default=False,
         description="Copy images into the dataset instead of referencing them in place.",
     )
+    #: Doc 82: how the export writes its boxes, as POST .../import/coco/inspect decided.
+    box_convention: Convention = "xywh"
+    #: Doc 82: written class name -> class to store it as (accepted spelling merges).
+    class_map: dict[str, str] = Field(default_factory=dict)
+    #: Doc 82: keep the export's train/valid/test folders as the stored split.
+    keep_source_split: bool = False
 
 
 class ImportResponse(BaseModel):
@@ -208,6 +215,11 @@ async def import_coco(request: ImportCocoRequest) -> ImportResponse:
             name=request.name,
             directory=Path(request.directory).expanduser(),
             copy_images=request.copy_images,
+            options=ImportOptions(
+                convention=request.box_convention,
+                class_map=request.class_map or None,
+                keep_source_split=request.keep_source_split,
+            ),
         )
     except ValueError as error:
         logger.info("COCO import from %s rejected: %s", request.directory, error)

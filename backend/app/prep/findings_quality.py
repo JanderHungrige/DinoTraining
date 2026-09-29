@@ -3,9 +3,9 @@
 
 from __future__ import annotations
 
-import re
 from collections import defaultdict
 
+from app.datasets.class_names import spelling_key
 from app.prep.finding_types import AuditContext, Finding
 
 
@@ -83,9 +83,7 @@ def doubt(ctx: AuditContext) -> Finding | None:
 def spelling(ctx: AuditContext) -> Finding | None:
     variants: defaultdict[str, set[str]] = defaultdict(set)
     for annotation in ctx.facts.annotations:
-        key = re.sub(r"[\s_\-]+", " ", annotation.cls).strip()
-        key = key[:-1] if key.endswith("s") and len(key) > 3 else key
-        variants[key].add(annotation.cls)
+        variants[spelling_key(annotation.cls)].add(annotation.cls)
     groups = [sorted(names) for names in variants.values() if len(names) > 1]
     if not groups:
         return None
