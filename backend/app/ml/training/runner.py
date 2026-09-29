@@ -1,6 +1,6 @@
 """Local execution backend for training jobs.
 
-Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 10
+Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 13
 adds a hyperscaler runner by implementing the same three methods and swapping the
 construction in :func:`get_job_runner` — no call site changes.
 """
@@ -272,7 +272,7 @@ def _save_completed_head(
 
 
 def get_job_runner() -> LocalJobRunner:
-    """Process-wide runner. Wave 10 swaps the construction here, not at call sites."""
+    """Process-wide runner. Wave 13 swaps the construction here, not at call sites."""
     global _runner
     with _runner_lock:
         if _runner is None:

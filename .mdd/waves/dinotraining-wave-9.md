@@ -7,12 +7,12 @@ status: in_progress
 depends_on: dinotraining-wave-8
 demo_state: "In the Dataset Generator the user picks a video, presses Play and watches it propose and save frame by frame, stopping only on predictions inside their 'unclear' score band. They then open the dataset in 'Inspect datasets', play the annotated video with coloured per-class bars under it, and jump to a class's first annotation. Every path and name they typed is still there after a tab switch or a restart."
 created: 2026-09-29
-hash: 4db873ca
+hash: 51ef0f72
 ---
 
 # Wave 9: Generator Autopilot & Dataset Inspection
 
-**Inserted 2026-09-29 at Jan's request, ahead of the website wave, which is now Wave 10.**
+**Inserted 2026-09-29 at Jan's request, ahead of the website wave, which is now Wave 13.**
 Wave 7.5 was inserted as a fractional wave so that nothing had to be renumbered. This time
 Jan asked for the shift explicitly. All 40 references to the old Wave 9 in docs and source
 comments were retargeted, and a grep for `wave[ -]9` came back empty before this file was

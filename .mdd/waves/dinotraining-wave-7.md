@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-6
 demo_state: "Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window."
 created: 2026-08-19
-hash: 47dcb2ce
+hash: 4941c933
 ---
 
 # Wave 7: Onboarding & Input Polish
@@ -88,7 +88,7 @@ The browser gives `File` objects with no path. Rather than add an upload endpoin
 second input contract, the one doc 17 deliberately avoided, plus a temp-file lifecycle to
 own — the drop zone is simply **not offered** where it cannot work. That is the pattern
 `hasNativeDialog` already sets: the browse buttons disappear, the path field never does.
-If browser input is ever wanted it belongs in Wave 10, where server-side files are already
+If browser input is ever wanted it belongs in Wave 13, where server-side files are already
 part of the deal.
 
 ### The intro is a sixth tab, not an overlay
@@ -117,7 +117,7 @@ stays correct for free.
 
 - **Drag-and-drop in the browser has no path.** Under Tauri a file drop yields real
   filesystem paths, which the path-based API takes directly. In the plain `web` dev mode —
-  and in Wave 10 — a drop yields `File` objects with no path, which the current API cannot
+  and in Wave 13 — a drop yields `File` objects with no path, which the current API cannot
   accept. Either an upload endpoint appears (a second input contract, which doc 17
   deliberately avoided) or the browser case stays picker-only. **Decide before building.**
 - **Where the intro lives.** A sixth tab, or a first-run overlay, or both. A tab is

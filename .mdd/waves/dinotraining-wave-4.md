@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-3
 demo_state: "User runs trained expert head(s) over new images, reviews/marks predictions, and saves a new dataset ready to train another head. Separately, SAM 3 proposes segmentation masks over an image set which the user reviews and saves — closing the gap that made segmentation untrainable in-app."
 created: 2026-08-14
-hash: c6ef152d
+hash: d9e6c741
 ---
 
 # Wave 4: Dataset Generator (SAM 3 + Expert-Head Auto-Annotation)
@@ -84,7 +84,7 @@ The initiative carries two unchecked open product questions. Both are **delibera
 here, not answered** — exactly as Wave 3 did:
 
 - `[ ] Code-signing / notarization for macOS + Windows installers` — **Wave 8**
-- `[ ] Which hyperscaler(s) to support first for the website` — **Wave 10**
+- `[ ] Which hyperscaler(s) to support first for the website` — **Wave 13**
 
 Neither can influence a dataset generator. Answering "which hyperscaler" merely to clear the
 gate would turn a guess into an architectural commitment nobody has made.
