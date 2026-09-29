@@ -31,6 +31,7 @@ from app.ml.annotators.proposals import PROPOSED_LABEL, clamp_to_frame
 from app.ml.foundation.build import build_foundation
 from app.ml.foundation.concept import ConceptSegmenter
 from app.ml.foundation.detect import DEFAULT_SCORE_THRESHOLD, RfDetrModel
+from app.ml.foundation.prompt_detect import PromptedDetector
 
 # Aliased: `Box` in this module is the *stored* annotation, not the four numbers.
 from app.ml.inference.results import Box as Box4
@@ -84,6 +85,8 @@ def propose_foundation_boxes(
         detections, producer = _from_concept(model, image, concept, score_threshold)
     elif isinstance(model, RfDetrModel):
         detections, producer = _from_detector(model, image, score_threshold)
+    elif isinstance(model, PromptedDetector):
+        detections, producer = _from_prompted(model, image, concept, score_threshold)
     else:
         # A depth model is perfectly usable — in the Inference Viewer, where looking is the
         # point. It is not annotatable, because there is nothing here to review it with.
@@ -151,6 +154,25 @@ def _from_detector(
         id=prediction.instance_id,
         label=f"{prediction.head_name} · {prediction.summary}",
     )
+    return [(box, score, name, None) for box, score, name in prediction.detections()], producer
+
+
+def _from_prompted(
+    model: PromptedDetector, image: Image.Image, concept: str, score_threshold: float
+) -> tuple[list[Detected], Producer]:
+    """Grounding DINO's boxes, each named by the phrase it matched (doc 66).
+
+    Missing until doc 71 found it: the Generator offered Grounding DINO and then refused it
+    as "does not predict boxes". An empty prompt is refused here rather than passed on,
+    because the model answers "" with an empty prediction by design, and that would read
+    as an image with nothing in it.
+    """
+    if not concept.strip():
+        raise FoundationCannotAnnotateError(
+            f"{model.spec.title} needs a prompt — type what you are looking for."
+        )
+    prediction = model.predict(image, concept, score_threshold)
+    producer = Producer(id=model.spec.id, label=f"{model.spec.title} · {concept.strip()}")
     return [(box, score, name, None) for box, score, name in prediction.detections()], producer
 
 
