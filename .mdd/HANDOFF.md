@@ -4,12 +4,89 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-29, at the end of the **Wave 9 build**. Waves 1–8 and docs
-60–68 are merged to `dev` and `main`. **Wave 9 (Generator Autopilot & Dataset Inspection,
-docs 69–75) is built, verified in the running app, and merged into `dev` (`076f56a`) for
-Jan to test. `main` waits for his release.** Its status stays `in_progress` until Jan has
-seen the demo-state. The website wave is now **Wave 13**. The three features deferred out
-of Wave 8 are still open.
+**Last updated:** 2026-09-30, at the end of the **Wave 11 build**. Waves 1–8 and docs
+60–68 are in `dev` and `main`. **Wave 9** (docs 69–75) is in `dev` (`076f56a`) and waits
+for Jan's test before `main`. **Wave 10** (Look & Feel, docs 76–80) is built and pushed on
+`feat/dinotraining-wave-10`, **not merged**, and waits for the packaged-app demo.
+**Wave 11** (Guided Data Preparation, docs 81–91) is built, verified in the running app,
+and pushed on `feat/dinotraining-wave-11`, **not merged**. Wave 12 (fine-tuning SAM 2/3
+and DINOv3) is next; the website is Wave 13.
+
+---
+
+## Wave 10 — Look & Feel (2026-09-29), on its own branch
+
+The Pixabay "octagon" particles clip, mirror-stitched into a seamless 58 s loop (4.0 MB,
+H.264, provenance and licence recorded), as the app's background. It pauses when hidden and
+shows the poster for reduced motion or when switched off (Admin → Appearance). Also:
+- NinaNatur's Draft Sketch outline on every button;
+- Lato, bundled rather than fetched;
+- contrast measured against the loop's brightest frame, with tokens fixed where they
+  failed AA.
+
+Docs 76–80 are on `feat/dinotraining-wave-10`. Its status stays `in_progress` until the
+packaged app has been seen: `tauri dev` does not apply the packaged CSP (`media-src 'self'`
+was added), and WebKit plays video differently.
+
+## Wave 11 — Guided Data Preparation (2026-09-29/30)
+
+Jan's "most important and most complex wave": preprocessing done for people who have
+never trained a model, most of all for external data. It is all in a new tab, **Prepare
+data**, between Annotation Studio and Training, and in the API and MCP for agents.
+
+| | |
+|---|---|
+| 81 | **Audit.** Plain-language findings (what / why / what to do, example thumbnails), judged at the target model's input. |
+| 82 | **Import check.** Detects xywh / xyxy / normalised boxes. An unchecked xyxy export had lost 162 of 273 boxes silently. |
+| 83 | **Safe fixes.** Exclude and include, never delete; a class map that renames, merges or leaves out. Undoable. |
+| 84 | **Leak-free split.** Scenes and video stretches never straddle sides; buffers at contiguous boundaries; stored and seeded. |
+| 85 | **What the model sees.** Fit, object sizes at the input, the tiling decision, and the real pictures at the model's resolution. Found: RF-DETR and SAM 2 *stretch* to a square, they do not letterbox. |
+| 86 | **Unequal classes.** Weighted loss or repeat-factor sampling, recommended from the numbers. |
+| 87 | **Augmentation presets.** Geometry-safe (property-tested), with a whole-word meaning guard (no mirroring for signs, text or sides). |
+| 88 | **Recipe.** A versioned, never-edited snapshot. It says when the data no longer matches it. |
+| 89 | **The Prepare data tab.** Seven steps, each with a recommended default and why. |
+| 90 | **Training uses the recipe.** Stored split, tiles, strategy, augmentation. Fixes apply to every run. A **test score** is reported and saved with the head. |
+| 91 | **For agents.** Eight MCP tools and guide section 2c, "prepare before you train". |
+
+**Found live, and worth carrying forward:**
+- **The shared SQLite connection was used by several threads at once** (doc 03, Bugs).
+  Symptoms: "API misuse" 500s, a false "Dataset not found", and one thread's commit
+  persisting another's half-done work. Latent since Wave 1. `transaction()` now holds a
+  lock.
+- **Every MCP tool's error explanation was lost** (doc 91). `ApiError` was not a
+  `ToolError`, so the model saw only "Error executing tool".
+- **mAP counted classes absent from the evaluation side as 0** (doc 11, Bugs). With a
+  leak-free split that is common, and it cut scores by a third per missing class.
+- **The first honest numbers are lower.** Blood cells: validation mAP 0.498, **test 0.412**.
+  On OSDaR the leak-free split leaves only 58 groups, and a DINOv2-small head learns little
+  in 6 epochs, tiled or not (doc 90). RF-DETR's 0.96 from Wave 7 was measured on a random
+  split, so treat it with the same caution until it is re-run with a recipe.
+- **Balance strategies could not be told apart** on Blood cells with one seed and 8
+  epochs (doc 86). The recommendation rule is reasoned, not yet measured.
+
+## Waiting on Jan — Waves 10 and 11
+
+**A. Merge order.** Both branches start from `dev` at `24f5230`. Wave 11's new tab uses
+only colour tokens both branches define, so either order works. Wave 10 first gives Wave 11
+its look; check the Prepare data tab once both are in.
+
+**B. See Wave 11's demo-state yourself** (`./scripts/dev.sh web`):
+1. Prepare data → a dataset and a model.
+2. Run the audit and read the findings.
+3. Split, then "What the model sees", then save a recipe.
+4. "Train with …" opens Training with the recipe chosen; the finished run shows a test
+   score.
+
+**C. Not seen in WebKit.** The Prepare tab draws `<img>` data URLs and a
+`image-rendering: pixelated` preview, with no canvas data. That is low risk, but it is not
+evidence.
+
+**D. Tasks offered out of scope**, still open: blocking file IO on the event loop
+(macOS's ~/Downloads prompt stalled a preview for 6,711 s), doc 68's path-confinement
+claim, and unhandled `setPointerCapture` errors in the viewer tests.
+
+**E. Test data left behind:** recipes on Blood cells ("blood v1") and OSDaR ("osdar
+tiled", "osdar whole"), and new heads from the comparison runs, for deleting in Library.
 
 ---
 

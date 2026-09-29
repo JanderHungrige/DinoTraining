@@ -3,11 +3,11 @@ id: dinotraining-wave-11
 title: "Wave 11: Guided Data Preparation"
 initiative: dinotraining
 initiative_version: 10
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-10
 demo_state: "A user with no data-science background imports an external dataset and follows a guided flow. The app audits it and explains in plain language what is wrong, fixes what can safely be fixed, splits it without leakage, shows exactly what the chosen model will see, sets how class imbalance is handled, and hands a saved, reproducible preparation recipe to training. An AI assistant over MCP can run the same steps and gets the same explanations."
 created: 2026-09-29
-hash: 09f16c28
+hash: 54f8b819
 ---
 
 # Wave 11: Guided Data Preparation
@@ -84,8 +84,8 @@ parameters; external data is where this matters most.
 | 7 | augmentation-presets | docs/87-augmentation-presets.md | complete | model-input-planning |
 | 8 | preparation-recipe | docs/88-preparation-recipe.md | complete | leakage-safe-split, model-input-planning, imbalance-strategy, augmentation-presets |
 | 9 | guided-preparation-flow | docs/89-guided-preparation-flow.md | complete | safe-fixes, preparation-recipe |
-| 10 | training-consumes-recipe | — | planned | preparation-recipe |
-| 11 | preparation-for-agents | — | planned | preparation-recipe |
+| 10 | training-consumes-recipe | docs/90-training-consumes-recipe.md | complete | preparation-recipe |
+| 11 | preparation-for-agents | docs/91-preparation-for-agents.md | complete | preparation-recipe |
 
 ### Feature notes
 
