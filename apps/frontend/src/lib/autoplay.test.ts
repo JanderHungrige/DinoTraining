@@ -153,3 +153,83 @@ describe('holdFor', () => {
     await expect(holdFor(10_000, controller.signal)).resolves.toBeUndefined();
   });
 });
+
+describe('runAutoplay — asking when unclear (doc 72)', () => {
+  const BAND = { low: 0.3, high: 0.5 };
+
+  function scored(path: string, scores: number[]): ImageReview {
+    return {
+      ...review(path, 0),
+      boxes: scores.map((score, i) => ({ id: `${path}-${i}`, label: 'positive', score }) as never),
+    };
+  }
+
+  it('pauses on an image with an in-band proposal, marked unclear, and saves the answer', async () => {
+    const answered = scored('/f/0.png', [0.9]);
+    const ask = vi.fn(
+      async (_index: number, _review: ImageReview, _count: number): Promise<ImageReview> =>
+        answered,
+    );
+    const r = run({
+      paths: ['/f/0.png'],
+      band: BAND,
+      ask,
+      propose: vi.fn(async (path: string) => scored(path, [0.9, 0.4])),
+    });
+    const result = await runAutoplay(r);
+
+    const [index, asked, count] = ask.mock.calls[0]!;
+    expect(index).toBe(0);
+    expect(count).toBe(1);
+    expect(asked.boxes.map((box: { label: string }) => box.label)).toEqual(['positive', 'unclear']);
+    // What is saved is the user's answer, not the model's proposal.
+    expect(vi.mocked(r.save).mock.calls[0]![0]).toBe(answered);
+    expect(result).toMatchObject({ saved: 1, asked: 1 });
+  });
+
+  it('shows the image it asks about even in hidden mode', async () => {
+    const r = run({
+      paths: ['/f/0.png'],
+      hidden: true,
+      band: BAND,
+      ask: vi.fn(async (_i: number, asked: ImageReview) => asked),
+      propose: vi.fn(async (path: string) => scored(path, [0.4])),
+    });
+    await runAutoplay(r);
+    expect(vi.mocked(r.show).mock.calls.map(([i, rv]) => [i, rv === null])).toEqual([
+      [0, true],
+      [0, false],
+    ]);
+  });
+
+  it('does not ask when every score is outside the band', async () => {
+    const ask = vi.fn();
+    const r = run({
+      paths: ['/f/0.png'],
+      band: BAND,
+      ask,
+      propose: vi.fn(async (path: string) => scored(path, [0.9, 0.1])),
+    });
+    await runAutoplay(r);
+    expect(ask).not.toHaveBeenCalled();
+    expect(r.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops there, unsaved, when the question is answered with Stop', async () => {
+    const r = run({
+      band: BAND,
+      ask: vi.fn(async () => null),
+      propose: vi.fn(async (path: string) => scored(path, [0.4])),
+    });
+    const result = await runAutoplay(r);
+    expect(result).toMatchObject({ end: 'stopped', lastIndex: 0, saved: 0 });
+    expect(r.save).not.toHaveBeenCalled();
+  });
+
+  it('never asks without a band, even with an ask handler', async () => {
+    const ask = vi.fn();
+    const r = run({ paths: ['/f/0.png'], band: null, ask });
+    await runAutoplay(r);
+    expect(ask).not.toHaveBeenCalled();
+  });
+});

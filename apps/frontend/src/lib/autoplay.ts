@@ -12,6 +12,7 @@
  */
 
 import type { ImageReview } from './generatorSave';
+import { markUnclear, type UnclearBand } from './unclearBand';
 
 export interface AutoplayProgress {
   /** Images dealt with so far in this run, including skipped and failed ones. */
@@ -22,6 +23,13 @@ export interface AutoplayProgress {
   readonly empty: number;
   readonly failed: number;
   readonly skipped: number;
+  /** Images the run paused on to ask about (doc 72). Also counted as saved. */
+  readonly asked: number;
+}
+
+/** Nothing done yet. One definition, so a new counter cannot be missed in one of the copies. */
+export function emptyProgress(total: number): AutoplayProgress {
+  return { done: 0, total, saved: 0, empty: 0, failed: 0, skipped: 0, asked: 0 };
 }
 
 export type AutoplayEnd = 'finished' | 'stopped' | 'save-failed';
@@ -47,6 +55,10 @@ export interface AutoplayRun {
   /** Visible mode only: move to an image (null review), then show what was proposed. */
   readonly show: (index: number, review: ImageReview | null) => void;
   readonly onProgress: (progress: AutoplayProgress) => void;
+  /** Doc 72: pause when a proposal scores inside this band, and wait for `ask`. */
+  readonly band?: UnclearBand | null;
+  /** Resolves with the reviewed image to save, or null to stop the run there. */
+  readonly ask?: (index: number, review: ImageReview, count: number) => Promise<ImageReview | null>;
 }
 
 /** Resolves after `ms`, or at once when the signal aborts. Never rejects. */
@@ -79,10 +91,35 @@ interface Tally {
   empty: number;
   failed: number;
   skipped: number;
+  asked: number;
 }
 
 /** What happened to one image: counted under `outcome`, or the run has to end. */
-type Step = { readonly outcome: 'saved' | 'empty' | 'failed'; readonly error?: string } | AutoplayEnd;
+type Step =
+  | {
+      readonly outcome: 'saved' | 'empty' | 'failed';
+      readonly error?: string;
+      readonly asked?: boolean;
+    }
+  | AutoplayEnd;
+
+/** Doc 72: shows the image with its in-band proposals marked, and waits for the user.
+ *  Undefined when there is nothing to ask about. */
+async function askIfUnclear(
+  run: AutoplayRun,
+  index: number,
+  review: ImageReview,
+): Promise<Step | undefined> {
+  if (!run.ask || !run.band) return undefined;
+  const marked = markUnclear(review, run.band);
+  if (marked.count === 0) return undefined;
+  // Hidden mode has drawn nothing so far; a question needs the picture it is about.
+  if (run.hidden) run.show(index, null);
+  run.show(index, marked.review);
+  const answer = await run.ask(index, marked.review, marked.count);
+  if (answer === null || run.signal.aborted) return 'stopped';
+  return (await run.save(answer)) ? { outcome: 'saved', asked: true } : 'save-failed';
+}
 
 async function step(run: AutoplayRun, index: number, path: string): Promise<Step> {
   if (!run.hidden) run.show(index, null);
@@ -101,6 +138,8 @@ async function step(run: AutoplayRun, index: number, path: string): Promise<Step
   if (!run.hidden) run.show(index, review);
   if (run.signal.aborted) return 'stopped';
   if (!found(review)) return { outcome: 'empty' };
+  const asked = await askIfUnclear(run, index, review);
+  if (asked !== undefined) return asked;
 
   if (!run.hidden) {
     await holdFor(run.holdMs, run.signal);
@@ -112,14 +151,7 @@ async function step(run: AutoplayRun, index: number, path: string): Promise<Step
 }
 
 export async function runAutoplay(run: AutoplayRun): Promise<AutoplayReport> {
-  const tally: Tally = {
-    done: 0,
-    total: Math.max(0, run.paths.length - run.start),
-    saved: 0,
-    empty: 0,
-    failed: 0,
-    skipped: 0,
-  };
+  const tally: Tally = emptyProgress(Math.max(0, run.paths.length - run.start));
   let lastIndex = Math.min(run.start, Math.max(0, run.paths.length - 1));
   let lastError: string | null = null;
   const report = (end: AutoplayEnd): AutoplayReport => ({ ...tally, end, lastIndex, lastError });
@@ -137,6 +169,7 @@ export async function runAutoplay(run: AutoplayRun): Promise<AutoplayReport> {
       const result = await step(run, index, path);
       if (typeof result === 'string') return report(result);
       tally[result.outcome] += 1;
+      if (result.asked) tally.asked += 1;
       if (result.error !== undefined) lastError = result.error;
     }
     tally.done += 1;

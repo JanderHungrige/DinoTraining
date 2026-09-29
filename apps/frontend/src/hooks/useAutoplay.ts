@@ -14,11 +14,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
+  emptyProgress,
   runAutoplay,
   type AutoplayProgress,
   type AutoplayReport,
 } from '../lib/autoplay';
 import { proposeReview } from '../lib/generatorProposal';
+import type { ImageReview } from '../lib/generatorSave';
+import type { UnclearBand } from '../lib/unclearBand';
 import { isBoolean } from '../lib/persisted';
 import type { GeneratorConfig } from '../types/generatorConfig';
 import type { GeneratorSession } from '../types/generatorSession';
@@ -28,8 +31,18 @@ import { usePersistentState } from './usePersistentState';
  *  box and press Stop, short enough that a folder of 300 still moves. */
 export const HOLD_MS = 500;
 
+/** Autoplay is paused on an image, waiting for the user to judge in-band proposals. */
+export interface AutoplayQuestion {
+  readonly index: number;
+  readonly count: number;
+}
+
 export interface Autoplay {
   readonly running: boolean;
+  /** Doc 72: set while the run waits for an answer. */
+  readonly question: AutoplayQuestion | null;
+  /** Saves the image as it now stands on screen and carries on. */
+  readonly answer: () => void;
   readonly hidden: boolean;
   readonly setHidden: (hidden: boolean) => void;
   readonly progress: AutoplayProgress | null;
@@ -41,8 +54,12 @@ export interface Autoplay {
 export function useAutoplay(
   config: GeneratorConfig | null,
   session: GeneratorSession,
+  band: UnclearBand | null = null,
 ): Autoplay {
   const [running, setRunning] = useState(false);
+  const [question, setQuestion] = useState<AutoplayQuestion | null>(null);
+  // Resolves the pending question: the reviewed image, or null for Stop.
+  const reply = useRef<((review: ImageReview | null) => void) | null>(null);
   const [hidden, setHidden] = usePersistentState('generator.autoplayHidden', false, isBoolean);
   const [progress, setProgress] = useState<AutoplayProgress | null>(null);
   const [report, setReport] = useState<AutoplayReport | null>(null);
@@ -63,14 +80,7 @@ export function useAutoplay(
     setRunning(true);
     setReport(null);
     // The total is known before the first image finishes; "0 of 0" would read as broken.
-    setProgress({
-      done: 0,
-      total: Math.max(0, paths.length - start),
-      saved: 0,
-      empty: 0,
-      failed: 0,
-      skipped: 0,
-    });
+    setProgress(emptyProgress(Math.max(0, paths.length - start)));
 
     void runAutoplay({
       paths,
@@ -86,6 +96,12 @@ export function useAutoplay(
         else live.current.show(review);
       },
       onProgress: setProgress,
+      band,
+      ask: (index, _review, count) =>
+        new Promise<ImageReview | null>((resolve) => {
+          reply.current = resolve;
+          setQuestion({ index, count });
+        }),
     }).then((result) => {
       controller.current = null;
       setRunning(false);
@@ -94,9 +110,22 @@ export function useAutoplay(
       // (or the end) leaves the user somewhere they can look and correct.
       if (hidden) live.current.goTo(result.lastIndex);
     });
-  }, [config, hidden]);
+  }, [config, hidden, band]);
 
-  const stop = useCallback((): void => controller.current?.abort(), []);
+  const settle = useCallback((review: ImageReview | null): void => {
+    const resolve = reply.current;
+    reply.current = null;
+    setQuestion(null);
+    resolve?.(review);
+  }, []);
 
-  return { running, hidden, setHidden, progress, report, play, stop };
+  const answer = useCallback((): void => settle(live.current.currentReview()), [settle]);
+
+  const stop = useCallback((): void => {
+    controller.current?.abort();
+    // A run waiting on a question is parked on a promise the abort cannot reach.
+    settle(null);
+  }, [settle]);
+
+  return { running, question, answer, hidden, setHidden, progress, report, play, stop };
 }

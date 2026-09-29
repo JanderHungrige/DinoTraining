@@ -193,3 +193,58 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
     expect(generate.proposeMasks).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('DatasetGeneratorTab — asking when unclear (doc 72)', () => {
+  beforeEach(() => {
+    // The mocked mask scores 0.88: a band around it makes every image a question.
+    localStorage.setItem('dinotraining.v1.generator.askUnclear', 'true');
+    localStorage.setItem('dinotraining.v1.generator.unclearBand', '{"low":0.8,"high":0.9}');
+  });
+
+  it('pauses, lets the user overrule, and saves their verdict — not the model\'s', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /play/i }));
+
+    const question = await screen.findByRole('alert', { name: /waiting for you/i });
+    expect(question).toHaveTextContent('Paused on image 1 of 3');
+    expect(datasetsApi.saveImageMasks).not.toHaveBeenCalled();
+
+    // Marked unclear for the question; one click cycles it on to positive.
+    const mask = screen.getByRole('button', { name: /Unclear mask/ });
+    await user.click(mask);
+    expect(screen.getByRole('button', { name: /Positive mask/ })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => expect(datasetsApi.saveImageMasks).toHaveBeenCalled());
+    const [, , reviewed] = vi.mocked(datasetsApi.saveImageMasks).mock.calls[0]!;
+    expect(reviewed[0]!.label).toBe('positive');
+    // And it goes on to ask about the next one.
+    expect(await screen.findByText(/Paused on image 2 of 3/)).toBeInTheDocument();
+  });
+
+  it('saves an unanswered question as unclear', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /play/i }));
+    await screen.findByRole('alert', { name: /waiting for you/i });
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
+    await waitFor(() => expect(datasetsApi.saveImageMasks).toHaveBeenCalled());
+    const [, , reviewed] = vi.mocked(datasetsApi.saveImageMasks).mock.calls[0]!;
+    expect(reviewed[0]!.label).toBe('unclear');
+  });
+
+  it('Stop here ends the run on that image, unsaved', async () => {
+    const user = userEvent.setup();
+    await startMaskSession();
+    await user.click(screen.getByRole('button', { name: /play/i }));
+    await screen.findByRole('alert', { name: /waiting for you/i });
+    await user.click(screen.getByRole('button', { name: /stop here/i }));
+
+    expect(await screen.findByText(/stopped here/)).toBeInTheDocument();
+    expect(datasetsApi.saveImageMasks).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /play/i })).toBeEnabled();
+  });
+});
+

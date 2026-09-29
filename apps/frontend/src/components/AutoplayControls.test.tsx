@@ -9,6 +9,8 @@ import { AutoplayBar, AutoplaySummary, percentOf } from './AutoplayProgress';
 function autoplay(overrides: Partial<Autoplay> = {}): Autoplay {
   return {
     running: false,
+    question: null,
+    answer: vi.fn(),
     hidden: false,
     setHidden: vi.fn(),
     progress: null,
@@ -19,7 +21,7 @@ function autoplay(overrides: Partial<Autoplay> = {}): Autoplay {
   };
 }
 
-const PROGRESS = { done: 34, total: 100, saved: 20, empty: 12, failed: 2, skipped: 0 };
+const PROGRESS = { done: 34, total: 100, saved: 20, empty: 12, failed: 2, skipped: 0, asked: 0 };
 
 describe('AutoplayControls (doc 71)', () => {
   it('offers Play when idle, and starts the run', async () => {

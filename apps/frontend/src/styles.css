@@ -1175,6 +1175,56 @@ body {
   height: 0.75rem;
 }
 
+/* Doc 72: ask when unclear. */
+.unclearband {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.9rem;
+}
+
+.unclearband__legend {
+  float: left;
+  margin-right: 0.5rem;
+  color: var(--text-dim);
+}
+
+.unclearband__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.unclearband__bound {
+  width: 4.5rem;
+}
+
+.unclearband__hint {
+  flex-basis: 100%;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.unclearq {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.unclearq__text {
+  margin: 0 0 0.6rem;
+}
+
+.unclearq__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .genbar__auto {
   display: inline-flex;
   align-items: center;

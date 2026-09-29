@@ -46,6 +46,8 @@ export interface GeneratorSession {
   readonly saved: (path: string) => ImageReview | undefined;
   readonly goTo: (index: number) => void;
   readonly show: (review: ImageReview) => void;
+  /** The review on screen, including the user's edits. */
+  readonly currentReview: () => ImageReview | null;
   /** The image the review on screen was proposed for, if any. */
   readonly proposedFor: string | null;
   readonly canGoNext: boolean;

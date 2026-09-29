@@ -179,6 +179,16 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     [images, arrive],
   );
 
+  /** The review on screen as it stands now, edits included (doc 72: the answer to a
+   *  question autoplay asked is whatever the user left on the canvas). */
+  const currentReview = useCallback(
+    (): ImageReview | null =>
+      currentImage === null
+        ? null
+        : { path: currentImage, boxes, masks, maskResponse: lastMaskProposal.current, imageSize },
+    [currentImage, boxes, masks, imageSize],
+  );
+
   /** Puts a review produced elsewhere (autoplay) on screen, as if it had been proposed here. */
   const show = useCallback((review: ImageReview): void => {
     lastMaskProposal.current = review.maskResponse;
@@ -250,6 +260,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     saved,
     goTo,
     show,
+    currentReview,
     proposedFor,
     canGoNext: index < images.length - 1,
     canGoPrevious: index > 0,

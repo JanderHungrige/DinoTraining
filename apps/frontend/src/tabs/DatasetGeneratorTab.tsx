@@ -17,16 +17,21 @@ import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { GeneratorSetup } from '../components/GeneratorSetup';
 import { usePersistentState } from '../hooks/usePersistentState';
-import { isAnnotationView, isBoolean } from '../lib/persisted';
+import { isAnnotationView, isBoolean, isShapeOf } from '../lib/persisted';
 import { useAutoPropose } from '../hooks/useAutoPropose';
 import { useAutoplay } from '../hooks/useAutoplay';
 import { AutoplayControls } from '../components/AutoplayControls';
 import { AutoplayBar, AutoplaySummary } from '../components/AutoplayProgress';
+import { UnclearBandField } from '../components/UnclearBandField';
+import { UnclearQuestion } from '../components/UnclearQuestion';
+import { DEFAULT_BAND, normaliseBand } from '../lib/unclearBand';
 import { GeneratorActionBar } from '../components/GeneratorActionBar';
 import {
   useGeneratorSession,
   type GeneratorConfig,
 } from '../hooks/useGeneratorSession';
+
+const isBand = isShapeOf(DEFAULT_BAND);
 
 export function DatasetGeneratorTab(): JSX.Element {
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
@@ -42,10 +47,14 @@ export function DatasetGeneratorTab(): JSX.Element {
   // Doc 70: both on by default, and remembered.
   const [autoPropose, setAutoPropose] = usePersistentState('generator.autoPropose', true, isBoolean);
   const [autoSave, setAutoSave] = usePersistentState('generator.autoSave', true, isBoolean);
-  const autoplay = useAutoplay(config, session);
+  // Doc 72: off by default; the band is the user's, because every model scores differently.
+  const [askUnclear, setAskUnclear] = usePersistentState('generator.askUnclear', false, isBoolean);
+  const [band, setBand] = usePersistentState('generator.unclearBand', DEFAULT_BAND, isBand);
+  const autoplay = useAutoplay(config, session, askUnclear ? normaliseBand(band) : null);
   // Autoplay proposes for itself; a second proposer racing it would be a second opinion.
   useAutoPropose(session, config !== null && autoPropose && !autoplay.running);
-  const locked = autoplay.running;
+  // While autoplay waits on a question, the canvas is the user's again; nothing else is.
+  const locked = autoplay.running && autoplay.question === null;
   const prescan = usePrescan();
 
   const startScan = useCallback(
@@ -213,7 +222,7 @@ export function DatasetGeneratorTab(): JSX.Element {
             onSave={() => void session.save()}
             onPrevious={() => void session.previous({ autoSave })}
             onNext={() => void session.next({ autoSave })}
-            locked={locked}
+            locked={autoplay.running}
           >
             <AutoplayControls
               autoplay={autoplay}
@@ -221,7 +230,26 @@ export function DatasetGeneratorTab(): JSX.Element {
             />
           </GeneratorActionBar>
 
-          {!locked && autoplay.report && <AutoplaySummary report={autoplay.report} />}
+          {autoplay.question && (
+            <UnclearQuestion
+              imageNumber={autoplay.question.index + 1}
+              imageTotal={session.images.length}
+              count={autoplay.question.count}
+              band={normaliseBand(band)}
+              onContinue={autoplay.answer}
+              onStop={autoplay.stop}
+            />
+          )}
+
+          <UnclearBandField
+            enabled={askUnclear}
+            band={band}
+            disabled={autoplay.running}
+            onEnabledChange={setAskUnclear}
+            onBandChange={setBand}
+          />
+
+          {!autoplay.running && autoplay.report && <AutoplaySummary report={autoplay.report} />}
 
         </>
       )}
