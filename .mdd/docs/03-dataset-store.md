@@ -31,6 +31,7 @@ test_files:
   - backend/tests/test_store.py
   - backend/tests/test_coco.py
   - backend/tests/test_datasets_api.py
+  - backend/tests/test_db_threads.py
 data_flow: greenfield
 last_synced: 2026-08-17
 status: complete
@@ -186,4 +187,16 @@ list and the number in the header cannot drift.
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+**2026-09-30: the shared connection was used from several threads at once** (found live
+by doc 89's Prepare tab).
+- **Symptoms:** `sqlite3.InterfaceError: bad parameter or other API misuse` (a 500 that
+  reached the browser without CORS headers, as `ERR_FAILED`), and once a false "Dataset
+  not found" 404 for a dataset that existed.
+- **Cause:** FastAPI runs sync handlers in its thread pool, and the audit, training and
+  generator jobs have threads of their own. The comment on `check_same_thread=False`
+  claimed SQLite's locking covers that. It does not, for one connection object: cursors
+  collide, and one thread's commit commits another's half-done unit of work, so a
+  rollback no longer undoes it. Both are reproduced in `test_db_threads.py`, and both
+  failed before the fix.
+- **Fix:** `transaction()` holds a re-entrant lock for the whole unit of work. Nothing
+  slow (image reads, model calls, network) runs inside one.

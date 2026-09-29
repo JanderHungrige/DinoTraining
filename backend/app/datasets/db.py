@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 SCHEMA_VERSION = LATEST_VERSION
 
 _lock = threading.Lock()
+#: One unit of work at a time on the shared connection. Re-entrant, because a transaction
+#: may call code that opens one of its own on the same thread.
+_work = threading.RLock()
 _connection: sqlite3.Connection | None = None
 _connected_path: Path | None = None
 
@@ -66,8 +69,11 @@ def get_connection(settings: Settings | None = None) -> sqlite3.Connection:
             _connection.close()
 
         path.parent.mkdir(parents=True, exist_ok=True)
-        # The connection is shared across FastAPI's threadpool workers; SQLite's own
-        # locking covers the concurrency, so the per-thread check is not wanted here.
+        # The connection is shared across FastAPI's threadpool workers and the job threads.
+        # SQLite's file locking does *not* cover one connection used from several threads
+        # at once: cursors collide ("bad parameter or other API misuse") and one thread's
+        # commit commits another's half-done work (both found live, 2026-09-30). The
+        # per-thread check is off because `transaction()` serialises every unit of work.
         connection = sqlite3.connect(str(path), check_same_thread=False)
         _configure(connection)
         connection.executescript(SCHEMA_SQL)
@@ -83,14 +89,18 @@ def get_connection(settings: Settings | None = None) -> sqlite3.Connection:
 
 @contextmanager
 def transaction(settings: Settings | None = None) -> Iterator[sqlite3.Connection]:
-    """Run a unit of work atomically. Rolls back on any exception."""
-    connection = get_connection(settings)
-    try:
-        yield connection
-    except Exception:
-        connection.rollback()
-        raise
-    connection.commit()
+    """Run a unit of work atomically. Rolls back on any exception.
+
+    Holds `_work` throughout, so no other thread's statements or commit land inside it.
+    """
+    with _work:
+        connection = get_connection(settings)
+        try:
+            yield connection
+        except Exception:
+            connection.rollback()
+            raise
+        connection.commit()
 
 
 def reset_connection() -> None:
