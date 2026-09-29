@@ -15,6 +15,8 @@ numbered steps, real calls, and the trap named beside the step that springs it.
 
 from __future__ import annotations
 
+from app.docs.workflows_prepare import PREPARE
+
 BASE_URL = "http://127.0.0.1:8756/api/v1"
 
 INTRO = f"""# DinoTraining API — a guide for an AI assistant
@@ -223,6 +225,7 @@ WORKFLOWS: tuple[str, ...] = (
     INTRO,
     INSTALL,
     DATASET_IN,
+    PREPARE,
     TRAIN_HEAD,
     FINETUNE,
     GENERATE,
@@ -239,12 +242,15 @@ annotate my own images."*
 2. `POST /models/rf-detr-nano/download`, then poll `GET /models/jobs/{job_id}`.
 3. `POST /datasets/import/coco` with the unpacked directory. Keep `dataset_id`. Check
    `skipped_boxes` is 0, or say so.
-4. `POST /foundation/finetune` with that `dataset_id`. Poll `GET /foundation/finetune/{id}`
-   until `state` is `complete`, reporting `best_metric` as it moves.
-5. `GET /annotate/folder?path=...` over the user's own images, then
-   `POST /generate/foundation` per image with the fine-tuned `foundation_id` from step 4,
+4. Prepare it (section 2c): audit for `rf-detr-nano`, split, save a recipe. Report the
+   audit's problems before going on.
+5. `POST /foundation/finetune` with that `dataset_id` and the `recipe_id`. Poll
+   `GET /foundation/finetune/{id}` until `state` is `complete`, reporting `best_metric` as it
+   moves.
+6. `GET /annotate/folder?path=...` over the user's own images, then
+   `POST /generate/foundation` per image with the fine-tuned `foundation_id` from step 5,
    and `PUT /datasets/{new_id}/images` for each result.
-6. `POST /datasets/{new_id}/export/coco` and tell the user the path.
+7. `POST /datasets/{new_id}/export/coco` and tell the user the path.
 
 **Report the numbers, not just success.** `best_metric` after a fine-tune, and how many
 boxes were proposed and kept. A run that finished and learned nothing looks exactly like a

@@ -30,7 +30,7 @@ from fastapi import FastAPI
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 
-from app.mcp import client, tools
+from app.mcp import client, prep_tools, tools
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +40,11 @@ MCP_PATH = "/mcp"
 INSTRUCTIONS = """DinoTraining annotates images, trains models on them, and generates more
 annotated data with what it trained.
 
-Start with `get_guide` for anything needing several steps — it documents the order, which
-no tool schema can. Long work returns a job id: poll `get_job` and report the metrics as
-they move. Every path is absolute and on this machine; there is no upload."""
+Before training, prepare the data: `audit_dataset`, `split_dataset`, `plan_preparation`,
+`save_recipe`, then train with its `recipe_id`. Start with `get_guide` for anything needing
+several steps — it documents the order, which no tool schema can. Long work returns a job
+id: poll `get_job` and report the metrics as they move. Every path is absolute and on this
+machine; there is no upload."""
 
 
 def _security(host: str, port: int) -> TransportSecuritySettings:
@@ -64,6 +66,7 @@ def build() -> MCPServer:
     """The server with every tool attached."""
     mcp = MCPServer("dinotraining", instructions=INSTRUCTIONS)
     tools.register(mcp)
+    prep_tools.register(mcp)
     return mcp
 
 

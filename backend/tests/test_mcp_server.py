@@ -34,9 +34,7 @@ from app.mcp.server import MCP_PATH, build
 
 
 @asynccontextmanager
-async def running_app(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> AsyncIterator[FastAPI]:
+async def running_app(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[FastAPI]:
     """The real app on a throwaway data root, with its lifespan actually running.
 
     **A context manager rather than a fixture, and that is not a style preference.** The MCP
@@ -144,6 +142,14 @@ class TestTheToolContract:
             "propose_annotations",
             "save_annotations",
             "run_inference",
+            # Doc 91: preparation, the step an assistant would otherwise skip or improvise.
+            "inspect_coco_export",
+            "audit_dataset",
+            "fix_dataset",
+            "split_dataset",
+            "plan_preparation",
+            "save_recipe",
+            "list_recipes",
         }
 
     async def test_every_tool_describes_itself(
@@ -166,6 +172,13 @@ class TestTheToolContract:
         assert "prompt" in described["save_annotations"]
         # A tile-trained head finds nothing on a full frame — and the call succeeds (doc 62).
         assert "tile" in described["run_inference"].lower()
+        # Doc 91: random video splits inflate scores; class merges are the user's call;
+        # a recipe is what makes training use the leak-free split.
+        assert "video" in described["split_dataset"]
+        assert "Ask before merging" in described["fix_dataset"]
+        # Doc 82: an unchecked xyxy export silently lost 162 of 273 boxes.
+        assert "inspect_coco_export" in described["import_coco_dataset"]
+        assert "recipe_id" in described["train_head"] and "recipe_id" in described["save_recipe"]
 
     async def test_a_job_starting_tool_points_at_get_job(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -174,7 +187,7 @@ class TestTheToolContract:
         async with running_app(tmp_path, monkeypatch) as app:
             described = await descriptions(app)
 
-        for name in ("install_model", "train_head", "finetune_model"):
+        for name in ("install_model", "train_head", "finetune_model", "audit_dataset"):
             assert "get_job" in described[name], f"{name} does not point at get_job"
 
     async def test_parameters_are_typed_rather_than_free_text(
@@ -210,9 +223,7 @@ class TestToolsAgainstTheRealApi:
                 "tools/call",
                 {"name": "create_dataset", "arguments": {"name": "From MCP"}},
             )
-            listed = await rpc(
-                app, "tools/call", {"name": "list_datasets", "arguments": {}}
-            )
+            listed = await rpc(app, "tools/call", {"name": "list_datasets", "arguments": {}})
 
         assert "From MCP" in str(listed["result"])
 
@@ -229,6 +240,8 @@ class TestToolsAgainstTheRealApi:
             )
 
         assert body["result"]["isError"] is True
+        # And *why*: the API's own message, not "Error executing tool" (doc 91).
+        assert "nope" in str(body["result"]["content"])
 
     async def test_the_guide_is_reachable_as_a_tool(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -244,7 +257,7 @@ class TestTheClientLayer:
     def test_every_job_kind_maps_to_a_route(self) -> None:
         from app.mcp.tools import _JOB_PATHS
 
-        assert set(_JOB_PATHS) == {"download", "training", "finetune"}
+        assert set(_JOB_PATHS) == {"download", "training", "finetune", "audit"}
         assert all("{job_id}" in path for path in _JOB_PATHS.values())
 
     def test_the_server_carries_instructions(self) -> None:
@@ -261,3 +274,43 @@ class TestTheClientLayer:
                 await client.call("GET", "/datasets")
         finally:
             client._app = original
+
+
+class TestPreparationTools:
+    async def test_the_preparation_tools_reach_the_app_and_refuse_with_reasons(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Prep"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            plan = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "plan_preparation",
+                    "arguments": {"dataset_id": dataset_id, "target": "rf-detr-nano"},
+                },
+            )
+            refused = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "save_recipe",
+                    "arguments": {
+                        "dataset_id": dataset_id,
+                        "name": "first",
+                        "target": "rf-detr-nano",
+                        "imbalance": "none",
+                        "augmentation": "none",
+                    },
+                },
+            )
+
+        assert plan["result"].get("isError") is not True, plan
+        planned = json.loads(plan["result"]["content"][0]["text"])
+        assert {"targets", "input", "balance", "augmentation"} <= set(planned)
+        # No audit yet: the refusal names the step, and reaches the model as a failure.
+        assert refused["result"].get("isError") is True
+        assert "Audit step" in str(refused["result"])

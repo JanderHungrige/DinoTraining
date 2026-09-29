@@ -19,6 +19,7 @@ from typing import Any
 
 import httpx
 from fastapi import FastAPI
+from mcp.server.mcpserver.exceptions import ToolError
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +36,17 @@ def bind(app: FastAPI) -> None:
     _app = app
 
 
-class ApiError(RuntimeError):
+class ApiError(ToolError):
     """A non-2xx from the app, carrying the message the API wrote for a person.
 
     Raised rather than returned: an MCP client renders a raised error as a tool failure the
     model can read and act on, while a dict with an `error` key is just as likely to be
     summarised as success.
+
+    **A `ToolError`, not any exception.** `mcp` passes a `ToolError`'s text through and
+    replaces every other exception with "Error executing tool <name>". As a
+    `RuntimeError` this class lost every explanation the API writes ("Run the Audit step
+    first") on the way to the model (found 2026-09-30, doc 91).
     """
 
     def __init__(self, status: int, message: str) -> None:
@@ -67,9 +73,7 @@ async def call(
     async with httpx.AsyncClient(
         transport=transport, base_url="http://mcp.local", timeout=TIMEOUT
     ) as client:
-        response = await client.request(
-            method, f"/api/v1{path}", json=json, params=params
-        )
+        response = await client.request(method, f"/api/v1{path}", json=json, params=params)
 
     if response.status_code >= 400:
         raise ApiError(response.status_code, _message(response))

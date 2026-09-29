@@ -25,12 +25,13 @@ from app.mcp import client
 
 #: Which poll route a job id belongs to. Three different endpoints, one tool, because the
 #: assistant should not have to remember which kind of job it started.
-JobKind = Literal["download", "training", "finetune"]
+JobKind = Literal["download", "training", "finetune", "audit"]
 
 _JOB_PATHS: dict[str, str] = {
     "download": "/models/jobs/{job_id}",
     "training": "/training/jobs/{job_id}",
     "finetune": "/foundation/finetune/{job_id}",
+    "audit": "/prep/audits/{job_id}",
 }
 
 
@@ -104,6 +105,7 @@ def register(mcp: MCPServer) -> None:
         dataset_ids: list[str],
         epochs: int = 20,
         learning_rate: float = 0.001,
+        recipe_id: str | None = None,
     ) -> Any:
         """Train a head on a frozen backbone. Returns a job id — poll with `get_job`.
 
@@ -113,6 +115,10 @@ def register(mcp: MCPServer) -> None:
 
         For boxes, `finetune_model` is usually the better answer — measured here at mAP
         0.96 against 0.5-0.6 for a detector head on the same data.
+
+        Pass `recipe_id` from `save_recipe` (one dataset only): its leak-free split, tiles
+        and class handling are applied, and the job reports `test_metrics` — the honest
+        score. Without one the split is random and the job's `notes` say so.
         """
         return await client.call(
             "POST",
@@ -123,6 +129,7 @@ def register(mcp: MCPServer) -> None:
                 "dataset_ids": dataset_ids,
                 "epochs": epochs,
                 "learning_rate": learning_rate,
+                **({"recipe_id": recipe_id} if recipe_id else {}),
             },
         )
 
@@ -134,6 +141,7 @@ def register(mcp: MCPServer) -> None:
         epochs: int = 20,
         learning_rate: float = 0.0001,
         unfreeze_blocks: int = 0,
+        recipe_id: str | None = None,
     ) -> Any:
         """Fine-tune a whole detector on your classes. Returns a job id — poll with
         `get_job`.
@@ -144,6 +152,8 @@ def register(mcp: MCPServer) -> None:
         `unfreeze_blocks` opens the last N backbone blocks. Measured here: 4 blocks cost
         19% more time and moved holdout mAP 0.78 to 0.84 — almost all of it tighter boxes
         rather than more detections. Use it when localisation matters.
+
+        `recipe_id` (from `save_recipe`) makes it use the recipe's leak-free split.
         """
         return await client.call(
             "POST",
@@ -155,29 +165,11 @@ def register(mcp: MCPServer) -> None:
                 "epochs": epochs,
                 "learning_rate": learning_rate,
                 "unfreeze_blocks": unfreeze_blocks,
+                **({"recipe_id": recipe_id} if recipe_id else {}),
             },
         )
 
     # --- getting data in and out ------------------------------------------------
-
-    @mcp.tool()
-    async def import_coco_dataset(
-        name: str, directory: str, copy_images: bool = False
-    ) -> Any:
-        """Import a COCO or Roboflow export as a new dataset.
-
-        `directory` is an absolute path **on the machine running this app** — the backend
-        opens the files itself, there is no upload. A Roboflow COCO export works as
-        downloaded.
-
-        Read `skipped_images` and `skipped_boxes` in the response and report them. An
-        import that silently dropped half its boxes looks identical to a clean one.
-        """
-        return await client.call(
-            "POST",
-            "/datasets/import/coco",
-            json={"name": name, "directory": directory, "copy_images": copy_images},
-        )
 
     @mcp.tool()
     async def create_dataset(name: str, copy_images: bool = False) -> Any:
