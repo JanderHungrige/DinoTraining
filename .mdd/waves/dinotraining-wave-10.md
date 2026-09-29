@@ -3,11 +3,11 @@ id: dinotraining-wave-10
 title: "Wave 10: Look & Feel — Living Background, Hand-Drawn Controls, Lato"
 initiative: dinotraining
 initiative_version: 10
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-9
 demo_state: "The app opens over a seamlessly looping particle background with no visible jump at the loop point. Every button has NinaNatur's hand-drawn outline, all text is set in Lato, and every screen stays legible, and calm under reduced motion, in the packaged app and not only the dev browser."
 created: 2026-09-29
-hash: ddb3d3af
+hash: f572ad9b
 ---
 
 # Wave 10: Look & Feel
@@ -44,7 +44,7 @@ Planned with Jan's choices:
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | background-video-asset | — | planned | — |
+| 1 | background-video-asset | docs/76-background-video-asset.md | complete | — |
 | 2 | app-background-layer | — | planned | background-video-asset |
 | 3 | lato-typography | — | planned | — |
 | 4 | draft-sketch-controls | — | planned | lato-typography |
