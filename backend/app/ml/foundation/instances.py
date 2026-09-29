@@ -21,7 +21,7 @@ import json
 import logging
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -48,14 +48,21 @@ class FoundationInstance:
     metrics: dict[str, float]
     epochs_trained: int
     created_at: str
+    #: Wave 12 (doc 93). Which fine-tune produced it, from which recipe, what the base
+    #: model scored on the same held-out pictures, and what is on disk: the whole model
+    #: (`full`), SAM's mask decoder only (`sam-mask-decoder`), or a backbone variant.
+    finetune_id: str = ""
+    recipe_id: str | None = None
+    baseline_metrics: dict[str, float] = field(default_factory=dict)
+    weights_kind: str = "full"
 
     @property
     def summary(self) -> str:
         """One line, composed here so every tab reads it identically — doc 12's rule."""
         classes = f"{len(self.class_names)} class{'' if len(self.class_names) == 1 else 'es'}"
-        score = self.metrics.get("map")
+        key = "map" if "map" in self.metrics else "miou" if "miou" in self.metrics else None
         trained = f"fine-tuned from {self.base_model_id} · {classes}"
-        return trained if score is None else f"{trained} · map {score:.3f}"
+        return trained if key is None else f"{trained} · {key} {self.metrics[key]:.3f}"
 
 
 def instances_root(settings: Settings | None = None) -> Path:
@@ -105,6 +112,10 @@ class FoundationInstanceStore:
         metrics: dict[str, float],
         epochs_trained: int,
         save: Callable[[Path], None],
+        finetune_id: str = "",
+        recipe_id: str | None = None,
+        baseline_metrics: dict[str, float] | None = None,
+        weights_kind: str = "full",
     ) -> FoundationInstance:
         """Write weights and manifest, replacing an earlier best from the same run.
 
@@ -129,6 +140,10 @@ class FoundationInstanceStore:
             metrics=metrics,
             epochs_trained=epochs_trained,
             created_at=datetime.now(UTC).isoformat(),
+            finetune_id=finetune_id,
+            recipe_id=recipe_id,
+            baseline_metrics=baseline_metrics or {},
+            weights_kind=weights_kind,
         )
         (directory / MANIFEST).write_text(json.dumps(_as_dict(instance), indent=2))
         logger.info("Saved fine-tuned model %s (%s)", instance_id, name)
@@ -155,6 +170,10 @@ def _as_dict(instance: FoundationInstance) -> dict[str, object]:
         "metrics": instance.metrics,
         "epochs_trained": instance.epochs_trained,
         "created_at": instance.created_at,
+        "finetune_id": instance.finetune_id,
+        "recipe_id": instance.recipe_id,
+        "baseline_metrics": instance.baseline_metrics,
+        "weights_kind": instance.weights_kind,
     }
 
 
@@ -169,6 +188,12 @@ def _read(manifest: Path) -> FoundationInstance:
         metrics={str(k): float(v) for k, v in (raw.get("metrics") or {}).items()},
         epochs_trained=int(raw.get("epochs_trained", 0)),
         created_at=str(raw.get("created_at", "")),
+        finetune_id=str(raw.get("finetune_id", "")),
+        recipe_id=raw.get("recipe_id"),
+        baseline_metrics={
+            str(k): float(v) for k, v in (raw.get("baseline_metrics") or {}).items()
+        },
+        weights_kind=str(raw.get("weights_kind", "full")),
     )
 
 

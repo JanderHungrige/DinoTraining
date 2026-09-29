@@ -98,8 +98,6 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
         "itself (its box, jittered), so you do not provide prompts.",
         what_trains="The mask decoder only. The image encoder stays frozen, which keeps it "
         "fast and saves the result in a few megabytes.",
-        available=False,
-        unavailable_reason="The SAM 2 training adapter is built in doc 94.",
     ),
     FinetuneRequirements(
         id="sam3",
@@ -130,7 +128,7 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
         FinetuneRequirements(
             id=f"{backbone}-{task}",
             model_id=backbone,
-            label=f"DINOv3 {size} — {task}",
+            label=f"{'DINOv2' if backbone.startswith('dinov2') else 'DINOv3'} {size} — {task}",
             task=task,
             annotation_kind="image-labels" if task == "classification" else "instance-masks",
             prompt_kind="none",
@@ -140,7 +138,9 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
             "head relies on; with less data it forgets more than it learns.",
             image_sizes="Any size; letterboxed to 448 px (224 for classification).",
             recipe_required=True,
-            gates=["Gated on HuggingFace: accept the DINOv3 licence and set a token."],
+            gates=[]
+            if backbone.startswith("dinov2")
+            else ["Gated on HuggingFace: accept the DINOv3 licence and set a token."],
             data_format=(
                 "One class per image: each image has boxes of exactly one class (the "
                 "class of the image). Images with several classes are skipped."
@@ -150,10 +150,12 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
             what_trains="The last blocks of the backbone together with a task head, saved "
             "as a new backbone variant with its own id. Heads trained on the original "
             "backbone never run on the variant.",
-            available=False,
-            unavailable_reason="The DINOv3 fine-tuning adapter is built in doc 95.",
         )
-        for backbone, size in (("dinov3-vitb16", "ViT-B/16"), ("dinov3-vitl16", "ViT-L/16"))
+        for backbone, size in (
+            ("dinov2-small", "ViT-S/14 (DINOv2)"),
+            ("dinov3-vitb16", "ViT-B/16"),
+            ("dinov3-vitl16", "ViT-L/16"),
+        )
         for task in ("classification", "segmentation")
     ),
 )

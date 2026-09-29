@@ -23,9 +23,7 @@ from app.ml.foundation.registry import FoundationSpec, get_foundation
 #: Every foundation implementation. A union rather than a Protocol: they share `predict`
 #: but not its signature — the detector takes a score threshold and the depth model has
 #: nothing to threshold — and a Protocol wide enough to cover both would describe neither.
-FoundationImplementation = (
-    ConceptSegmenter | DepthAnythingModel | PromptedDetector | RfDetrModel
-)
+FoundationImplementation = ConceptSegmenter | DepthAnythingModel | PromptedDetector | RfDetrModel
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +76,7 @@ def forget_foundation(foundation_id: str) -> bool:
     return _CACHE.pop(foundation_id, None) is not None
 
 
-def _trained_spec(
-    foundation_id: str, settings: Settings | None
-) -> FoundationSpec | None:
+def _trained_spec(foundation_id: str, settings: Settings | None) -> FoundationSpec | None:
     """A fine-tuned model as a spec, or None if no instance has that id."""
     from app.ml.foundation.instances import FoundationInstanceStore
 
@@ -94,6 +90,19 @@ def _trained_spec(
         return None
     if instance is None:
         return None
+    if instance.weights_kind == "sam-mask-decoder":
+        # A fine-tuned SAM segments nothing on its own: it runs as Grounded SAM's second
+        # half, Grounding DINO finding the objects and the user's SAM outlining them.
+        return FoundationSpec(
+            id=instance.id,
+            model_id="grounding-dino-tiny",
+            annotator_id="grounded-sam",
+            segmenter_id=instance.id,
+            title=f"Grounded SAM · {instance.name}",
+            description=instance.summary,
+            task="segmentation",
+            render_hint="masks",
+        )
     return FoundationSpec(
         id=instance.id,
         model_id=instance.base_model_id,
@@ -106,9 +115,7 @@ def _trained_spec(
     )
 
 
-def _implementation(
-    spec: FoundationSpec, settings: Settings | None
-) -> FoundationImplementation:
+def _implementation(spec: FoundationSpec, settings: Settings | None) -> FoundationImplementation:
     # Checked before `task`, because a concept-prompted pipeline is not one checkpoint
     # and its id would otherwise fall through to "no implementation".
     if spec.annotator_id is not None:

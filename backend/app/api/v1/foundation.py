@@ -146,7 +146,6 @@ def _describe_pipeline(spec: FoundationSpec, annotator_id: str) -> FoundationInf
     )
 
 
-
 @router.delete(
     "/foundation/instances/{instance_id}",
     summary="Delete a fine-tuned model",
@@ -191,6 +190,14 @@ async def list_foundations() -> FoundationListResponse:
 
 
 def _describe_instance(instance: FoundationInstance) -> FoundationInfo:
+    if instance.weights_kind == "sam-mask-decoder":
+        # Listed as the Grounded SAM pipeline it runs in (doc 94), so it needs a concept
+        # and needs Grounding DINO installed, exactly like the catalogue tier.
+        info = _describe_pipeline(get_foundation("grounded-sam"), "grounded-sam")  # type: ignore[arg-type]
+        return info.model_copy(
+            update={"id": instance.id, "title": f"Grounded SAM · {instance.name}",
+                    "description": instance.summary, "approx_size_mb": 0}
+        )  # fmt: skip
     base = get_model(instance.base_model_id)
     return FoundationInfo(
         id=instance.id,

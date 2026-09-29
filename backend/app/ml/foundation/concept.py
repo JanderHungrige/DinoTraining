@@ -27,8 +27,9 @@ from PIL import Image
 
 from app.core.config import Settings, get_settings
 from app.datasets.rle import rle_decode
-from app.ml.annotators.base import MaskProposal
+from app.ml.annotators.base import MaskAnnotator, MaskProposal
 from app.ml.annotators.build import build_annotator
+from app.ml.annotators.grounded_sam import GroundedSamAnnotator
 from app.ml.foundation.registry import FoundationSpec
 from app.ml.inference.payloads import (
     MAX_PNG_CLASSES,
@@ -61,7 +62,13 @@ class ConceptSegmenter:
         self, image: Image.Image, concept: str, threshold: float = DEFAULT_SCORE_THRESHOLD
     ) -> list[MaskProposal]:
         """The raw proposals — masks *and* boxes. Both callers start here."""
-        annotator = build_annotator(str(self._spec.annotator_id))
+        if self._spec.segmenter_id is not None:
+            # Doc 94: Grounded SAM with the user's fine-tuned SAM as its segmenting half.
+            annotator: MaskAnnotator = GroundedSamAnnotator(
+                self._spec.id, self._spec.model_id, self._spec.segmenter_id
+            )
+        else:
+            annotator = build_annotator(str(self._spec.annotator_id))
         return annotator.propose(image, concept, threshold=threshold)
 
     def predict(
