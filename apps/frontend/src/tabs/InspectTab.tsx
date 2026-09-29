@@ -10,6 +10,7 @@ import type { SequenceFrame } from '../api/datasetSequences';
 import { sequenceLabel } from '../api/datasetSequences';
 import { probeSequence } from '../api/video';
 import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { AnnotationTimeline } from '../components/AnnotationTimeline';
 import { DatasetPlayer } from '../components/DatasetPlayer';
 import { useInspectData } from '../hooks/useInspectData';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -41,6 +42,9 @@ export function InspectTab({ request }: { readonly request: InspectRequest | nul
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const [datasetChoice, setDatasetChoice] = usePersistentState('inspect.dataset', '', isString);
   const [trackChoice, setTrackChoice] = useState('');
+  // Doc 75: the class whose bar was clicked. Kept across tracks, because "where is the
+  // signal in the next ride" is the natural next question.
+  const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [view, setView] = usePersistentState<AnnotationView>('inspect.view', DEFAULT_VIEW, isAnnotationView);
 
   useEffect(() => {
@@ -149,7 +153,19 @@ export function InspectTab({ request }: { readonly request: InspectRequest | nul
           hasMasks={hasMasks}
           view={view}
           playback={playback}
-        />
+        >
+          <AnnotationTimeline
+            frames={frames}
+            classNames={data.sequences.class_names}
+            index={playback.index}
+            selected={selectedClass}
+            onSelect={setSelectedClass}
+            onSeek={(position) => {
+              playback.step(0);
+              playback.setIndex(position);
+            }}
+          />
+        </DatasetPlayer>
       )}
     </section>
   );

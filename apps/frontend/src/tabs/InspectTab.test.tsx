@@ -91,4 +91,15 @@ describe('InspectTab (doc 74)', () => {
     render(<InspectTab request={null} />);
     await waitFor(() => expect(sequences.listDatasetSequences).toHaveBeenCalledWith('d1', expect.anything()));
   });
+
+  it('clicking a bar and pressing First jumps to that class\'s first frame (doc 75)', async () => {
+    const user = userEvent.setup();
+    render(<InspectTab request={{ datasetId: 'd2', sequence: RIDE, nonce: 1 }} />);
+    await screen.findByText('1 / 4 · frame 0 · not annotated');
+
+    await user.click(screen.getByRole('button', { name: 'signal: on 1 of 4 frames' }));
+    await user.click(screen.getByRole('button', { name: /first/i }));
+    expect(screen.getByText('2 / 4 · frame 2')).toBeInTheDocument();
+  });
 });
+

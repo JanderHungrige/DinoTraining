@@ -1175,6 +1175,96 @@ body {
   height: 0.75rem;
 }
 
+/* Doc 75: one coloured bar per class under the player. */
+.timeline {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.timeline__rows {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.timeline__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timeline__row:hover {
+  border-color: var(--border);
+}
+
+.timeline__row--selected {
+  border-color: var(--accent);
+}
+
+.timeline__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.timeline__swatch {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.timeline__track {
+  position: relative;
+  height: 0.9rem;
+  border-radius: 3px;
+  background: var(--surface-sunken, rgb(127 127 127 / 0.15));
+  overflow: hidden;
+}
+
+.timeline__segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+}
+
+.timeline__playhead {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text, #fff);
+}
+
+.timeline__jumps {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.timeline__hint,
+.timeline__empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 /* Doc 74: Inspect datasets. */
 .inspect__pickers {
   display: flex;
