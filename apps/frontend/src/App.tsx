@@ -11,6 +11,7 @@ import { InferenceViewerTab } from './tabs/InferenceViewerTab';
 import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
 import { LibraryTab } from './tabs/LibraryTab';
+import { PrepareTab } from './tabs/PrepareTab';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 import type { InspectRequest } from './types/navigation';
 
@@ -29,6 +30,8 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
       return <AnnotationStudioTab />;
     case 'trainer':
       return <HeadTrainerTab />;
+    case 'prepare':
+      return <PrepareTab />;
     case 'inference':
       return <InferenceViewerTab />;
     case 'generator':

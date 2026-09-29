@@ -9,6 +9,7 @@
 export const TAB_IDS = [
   'intro',
   'studio',
+  'prepare',
   'trainer',
   'inference',
   'generator',
@@ -42,6 +43,13 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
     // Updated in Wave 5: a prompt is no longer the only way to get proposals.
     hint: 'Label a folder of images — from a text prompt, or from a head you trained.',
     wave: 1,
+  },
+  {
+    // Between annotating and training, because that is where it happens (doc 89).
+    id: 'prepare',
+    label: 'Prepare data',
+    hint: 'Check a dataset, fix it, split it and see it as the model will, then save a recipe.',
+    wave: 11,
   },
   {
     id: 'trainer',

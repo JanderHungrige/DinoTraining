@@ -46,6 +46,18 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
       'than a blank canvas is the difference between an afternoon and a week.',
   },
   {
+    tab: 'prepare',
+    title: 'Prepare',
+    what:
+      'Check a dataset before training on it: what is wrong with it, what can be fixed ' +
+      'safely, a split that keeps near-identical pictures together, and your pictures ' +
+      'exactly as the model will see them. Each step recommends a setting and says why.',
+    why:
+      'Most failed training runs fail here, not in training. A model cannot learn an ' +
+      'object shrunk to two pixels, and a test score is worthless if the test pictures ' +
+      'are near-copies of the training ones.',
+  },
+  {
     tab: 'trainer',
     title: 'Train',
     what:

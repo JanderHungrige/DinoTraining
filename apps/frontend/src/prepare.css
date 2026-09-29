@@ -1,0 +1,261 @@
+/* Prepare data (doc 89). Only the app's own tokens, so Wave 10's look applies unchanged. */
+
+.prep-flow {
+  display: grid;
+  grid-template-columns: minmax(12rem, 15rem) 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .prep-flow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.prep-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.prep-nav__step {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.prep-nav__step--done {
+  color: var(--text);
+}
+
+.prep-nav__step--current {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--bg-raised);
+}
+
+.prep-nav__mark {
+  display: inline-block;
+  width: 1.2em;
+}
+
+.prep-nav__step--done .prep-nav__mark {
+  color: var(--accent);
+}
+
+.prep-flow__title {
+  margin: 0 0 0.75rem;
+}
+
+.prep-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 62rem;
+}
+
+.prep-step__why {
+  color: var(--text-dim);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.prep-step__summary,
+.prep-step__status {
+  margin: 0;
+}
+
+.prep-step__note {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--pending);
+  background: var(--bg-raised);
+}
+
+.prep-step__hint {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.9em;
+}
+
+.prep-step__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.prep-step__review {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.prep-findings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prep-finding {
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  background: var(--bg-raised);
+}
+
+.prep-finding--problem {
+  border-left-color: var(--danger);
+}
+
+.prep-finding--warn {
+  border-left-color: var(--pending);
+}
+
+.prep-finding--info {
+  border-left-color: var(--accent);
+}
+
+.prep-finding__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.prep-finding__badge {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.prep-finding__title {
+  margin: 0;
+}
+
+.prep-finding p {
+  margin: 0.35rem 0 0;
+}
+
+.prep-finding__examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.prep-finding__examples img {
+  width: 88px;
+  height: 66px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.prep-table {
+  border-collapse: collapse;
+  width: max-content;
+  max-width: 100%;
+}
+
+.prep-table th,
+.prep-table td {
+  padding: 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+
+.prep-table th[scope='row'] {
+  text-align: left;
+  font-weight: normal;
+}
+
+.prep-table__missing {
+  color: var(--danger);
+}
+
+.prep-classmap table input:not([type='checkbox']) {
+  width: 12rem;
+}
+
+.prep-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.prep-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.prep-option:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--bg-raised);
+}
+
+.prep-option__title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.prep-option__explained {
+  grid-column: 2;
+  color: var(--text-dim);
+  font-size: 0.9em;
+}
+
+/* The model's own pixels, enlarged without smoothing: what it sees is what is shown. */
+.prep-seen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.prep-seen__item {
+  margin: 0;
+}
+
+.prep-seen__item img {
+  width: 300px;
+  height: auto;
+  image-rendering: pixelated;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  display: block;
+}
+
+.prep-seen__item figcaption {
+  font-size: 0.85em;
+  color: var(--text-dim);
+  margin-top: 0.25rem;
+  max-width: 300px;
+}
+
+.prep-recipes {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.prep-recipes__stale {
+  color: var(--text-dim);
+}
+
+.prep-recipes__why {
+  color: var(--danger);
+}

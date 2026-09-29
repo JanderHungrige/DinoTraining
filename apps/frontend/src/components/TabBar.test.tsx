@@ -77,7 +77,8 @@ describe('TabBar', () => {
     screen.getByRole('tab', { name: 'Annotation Studio' }).focus();
     await user.keyboard('{ArrowRight}');
 
-    expect(onTabChange).toHaveBeenCalledExactlyOnceWith('trainer');
+    // Prepare sits between annotating and training (doc 89).
+    expect(onTabChange).toHaveBeenCalledExactlyOnceWith('prepare');
   });
 
   it('wraps from the first tab to the last on ArrowLeft', async () => {

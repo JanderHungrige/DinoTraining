@@ -61,14 +61,15 @@ OPTIONS = [
         title="Make rare classes count more",
         explained="A mistake on a rare class costs the model more than one on a common "
         "class, so it cannot get away with ignoring it. Nothing is repeated, so nothing "
-        "is memorised. Best for labelling whole images and for outlines.",
+        "is memorised. Best for whole-image labels and outlines, and for boxes when the "
+        "rare class shares its pictures with common ones.",
     ),
     Option(
         id="balanced-sampling",
         title="Show rare classes more often",
-        explained="Images with rare classes are shown several times per round of training. "
-        "Best for boxes, where every image is mostly background and weighting alone is "
-        "drowned out.",
+        explained="Pictures with rare classes are shown several times per round of training. "
+        "Best for boxes when the rare classes have pictures of their own: every picture is "
+        "mostly background, which can drown out a weighted loss.",
     ),
 ]
 
