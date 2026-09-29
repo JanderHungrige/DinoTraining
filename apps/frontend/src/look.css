@@ -85,3 +85,96 @@ textarea {
   color: var(--text-dim);
   font-size: 0.85rem;
 }
+
+/* --- Doc 79: Draft Sketch controls ------------------------------------------------------
+   Provenance: NinaNatur, Draft Sketch (frontend/src/themes/draft-sketch/ours/controls.css
+   at 1a5ad29) — the hand-drawn edge, the line, the offset shadow and the pen-goes-round-
+   twice hover. Adapted for a dark, moving background: the ink is the app's text colour
+   (light on dark, dark on light), the wash is a translucent surface, and the lettering is
+   Lato (doc 78) rather than Patrick Hand. */
+
+:root {
+  --sk-edge: 255px 14px 225px 16px / 16px 225px 14px 255px;
+  --sk-ink: color-mix(in srgb, var(--text) 86%, transparent);
+  --sk-wash: color-mix(in srgb, var(--bg-raised) 76%, transparent);
+  --sk-wash-deep: color-mix(in srgb, var(--accent) 16%, var(--sk-wash));
+  --sk-go: color-mix(in srgb, var(--accent) 26%, var(--bg-raised) 74%);
+  --sk-go-deep: color-mix(in srgb, var(--accent) 38%, var(--bg-raised) 62%);
+  --sk-shadow: 1px 2px 0 color-mix(in srgb, var(--sk-ink) 35%, transparent);
+}
+
+.btn {
+  border: 1.5px solid var(--sk-ink);
+  border-radius: var(--sk-edge);
+  background: var(--sk-wash);
+  color: var(--text);
+  box-shadow: var(--sk-shadow);
+  letter-spacing: 0.01em;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
+}
+
+/* A second line drawn over the first, as a pen goes round twice. */
+.btn:hover:not(:disabled) {
+  border-color: var(--sk-ink);
+  background: var(--sk-wash-deep);
+  color: var(--text);
+  transform: rotate(-0.6deg);
+}
+
+.btn:active:not(:disabled) {
+  box-shadow: none;
+  transform: translate(1px, 2px);
+}
+
+/* The button that does something carries the wash, as NinaNatur's grass does. */
+.btn--primary {
+  border-color: var(--sk-ink);
+  background: var(--sk-go);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--sk-go-deep);
+}
+
+/* Pressed — a switch that is on — is drawn heavier. */
+.btn[aria-pressed='true'] {
+  border-width: 2.5px;
+  background: var(--sk-wash-deep);
+}
+
+.btn--danger,
+.genbar__stop {
+  border-color: var(--danger);
+  color: var(--danger);
+  box-shadow: 1px 2px 0 color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+.btn--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, var(--sk-wash));
+  color: var(--danger);
+}
+
+.btn:disabled {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--sk-ink) 40%, transparent);
+  color: color-mix(in srgb, var(--text) 45%, transparent);
+  background: color-mix(in srgb, var(--bg-raised) 50%, transparent);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}
