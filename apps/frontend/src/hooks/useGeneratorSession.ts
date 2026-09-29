@@ -36,8 +36,16 @@ function describe(error: unknown, fallback: string): string {
 }
 
 export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSession {
-  const { images, allImages, filtered, setFilter: setImageFilter, loading, listError } =
-    useGeneratorImages(config);
+  const {
+    images,
+    allImages,
+    filtered,
+    setFilter: setImageFilter,
+    loading,
+    listError,
+    decoding,
+    frameOf,
+  } = useGeneratorImages(config);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxes] = useState<readonly CanvasBox[]>([]);
   const [masks, setMasks] = useState<readonly ReviewMask[]>([]);
@@ -122,7 +130,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       setSaving(true);
       setError(null);
       try {
-        setCounts(await saveReview(config, review));
+        setCounts(await saveReview(config, review, frameOf(review.path)));
         savedReviews.current.set(review.path, review);
         if (review.path === currentImage) setDirty(false);
         return true;
@@ -137,7 +145,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         setSaving(false);
       }
     },
-    [config, currentImage, imageSize, boxes, masks],
+    [config, currentImage, imageSize, boxes, masks, frameOf],
   );
 
   // A hand edit is a review: drawing a box the model missed, rejecting one it found, or
@@ -245,6 +253,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     producerName,
     producerDetail,
     loading,
+    decoding,
     proposing,
     saving,
     dirty,

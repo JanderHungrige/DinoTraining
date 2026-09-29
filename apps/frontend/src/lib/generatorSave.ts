@@ -6,7 +6,12 @@
  * `save()` reading state would write the *previous* image's boxes under this image's path.
  */
 
-import { saveImageBoxes, saveImageMasks, type DatasetCounts } from '../api/datasets';
+import {
+  saveImageBoxes,
+  saveImageMasks,
+  type DatasetCounts,
+  type FramePosition,
+} from '../api/datasets';
 import type { MaskProposalResponse } from '../api/generate';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
@@ -21,9 +26,11 @@ export interface ImageReview {
   readonly imageSize: { readonly width: number; readonly height: number } | null;
 }
 
+/** `frame` records where the image sits in its video or folder (doc 73); null for none. */
 export async function saveReview(
   config: GeneratorConfig,
   review: ImageReview,
+  frame: FramePosition | null = null,
 ): Promise<DatasetCounts> {
   if (config.kind === 'masks') {
     if (!review.maskResponse) {
@@ -31,7 +38,7 @@ export async function saveReview(
       // empty proposal, which would wipe whatever the image already had stored.
       throw new Error('Propose masks before saving.');
     }
-    return saveImageMasks(config.datasetId, review.maskResponse, review.masks);
+    return saveImageMasks(config.datasetId, review.maskResponse, review.masks, frame);
   }
   if (!review.imageSize) {
     throw new Error('The image has not loaded yet, so its boxes cannot be placed.');
@@ -40,5 +47,6 @@ export async function saveReview(
     config.datasetId,
     { path: review.path, width: review.imageSize.width, height: review.imageSize.height },
     review.boxes,
+    frame,
   );
 }

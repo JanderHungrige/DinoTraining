@@ -1175,6 +1175,19 @@ body {
   height: 0.75rem;
 }
 
+/* Doc 73: a video as the Generator's source. */
+.videosrc__range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.videosrc__range input {
+  width: 6rem;
+  margin: 0 0.3rem;
+}
+
 /* Doc 72: ask when unclear. */
 .unclearband {
   display: flex;

@@ -82,7 +82,12 @@ describe('guards', () => {
   it('isImageSource checks both kinds and their fields', () => {
     expect(isImageSource({ kind: 'dataset', datasetId: 'd1' })).toBe(true);
     expect(isImageSource({ kind: 'dataset', folder: '/x' })).toBe(false);
+    // A video needs its range too (doc 73); a half-remembered one falls back whole.
     expect(isImageSource({ kind: 'video', path: '/x' })).toBe(false);
+    expect(
+      isImageSource({ kind: 'video', path: '/v.mp4', range: { start: 0, count: 60, stride: 2 } }),
+    ).toBe(true);
+    expect(isImageSource({ kind: 'photo', path: '/x' })).toBe(false);
   });
 
   it('isShapeOf needs every default key with the same type, and arrays to stay arrays', () => {

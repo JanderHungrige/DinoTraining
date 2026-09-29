@@ -48,7 +48,12 @@ class MaskStore:
                 dataset_dir(dataset_id, self._settings), connection, dataset_id, annotation.path
             )
             image_id = upsert_image(
-                connection, dataset_id, stored_path, annotation.width, annotation.height
+                connection,
+                dataset_id,
+                stored_path,
+                annotation.width,
+                annotation.height,
+                annotation.frame,
             )
 
             connection.execute("DELETE FROM masks WHERE image_id = ?", (image_id,))

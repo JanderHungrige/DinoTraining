@@ -84,6 +84,17 @@ export const isImageSource: Guard<ImageSource> = (value): value is ImageSource =
   const record = value as Record<string, unknown>;
   if (record.kind === 'folder') return typeof record.folder === 'string';
   if (record.kind === 'dataset') return typeof record.datasetId === 'string';
+  if (record.kind === 'video') {
+    const range = record.range as Record<string, unknown> | null | undefined;
+    return (
+      typeof record.path === 'string' &&
+      typeof range === 'object' &&
+      range !== null &&
+      [range.start, range.count, range.stride].every(
+        (value) => typeof value === 'number' && Number.isFinite(value),
+      )
+    );
+  }
   return false;
 };
 

@@ -12,7 +12,6 @@ from app.datasets.coco import build_coco, write_coco
 from app.datasets.coco_import import import_coco_dataset
 from app.datasets.masks import MaskStore
 from app.datasets.models import (
-    Box,
     DatasetCounts,
     DatasetInfo,
     ImageAnnotation,
@@ -139,26 +138,6 @@ async def put_image_masks(
         raise HTTPException(status_code=422, detail=str(exc)) from None
 
 
-class DatasetImageInfo(BaseModel):
-    """One image in a dataset, with the boxes it already carries.
-
-    The boxes ride along rather than needing a call per image: picking a dataset as a
-    source means "carry on working on this", so the review surface needs them the moment
-    it opens, and fetching them one image at a time would put a request behind every press
-    of the Next key. `image_annotations` has already loaded them to answer this query.
-    """
-
-    path: str
-    width: int
-    height: int
-    boxes: list[Box]
-
-
-class DatasetImagesResponse(BaseModel):
-    dataset_id: str
-    images: list[DatasetImageInfo]
-
-
 class DatasetFolder(BaseModel):
     """Where a dataset's pictures actually are on disk (doc 59)."""
 
@@ -197,29 +176,6 @@ async def dataset_folder(dataset_id: str) -> DatasetFolder:
 
     return DatasetFolder(
         folder=str(folder), exists=folder.is_dir(), copies=info.copy_images
-    )
-
-
-@router.get(
-    "/datasets/{dataset_id}/images",
-    response_model=DatasetImagesResponse,
-    summary="List the images in a dataset",
-)
-async def list_dataset_images(dataset_id: str) -> DatasetImagesResponse:
-    """The images a dataset holds, so it can be used as a source (doc 50).
-
-    Returns **stored paths**, which is what every other image route in this app consumes —
-    a dataset created with `copy_images` points inside the store, and one created without
-    points at wherever the user's files were. Both are absolute and both open the same way,
-    so a caller never has to know which kind it is holding.
-    """
-    _require(dataset_id)
-    return DatasetImagesResponse(
-        dataset_id=dataset_id,
-        images=[
-            DatasetImageInfo(path=path, width=width, height=height, boxes=boxes)
-            for _, path, width, height, boxes in _store().image_annotations(dataset_id)
-        ],
     )
 
 

@@ -111,7 +111,17 @@ export function DatasetGeneratorTab(): JSX.Element {
         </p>
       )}
 
-      {session.loading && <p role="status">Listing images…</p>}
+      {session.loading &&
+        (session.decoding ? (
+          // Doc 73: a video is decoded into the dataset before the first image can show.
+          <p role="status">
+            Decoding frames into the dataset — {session.decoding.done} of{' '}
+            {session.decoding.total}…{' '}
+            <progress max={Math.max(1, session.decoding.total)} value={session.decoding.done} />
+          </p>
+        ) : (
+          <p role="status">Listing images…</p>
+        ))}
 
       {/* Unattended runs benefit at least as much as the Studio: the Generator proposes on
           every image whether or not there is anything in it, and reviewing 400 crops of

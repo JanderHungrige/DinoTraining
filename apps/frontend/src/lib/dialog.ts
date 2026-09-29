@@ -34,6 +34,15 @@ export function pickFolder(): Promise<string | null> {
   return open({ directory: true, multiple: false });
 }
 
+/** Doc 73: the containers the backend decodes. */
+export function pickVideoFile(): Promise<string | null> {
+  return open({
+    directory: false,
+    multiple: false,
+    filters: [{ name: 'Videos', extensions: ['mp4', 'mov', 'avi', 'mkv', 'webm', 'm4v'] }],
+  });
+}
+
 export function pickImageFile(): Promise<string | null> {
   return open({
     directory: false,

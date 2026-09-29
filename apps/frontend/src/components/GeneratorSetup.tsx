@@ -16,6 +16,7 @@ import { GROUNDED_SAM } from '../api/annotators';
 import { useGeneratorCatalogue } from '../hooks/useGeneratorCatalogue';
 import { useGeneratorEntries } from '../hooks/useGeneratorEntries';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
+import { sourceReady } from '../lib/imageSource';
 import { stillListed } from '../lib/persisted';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { ImageSourceField } from './ImageSourceField';
@@ -117,7 +118,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
   const ready =
     destinationReady(datasetId, newName) &&
-    (source.kind === 'dataset' ? source.datasetId !== '' : source.folder.trim() !== '') &&
+    sourceReady(source) &&
     (mode === 'foundation'
       ? selectedDetector !== '' && (!detectorNeedsConcept || concept.trim().length > 0)
       : mode === 'expert'
@@ -185,6 +186,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         datasets={datasets}
         placeholder="/Users/you/new-photos"
         variant="genpanel"
+        allowVideo
         datasetHint="Its images are re-annotated into whichever dataset you choose below — the source is only where the pictures come from."
       />
 

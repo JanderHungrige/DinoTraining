@@ -17,10 +17,22 @@ import type { DatasetInfo } from '../api/datasets';
 import { stillListed } from '../lib/persisted';
 import { FolderField } from './FolderField';
 import { RevealDatasetButton } from './RevealDatasetButton';
+import { VideoSourceFields } from './VideoSourceFields';
+
+/** Which frames of a video to decode (doc 73): every `stride`-th from `start`, `count` of them. */
+export interface VideoRange {
+  readonly start: number;
+  readonly count: number;
+  readonly stride: number;
+}
+
+export const DEFAULT_VIDEO_RANGE: VideoRange = Object.freeze({ start: 0, count: 120, stride: 1 });
 
 export type ImageSource =
   | { readonly kind: 'folder'; readonly folder: string }
-  | { readonly kind: 'dataset'; readonly datasetId: string };
+  | { readonly kind: 'dataset'; readonly datasetId: string }
+  /** Doc 73, Dataset Generator only: decoded into the destination dataset first. */
+  | { readonly kind: 'video'; readonly path: string; readonly range: VideoRange };
 
 export interface ImageSourceFieldProps {
   readonly value: ImageSource;
@@ -33,6 +45,8 @@ export interface ImageSourceFieldProps {
   /** Explains what picking a dataset does *here* — it differs by tab, and a wrong guess
    *  about where annotations land is the expensive kind of surprise. */
   readonly datasetHint?: string;
+  /** Doc 73: offer a video file. Only the Dataset Generator can decode one. */
+  readonly allowVideo?: boolean;
 }
 
 export function ImageSourceField({
@@ -44,6 +58,7 @@ export function ImageSourceField({
   disabled = false,
   variant = 'setup',
   datasetHint,
+  allowVideo = false,
 }: ImageSourceFieldProps): JSX.Element {
   // Only the user's override is stored; the shown value is derived. Seeding state from
   // `datasets` would strand the select empty whenever the list arrives after first render.
@@ -97,9 +112,29 @@ export function ImageSourceField({
             {usable.length === 0 ? ' — none with images yet' : ''}
           </span>
         </label>
+        {allowVideo && (
+          <label>
+            <input
+              type="radio"
+              name={`${id}-mode`}
+              checked={value.kind === 'video'}
+              disabled={disabled}
+              onChange={() => onChange({ kind: 'video', path: '', range: DEFAULT_VIDEO_RANGE })}
+            />
+            <span>A video file</span>
+          </label>
+        )}
       </fieldset>
 
-      {value.kind === 'folder' ? (
+      {value.kind === 'video' ? (
+        <VideoSourceFields
+          id={id}
+          path={value.path}
+          range={value.range}
+          disabled={disabled}
+          onChange={(path, range) => onChange({ kind: 'video', path, range })}
+        />
+      ) : value.kind === 'folder' ? (
         <FolderField
           id={id}
           value={value.folder}

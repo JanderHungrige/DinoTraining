@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-8
 demo_state: "In the Dataset Generator the user picks a video, presses Play and watches it propose and save frame by frame, stopping only on predictions inside their 'unclear' score band. They then open the dataset in 'Inspect datasets', play the annotated video with coloured per-class bars under it, and jump to a class's first annotation. Every path and name they typed is still there after a tab switch or a restart."
 created: 2026-09-29
-hash: cb6a5436
+hash: 11f31f68
 ---
 
 # Wave 9: Generator Autopilot & Dataset Inspection
@@ -43,7 +43,7 @@ written.
 | 2 | generator-action-bar | docs/70-generator-action-bar.md | complete | — |
 | 3 | generator-autoplay | docs/71-generator-autoplay.md | complete | generator-action-bar |
 | 4 | unclear-band-pause | docs/72-unclear-band-pause.md | complete | generator-autoplay |
-| 5 | generator-video-source | — | planned | — |
+| 5 | generator-video-source | docs/73-generator-video-source.md | complete | — |
 | 6 | inspect-datasets-tab | — | planned | generator-video-source |
 | 7 | annotation-timeline | — | planned | inspect-datasets-tab |
 

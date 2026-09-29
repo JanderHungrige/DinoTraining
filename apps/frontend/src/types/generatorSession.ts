@@ -3,6 +3,7 @@
  */
 
 import type { DatasetCounts } from '../api/datasets';
+import type { ExtractProgress } from '../api/videoExtract';
 import type { ImageReview } from '../lib/generatorSave';
 import type { CanvasBox, ReviewMask } from './annotation';
 
@@ -25,6 +26,8 @@ export interface GeneratorSession {
   readonly producerName: string | null;
   readonly producerDetail: string | null;
   readonly loading: boolean;
+  /** Doc 73: a video being decoded into the dataset, with progress. */
+  readonly decoding: ExtractProgress | null;
   readonly proposing: boolean;
   readonly saving: boolean;
   /** True when there is something reviewed that has not been written yet. */

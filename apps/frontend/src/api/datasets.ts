@@ -87,6 +87,7 @@ export function saveImageBoxes(
   datasetId: string,
   image: { path: string; width: number; height: number; prompt?: string | null },
   boxes: readonly CanvasBox[],
+  frame?: FramePosition | null,
 ): Promise<DatasetCounts> {
   return apiFetch(`/datasets/${encodeURIComponent(datasetId)}/images`, isDatasetCounts, {
     method: 'PUT',
@@ -96,6 +97,7 @@ export function saveImageBoxes(
       width: image.width,
       height: image.height,
       prompt: image.prompt ?? null,
+      ...(frame ? { frame } : {}),
       // Strip the client-side id; the backend neither wants nor stores it. `text` is
       // the canvas's name for a box's class, and the store calls it `prompt` — rename it
       // here, at the one boundary where a CanvasBox becomes an API box.
@@ -136,6 +138,7 @@ export function saveImageMasks(
   datasetId: string,
   proposal: MaskProposalResponse,
   reviewed: readonly ReviewMask[],
+  frame?: FramePosition | null,
 ): Promise<DatasetCounts> {
   if (reviewed.length !== proposal.masks.length) {
     // Not recoverable by guessing: pairing a verdict to the wrong mask is a silent
@@ -154,6 +157,7 @@ export function saveImageMasks(
       path: proposal.image_path,
       width: proposal.width,
       height: proposal.height,
+      ...(frame ? { frame } : {}),
       masks: proposal.masks.map((mask, index) => ({
         // The verdict is the reviewer's; everything else is the server's own proposal,
         // returned unchanged so nothing is re-derived on the way back.
@@ -188,6 +192,16 @@ export interface DatasetImageInfo {
   readonly width: number;
   readonly height: number;
   readonly boxes: readonly StoredBox[];
+  /** Doc 73: the video or folder this image is a frame of, and its number there. */
+  readonly sequence?: string | null;
+  readonly frame_index?: number | null;
+}
+
+/** Where a saved image sits in its sequence (doc 73). Sent with a save; never cleared by
+ *  one that omits it. */
+export interface FramePosition {
+  readonly sequence: string;
+  readonly frame_index: number;
 }
 
 let storedCounter = 0;
