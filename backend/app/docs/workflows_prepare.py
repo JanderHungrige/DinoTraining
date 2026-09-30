@@ -11,6 +11,13 @@ input (it cannot learn them), a class with three examples. The app checks all of
 assistant that trains straight away skips it. The MCP tools for this are `audit_dataset`,
 `fix_dataset`, `split_dataset`, `plan_preparation`, `save_recipe` and `list_recipes`.
 
+**The shortcut: the default recipe.** `POST /datasets/{id}/recipes/default` with
+`{"model_id": "rf-detr-nano"}` (or `"head"` plus `head_type_id` and `backbone_id`) runs steps
+1, 3, 4 and 5 below with every recommendation taken, keeping a split the user made. MCP:
+`create_default_recipe`. It does not fix anything, so still report the audit's `problem`
+findings, and ask before step 2's class changes. When the user wants control, walk the
+steps instead.
+
 0. **Importing a published dataset? Check it first.** `POST /datasets/import/coco/inspect`
    with `{"directory": ...}` writes nothing and says how the boxes are written
    (`convention`), which class names look like one class spelled twice, and whether it ships
@@ -38,7 +45,7 @@ assistant that trains straight away skips it. The MCP tools for this are `audit_
    `imbalance` and `augmentation` (`GET .../balance` and `GET .../augmentation` give the
    recommendations and the reasons). A 409 names the missing step.
 6. **Train with it.** Pass `recipe_id` to `POST /training/jobs` or
-   `POST /foundation/finetune` (one dataset per run). The job then reports `test_metrics`:
+   `POST /finetune/jobs` (one dataset per run). The job then reports `test_metrics`:
    the best weights scored on pictures that neither trained the model nor chose the best
    round. **Report that number** — it is the honest one, and usually lower than
    `best_metric`. A 409 means the recipe is out of date: the reason says what changed.

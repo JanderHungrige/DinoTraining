@@ -202,3 +202,15 @@ class TestBuildGuide:
         document = build_guide(client.get("/openapi.json").json())
 
         assert document.index("## 1. Install a model") < document.index("## Endpoint reference")
+
+
+class TestTrainingKnobsInTheGuide:
+    """Doc 102: the guide points at the settings and the default recipe."""
+
+    def test_it_names_the_settings_and_says_to_keep_defaults(self, guide: str) -> None:
+        assert "/training/parameters/" in guide
+        assert "Keep the defaults unless the user asks" in guide
+
+    def test_it_offers_the_default_recipe_without_pretending_it_fixes(self, guide: str) -> None:
+        assert "/recipes/default" in guide and "create_default_recipe" in guide
+        assert "It does not fix anything" in guide

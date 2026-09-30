@@ -153,6 +153,9 @@ class TestTheToolContract:
             "get_finetune_requirements",
             "check_dataset_for",
             "start_finetune",
+            # Doc 102: the Training tab's settings and default recipes, for an assistant too.
+            "get_training_parameters",
+            "create_default_recipe",
         }
 
     async def test_every_tool_describes_itself(
@@ -190,7 +193,13 @@ class TestTheToolContract:
         async with running_app(tmp_path, monkeypatch) as app:
             described = await descriptions(app)
 
-        for name in ("install_model", "train_head", "start_finetune", "audit_dataset"):
+        for name in (
+            "install_model",
+            "train_head",
+            "start_finetune",
+            "audit_dataset",
+            "create_default_recipe",
+        ):
             assert "get_job" in described[name], f"{name} does not point at get_job"
 
     async def test_parameters_are_typed_rather_than_free_text(
@@ -266,6 +275,7 @@ class TestTheClientLayer:
             "finetune",
             "audit",
             "foundation-finetune",
+            "default-recipe",
         }
         assert all("{job_id}" in path for path in _JOB_PATHS.values())
 
@@ -358,3 +368,62 @@ class TestFinetuneTools:
         assert refused["result"].get("isError") is True
         text = str(refused["result"])
         assert "outline" in text and "Prepare data" in text
+
+
+class TestTrainingKnobTools:
+    """Doc 102: the assistant gets the Training tab's settings and default recipe."""
+
+    async def test_it_reads_a_model_s_settings_with_their_reasons(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            answer = await rpc(
+                app,
+                "tools/call",
+                {"name": "get_training_parameters", "arguments": {"model_id": "sam3"}},
+            )
+        body = json.loads(answer["result"]["content"][0]["text"])
+        rounds = next(p for p in body["parameters"] if p["key"] == "epochs")
+        assert (rounds["label"], rounds["term"], rounds["default"]) == ("Rounds", "epochs", 4)
+        assert rounds["why"]
+
+    async def test_a_misspelt_option_is_an_error_that_names_it(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            refused = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "start_finetune",
+                    "arguments": {
+                        "finetune_id": "sam2.1-hiera-small",
+                        "dataset_ids": ["x"],
+                        "name": "x",
+                        "options": {"box_jiter": 0.2},
+                    },
+                },
+            )
+        assert refused["result"].get("isError") is True
+        assert "box_jiter" in str(refused["result"])
+
+    async def test_it_starts_a_default_recipe_and_names_its_job_kind(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Empty"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            started = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "create_default_recipe",
+                    "arguments": {"dataset_id": dataset_id, "model_id": "rf-detr-nano"},
+                },
+            )
+            described = await descriptions(app)
+        job = json.loads(started["result"]["content"][0]["text"])
+        assert job["job_id"] and job["state"] in ("pending", "running", "failed", "complete")
+        assert "default-recipe" in described["create_default_recipe"]
