@@ -33,7 +33,8 @@ def _fake_backend(root: Path) -> Path:
     (backend / ".venv").mkdir()
     (backend / ".env").write_text("HF_TOKEN=secret")
     (backend / "pyproject.toml").write_text("[project]\nname='x'\n")
-    (backend / "uv.lock").write_text("version = 1\n")
+    # Bytes: write_text would give "\r\n" on Windows, and another hash.
+    (backend / "uv.lock").write_bytes(b"version = 1\n")
     return backend
 
 
