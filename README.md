@@ -91,7 +91,7 @@ cp .env.example .env            # add HF_TOKEN only if you need the gated models
 # Backend
 python3.12 -m venv backend/.venv
 source backend/.venv/bin/activate
-pip install -e "backend[dev]"
+pip install -e "backend[dev,export]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps
@@ -296,6 +296,17 @@ Everything you have made in one place: datasets, trained heads and fine-tuned mo
 with what they were trained on and how well they scored. Rename, delete, or open a
 dataset's folder.
 
+**Export a trained model** to use it outside the app. The zip holds:
+- the **model card** (`model.json`): base model, classes in output order, the exact
+  preprocessing, how to read the outputs, metrics, training data and recipe;
+- the weights;
+- `dino_runtime.py` (the app's own preprocessing, head and decoding code) and
+  `predict.py`, so `python predict.py picture.jpg` prints what the app would;
+- for a head, `model.onnx`: backbone and head as one graph, checked against PyTorch at
+  export.
+
+"Show where it is" opens the folder that holds the model.
+
 ### Admin / Models
 
 - **Models:** download and remove models. The starter set is one click. Gated models
@@ -316,6 +327,12 @@ dataset's folder.
 - **API guide:** a guide written for an AI assistant (the order of calls, and the traps),
   plus the full REST API under `http://127.0.0.1:8756/api/v1`, reachable from a "Copy for
   your AI" button.
+- **MLflow:** set a tracking URI (and credentials, if your server needs them) and every
+  head training and fine-tune appears there as a run: settings and recipe as params,
+  metrics per epoch, the model card and export bundle as artifacts, and a registered model
+  version. "Send existing models to MLflow" adds everything trained before, each model
+  once. Training never waits for MLflow or fails because of it. On macOS port 5000 is
+  taken by the system (AirPlay), so run `mlflow server --port 5001`.
 - **Local only:** everything is bound to this machine, without authentication.
 
 ---
@@ -437,6 +454,7 @@ state.
 | 14 | Annotating for the model: phrases, hard negatives, mask editing |
 | 15 | English and German |
 | 15.5 | Annotating the normal way: saved means complete, umbrella terms, review for a new class |
+| 15.6 | MLOps: model cards, export with runtime and ONNX, MLflow tracking and registry |
 | 16 | Website and cloud compute (planned) |
 
 **Branches:**

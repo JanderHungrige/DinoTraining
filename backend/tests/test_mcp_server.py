@@ -168,6 +168,11 @@ class TestTheToolContract:
             # "it does not occur there".
             "get_completeness",
             "mark_absent_in_older_pictures",
+            # Wave 15.6: trained models' cards, export and MLflow.
+            "get_model_card",
+            "export_model",
+            "get_mlflow_status",
+            "send_models_to_mlflow",
         }
 
     async def test_every_tool_describes_itself(

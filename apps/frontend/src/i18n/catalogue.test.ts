@@ -11,6 +11,8 @@ import { de, en } from './catalogue';
 export const SAME_IN_BOTH = new Set<string>([
   'English',
   // Technical terms stay English in German too (Jan, 2026-09-30).
+  'Experiment',
+  'Token',
   'Prescan',
   'Confidence',
   'Frames',

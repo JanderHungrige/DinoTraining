@@ -14,7 +14,7 @@ import logging
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from app.core.config import Settings, get_settings
 from app.finetune.adapter import FinetuneAdapter, FinetuneData, FinetuneSettings, TrainingState
@@ -24,8 +24,12 @@ from app.finetune.preflight import preflight, refusal
 from app.finetune.requirements import get_requirements
 from app.ml.foundation.instances import FoundationInstanceStore
 from app.ml.training.job import JobState
+from app.mlops.tracking import MlflowTracker, NullTracker
+from app.mlops.tracking_hooks import finetune_tracker
 
 logger = logging.getLogger(__name__)
+
+Tracker = NullTracker | MlflowTracker
 
 #: The base model, as the best "epoch" nothing beat.
 BASE = object()
@@ -111,14 +115,22 @@ class FoundationFinetuneRunner:
         return job
 
     def _run(self, job: FoundationFinetuneJob) -> None:
+        tracker = finetune_tracker(job)  # doc 123; never gets in the way of training
         try:
             job.state = "running"
-            self._train(job)
+            self._train(job, tracker)
         except Exception as exc:  # noqa: BLE001 - surfaced on the job, logged with context
             logger.exception("Foundation fine-tune %s failed", job.job_id)
             job.state, job.message = "failed", str(exc)
+        # Read through an annotated local: mypy narrows job.state from the assignments
+        # above and cannot see that _train reassigns it.
+        final: JobState = job.state
+        if final == "complete" and job.instance_id:
+            tracker.saved("finetuned", job.instance_id)
+        else:
+            tracker.finished(final)
 
-    def _train(self, job: FoundationFinetuneJob) -> None:
+    def _train(self, job: FoundationFinetuneJob, tracker: Tracker) -> None:
         request = job.request
         adapter = get_adapter(request.finetune_id)
         job.primary_metric = adapter.primary_metric
@@ -144,7 +156,8 @@ class FoundationFinetuneRunner:
         )
         base_val = adapter.evaluate(state, data.val) if data.val else {}
         job.best_metric = base_val.get(adapter.primary_metric)
-        best = self._epochs(job, adapter, state, data)
+        tracker.epoch(0, {f"baseline_{k}": v for k, v in job.baseline_metrics.items()})
+        best = self._epochs(job, adapter, state, data, tracker)
         if best is None:
             return
         if best is BASE:
@@ -162,6 +175,7 @@ class FoundationFinetuneRunner:
         adapter: FinetuneAdapter,
         state: TrainingState,
         data: FinetuneData,
+        tracker: Tracker,
     ) -> object | None:
         """The best epoch's snapshot, `BASE` when none beat the base model on validation,
         or None when cancelled. The base model competes as epoch 0."""
@@ -178,6 +192,7 @@ class FoundationFinetuneRunner:
             metrics = adapter.evaluate(state, data.val) if data.val else {}
             job.history.append(EpochResult(epoch, loss, metrics))
             job.epoch = epoch
+            tracker.epoch(epoch, {"train_loss": loss, **metrics})
             score = metrics.get(adapter.primary_metric)
             if score is None or job.best_metric is None or score > job.best_metric:
                 job.best_metric = score
@@ -229,6 +244,7 @@ class FoundationFinetuneRunner:
             baseline_metrics=job.baseline_metrics,
             weights_kind=adapter.weights_kind,
             parameters=request.settings.as_parameters(),
+            history=[asdict(entry) for entry in job.history],
         )
         job.instance_id = instance.id
 

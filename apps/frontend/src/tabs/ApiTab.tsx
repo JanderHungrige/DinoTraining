@@ -24,17 +24,20 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { fetchAgentGuide, GuideLoadError, GUIDE_FILENAME } from '../api/agentGuide';
 import { MarkdownView } from '../components/MarkdownView';
 import { McpPanel } from '../components/McpPanel';
+import { MlflowPanel } from '../components/MlflowPanel';
 import { useT, type Key } from '../i18n';
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
 /** Which way of connecting is on screen. */
-type ConnectionMode = 'mcp' | 'manual';
+type ConnectionMode = 'mcp' | 'manual' | 'mlflow';
 
 /** `name` is a key, or null for "MCP", which is a name in every language. */
 const MODES: readonly { id: ConnectionMode; name: Key | null; hint: Key }[] = Object.freeze([
   { id: 'mcp', name: null, hint: 'admin.connection.mcpHint' },
   { id: 'manual', name: 'admin.connection.manualName', hint: 'admin.connection.manualHint' },
+  // Doc 123: the other direction — this app reporting its runs to the user's MLOps tool.
+  { id: 'mlflow', name: null, hint: 'admin.connection.mlflowHint' },
 ]);
 
 export function ApiTab(): JSX.Element {
@@ -106,13 +109,15 @@ export function ApiTab(): JSX.Element {
               checked={mode === entry.id}
               onChange={() => setMode(entry.id)}
             />
-            <span className="modeswitch__name">{entry.name ? t(entry.name) : 'MCP'}</span>
+            <span className="modeswitch__name">{entry.name ? t(entry.name) : entry.id === 'mlflow' ? 'MLflow' : 'MCP'}</span>
             <span className="modeswitch__hint">{t(entry.hint)}</span>
           </label>
         ))}
       </fieldset>
 
       {mode === 'mcp' && <McpPanel />}
+
+      {mode === 'mlflow' && <MlflowPanel />}
 
       {mode === 'manual' && (
         <div className="conn__mode">

@@ -43,7 +43,7 @@ sync_deps() {
 
 preflight() {
   [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run:
-       python3.12 -m venv '$BACKEND_DIR/.venv' && source '$BACKEND_DIR/.venv/bin/activate' && pip install -e '$BACKEND_DIR'[dev]"
+       python3.12 -m venv '$BACKEND_DIR/.venv' && source '$BACKEND_DIR/.venv/bin/activate' && pip install -e '$BACKEND_DIR'[dev,export]"
   [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run:
        npm install --prefix '$FRONTEND_DIR' --legacy-peer-deps"
   sync_deps "$FRONTEND_DIR" --legacy-peer-deps

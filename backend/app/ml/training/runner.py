@@ -287,7 +287,7 @@ def _save_completed_head(
     from app.ml.training.persist import register_trained_head
 
     instance = register_trained_head(job, spec, capabilities)
-    job.head_instance_id = instance.id
+    job.mark_saved(instance.id)
     logger.info("Saved head instance %s from job %s", instance.id, job.job_id)
 
 

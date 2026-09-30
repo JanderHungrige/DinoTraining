@@ -43,6 +43,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Doc 122: ONNX export of trained heads, checked with onnxruntime. Optional at runtime:
+# without them an export bundle simply has no model.onnx and says why.
+export = [
+    "onnx>=1.16",
+    "onnxruntime>=1.18",
+]
 dev = [
     "pytest>=8.2",
     "pytest-asyncio>=0.23",

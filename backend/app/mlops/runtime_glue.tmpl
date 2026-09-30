@@ -1,0 +1,67 @@
+Template for the hand-written end of dino_runtime.py (doc 121). Everything above the
+marker is ignored; everything below is appended to the generated runtime, where the
+app's functions it calls are defined. Tested by tests/test_runtime_parity.py.
+
+# --- glue ---
+class Model:
+    """A trained head, ready to run: ``Model.load(folder)``, then ``predict(image)``."""
+
+    def __init__(self, card: dict[str, Any], backbone: nn.Module, head: nn.Module, device: str) -> None:
+        self.card = card
+        self.backbone = backbone
+        self.head = head
+        self.device = device
+        self.classes: list[str] = list(card["classes"])
+
+    @classmethod
+    def load(cls, folder: str | Path = ".", device: str = "cpu") -> "Model":
+        """Read model.json, load the base model from HuggingFace, build and load the head."""
+        from safetensors.torch import load_file
+        from transformers import AutoModel
+
+        folder = Path(folder)
+        card = json.loads((folder / "model.json").read_text(encoding="utf-8"))
+        head_type = card["head"]["type_id"]
+        if head_type not in HEADS:
+            raise ValueError(f"This runtime does not run head type {head_type!r}; see README.md.")
+        backbone = AutoModel.from_pretrained(card["base"]["repo_id"]).to(device).eval()
+        caps = SimpleNamespace(embed_dim=card["base"]["embed_dim"], patch_size=card["base"]["patch_size"])
+        builder, _ = HEADS[head_type]
+        head = builder(caps, card["head"]["num_classes"])
+        head.load_state_dict(load_file(str(folder / card["weights"][0]["file"])))
+        return cls(card, backbone, head.to(device).eval(), device)
+
+    def plan(self) -> PreprocessPlan:
+        p = self.card["preprocessing"]
+        return PreprocessPlan(
+            size=int(p["size"]),
+            geometry=p["geometry"],
+            patch_size=int(self.card["base"]["patch_size"]),
+            mean=tuple(p["mean"]),
+            std=tuple(p["std"]),
+        )
+
+    def raw(self, image: Image.Image) -> tuple[dict[str, Tensor], Any, PreprocessPlan]:
+        """The head's decoded outputs for one picture, before mapping back onto it."""
+        plan = self.plan()
+        resized, transform = apply_geometry(plan, image)
+        pixel_values = to_pixel_values(plan, [resized]).to(self.device)
+        grid = _grid_dims(plan.size, plan.size, plan.patch_size)
+        with torch.no_grad():
+            hidden = self.backbone(pixel_values=pixel_values).last_hidden_state
+            cls_token, patches = _split_tokens(hidden, int(self.card["base"]["num_prefix_tokens"]), grid)
+            outputs = self.head(BackboneFeatures(cls=cls_token, patches=patches, grid=grid))
+        _, decoder = HEADS[self.card["head"]["type_id"]]
+        return decoder(outputs, plan.patch_size), transform, plan
+
+    def predict(self, image: Image.Image, score_threshold: float = 0.3) -> dict[str, Any]:
+        """What the app's Inference Viewer shows, in the picture's own pixels, with names."""
+        decoded, transform, plan = self.raw(image)
+        spec = SimpleNamespace(id=self.card["head"]["type_id"], render_hint=self.card["head"]["render_hint"])
+        payload = build_payload(spec, decoded, transform, plan.size, score_threshold)
+        if "classes" in payload and "boxes" in payload:
+            payload["class_names"] = [self.classes[int(i)] for i in payload["classes"]]
+        if "scores" in payload and "boxes" not in payload:
+            ranked = sorted(zip(self.classes, payload["scores"]), key=lambda pair: -pair[1])
+            payload["ranked"] = [{"class": name, "score": score} for name, score in ranked]
+        return payload

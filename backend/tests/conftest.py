@@ -31,9 +31,7 @@ def _isolate_settings(
     layer contributes nothing. Before this, the suite was accidentally safe only because
     the resolved path was wrong and no file was found there.
     """
-    monkeypatch.setenv(
-        "DINO_ENV_FILE", str(tmp_path_factory.mktemp("env") / "absent.env")
-    )
+    monkeypatch.setenv("DINO_ENV_FILE", str(tmp_path_factory.mktemp("env") / "absent.env"))
     for key in (
         "HF_TOKEN",
         "DINO_MODEL_CACHE_DIR",
@@ -43,6 +41,13 @@ def _isolate_settings(
         "DINO_DEVICE",
         "DINO_DATA_DIR",
         "LOG_LEVEL",
+        # Doc 123: a developer's MLflow must never receive test runs.
+        "MLFLOW_TRACKING_URI",
+        "MLFLOW_TRACKING_USERNAME",
+        "MLFLOW_TRACKING_PASSWORD",
+        "MLFLOW_TRACKING_TOKEN",
+        "DINO_MLFLOW_EXPERIMENT",
+        "DINO_MLFLOW_REGISTER",
     ):
         monkeypatch.delenv(key, raising=False)
     get_settings.cache_clear()
@@ -76,8 +81,7 @@ def _no_real_downloads(monkeypatch: pytest.MonkeyPatch) -> None:
 
     def _blocked(*args: object, **kwargs: object) -> None:
         raise AssertionError(
-            "Test attempted a real huggingface_hub.snapshot_download. "
-            "Patch it in the test instead."
+            "Test attempted a real huggingface_hub.snapshot_download. Patch it in the test instead."
         )
 
     monkeypatch.setattr(huggingface_hub, "snapshot_download", _blocked)
