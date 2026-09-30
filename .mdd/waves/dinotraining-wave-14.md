@@ -82,7 +82,7 @@ hash: bb94ea67
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | phrase-data-model | docs/103-phrase-data-model.md | planned | — |
+| 1 | phrase-data-model | docs/103-phrase-data-model.md | complete | — |
 | 2 | annotation-target | docs/104-annotation-target.md | planned | phrase-data-model |
 | 3 | phrase-annotation-ux | docs/105-phrase-annotation-ux.md | planned | phrase-data-model, annotation-target |
 | 4 | mask-editing | docs/106-mask-editing.md | planned | annotation-target |

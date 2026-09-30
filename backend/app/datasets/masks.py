@@ -15,6 +15,7 @@ from app.core.config import Settings
 from app.datasets.db import transaction
 from app.datasets.images import store_image_file, upsert_image
 from app.datasets.models import DatasetCounts, ImageMaskAnnotation, Mask, MaskRle
+from app.datasets.phrase_links import link_mask, phrase_key, phrases_of_masks
 from app.datasets.producers import decode_producer, encode_producer
 from app.datasets.rle import rle_bbox
 from app.datasets.store import DatasetNotFoundError, DatasetStore, dataset_dir
@@ -56,14 +57,21 @@ class MaskStore:
                 annotation.frame,
             )
 
+            # Cascades to the old masks' phrase links (doc 103); statuses stay on the image.
             connection.execute("DELETE FROM masks WHERE image_id = ?", (image_id,))
-            connection.executemany(
-                "INSERT INTO masks"
-                " (image_id, label, provenance, prompt, score, producer,"
-                "  rle_counts, rle_height, rle_width, x, y, w, h)"
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                [(image_id, *row) for row in rows],
-            )
+            for mask, row in zip(annotation.masks, rows, strict=True):
+                cursor = connection.execute(
+                    "INSERT INTO masks"
+                    " (image_id, label, provenance, prompt, score, producer,"
+                    "  rle_counts, rle_height, rle_width, x, y, w, h)"
+                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (image_id, *row),
+                )
+                if mask.phrases:
+                    class_name = str(row[2] or "")
+                    link_mask(
+                        connection, dataset_id, int(cursor.lastrowid or 0), class_name, mask.phrases
+                    )
 
         return self._datasets.counts(dataset_id)
 
@@ -100,22 +108,22 @@ class MaskStore:
             result = []
             for image in images:
                 rows = connection.execute(
-                    "SELECT label, provenance, prompt, score, producer,"
+                    "SELECT id, label, provenance, prompt, score, producer,"
                     " rle_counts, rle_height, rle_width"
                     " FROM masks WHERE image_id = ? ORDER BY id",
                     (image["id"],),
                 ).fetchall()
+                linked = phrases_of_masks(connection, [int(row["id"]) for row in rows])
                 result.append(
                     (
                         int(image["id"]),
                         str(image["path"]),
                         int(image["width"]),
                         int(image["height"]),
-                        [_mask_from_row(row) for row in rows],
+                        [_mask_from_row(row, linked.get(int(row["id"]), [])) for row in rows],
                     )
                 )
         return result
-
 
     def masks_for_image(self, dataset_id: str, path: str) -> list[Mask]:
         """One image's masks (doc 61). Empty when the image has none, or is not here.
@@ -132,18 +140,21 @@ class MaskStore:
         """
         with transaction(self._settings) as connection:
             rows = connection.execute(
-                "SELECT m.label, m.provenance, m.prompt, m.score, m.producer,"
+                "SELECT m.id, m.label, m.provenance, m.prompt, m.score, m.producer,"
                 " m.rle_counts, m.rle_height, m.rle_width"
                 " FROM masks m JOIN images i ON m.image_id = i.id"
                 " WHERE i.dataset_id = ? AND i.path = ? ORDER BY m.id",
                 (dataset_id, path),
             ).fetchall()
-        return [_mask_from_row(row) for row in rows]
+            linked = phrases_of_masks(connection, [int(row["id"]) for row in rows])
+        return [_mask_from_row(row, linked.get(int(row["id"]), [])) for row in rows]
 
 
-def _mask_from_row(row: object) -> Mask:
+def _mask_from_row(row: object, linked: list[str]) -> Mask:
     mapping = dict(row)  # type: ignore[call-overload]
+    own = phrase_key(mapping["prompt"] or "")
     return Mask(
+        phrases=[own, *(text for text in linked if text != own)],
         label=mapping["label"],
         provenance=mapping["provenance"],
         prompt=mapping["prompt"],

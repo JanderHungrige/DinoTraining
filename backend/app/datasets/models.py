@@ -137,6 +137,10 @@ class Mask(BaseModel):
     prompt: str | None = None
     score: float | None = Field(default=None, ge=0, le=1)
     producer: Producer | None = None
+    #: Doc 103: the SAM 3 phrases this mask answers to. Read back with its class name
+    #: first; on write the class name needs no mention, and an empty list means "just its
+    #: class". A phrase of another class is refused.
+    phrases: list[str] = Field(default_factory=list)
 
     def matches_image(self, width: int, height: int) -> bool:
         return self.rle.size == (height, width)

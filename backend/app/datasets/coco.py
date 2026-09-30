@@ -90,6 +90,10 @@ def build_coco(
                     "area": rle_area(mask.rle.counts),
                     "iscrowd": 0,
                     **({"score": mask.score} if mask.score is not None else {}),
+                    # Doc 103: the per-segment text SAM 3 fine-tuning tools read first.
+                    **(
+                        {"phrase": mask.phrases[0], "phrases": mask.phrases} if mask.phrases else {}
+                    ),
                 }
             )
             annotation_id += 1
