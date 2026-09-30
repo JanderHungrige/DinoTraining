@@ -15,7 +15,7 @@ from PIL import Image
 
 from app.core.config import get_settings
 from app.core.paths import is_installed, resolve_model_dir
-from app.ml.concepts import prompt_terms
+from app.ml.concepts import best_terms, prompt_terms, term_spans
 from app.ml.errors import ModelNotInstalledError
 from app.ml.registry import ModelSpec, get_model
 
@@ -133,7 +133,24 @@ def detect(
         target_sizes=[(image.height, image.width)],
     )[0]
 
+    terms = prompt_terms(prompt)
+    if len(terms) > 1 and len(results["boxes"]):
+        results["text_labels"] = _one_term_per_box(detector, outputs, text, terms, box_threshold)
     return _to_detections(results)
+
+
+def _one_term_per_box(
+    detector: Detector, outputs: Any, text: str, terms: list[str], box_threshold: float
+) -> list[str]:
+    """Relabel the kept boxes, in the post-processor's order (same `keep` rule), with the
+    single best-matching term instead of every token above the text threshold."""
+    import torch
+
+    probs = torch.sigmoid(outputs.logits[0])
+    kept = probs[probs.max(dim=-1).values > box_threshold]
+    encoded = detector.processor.tokenizer(text, return_offsets_mapping=True)
+    offsets = [tuple(pair) for pair in encoded["offset_mapping"]]
+    return best_terms(kept.detach().cpu().tolist(), offsets, term_spans(text, terms), terms)
 
 
 def _to_detections(results: dict[str, Any]) -> list[Detection]:
