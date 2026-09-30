@@ -45,3 +45,25 @@ export function testMlflow(): Promise<{ ok: boolean; message: string }> {
     { method: 'POST' },
   );
 }
+
+/** Doc 124: sending the models trained before, as a job. */
+export interface BackfillJob {
+  readonly job_id: string;
+  readonly state: 'running' | 'complete' | 'failed';
+  readonly total: number;
+  readonly sent: number;
+  readonly skipped: number;
+  readonly failed: number;
+  readonly notes: readonly string[];
+}
+
+const isBackfill = (v: unknown): v is BackfillJob =>
+  hasFields(v, { job_id: 'string', state: 'string', total: 'number', sent: 'number', skipped: 'number' });
+
+export function startBackfill(): Promise<BackfillJob> {
+  return apiFetch('/mlops/backfill', isBackfill, { method: 'POST' });
+}
+
+export function getBackfill(jobId: string): Promise<BackfillJob> {
+  return apiFetch(`/mlops/backfill/${encodeURIComponent(jobId)}`, isBackfill);
+}

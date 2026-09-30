@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.core.env_file import write_env_value
+from app.mlops.backfill import as_dict, get_backfill, start_backfill
 from app.mlops.mlflow_client import MlflowClient, MlflowError
 
 logger = logging.getLogger(__name__)
@@ -101,6 +103,21 @@ def post_test() -> TestResult:
         message=f"Connected. Experiment '{settings.mlflow_experiment}' has id {experiment}.",
         experiment_id=experiment,
     )
+
+
+@router.post("/mlops/backfill", summary="Send the models trained before to MLflow (a job)")
+def post_backfill() -> dict[str, Any]:
+    if not get_settings().mlflow_uri:
+        raise HTTPException(status_code=409, detail="MLflow is not set up: no tracking URI.")
+    return as_dict(start_backfill())
+
+
+@router.get("/mlops/backfill/{job_id}", summary="A backfill's progress")
+def get_backfill_job(job_id: str) -> dict[str, Any]:
+    job = get_backfill(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail=f"No such backfill: {job_id}")
+    return as_dict(job)
 
 
 __all__ = ["router"]

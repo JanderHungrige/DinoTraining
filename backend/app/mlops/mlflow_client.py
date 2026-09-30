@@ -81,12 +81,14 @@ class MlflowClient:
             self._call("POST", "mlflow/experiments/create", json={"name": name})["experiment_id"]
         )
 
-    def create_run(self, experiment_id: str, name: str, tags: dict[str, str]) -> tuple[str, str]:
-        """(run id, artifact URI)."""
+    def create_run(
+        self, experiment_id: str, name: str, tags: dict[str, str], start_ms: int | None = None
+    ) -> tuple[str, str]:
+        """(run id, artifact URI). `start_ms` backdates it (doc 124: a model's creation)."""
         body = {
             "experiment_id": experiment_id,
             "run_name": name,
-            "start_time": _now_ms(),
+            "start_time": start_ms or _now_ms(),
             "tags": [{"key": k, "value": v[:MAX_VALUE]} for k, v in tags.items()],
         }
         info = self._call("POST", "mlflow/runs/create", json=body)["run"]["info"]

@@ -10,6 +10,7 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { clearMlflowSettings, getMlflowStatus, saveMlflowSettings, testMlflow, type MlflowStatus } from '../api/mlops';
 import { useT } from '../i18n';
+import { MlflowBackfill } from './MlflowBackfill';
 
 export function MlflowPanel(): JSX.Element {
   const { t } = useT();
@@ -123,6 +124,7 @@ export function MlflowPanel(): JSX.Element {
           </button>
         </div>
       </form>
+      <MlflowBackfill enabled={Boolean(status?.configured)} />
       {said && <p className="trainer__dim" role="status">{said}</p>}
       {problem && <p className="run__warn" role="alert">{problem}</p>}
     </div>

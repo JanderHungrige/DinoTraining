@@ -41,3 +41,11 @@ def register(mcp: MCPServer) -> None:
         When set up, every head training and fine-tune appears there as a run with params,
         per-epoch metrics, the model card and export bundle, and a registered version."""
         return await client.call("GET", "/mlops/status")
+
+    @mcp.tool()
+    async def send_models_to_mlflow() -> Any:
+        """Send every model trained before MLflow was set up (doc 124): one run per trained
+        head and fine-tuned model, with its settings, metrics (every epoch when recorded),
+        card, export bundle and a registry version. Models already in MLflow are skipped.
+        Starts a job; read its progress with GET /api/v1/mlops/backfill/{job_id}."""
+        return await client.call("POST", "/mlops/backfill")

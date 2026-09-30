@@ -89,7 +89,7 @@ hash: 2204d9c3
 | 2 | export-bundle | docs/121-export-bundle.md | complete | model-card |
 | 3 | onnx-export | docs/122-onnx-export.md | complete | export-bundle |
 | 4 | mlflow-tracking | docs/123-mlflow-tracking.md | complete | model-card |
-| 5 | mlflow-backfill | docs/124-mlflow-backfill.md | planned | mlflow-tracking, export-bundle |
+| 5 | mlflow-backfill | docs/124-mlflow-backfill.md | complete | mlflow-tracking, export-bundle |
 
 ### Feature notes
 

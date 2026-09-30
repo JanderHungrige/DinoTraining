@@ -132,6 +132,10 @@ ENTRIES: dict[str, str] = {
     "Connected. Experiment '{name}' has id {id}.": (
         "Verbunden. Das Experiment „{name}“ hat die ID {id}."
     ),
+    "No such backfill: {job}": "Diesen Versand gibt es nicht: {job}",
+    "{#n} heads were not trained here (defaults, imports).": (
+        "{n} Heads wurden nicht hier trainiert (Voreinstellungen, Importe)."
+    ),
 }
 
 __all__ = ["ENTRIES"]
