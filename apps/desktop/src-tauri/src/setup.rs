@@ -131,6 +131,8 @@ pub enum SetupFailure {
     Disk { needed_gb: f64, free_gb: f64, path: String },
     Offline,
     Failed { message: String },
+    /// Doc 128: a switch failed and the previous variant was put back.
+    RolledBack { to: String, reason: Box<SetupFailure> },
 }
 
 /// Free space where the runtime goes. The folder may not exist yet; its nearest

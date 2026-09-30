@@ -162,3 +162,12 @@
     transition: none;
   }
 }
+
+/* Doc 128: the same screen over the app while PyTorch is exchanged. */
+.firstrun-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: auto;
+  background: var(--bg);
+}

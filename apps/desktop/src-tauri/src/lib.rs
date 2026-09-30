@@ -8,6 +8,7 @@ pub mod runtime;
 pub mod setup;
 pub mod setup_flow;
 pub mod sidecar;
+pub mod switch;
 
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -44,7 +45,9 @@ pub fn run() {
             backend_url,
             setup_flow::setup_status,
             setup_flow::setup_install,
-            setup_flow::setup_report
+            setup_flow::setup_report,
+            switch::runtime_status,
+            switch::switch_variant
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -127,7 +130,7 @@ pub(crate) async fn start_backend(app: tauri::AppHandle) -> Result<(), String> {
         Err(error) => return Err(report_failure(&app, error.to_string())),
     };
 
-    if let Err(error) = sidecar::ensure_port_free(&config) {
+    if let Err(error) = sidecar::wait_port_free(&config).await {
         return Err(report_failure(&app, error.to_string()));
     }
 

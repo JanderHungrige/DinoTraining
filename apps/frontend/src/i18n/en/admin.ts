@@ -135,12 +135,14 @@ export const adminEn = {
     'Reinstalling or updating the driver usually fixes this. Until it answers, this app cannot tell whether a GPU is present.',
   'admin.gpu.title': 'Your GPU is not being used',
   'admin.gpu.driver': 'driver {version}',
-  'admin.gpu.footBefore':
-    'The installer ships a CPU build so it stays small. GPU support is a separate download of about',
-  'admin.gpu.footAfter':
-    "— it is large because it carries NVIDIA's CUDA runtime, not because the app is. Training and inference typically run several times faster on it.",
-  'admin.gpu.downloading': 'Downloading…',
-  'admin.gpu.download': 'Download GPU support ({size} GB)',
+  'admin.gpu.devFoot':
+    'This is a development checkout, so its environment is yours: install the GPU build in backend/ with uv sync --extra cu130 (or cu126 for an older driver).',
+  'admin.gpu.use': 'Use the GPU (CUDA {cuda}, about {gb} GB download)',
+  'admin.gpu.switchNote':
+    'Switching exchanges PyTorch and restarts the backend: a running training or prescan ends. Your datasets and models stay.',
+  'admin.gpu.inUse': 'GPU in use: {name}, CUDA {cuda}',
+  'admin.gpu.notUsedTitle': 'The GPU build (CUDA {cuda}) is installed but not used',
+  'admin.gpu.backToCpu': 'Back to CPU',
 
   // Distribution notice
   'admin.dist.title': 'Before you distribute this app',

@@ -10,7 +10,7 @@ import { useT } from '../i18n';
 import { DinoRun } from './DinoRun';
 import { SetupFailureNotice } from './SetupFailureNotice';
 import { MachineSummary, variantLabel } from './MachineSummary';
-import { onProgress, percent, report, setupInstall, type Machine, type Progress, type SetupFailure, type Variant } from './shell';
+import { onProgress, percent, report, setupInstall, CUDA_VERSION, type Machine, type Progress, type SetupFailure, type Variant } from './shell';
 import { SetupTips } from './SetupTips';
 import './setup.css';
 
@@ -26,9 +26,14 @@ interface SetupScreenProps {
   /** Install this variant straight away (`DINO_SETUP_AUTO`, an unattended install). */
   readonly auto?: Variant | null;
   readonly onDone: () => void;
+  /**
+   * Doc 128: the Admin tab's switch runs this screen with another shell command, and a
+   * failed switch can go back to the (rolled-back, working) app.
+   */
+  readonly switching?: { readonly run: (variant: Variant) => Promise<void>; readonly onBack: () => void };
 }
 
-export function SetupScreen({ machine, auto = null, onDone }: SetupScreenProps): JSX.Element {
+export function SetupScreen({ machine, auto = null, onDone, switching }: SetupScreenProps): JSX.Element {
   const { t } = useT();
   const [stage, setStage] = useState<Stage>({ kind: 'choose' });
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -63,7 +68,7 @@ export function SetupScreen({ machine, auto = null, onDone }: SetupScreenProps):
       setProgress(null);
       setStage({ kind: 'installing', variant });
       try {
-        await setupInstall(variant);
+        await (switching ? switching.run(variant) : setupInstall(variant));
       } catch (failure) {
         setStage({ kind: 'failed', variant, failure: failure as SetupFailure });
         return;
@@ -71,7 +76,7 @@ export function SetupScreen({ machine, auto = null, onDone }: SetupScreenProps):
       // The shell returns once the backend answers `/health`.
       setStage({ kind: 'ready' });
     },
-    [],
+    [switching],
   );
 
   const started = useRef(false);
@@ -86,15 +91,21 @@ export function SetupScreen({ machine, auto = null, onDone }: SetupScreenProps):
   return (
     <div className="firstrun">
       <header className="firstrun__header">
-        <h1 className="firstrun__title">{t('setup.title')}</h1>
+        <h1 className="firstrun__title">
+          {switching && auto ? t(CUDA_VERSION[auto] ? 'setup.switch.titleGpu' : 'setup.switch.titleCpu') : t('setup.title')}
+        </h1>
         <LanguageSwitch />
       </header>
       <section className="firstrun__card" aria-live="polite">
-        <p className="firstrun__intro">{t('setup.intro')}</p>
+        <p className="firstrun__intro">{t(switching ? 'setup.switch.intro' : 'setup.intro')}</p>
         <MachineSummary machine={machine} />
         {stage.kind === 'choose' && <Choices machine={machine} onInstall={(v) => void install(v)} />}
         {stage.kind === 'failed' && (
-          <SetupFailureNotice failure={stage.failure} onRetry={() => void install(stage.variant)} />
+          <SetupFailureNotice
+            failure={stage.failure}
+            onRetry={() => void install(stage.variant)}
+            {...(switching ? { onBack: switching.onBack } : {})}
+          />
         )}
         {busy && <InstallProgress stage={stage} progress={progress} onOpen={open} />}
       </section>

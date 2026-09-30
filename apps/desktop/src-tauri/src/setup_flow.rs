@@ -24,8 +24,20 @@ pub struct SetupState {
 }
 
 impl SetupState {
+    /// One install or switch at a time: two `uv sync` into one environment would corrupt it.
+    pub(crate) fn begin(&self) -> Result<(), SetupFailure> {
+        if self.installing.swap(true, Ordering::SeqCst) {
+            return Err(SetupFailure::Failed { message: "An install is already running.".into() });
+        }
+        Ok(())
+    }
+
+    pub(crate) fn end(&self) {
+        self.installing.store(false, Ordering::SeqCst);
+    }
+
     /// Detected once: `nvidia-smi` takes a moment and the answer does not change.
-    fn machine(&self) -> Machine {
+    pub(crate) fn machine(&self) -> Machine {
         let mut slot = self.machine.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
         slot.get_or_insert_with(setup::detect).clone()
     }
@@ -91,11 +103,9 @@ pub async fn setup_install(
         .find(|choice| choice.variant == variant)
         .cloned()
         .ok_or(SetupFailure::Unsupported)?;
-    if state.installing.swap(true, Ordering::SeqCst) {
-        return Err(SetupFailure::Failed { message: "An install is already running.".into() });
-    }
+    state.begin()?;
     let result = install(&app, runtime, choice.variant, &choice).await;
-    state.installing.store(false, Ordering::SeqCst);
+    state.end();
     result?;
     crate::start_backend(app.clone())
         .await
@@ -104,7 +114,8 @@ pub async fn setup_install(
     Ok(())
 }
 
-async fn install(
+/// Disk, connection, then `uv sync` with progress events (doc 127).
+pub(crate) async fn install(
     app: &tauri::AppHandle,
     runtime: Runtime,
     variant: &'static str,
@@ -114,7 +125,16 @@ async fn install(
     tauri::async_runtime::spawn_blocking(setup::check_online)
         .await
         .map_err(|error| SetupFailure::Failed { message: error.to_string() })??;
+    sync(app, runtime, variant).await
+}
 
+/// `uv sync` alone, with progress events. The rollback of doc 128 uses it without the
+/// checks: the previous variant comes from uv's cache and needs no connection.
+pub(crate) async fn sync(
+    app: &tauri::AppHandle,
+    runtime: Runtime,
+    variant: &'static str,
+) -> Result<(), SetupFailure> {
     log::info!("Installing the {variant} environment into {}", runtime.root.display());
     let emitter = app.clone();
     let outcome = tauri::async_runtime::spawn_blocking(move || {

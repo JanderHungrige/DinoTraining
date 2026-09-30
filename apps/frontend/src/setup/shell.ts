@@ -40,7 +40,18 @@ export type SetupFailure =
   | { readonly kind: 'unsupported' }
   | { readonly kind: 'disk'; readonly needed_gb: number; readonly free_gb: number; readonly path: string }
   | { readonly kind: 'offline' }
-  | { readonly kind: 'failed'; readonly message: string };
+  | { readonly kind: 'failed'; readonly message: string }
+  /** Doc 128: a switch failed and the previous variant was put back. */
+  | { readonly kind: 'rolled_back'; readonly to: Variant; readonly reason: SetupFailure };
+
+/** Doc 128: what is installed, and what this machine could take. */
+export interface RuntimeStatus {
+  readonly variant: Variant | null;
+  readonly machine: Machine;
+}
+
+/** CUDA version per GPU variant, for labels. */
+export const CUDA_VERSION: Readonly<Record<Variant, string | null>> = { cpu: null, cu126: '12.6', cu130: '13.0' };
 
 export type Phase = 'python' | 'packages' | 'installing' | 'done';
 
@@ -70,16 +81,32 @@ function isSetupFailure(value: unknown): value is SetupFailure {
   return typeof value === 'object' && value !== null && 'kind' in value;
 }
 
-/** Resolves when the backend is starting; rejects with a {@link SetupFailure}. */
-export async function setupInstall(variant: Variant): Promise<void> {
+async function invokeInstall(command: string, variant: Variant): Promise<void> {
   const { invoke } = await import('@tauri-apps/api/core');
   try {
-    await invoke('setup_install', { variant });
+    await invoke(command, { variant });
   } catch (error) {
     if (isSetupFailure(error)) throw error;
     const failure: SetupFailure = { kind: 'failed', message: String(error) };
     throw failure;
   }
+}
+
+/** Resolves when the backend answers; rejects with a {@link SetupFailure}. */
+export function setupInstall(variant: Variant): Promise<void> {
+  return invokeInstall('setup_install', variant);
+}
+
+/** Doc 128: exchange PyTorch for `variant`; resolves when the backend answers again. */
+export function switchVariant(variant: Variant): Promise<void> {
+  return invokeInstall('switch_variant', variant);
+}
+
+/** Doc 128: null outside the packaged app (a checkout manages its own environment). */
+export async function runtimeStatus(): Promise<RuntimeStatus | null> {
+  if (!inShell()) return null;
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<RuntimeStatus | null>('runtime_status');
 }
 
 export type Step = 'shown' | 'installing' | 'starting' | 'ready' | 'opened' | 'failed';

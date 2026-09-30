@@ -137,6 +137,28 @@ describe('SetupScreen', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
+  it('doc 128: a switch runs its own command, under its own title, straight away', async () => {
+    const run = vi.fn<(v: string) => Promise<void>>().mockResolvedValue();
+    const onDone = vi.fn();
+    render(<SetupScreen machine={PC} auto="cu130" onDone={onDone} switching={{ run, onBack: vi.fn() }} />);
+    expect(screen.getByRole('heading', { name: 'Switching to the GPU' })).toBeInTheDocument();
+    expect(run).toHaveBeenCalledWith('cu130');
+    expect(shell.install).not.toHaveBeenCalled();
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+  });
+
+  it('doc 128: a failed switch says where it went back to, and leads back to the app', async () => {
+    const rolledBack: SetupFailure = { kind: 'rolled_back', to: 'cpu', reason: { kind: 'offline' } };
+    const run = vi.fn<(v: string) => Promise<void>>().mockRejectedValue(rolledBack);
+    const onBack = vi.fn();
+    render(<SetupScreen machine={PC} auto="cu130" onDone={vi.fn()} switching={{ run, onBack }} />);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('Switching did not work: No internet connection.');
+    expect(alert).toHaveTextContent('You are back on the CPU, as before.');
+    fireEvent.click(screen.getByRole('button', { name: 'Back to the app' }));
+    expect(onBack).toHaveBeenCalled();
+  });
+
   it('speaks German', () => {
     renderInGerman(<SetupScreen machine={PC} onDone={() => undefined} />);
     expect(screen.getByRole('heading', { name: 'Willkommen bei DinoTraining' })).toBeInTheDocument();

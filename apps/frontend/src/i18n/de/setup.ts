@@ -37,6 +37,14 @@ export const setupDe: Catalogue<typeof setupEn> = {
   'setup.fail.unsupported': 'Auf diesem Rechner kann DinoTraining nicht laufen (siehe oben).',
   'setup.fail.failed': 'Die Installation wurde abgebrochen: {message}',
   'setup.fail.resume': 'Was schon geladen war, bleibt erhalten; ein neuer Versuch macht dort weiter.',
+  'setup.variant.cpu': 'der CPU',
+  'setup.variant.gpu': 'der GPU (CUDA {cuda})',
+  'setup.switch.titleGpu': 'Wechsel auf die GPU',
+  'setup.switch.titleCpu': 'Wechsel auf die CPU',
+  'setup.switch.intro':
+    'PyTorch wird ausgetauscht. Das Backend ist so lange gestoppt; deine Datensätze und Modelle bleiben, wie sie sind.',
+  'setup.fail.rolledBack': 'Der Wechsel hat nicht geklappt: {reason} Du bist wieder auf {to}, wie vorher.',
+  'setup.back': 'Zurück zur App',
   'setup.retry': 'Noch einmal versuchen',
 
   'setup.game.label': 'Dino Run: ein kleines Spiel, während DinoTraining installiert. Leertaste oder Klick zum Springen.',

@@ -155,6 +155,24 @@ pub fn ensure_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
     }
 }
 
+/// Wait up to [`PORT_WAIT`] for the port to free.
+///
+/// A backend stopped a moment ago (doc 128's switch) can leave the port unbindable for a
+/// few seconds on Linux and Windows. A backend that is really still running fails after
+/// the wait with the same message as before.
+pub async fn wait_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
+    let deadline = std::time::Instant::now() + PORT_WAIT;
+    loop {
+        match ensure_port_free(config) {
+            Ok(()) => return Ok(()),
+            Err(error) if std::time::Instant::now() >= deadline => return Err(error),
+            Err(_) => tokio::time::sleep(POLL_INTERVAL).await,
+        }
+    }
+}
+
+const PORT_WAIT: Duration = Duration::from_secs(5);
+
 /// Start the backend process. Does not wait for it to become healthy.
 pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
     let Launch::Module { python, backend_dir } = &config.launch;

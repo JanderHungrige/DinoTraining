@@ -35,6 +35,14 @@ export const setupEn = {
   'setup.fail.unsupported': 'This machine cannot run DinoTraining (see above).',
   'setup.fail.failed': 'The install stopped: {message}',
   'setup.fail.resume': 'What was already downloaded is kept, so trying again continues where it stopped.',
+  'setup.variant.cpu': 'the CPU',
+  'setup.variant.gpu': 'the GPU (CUDA {cuda})',
+  'setup.switch.titleGpu': 'Switching to the GPU',
+  'setup.switch.titleCpu': 'Switching to the CPU',
+  'setup.switch.intro':
+    'PyTorch is being exchanged. The backend is stopped meanwhile; your datasets and models stay as they are.',
+  'setup.fail.rolledBack': 'Switching did not work: {reason} You are back on {to}, as before.',
+  'setup.back': 'Back to the app',
   'setup.retry': 'Try again',
 
   'setup.game.label': 'Dino Run: a small game while DinoTraining installs. Press Space or click to jump.',
