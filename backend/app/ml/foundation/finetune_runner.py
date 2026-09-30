@@ -230,7 +230,7 @@ _runner: FinetuneRunner | None = None
 
 
 def get_finetune_runner() -> FinetuneRunner:
-    """Process-wide runner. Wave 13 swaps the construction here, not at call sites."""
+    """Process-wide runner. Wave 14 swaps the construction here, not at call sites."""
     global _runner
     if _runner is None:
         _runner = FinetuneRunner()

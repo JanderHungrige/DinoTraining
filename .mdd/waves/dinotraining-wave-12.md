@@ -48,7 +48,7 @@ input plan, imbalance) rather than inventing a second, weaker version of it.
    backbone variant with its task head.
 3. **SAM 3** either completes the same flow, or refuses up front with the concrete reason:
    VRAM or unified memory needed vs available, the gated licence, or no trainable path in
-   the installed library. It points at Wave 13's remote runner.
+   the installed library. It points at Wave 14's remote runner.
 4. **MCP.** The assistant asks for SAM 2's requirements and gets the same card as data. A
    fine-tune started over MCP with a dataset that breaks a rule is refused with the same
    explanation.
@@ -114,7 +114,7 @@ input plan, imbalance) rather than inventing a second, weaker version of it.
      15 GB of disk free (dev-environment memory). Its trainability through the installed
      library also has to be established.
    - If it cannot train locally, the feature ships the requirements, the preflight and a
-     precise refusal, and hands the job to Wave 13's remote GPU runner.
+     precise refusal, and hands the job to Wave 14's remote GPU runner.
 6. **finetune-ui.** A Training tab mode "Fine-tune a foundation model":
    - pick the model → requirements card → recipe/dataset check → settings with defaults
      → progress → before/after comparison with overlays → name and save;

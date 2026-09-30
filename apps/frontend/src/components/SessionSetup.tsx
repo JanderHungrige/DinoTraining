@@ -9,7 +9,7 @@
  * caller from constructing both at once.
  *
  * The folder is a text field with an optional native picker. Under Tauri the dialog
- * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 13) there is
+ * plugin gives a real picker; in a browser (the `web` dev mode, and Wave 14) there is
  * none, so the field is always editable rather than being disabled without one.
  */
 

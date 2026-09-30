@@ -4,16 +4,17 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 12 build**. Waves 1–8 and docs
-60–68 are in `dev` and `main`. **Wave 9** (docs 69–75) is in `dev` (`076f56a`) and waits
-for Jan's test before `main`. Three waves are built and pushed, each on its own branch, and
-none is merged:
-- **Wave 10** (Look & Feel, docs 76–80) on `feat/dinotraining-wave-10`;
-- **Wave 11** (Guided Data Preparation, docs 81–91) on `feat/dinotraining-wave-11`;
-- **Wave 12** (Fine-Tuning, docs 92–98) on `feat/dinotraining-wave-12`, which branches from
-  Wave 11.
+**Last updated:** 2026-09-30. **Waves 1–12 are in `dev` and `main`** (`04045b3`), including
+the rewritten README, the generator controls Jan asked for (Start analysis, named
+automation boxes below the buttons) and `dev.sh` reinstalling npm dependencies when the
+lockfile changed.
 
-The website is Wave 13.
+**Next: Wave 13** (planned on `feat/plan-wave-13`, docs 99–110): annotate for the model
+(phrases with variations, per-picture phrase status, hard negatives, mask editing), every
+training parameter explained with a ?, default recipes, and an English/German switch. Read
+`waves/dinotraining-wave-13.md` — its "Decisions taken in planning" await Jan's answer.
+
+The website is Wave 14.
 
 ---
 

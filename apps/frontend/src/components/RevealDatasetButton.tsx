@@ -5,7 +5,7 @@
  * over files the user still owns, and at some point they want the files — to back them up,
  * to add more, or to check that the thing they picked is the thing they meant.
  *
- * **Tauri only.** In the browser dev mode and in Wave 13 there is no file manager to open,
+ * **Tauri only.** In the browser dev mode and in Wave 14 there is no file manager to open,
  * so the button is simply absent — the same rule the folder pickers follow.
  *
  * The folder comes from the backend rather than being derived from the dataset id, because
