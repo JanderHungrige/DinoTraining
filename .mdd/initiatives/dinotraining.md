@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 14
-hash: 72b74b97
+version: 15
+hash: 41a889c9
 created: 2026-08-14
 ---
 
@@ -162,4 +162,5 @@ became **three waves** — 13 training knobs and default recipes, 14 annotating 
 | Wave 15 | waves/dinotraining-wave-15.md | The whole app, including the backend's plain-language texts, switches between English and German; a missing German text fails the build. | in_progress |
 | Wave 15.5 | waves/dinotraining-wave-15-5.md | Annotating the normal way: saved means complete, umbrella terms over several classes (screw for m8 and m9), a question when a class is added later, and an add-only review of earlier pictures. | in_progress |
 | Wave 15.6 | waves/dinotraining-wave-15-6.md | MLOps: a model card for every trained model, an export bundle (weights, card, runnable example, ONNX where possible), and MLflow tracking and registry, including models trained before. | in_progress |
+| Wave 15.7 | waves/dinotraining-wave-15-7.md | Installer: bundled Python and uv instead of PyInstaller; PyTorch from pytorch.org with the accelerator chosen at first start (CUDA / MPS / CPU), switchable later, updates that fetch only changes; CI installs and starts it on all three platforms. | planned |
 | Wave 16 | waves/dinotraining-wave-16.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
