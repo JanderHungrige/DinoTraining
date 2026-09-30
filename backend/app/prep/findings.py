@@ -22,6 +22,7 @@ from app.prep.findings_quality import (
     spelling,
     unreadable,
 )
+from app.prep.findings_task import TASK_RULES
 from app.prep.input_plan import decide_tiling, object_sizes
 
 
@@ -170,6 +171,7 @@ RULES = (
     doubt,
     empty,
     sequences,
+    *TASK_RULES,
 )
 
 

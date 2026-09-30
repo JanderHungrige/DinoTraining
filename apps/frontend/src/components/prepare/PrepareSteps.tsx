@@ -37,6 +37,22 @@ export interface PrepareStepsProps {
   readonly onTrain?: ((datasetId: string, recipeId: string) => void) | undefined;
 }
 
+/**
+ * Why the chosen model does not use a step (doc 107), or ''. Fine-tuning a whole model
+ * (RF-DETR, SAM 2, SAM 3) takes the recipe's split, classes and exclusions, but neither
+ * class balancing nor changed copies: those are the DINO head's.
+ */
+export function unusedReason(target: string, step: StepId): string {
+  if (target === '' || target.startsWith('head-')) return '';
+  if (step === 'balance') {
+    return 'Fine-tuning this model does not balance classes: every picture counts once. The recipe still records a choice, used if you train a DINO head with it.';
+  }
+  if (step === 'augment') {
+    return 'Fine-tuning this model trains on the pictures as they are: it makes no changed copies. The recipe still records a choice, used if you train a DINO head with it.';
+  }
+  return '';
+}
+
 export function statusesFor(data: PrepareData, target: string): Record<StepId, StepStatus> {
   const audited = data.audit !== null && data.audit.target === target;
   const saved = data.recipes.some((info) => info.recipe.target === target && info.out_of_date.length === 0);
@@ -45,8 +61,8 @@ export function statusesFor(data: PrepareData, target: string): Record<StepId, S
     fix: audited && (data.audit?.copy_groups.length ?? 0) + (data.audit?.unreadable.length ?? 0) === 0 ? 'done' : 'choice',
     split: data.split ? 'done' : 'open',
     input: 'choice',
-    balance: 'choice',
-    augment: 'choice',
+    balance: unusedReason(target, 'balance') ? 'unused' : 'choice',
+    augment: unusedReason(target, 'augment') ? 'unused' : 'choice',
     save: saved ? 'done' : 'open',
   };
 }
@@ -74,6 +90,8 @@ function StepBody(props: PrepareStepsProps & { step: StepId; strategy: Strategy;
   const { datasetId, datasetName, target, data, plans, choices, onChoose, onTrain, step, strategy, preset } = props;
   const targetId = target?.id ?? '';
   const grid = choices.grid ?? null;
+  const unused = unusedReason(targetId, step);
+  if (unused) return <p className="prep-step__status">{unused}</p>;
   switch (step) {
     case 'audit':
       return (

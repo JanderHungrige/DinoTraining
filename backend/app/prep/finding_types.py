@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.prep.profiles import ModelProfile
 from app.prep.stats import DatasetFacts
+from app.prep.task_facts import MaskFacts, PhraseFacts
 
 SEVERITY_ORDER = {"problem": 0, "warn": 1, "info": 2, "ok": 3}
 
@@ -33,3 +34,7 @@ class AuditContext:
     copy_groups: list[list[str]] = field(default_factory=list)
     #: Images that look the same, whatever they carry: one scene, kept together by the split.
     scene_groups: list[list[str]] = field(default_factory=list)
+    #: Doc 107: outline shapes, for targets that train on outlines; None otherwise.
+    masks: MaskFacts | None = None
+    #: Doc 107: phrase checks, for SAM 3; None otherwise.
+    phrases: PhraseFacts | None = None

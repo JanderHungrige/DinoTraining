@@ -1,0 +1,169 @@
+"""Audit rules that depend on what the model trains from (doc 107).
+
+Labels: one class per picture. Outlines: in one piece, and each object once. Phrases (SAM
+3): enough of each, every picture checked, variations, confirmed negatives. Each rule says
+what it found, why it matters for this model, and what to do — as every rule does (doc 81).
+"""
+
+from __future__ import annotations
+
+from collections import defaultdict
+
+from app.prep.finding_types import AuditContext, Finding
+
+MIN_PHRASE_INSTANCES = 50
+
+
+def _examples(paths: list[str]) -> list[str]:
+    return list(dict.fromkeys(paths))[:8]
+
+
+def mixed_classes(ctx: AuditContext) -> Finding | None:
+    if ctx.profile is None or ctx.profile.annotation_kind != "labels":
+        return None
+    classes: dict[int, set[str]] = defaultdict(set)
+    for a in ctx.facts.positives():
+        classes[a.image_id].add(a.cls)
+    mixed = [ctx.facts.image(i) for i, names in classes.items() if len(names) > 1]
+    paths = [image.path for image in mixed if image is not None]
+    if not paths:
+        return None
+    return Finding(
+        id="mixed-classes",
+        severity="warn",
+        title=f"{len(paths)} picture(s) show more than one class",
+        what=f"{len(paths)} pictures carry annotations of two or more classes.",
+        why="A picture classifier learns one class per picture, so it leaves these out: "
+        "they are neither lesson nor test.",
+        action="Mark only the main object on each, or train a detector instead, which "
+        "learns every object in a picture.",
+        examples=_examples(paths),
+        metrics={"pictures": len(paths)},
+    )
+
+
+def fragmented(ctx: AuditContext) -> Finding | None:
+    if ctx.masks is None or not ctx.masks.fragmented:
+        return None
+    items = ctx.masks.fragmented
+    return Finding(
+        id="fragmented-outlines",
+        severity="info",
+        title=f"{len(items)} outline(s) in several pieces",
+        what=f"{len(items)} of {ctx.masks.outlines} outlines are split into separate pieces.",
+        why="That is right for an object cut in two by something in front of it, and wrong "
+        "for stray specks, which teach the model that bits of background belong to the object.",
+        action="Look at the examples; remove specks with the eraser in the Annotation "
+        "Studio (outline tools).",
+        examples=_examples([path for path, _, _ in items]),
+        metrics={"outlines": len(items)},
+    )
+
+
+def duplicated(ctx: AuditContext) -> Finding | None:
+    if ctx.masks is None or not ctx.masks.duplicates:
+        return None
+    items = ctx.masks.duplicates
+    return Finding(
+        id="duplicate-outlines",
+        severity="warn",
+        title=f"{len(items)} object(s) outlined twice",
+        what=f"{len(items)} pairs of outlines cover almost the same pixels (80 % or more).",
+        why="One object marked twice teaches the model to find it twice, and a pair with two "
+        "classes teaches it two contradictory answers.",
+        action="In the Annotation Studio, reject one outline of each pair.",
+        examples=_examples([path for path, *_ in items]),
+        metrics={"pairs": len(items)},
+    )
+
+
+def thin_phrases(ctx: AuditContext) -> Finding | None:
+    if ctx.phrases is None:
+        return None
+    thin = [(t, n) for t, n, _ in ctx.phrases.phrases if n < MIN_PHRASE_INSTANCES]
+    if not thin:
+        return None
+    listed = ", ".join(f"{t} ({n})" for t, n in sorted(thin, key=lambda x: x[1]))
+    return Finding(
+        id="thin-phrases",
+        severity="warn",
+        title=f"{len(thin)} phrase(s) with fewer than {MIN_PHRASE_INSTANCES} outlines",
+        what=f"Outlines per phrase: {listed}.",
+        why="SAM 3 learns a phrase from its examples; with few it learns these pictures, "
+        "not the concept.",
+        action="Outline more instances of these phrases, or leave the thinnest out for now.",
+        metrics={"phrases": len(thin)},
+    )
+
+
+def unchecked(ctx: AuditContext) -> Finding | None:
+    facts = ctx.phrases
+    if facts is None or facts.unchecked == 0:
+        return None
+    none_at_all = facts.checked_any == 0
+    return Finding(
+        id="unchecked-pictures",
+        severity="warn",
+        title=f"{facts.unchecked} of {facts.pictures} pictures not checked for every phrase",
+        what="No picture has been marked for any phrase yet."
+        if none_at_all
+        else f"{facts.unchecked} pictures lack an 'all marked' or 'not in this picture' "
+        "for at least one phrase.",
+        why="SAM 3 learns 'none here' only from pictures you checked. Unchecked, a picture "
+        "without an outline could simply not have been annotated yet — so it teaches nothing"
+        + (
+            "; until any picture is checked, training treats every picture without an outline "
+            "as 'none here', as before."
+            if none_at_all
+            else "."
+        ),
+        action="In the Annotation Studio's phrase bar, mark each picture per phrase: "
+        "A for all marked, N for not in this picture.",
+        metrics={"unchecked": facts.unchecked, "pictures": facts.pictures},
+    )
+
+
+def no_variants(ctx: AuditContext) -> Finding | None:
+    if ctx.phrases is None:
+        return None
+    bare = [t for t, _, variants in ctx.phrases.phrases if variants == 0]
+    if not bare:
+        return None
+    return Finding(
+        id="no-variations",
+        severity="info",
+        title=f"{len(bare)} phrase(s) without variations",
+        what=f"Only one wording for: {', '.join(bare[:10])}.",
+        why="Two to four other wordings teach SAM 3 that the words can vary, so it also "
+        "answers phrasings nobody typed.",
+        action="Add variations under Manage phrases (comma-separated).",
+        metrics={"phrases": len(bare)},
+    )
+
+
+def no_negatives(ctx: AuditContext) -> Finding | None:
+    facts = ctx.phrases
+    if facts is None or facts.checked_any == 0 or facts.absent_marks > 0:
+        return None
+    return Finding(
+        id="no-confirmed-negatives",
+        severity="info",
+        title="No picture is marked 'not in this picture'",
+        what="Every check so far says 'all marked'.",
+        why="Confirmed negatives are the strongest lesson in what a phrase is not — "
+        "especially pictures where something similar is there.",
+        action="Mark pictures without the phrase as 'not in this picture' (N), look-alikes first.",
+    )
+
+
+TASK_RULES = (
+    mixed_classes,
+    fragmented,
+    duplicated,
+    thin_phrases,
+    unchecked,
+    no_variants,
+    no_negatives,
+)
+
+__all__ = ["TASK_RULES"]

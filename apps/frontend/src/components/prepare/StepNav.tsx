@@ -8,7 +8,8 @@ import type { JSX } from 'react';
 export const STEPS = ['audit', 'fix', 'split', 'input', 'balance', 'augment', 'save'] as const;
 export type StepId = (typeof STEPS)[number];
 
-export type StepStatus = 'done' | 'open' | 'choice';
+/** `unused`: the chosen model does not use this step (doc 107); it says why when opened. */
+export type StepStatus = 'done' | 'open' | 'choice' | 'unused';
 
 export const STEP_LABEL: Readonly<Record<StepId, string>> = {
   audit: 'Check the data',
@@ -20,7 +21,7 @@ export const STEP_LABEL: Readonly<Record<StepId, string>> = {
   save: 'Save the recipe',
 };
 
-const STATUS_MARK: Readonly<Record<StepStatus, string>> = { done: '✓', open: '•', choice: '○' };
+const STATUS_MARK: Readonly<Record<StepStatus, string>> = { done: '✓', open: '•', choice: '○', unused: '–' };
 
 export function firstOpen(statuses: Readonly<Record<StepId, StepStatus>>): StepId {
   return STEPS.find((step) => statuses[step] === 'open') ?? 'save';
@@ -47,6 +48,7 @@ export function StepNav({ current, statuses, onSelect }: StepNavProps): JSX.Elem
               {STATUS_MARK[statuses[step]]}
             </span>
             {index + 1}. {STEP_LABEL[step]}
+            {statuses[step] === 'unused' ? ' (not used)' : ''}
           </button>
         </li>
       ))}

@@ -18,6 +18,7 @@ from app.prep.jobs import Progress
 from app.prep.profiles import get_profile
 from app.prep.state import load_state
 from app.prep.stats import DatasetFacts, collect
+from app.prep.task_facts import collect_masks, collect_phrases
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +101,13 @@ def run_audit(
     facts = collect(dataset_id, settings, load_state(dataset_id, settings).class_map)
     unreadable, scene_groups = _check_files(facts, progress)
     copies = copy_groups(facts, scene_groups)
-    findings = evaluate(AuditContext(facts, profile, unreadable, copies, scene_groups))
+    context = AuditContext(facts, profile, unreadable, copies, scene_groups)
+    # Doc 107: the costly facts only for the targets that train on them.
+    if profile is not None and profile.annotation_kind == "masks":
+        context.masks = collect_masks(dataset_id, settings)
+    if profile is not None and profile.id == "sam3":
+        context.phrases = collect_phrases(dataset_id, settings)
+    findings = evaluate(context)
     classes: dict[str, int] = {}
     for annotation in facts.positives():
         classes[annotation.cls] = classes.get(annotation.cls, 0) + 1
