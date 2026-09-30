@@ -15,6 +15,7 @@ import type { AnnotatorInfo, PromptStyle } from '../api/annotators';
 import { FieldHint } from './FieldHint';
 import { describeOutput } from '../types/annotationView';
 import type { GeneratorMode } from './GeneratorModePicker';
+import { useT } from '../i18n';
 
 export interface MaskSourceFieldsProps {
   readonly mode: GeneratorMode;
@@ -36,13 +37,14 @@ export function MaskSourceFields({
   onConceptChange,
   promptStyle,
 }: MaskSourceFieldsProps): JSX.Element | null {
+  const { t } = useT();
   if (mode !== 'masks') return null;
 
   return (
         <div className="genpanel__group">
           {annotators.length > 1 && (
             <label className="genpanel__field">
-              <span>Annotator</span>
+              <span>{t('run.maskSource.annotator')}</span>
               <select
                 value={annotatorId}
                 onChange={(event) => onAnnotatorChange(event.target.value)}
@@ -56,7 +58,7 @@ export function MaskSourceFields({
             </label>
           )}
           <label className="genpanel__field">
-            <span>Concept</span>
+            <span>{t('run.maskSource.concept')}</span>
             <input
               type="text"
               value={concept}
@@ -69,13 +71,13 @@ export function MaskSourceFields({
               inline — see doc 39 for why it matters to a screen reader. */}
           <FieldHint id="concept-hint">
             {promptStyle === 'phrases'
-              ? 'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.'
-              : 'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.'}
+              ? t('run.maskSource.hintPhrases')
+              : t('run.maskSource.hintSingle')}
           </FieldHint>
           {/* Doc 67. Mask mode always writes masks, and the export derives a box from each
               — which is the answer to "boxes, segmentations, or both?". Said here rather
               than after the run, when it can still change the choice. */}
-          <p className="genpanel__output">{describeOutput('masks')}</p>
+          <p className="genpanel__output">{describeOutput('masks', t)}</p>
         </div>
   );
 }

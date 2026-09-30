@@ -12,6 +12,7 @@
 import type { JSX } from 'react';
 
 import { metricKeys, type EpochInfo, type JobInfo } from '../api/training';
+import { useT, type Key } from '../i18n';
 
 export interface TrainingProgressProps {
   readonly job: JobInfo;
@@ -19,12 +20,12 @@ export interface TrainingProgressProps {
   readonly onCancel: () => void;
 }
 
-const STATE_LABELS: Readonly<Record<string, string>> = Object.freeze({
-  pending: 'Queued',
-  running: 'Training',
-  complete: 'Complete',
-  failed: 'Failed',
-  cancelled: 'Cancelled',
+const STATE_LABELS: Readonly<Record<string, Key>> = Object.freeze({
+  pending: 'training.progress.state.pending',
+  running: 'training.progress.state.running',
+  complete: 'training.progress.state.complete',
+  failed: 'training.progress.state.failed',
+  cancelled: 'training.progress.state.cancelled',
 });
 
 /** Normalise a series to a 0–1 sparkline path. Flat series sit mid-height rather than
@@ -62,18 +63,20 @@ function Sparkline({ values, accent }: { values: readonly number[]; accent: bool
 
 /** Doc 90: the best weights on pictures neither training nor model selection saw. */
 function TestScore({ metrics }: { readonly metrics: Readonly<Record<string, number>> }): JSX.Element | null {
+  const { t } = useT();
   const entries = Object.entries(metrics);
   if (entries.length === 0) return null;
+  const scores = entries.map(([key, value]) => `${key} ${value.toFixed(3)}`).join(' · ');
   return (
     <p className="run__message">
-      <strong>On the test pictures:</strong>{' '}
-      {entries.map(([key, value]) => `${key} ${value.toFixed(3)}`).join(' · ')} — the honest
-      number: these pictures were not used to train or to pick the best round.
+      <strong>{t('training.progress.testLabel')}</strong> {t('training.progress.testNote', { scores })}
     </p>
   );
 }
 
 export function TrainingProgress({ job, history, onCancel }: TrainingProgressProps): JSX.Element {
+  const { t, tp } = useT();
+  const stateKey = STATE_LABELS[job.state];
   const keys = metricKeys(history);
   const running = job.state === 'running' || job.state === 'pending';
   const percent = job.total_epochs ? Math.round((job.epoch / job.total_epochs) * 100) : 0;
@@ -82,15 +85,15 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
     <section className="run" aria-live="polite">
       <header className="run__head">
         <h3 className="run__title">
-          {STATE_LABELS[job.state] ?? job.state}
+          {stateKey ? t(stateKey) : job.state}
           <span className="trainer__dim">
             {' '}
-            · epoch {job.epoch}/{job.total_epochs}
+            {t('training.progress.epoch', { epoch: job.epoch, total: job.total_epochs })}
           </span>
         </h3>
         {running && (
           <button className="btn btn--danger" type="button" onClick={onCancel}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
       </header>
@@ -110,15 +113,12 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
       {job.skipped_mixed_class_images > 0 && (
         /* Surfaced, never silent: training on fewer images than the user annotated is
            exactly the quiet loss this project keeps designing against. */
-        <p className="run__warn">
-          {job.skipped_mixed_class_images} image(s) skipped — their boxes name more than one
-          class, which classification cannot use.
-        </p>
+        <p className="run__warn">{tp('training.progress.skipped', job.skipped_mixed_class_images)}</p>
       )}
 
       {job.class_names.length > 0 && (
         <p className="run__classes">
-          Classes: <code>{job.class_names.join(', ')}</code>
+          {t('training.progress.classes')} <code>{job.class_names.join(', ')}</code>
         </p>
       )}
 
@@ -129,7 +129,7 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
               <div key={key} className="run__spark">
                 <span className={key === job.primary_metric ? 'run__key run__key--primary' : 'run__key'}>
                   {key}
-                  {key === job.primary_metric ? ' (best-model criterion)' : ''}
+                  {key === job.primary_metric ? ` ${t('training.progress.bestCriterion')}` : ''}
                 </span>
                 <Sparkline
                   values={history.map((entry) => entry.metrics[key] ?? 0)}
@@ -143,12 +143,12 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
           </div>
 
           <table className="run__table">
-            <caption className="run__caption">Per-epoch loss and metrics</caption>
+            <caption className="run__caption">{t('training.progress.caption')}</caption>
             <thead>
               <tr>
-                <th scope="col">Epoch</th>
-                <th scope="col">Train loss</th>
-                <th scope="col">Val loss</th>
+                <th scope="col">{t('training.progress.epochHeader')}</th>
+                <th scope="col">{t('training.progress.trainLoss')}</th>
+                <th scope="col">{t('training.progress.valLoss')}</th>
                 {keys.map((key) => (
                   <th key={key} scope="col">
                     {key}
@@ -173,7 +173,7 @@ export function TrainingProgress({ job, history, onCancel }: TrainingProgressPro
       )}
 
       {job.head_instance_id && (
-        <p className="run__saved">Saved as a head you can now use in the Inference Viewer.</p>
+        <p className="run__saved">{t('training.progress.saved')}</p>
       )}
     </section>
   );

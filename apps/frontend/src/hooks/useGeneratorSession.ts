@@ -18,6 +18,7 @@ import type { MaskProposalResponse } from '../api/generate';
 import { proposeForGenerator, toReview } from '../lib/generatorProposal';
 import { saveReview, type ImageReview } from '../lib/generatorSave';
 import { useGeneratorImages } from './useGeneratorImages';
+import { useT } from '../i18n';
 import type { GeneratorSession, MoveOptions } from '../types/generatorSession';
 import type { GeneratorConfig } from '../types/generatorConfig';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
@@ -46,6 +47,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     decoding,
     frameOf,
   } = useGeneratorImages(config);
+  const tr = useT();
   const [index, setIndex] = useState(0);
   const [boxes, setBoxes] = useState<readonly CanvasBox[]>([]);
   const [masks, setMasks] = useState<readonly ReviewMask[]>([]);
@@ -91,7 +93,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
     setProposing(true);
     setError(null);
     try {
-      const proposed = await proposeForGenerator(config, currentImage);
+      const proposed = await proposeForGenerator(config, currentImage, tr);
       // A response for an image the user has already navigated away from must not land:
       // its boxes and masks are in that image's coordinate space and would look plausible
       // here. The ticket stays in the hook precisely so this check cannot be extracted.
@@ -109,13 +111,13 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       return review;
     } catch (caught) {
       if (ticket === requestId.current) {
-        setError(describe(caught, 'Nothing could be proposed for this image.'));
+        setError(describe(caught, tr.t('generator.session.proposeFailed')));
       }
       return null;
     } finally {
       if (ticket === requestId.current) setProposing(false);
     }
-  }, [config, currentImage]);
+  }, [config, currentImage, tr]);
 
   const save = useCallback(
     async (explicit?: ImageReview): Promise<boolean> => {
@@ -130,7 +132,7 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
       setSaving(true);
       setError(null);
       try {
-        setCounts(await saveReview(config, review, frameOf(review.path)));
+        setCounts(await saveReview(config, review, frameOf(review.path), tr));
         savedReviews.current.set(review.path, review);
         if (review.path === currentImage) setDirty(false);
         return true;
@@ -138,14 +140,14 @@ export function useGeneratorSession(config: GeneratorConfig | null): GeneratorSe
         setError(
           caught instanceof Error && !(caught instanceof ApiError)
             ? caught.message
-            : describe(caught, 'Could not save to the dataset.'),
+            : describe(caught, tr.t('generator.session.saveFailed')),
         );
         return false;
       } finally {
         setSaving(false);
       }
     },
-    [config, currentImage, imageSize, boxes, masks, frameOf],
+    [config, currentImage, imageSize, boxes, masks, frameOf, tr],
   );
 
   // A hand edit is a review: drawing a box the model missed, rejecting one it found, or

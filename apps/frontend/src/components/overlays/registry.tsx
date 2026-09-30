@@ -17,6 +17,7 @@ import { BoxOverlay } from './BoxOverlay';
 import { MaskLegend } from './MaskLegend';
 import { LabelOverlay } from './LabelOverlay';
 import { MapOverlay } from './MapOverlay';
+import { useT } from '../../i18n';
 
 export interface OverlayProps {
   readonly prediction: Prediction;
@@ -96,7 +97,8 @@ function alphaForStride(stride: number): (value: number) => number {
  * Both layers render into the same absolutely-positioned stack, mask under boxes, so an
  * outline is never buried by the 55% fill it describes.
  */
-const renderMask: OverlayRenderer = ({ prediction, rendered, view = DEFAULT_VIEW }) => {
+function MaskResult({ prediction, rendered, view = DEFAULT_VIEW }: OverlayProps): JSX.Element | null {
+  const { t } = useT();
   const encoded = prediction.payload['mask_png'];
   const stride = strideOf(prediction.payload);
   const named = prediction.class_names[0] === BACKGROUND_CLASS;
@@ -115,7 +117,7 @@ const renderMask: OverlayRenderer = ({ prediction, rendered, view = DEFAULT_VIEW
           rendered={rendered}
           colourFor={colourForStride(stride)}
           {...(named ? { alphaFor: alphaForStride(stride) } : {})}
-          title={`Segmentation from ${prediction.head_name}`}
+          title={t('run.overlay.segmentation', { head: prediction.head_name })}
         />
       )}
       {wantsBoxes && <BoxOverlay prediction={prediction} rendered={rendered} />}
@@ -124,9 +126,10 @@ const renderMask: OverlayRenderer = ({ prediction, rendered, view = DEFAULT_VIEW
       {wantsMask && <MaskLegend prediction={prediction} />}
     </>
   );
-};
+}
 
-const renderDepth: OverlayRenderer = ({ prediction, rendered }) => {
+function DepthResult({ prediction, rendered }: OverlayProps): JSX.Element | null {
+  const { t } = useT();
   const encoded = prediction.payload['depth_png'];
   if (typeof encoded !== 'string') return null;
 
@@ -140,10 +143,10 @@ const renderDepth: OverlayRenderer = ({ prediction, rendered }) => {
       // directly; `min`/`max` are for the legend, not for the colouring.
       colourFor={(value) => depthColour(value / 255)}
       opacity={0.85}
-      title={`Depth from ${prediction.head_name}`}
+      title={t('run.overlay.depth', { head: prediction.head_name })}
     />
   );
-};
+}
 
 /**
  * `render_hint` → renderer. The only dispatch in the overlay layer.
@@ -156,8 +159,9 @@ export const OVERLAY_RENDERERS: Record<RenderHint, OverlayRenderer> = {
   boxes: ({ prediction, rendered }) => (
     <BoxOverlay prediction={prediction} rendered={rendered} />
   ),
-  masks: renderMask,
-  'depth-map': renderDepth,
+  // Components rather than plain functions, so their titles can ask for the language.
+  masks: (props) => <MaskResult {...props} />,
+  'depth-map': (props) => <DepthResult {...props} />,
 };
 
 export function renderOverlayFor(

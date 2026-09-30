@@ -13,17 +13,17 @@ routes: []
 models: []
 test_files:
   - apps/frontend/src/i18n/catalogue.test.ts
-  - apps/frontend/src/i18n/german.test.tsx
+  - apps/frontend/src/i18n/<ns>.german.test.tsx (one per namespace)
 data_flow: reads-existing
 last_synced: 2026-09-30
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [i18n, german, english, frontend, strings]
 path: App/Language/Strings
 initiative: dinotraining
 wave: dinotraining-wave-15
-wave_status: active
+wave_status: complete
 integration_contracts: []
 satisfies_contracts: []
 known_issues: []
@@ -86,6 +86,49 @@ own component files:
 - A German smoke test (`german.test.tsx`) renders each tab inside a German provider and
   asserts that key texts read German.
 - Checked in the running app in German, at the pane's narrow width.
+
+## Done (2026-09-30)
+
+**Scale:** about 1 070 keys in English and German (app 42, intro 106, studio 225, phrases 59,
+prepare 117, training 125, run 98, generator 111, admin 191). The work was done in parallel,
+one agent per namespace. Studio is split into `studio.ts` + `studio2.ts`, spread into
+`studioEn`/`studioDe`.
+
+**Shared tables keep their English exports for compatibility** and gained translated
+accessors, now used everywhere they are shown:
+- `labelTitle` (AnnotationCanvas, MaskReviewCanvas);
+- `viewLabel` (AnnotationViewToggle);
+- `describeOutput(…, t)` (FoundationPicker, MaskSourceFields);
+- `describeHead(head, translator)` (ExpertHeadPicker, HeadRunPanel);
+- `tabLabel` (IntroTab).
+
+**Changes to the English itself:**
+- Hand-written plurals became real ones, so the text for exactly one reads correctly:
+  "(1 image)", "1 class", "1 mask", "Keep one of each copy (1 group)".
+- "Run  models" lost a double space.
+
+**Left English on purpose:**
+- Model input examples ("a cat. a dog.", "a bolt"), with German hints saying to write
+  concepts in English, because Grounding DINO and SAM read English.
+- Paths and units.
+- The copied AI guide, with a German note explaining why.
+- `api/videoExtract.ts`'s thrown "could not be decoded" and `lib/imageSource.ts`'s
+  `VIDEO_NEEDS_DECODING`: errors thrown outside React, which need codes first.
+- `api/video.ts`'s `describeEstimate`: VideoPlayer has a translated copy until it takes a
+  translator.
+
+**Allow-list:** "Annotation Studio", "Training", "Test" and "Prompt" stay the same in German,
+as the glossary says.
+
+**Verified:**
+- tsc is clean and the frontend is 1063 green.
+- No changed file is over 300 lines.
+- In the running app, German:
+  - the tab bar reads "Hier starten | Annotation Studio | Daten vorbereiten | Training |
+    Modell-Ansicht | Datensatz-Generator | Datensätze ansehen | Bibliothek | Verwaltung /
+    Modelle | Verbindung";
+  - the Studio setup and the Training tab read German throughout. Backend-supplied texts
+    (target matrix) stayed English until doc 113.
 
 ## Bugs
 

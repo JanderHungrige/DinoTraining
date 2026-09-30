@@ -6,12 +6,14 @@
 import { useState, type JSX } from 'react';
 
 import { addPhrase, changePhrase, markTheRest, type PhraseInfo } from '../../api/phrases';
+import { useT } from '../../i18n';
 
 function list(text: string): string[] {
   return text.split(',').map((part) => part.trim()).filter(Boolean);
 }
 
 function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; readonly phrase: PhraseInfo; readonly onSaved: () => void }): JSX.Element {
+  const { t } = useT();
   const [variants, setVariants] = useState<string | null>(null);
   const [confusable, setConfusable] = useState<string | null>(null);
   const [problem, setProblem] = useState('');
@@ -46,7 +48,7 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
     try {
       const done = await markTheRest(datasetId, phrase.text);
       setProblem('');
-      setFilled(`Marked ${done.complete} all marked, ${done.absent} not in this picture.`);
+      setFilled(t('phrases.manage.marked', { complete: done.complete, absent: done.absent }));
       onSaved();
     } catch (cause) {
       setProblem(cause instanceof Error ? cause.message : String(cause));
@@ -57,23 +59,23 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
     <li className="phrasemanage__row">
       <strong>{phrase.text}</strong> <span className="trainer__dim">({phrase.class_name})</span>
       <label>
-        Variations
-        <input value={shownVariants} placeholder="railway signal, light signal" onChange={(e) => setVariants(e.target.value)} />
+        {t('phrases.manage.variations')}
+        <input value={shownVariants} placeholder={t('phrases.manage.variationsPlaceholder')} onChange={(e) => setVariants(e.target.value)} />
       </label>
       <label>
-        Not to be confused with
-        <input value={shownConfusable} placeholder="street lamp, traffic sign" onChange={(e) => setConfusable(e.target.value)} />
+        {t('phrases.manage.confusable')}
+        <input value={shownConfusable} placeholder={t('phrases.manage.confusablePlaceholder')} onChange={(e) => setConfusable(e.target.value)} />
       </label>
       <button type="button" className="btn btn--small" disabled={!changed} onClick={() => void save()}>
-        Save
+        {t('phrases.manage.save')}
       </button>
       <button
         type="button"
         className="btn btn--small"
-        title="Only if every picture is fully annotated for this phrase: each unchecked picture becomes 'all marked' where it has an outline of it, 'not in this picture' where it has none."
+        title={t('phrases.manage.markRestHint')}
         onClick={() => void fill()}
       >
-        Mark the rest
+        {t('phrases.manage.markRest')}
       </button>
       {filled && <span className="trainer__dim" role="status">{filled}</span>}
       {problem && <span className="run__warn" role="alert">{problem}</span>}
@@ -82,9 +84,10 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
 }
 
 export function PhraseManager({ datasetId, phrases, onSaved }: { readonly datasetId: string; readonly phrases: readonly PhraseInfo[]; readonly onSaved: () => void }): JSX.Element {
+  const { t } = useT();
   return (
     <details className="phrasemanage">
-      <summary>Manage phrases</summary>
+      <summary>{t('phrases.manage.title')}</summary>
       <ul>
         {phrases.map((phrase) => (
           <Row key={phrase.text} datasetId={datasetId} phrase={phrase} onSaved={onSaved} />

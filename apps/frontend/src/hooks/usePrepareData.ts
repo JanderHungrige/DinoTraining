@@ -22,6 +22,7 @@ import {
   type SplitReport,
 } from '../api/prep';
 import { listRecipes, type RecipeInfo } from '../api/prepPlan';
+import { useT } from '../i18n';
 
 const POLL_MS = 400;
 
@@ -59,6 +60,7 @@ export function usePrepareData(datasetId: string): PrepareData {
   const [recipes, setRecipes] = useState<readonly RecipeInfo[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const { t } = useT();
   const current = useRef(datasetId);
   current.current = datasetId;
 
@@ -98,7 +100,7 @@ export function usePrepareData(datasetId: string): PrepareData {
               setAudit(job.audit);
               setAuditing(null);
             } else if (job.state === 'failed') {
-              setError(job.message || 'The audit failed.');
+              setError(job.message || t('prepare.audit.failed'));
               setAuditing(null);
             } else {
               setAuditing({ done: job.done, total: job.total });
@@ -117,7 +119,7 @@ export function usePrepareData(datasetId: string): PrepareData {
           setAuditing(null);
         });
     },
-    [datasetId],
+    [datasetId, t],
   );
 
   const fix = useCallback<PrepareData['fix']>(

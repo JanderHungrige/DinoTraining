@@ -15,6 +15,7 @@ import { usePhraseKeys } from '../../hooks/usePhraseKeys';
 import { phraseKey, withPhrase, withoutPhrase } from '../../lib/phraseEdit';
 import type { NumberedBox } from '../../lib/boxReview';
 import type { CanvasBox } from '../../types/annotation';
+import { useT } from '../../i18n';
 import { PhraseHelp } from './PhraseHelp';
 import { PhraseManager } from './PhraseManager';
 import { PictureChecks } from './PictureChecks';
@@ -35,6 +36,7 @@ export interface PhraseBarProps {
 export function PhraseBar(props: PhraseBarProps): JSX.Element {
   const { datasetId, items, selectedId, pictures, disabled } = props;
   const { phrases } = pictures;
+  const { t } = useT();
   const [activeChoice, setActiveChoice] = useState('');
   const [draft, setDraft] = useState('');
   const [problem, setProblem] = useState('');
@@ -70,15 +72,15 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
 
   return (
     <details className="phrasebar" open={props.open}>
-      <summary>{props.open ? 'Phrases' : 'Phrases (optional)'}</summary>
-      <div className="phrasebar__chips" role="group" aria-label="Phrases — keys 1–9 pick one">
+      <summary>{props.open ? t('phrases.bar.title') : t('phrases.bar.titleOptional')}</summary>
+      <div className="phrasebar__chips" role="group" aria-label={t('phrases.bar.chipsLabel')}>
         {phrases.map((phrase, index) => (
           <button
             key={phrase.text}
             type="button"
             className={`phrasechip${phrase.text === active?.text ? ' phrasechip--active' : ''}`}
             aria-pressed={phrase.text === active?.text}
-            title={phrase.variants.length ? `Also: ${phrase.variants.join(', ')}` : 'No variations yet'}
+            title={phrase.variants.length ? t('phrases.bar.also', { variants: phrase.variants.join(', ') }) : t('phrases.bar.noVariations')}
             onClick={() => setActiveChoice(phrase.text)}
           >
             {index < 9 && <span className="phrasechip__key">{index + 1}</span>}
@@ -88,20 +90,20 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
       </div>
       <form className="phrasebar__add" onSubmit={(event) => void add(event)}>
         <label>
-          + phrase
+          {t('phrases.bar.addLabel')}
           <input
             value={draft}
-            placeholder="signal, railway signal, light signal"
+            placeholder={t('phrases.bar.addPlaceholder')}
             aria-describedby="phrasebar-add-hint"
             onChange={(event) => setDraft(event.target.value)}
           />
         </label>
         <button type="submit" className="btn btn--small" disabled={!draft.trim()}>
-          Add
+          {t('phrases.bar.addButton')}
         </button>
         <span id="phrasebar-add-hint" className="phrasebar__note">
-          Commas separate variations of one phrase.
-          {selected?.box.mask ? ` It joins class ${phraseKey(selected.box.text ?? '')}.` : ''}
+          {t('phrases.bar.addHint')}
+          {selected?.box.mask ? t('phrases.bar.joinsClass', { name: phraseKey(selected.box.text ?? '') }) : ''}
         </span>
       </form>
       {problem && <p className="run__warn" role="alert">{problem}</p>}
@@ -123,7 +125,7 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
         disabled={disabled}
         onMark={(phrase, status) => void pictures.mark(phrase, status)}
       />
-      <p className="phrasebar__note">Keys: 1–9 pick a phrase · A all marked · N not in this picture.</p>
+      <p className="phrasebar__note">{t('phrases.bar.keys')}</p>
       <PhraseManager datasetId={datasetId} phrases={phrases} onSaved={pictures.reload} />
       <PhraseHelp />
     </details>

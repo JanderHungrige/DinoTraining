@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, type JSX } from 'react';
 
+import { useT } from '../i18n';
 import type { UnclearBand } from '../lib/unclearBand';
 
 export interface UnclearQuestionProps {
@@ -25,19 +26,23 @@ export function UnclearQuestion({
   onContinue,
   onStop,
 }: UnclearQuestionProps): JSX.Element {
+  const { t, tp } = useT();
   const continueButton = useRef<HTMLButtonElement | null>(null);
   useEffect(() => continueButton.current?.focus(), [imageNumber]);
 
-  const noun = count === 1 ? 'proposal scored' : 'proposals scored';
+  // `{unclear}` is left unfilled and split on, so the word can be set in italics wherever
+  // the language puts it.
+  const [before, after = ''] = tp('generator.unclear.scored', count, {
+    low: band.low.toFixed(2),
+    high: band.high.toFixed(2),
+  }).split('{unclear}');
   return (
-    <section className="unclearq" role="alert" aria-label="Autoplay is waiting for you">
+    <section className="unclearq" role="alert" aria-label={t('generator.unclear.waitingAria')}>
       <p className="unclearq__text">
-        <strong>
-          Paused on image {imageNumber} of {imageTotal}.
-        </strong>{' '}
-        {count} {noun} between {band.low.toFixed(2)} and {band.high.toFixed(2)} and{' '}
-        {count === 1 ? 'is' : 'are'} marked <em>unclear</em>. Click a box to cycle its label (or focus it and press
-        1 positive · 2 negative · 3 unclear), then continue. Left as it is, it saves as unclear.
+        <strong>{t('generator.unclear.paused', { number: imageNumber, total: imageTotal })}</strong>{' '}
+        {before}
+        <em>{t('generator.unclear.word')}</em>
+        {after}
       </p>
       <div className="unclearq__actions">
         <button
@@ -46,10 +51,10 @@ export function UnclearQuestion({
           className="btn btn--primary"
           onClick={onContinue}
         >
-          Continue
+          {t('generator.unclear.continue')}
         </button>
         <button type="button" className="btn" onClick={onStop}>
-          Stop here
+          {t('generator.unclear.stopHere')}
         </button>
       </div>
     </section>

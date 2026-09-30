@@ -11,6 +11,7 @@ import { useState, type JSX } from 'react';
 import type { BackboneInfo } from '../api/backbones';
 import type { HeadTypeInfo } from '../api/heads';
 import { useHeadCatalog } from '../hooks/useHeadCatalog';
+import { useT } from '../i18n';
 import { HeadCatalogCard } from './HeadCatalogCard';
 import { HeadImportForm } from './HeadImportForm';
 
@@ -23,6 +24,7 @@ export function HeadCatalogPanel({
   backbones,
   headTypes,
 }: HeadCatalogPanelProps): JSX.Element {
+  const { t } = useT();
   const installed = backbones.filter((backbone) => backbone.installed);
   // Defaults to "" — every entry, no verdicts. Seeding this from installed[0] looks
   // tempting but cannot work: backbones arrive asynchronously, so the initialiser
@@ -36,20 +38,17 @@ export function HeadCatalogPanel({
 
   return (
     <section className="admin__group">
-      <h3 className="admin__grouptitle">Pretrained heads</h3>
-      <p className="admin__groupnote">
-        Ready-made heads you can use without training. Choose a backbone to see which
-        fit it.
-      </p>
+      <h3 className="admin__grouptitle">{t('admin.heads.title')}</h3>
+      <p className="admin__groupnote">{t('admin.heads.note')}</p>
 
       <label className="field field--inline">
-        <span className="field__label">Compatible with</span>
+        <span className="field__label">{t('admin.heads.compatibleWith')}</span>
         <select
           className="field__input"
           value={selected}
           onChange={(event) => setSelected(event.target.value)}
         >
-          <option value="">Any backbone</option>
+          <option value="">{t('admin.heads.anyBackbone')}</option>
           {installed.map((backbone) => (
             <option key={backbone.id} value={backbone.id}>
               {backbone.id}
@@ -70,7 +69,7 @@ export function HeadCatalogPanel({
       )}
 
       {loading ? (
-        <p role="status">Loading head catalogue…</p>
+        <p role="status">{t('admin.heads.loading')}</p>
       ) : (
         <div className="admin__grid">
           {entries.map((entry) => (
@@ -84,7 +83,7 @@ export function HeadCatalogPanel({
         </div>
       )}
 
-      <h3 className="admin__grouptitle">Import a community head</h3>
+      <h3 className="admin__grouptitle">{t('admin.heads.importTitle')}</h3>
       <HeadImportForm
         headTypes={headTypes}
         backbones={installed}

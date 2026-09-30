@@ -10,6 +10,7 @@
 import { useEffect, useId, useState, type JSX } from 'react';
 
 import type { ParameterInfo, ParameterValue } from '../../api/parameters';
+import { useT, type Translator } from '../../i18n';
 import { HelpPopover } from './HelpPopover';
 
 export interface ParameterFieldProps {
@@ -24,8 +25,8 @@ export interface ParameterFieldProps {
   readonly onReset: () => void;
 }
 
-export function formatValue(parameter: ParameterInfo, value: ParameterValue): string {
-  if (parameter.kind === 'bool') return value ? 'on' : 'off';
+export function formatValue(parameter: ParameterInfo, value: ParameterValue, { t }: Translator): string {
+  if (parameter.kind === 'bool') return t(value ? 'training.params.on' : 'training.params.off');
   if (parameter.kind === 'choice') {
     return parameter.choices.find((c) => c.value === value)?.label ?? String(value);
   }
@@ -115,9 +116,11 @@ function Input(props: {
 
 export function ParameterField(props: ParameterFieldProps): JSX.Element {
   const { parameter, value, changed, problem, setByRecipe } = props;
+  const translator = useT();
+  const { t } = translator;
   const id = useId();
   const described = `${id}-about`;
-  const defaultText = formatValue(parameter, parameter.default);
+  const defaultText = formatValue(parameter, parameter.default, translator);
   return (
     <div className={`param-field${changed ? ' param-field--changed' : ''}`}>
       <label className="param-field__label" htmlFor={id}>
@@ -133,20 +136,20 @@ export function ParameterField(props: ParameterFieldProps): JSX.Element {
         onChange={props.onChange}
       />
       <span id={described} className="visually-hidden">
-        {parameter.help} Default: {defaultText}.
+        {parameter.help} {t('training.params.defaultSentence', { value: defaultText })}
       </span>
       {changed && !setByRecipe && (
         <button
           type="button"
           className="param-field__reset"
-          aria-label={`Reset ${parameter.label} to ${defaultText}`}
-          title={`Back to the default, ${defaultText}`}
+          aria-label={t('training.params.resetOne', { label: parameter.label, value: defaultText })}
+          title={t('training.params.backToDefault', { value: defaultText })}
           onClick={props.onReset}
         >
-          changed ↺
+          {t('training.params.changed')} ↺
         </button>
       )}
-      {setByRecipe && <span className="param-field__note">Set by the recipe</span>}
+      {setByRecipe && <span className="param-field__note">{t('training.params.setByRecipe')}</span>}
       {problem && !setByRecipe && (
         <span className="param-field__problem" role="alert">
           {problem}

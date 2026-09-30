@@ -11,6 +11,7 @@ import { useState, type JSX } from 'react';
 import { resolveTarget, type ModelRef } from '../api/defaultRecipe';
 import type { Recipe } from '../api/prepPlan';
 import { useDefaultRecipe } from '../hooks/useDefaultRecipe';
+import { useT } from '../i18n';
 import { writePersisted } from '../lib/persisted';
 import '../params.css';
 
@@ -27,6 +28,7 @@ export interface RecipeExplainerProps {
 }
 
 export function RecipeExplainer(props: RecipeExplainerProps): JSX.Element {
+  const { t } = useT();
   const { datasetId, model } = props;
   const recipe = useDefaultRecipe(datasetId, model, props.onSaved);
   const [openError, setOpenError] = useState('');
@@ -47,19 +49,16 @@ export function RecipeExplainer(props: RecipeExplainerProps): JSX.Element {
   return (
     <section className="recipe-explainer" aria-labelledby="recipe-explainer-title">
       <h4 id="recipe-explainer-title" className="recipe-explainer__title">
-        What is a recipe?{props.required ? ' This model needs one.' : ''}
+        {t('training.explainer.title')}
+        {props.required ? ` ${t('training.explainer.required')}` : ''}
       </h4>
       <p>
-        A recipe is the saved preparation of <strong>one dataset for one model</strong>: which
-        pictures train, which pick the best round and which give the final score — split so
-        that near-identical pictures stay together — plus class fixes, the input size and
-        tiles, how unequal classes are handled, and changed copies.
+        {t('training.explainer.whatBefore')} <strong>{t('training.explainer.whatStrong')}</strong>
+        {t('training.explainer.whatAfter')}
       </p>
       <p>
-        Without one the pictures are split at random, so near-identical ones can sit on both
-        sides and the score looks better than the model is. Recipes are made step by step in{' '}
-        <strong>Prepare data</strong>; the default recipe takes every recommendation there for
-        you, and can be refined later.
+        {t('training.explainer.whyBefore')} <strong>{t('training.explainer.whyStrong')}</strong>
+        {t('training.explainer.whyAfter')}
       </p>
       <div className="recipe-explainer__actions">
         <button
@@ -68,11 +67,11 @@ export function RecipeExplainer(props: RecipeExplainerProps): JSX.Element {
           disabled={!model || recipe.busy}
           onClick={recipe.create}
         >
-          {recipe.busy ? 'Making the default recipe…' : 'Create the default recipe'}
+          {recipe.busy ? t('training.explainer.making') : t('training.explainer.create')}
         </button>
         {props.onOpenPrepare && (
           <button type="button" className="btn" disabled={!model} onClick={openPrepare}>
-            Open Prepare data
+            {t('training.explainer.openPrepare')}
           </button>
         )}
         {!model && props.modelMissing && <span className="trainer__dim">{props.modelMissing}</span>}

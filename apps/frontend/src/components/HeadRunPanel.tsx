@@ -17,6 +17,7 @@ import { describeHead, groupByTask } from '../api/headInstances';
 import type { HeadTask } from '../api/heads';
 import type { HeadRunState } from '../hooks/useHeadRun';
 import { TilingField } from './TilingField';
+import { useT } from '../i18n';
 
 export interface HeadRunPanelProps {
   readonly state: HeadRunState;
@@ -45,6 +46,8 @@ export function HeadRunPanel({
   runDisabled = false,
   imageWidth = null,
 }: HeadRunPanelProps): JSX.Element {
+  const translator = useT();
+  const { t, tp } = translator;
   const { heads, selected, running, loadingHeads, backboneId, taskFilter } = state;
   const { datasetFilter, trainedOn } = state;
 
@@ -65,7 +68,7 @@ export function HeadRunPanel({
     [heads, taskFilter, datasetFilter],
   );
 
-  if (loadingHeads) return <p role="status">Loading heads…</p>;
+  if (loadingHeads) return <p role="status">{t('run.heads.loading')}</p>;
 
   // **Both catalogues, not just heads.** This used to bail on `heads.length === 0` alone,
   // which returned before the Foundation models group below ever rendered — so someone
@@ -74,10 +77,7 @@ export function HeadRunPanel({
   // once. A foundation model needs no head and never did.
   if (heads.length === 0 && state.foundations.length === 0) {
     return (
-      <p role="status">
-        Nothing to run yet. Install a foundation model or a ready-made head from the Admin
-        tab, or train a head in the Training tab.
-      </p>
+      <p role="status">{t('run.heads.nothingToRun')}</p>
     );
   }
 
@@ -94,7 +94,7 @@ export function HeadRunPanel({
   const conceptMissing = conceptNeeded && state.concept.trim() === '';
   const totalSelected = selected.length + state.selectedFoundations.length;
   const nothingSelected = totalSelected === 0;
-  const runLabel = `Run ${totalSelected || ''} model${totalSelected === 1 ? '' : 's'}`;
+  const runLabel = totalSelected ? tp('run.heads.run', totalSelected) : t('run.heads.runNone');
 
   const sameTaskCount = state.selectedTask
     ? selected.filter((id) => heads.find((h) => h.id === id)?.task === state.selectedTask).length
@@ -107,7 +107,7 @@ export function HeadRunPanel({
           cannot change anything — noise above the one group that does. */}
       {heads.length > 0 && (
       <div className="runpanel__filter">
-        <label htmlFor="task-filter">Task</label>
+        <label htmlFor="task-filter">{t('run.heads.task')}</label>
         <select
           id="task-filter"
           value={taskFilter ?? ALL_TASKS}
@@ -116,7 +116,7 @@ export function HeadRunPanel({
           }
           disabled={disabled || running}
         >
-          <option value={ALL_TASKS}>All tasks</option>
+          <option value={ALL_TASKS}>{t('run.heads.allTasks')}</option>
           {tasks.map((task) => (
             <option key={task} value={task}>
               {task}
@@ -125,7 +125,7 @@ export function HeadRunPanel({
         </select>
         {trainedOn.length > 0 && (
           <>
-            <label htmlFor="dataset-filter">Trained on</label>
+            <label htmlFor="dataset-filter">{t('run.heads.trainedOn')}</label>
             <select
               id="dataset-filter"
               value={datasetFilter ?? ALL_TASKS}
@@ -134,7 +134,7 @@ export function HeadRunPanel({
               }
               disabled={disabled || running}
             >
-              <option value={ALL_TASKS}>Any dataset</option>
+              <option value={ALL_TASKS}>{t('run.heads.anyDataset')}</option>
               {trainedOn.map((dataset) => (
                 <option key={dataset.id} value={dataset.id}>
                   {dataset.name}
@@ -145,7 +145,7 @@ export function HeadRunPanel({
         )}
         {sameTaskCount > 1 && (
           <span className="runpanel__compare">
-            Comparing {sameTaskCount} heads on {state.selectedTask}
+            {t('run.heads.comparing', { count: sameTaskCount, task: state.selectedTask ?? '' })}
           </span>
         )}
       </div>
@@ -153,7 +153,7 @@ export function HeadRunPanel({
 
       {heads.length > 0 && (
       <fieldset className="runpanel__heads">
-        <legend>Heads</legend>
+        <legend>{t('run.heads.legend')}</legend>
         {visible.map((head) => {
           const incompatible = state.isIncompatible(head);
           return (
@@ -162,7 +162,10 @@ export function HeadRunPanel({
               className={`runpanel__head${incompatible ? ' runpanel__head--off' : ''}`}
               title={
                 incompatible
-                  ? `Registered for ${head.backbone_id}; the selection is running on ${backboneId}.`
+                  ? t('run.heads.incompatible', {
+                      registered: head.backbone_id,
+                      current: backboneId ?? '',
+                    })
                   : head.summary
               }
             >
@@ -173,7 +176,7 @@ export function HeadRunPanel({
                 onChange={() => state.toggle(head.id)}
               />
               <span className="runpanel__headname">{head.name}</span>
-              <span className="runpanel__headmeta">{describeHead(head)}</span>
+              <span className="runpanel__headmeta">{describeHead(head, translator)}</span>
             </label>
           );
         })}
@@ -182,7 +185,7 @@ export function HeadRunPanel({
 
       {state.foundations.length > 0 && (
         <fieldset className="runpanel__heads">
-          <legend>Foundation models</legend>
+          <legend>{t('run.heads.foundations')}</legend>
           {/* A separate group because these are a different kind of thing, not a filtered
               view of the same list: they have no backbone, so `isIncompatible` has nothing
               to say about them and the backbone tooltip would be meaningless. Their
@@ -198,14 +201,14 @@ export function HeadRunPanel({
               <span className="runpanel__headname">{entry.title}</span>
               <span className="runpanel__headmeta">
                 {entry.task} · {entry.licence}
-                {entry.non_commercial ? ' · non-commercial' : ''}
+                {entry.non_commercial ? ` · ${t('run.heads.nonCommercial')}` : ''}
               </span>
             </label>
           ))}
 
           {conceptNeeded && (
             <label className="runpanel__concept">
-              <span>What to find</span>
+              <span>{t('run.heads.whatToFind')}</span>
               <input
                 type="text"
                 value={state.concept}
@@ -213,10 +216,7 @@ export function HeadRunPanel({
                 placeholder="cat. dog. traffic light."
                 onChange={(event) => state.setConcept(event.target.value)}
               />
-              <span className="runpanel__headmeta">
-                Concept models segment only what you name. Separate several with full
-                stops.
-              </span>
+              <span className="runpanel__headmeta">{t('run.heads.conceptHint')}</span>
             </label>
           )}
         </fieldset>
@@ -241,7 +241,7 @@ export function HeadRunPanel({
           onClick={onRun}
           disabled={disabled || runDisabled || running || nothingSelected || conceptMissing}
         >
-          {running ? 'Running…' : runLabel}
+          {running ? t('run.heads.running') : runLabel}
         </button>
         <button
           type="button"
@@ -249,16 +249,14 @@ export function HeadRunPanel({
           onClick={state.clear}
           disabled={nothingSelected || running}
         >
-          Clear
+          {t('run.heads.clear')}
         </button>
         {conceptMissing && (
-          <span className="runpanel__cost">
-            Type what to look for — a concept model segments only what you name.
-          </span>
+          <span className="runpanel__cost">{t('run.heads.conceptMissing')}</span>
         )}
         {state.result && (
           <span className="runpanel__cost">
-            {state.result.passes} backbone pass{state.result.passes === 1 ? '' : 'es'} ·{' '}
+            {tp('run.heads.passes', state.result.passes)} ·{' '}
             {Math.round(state.result.elapsed_ms)} ms
           </span>
         )}

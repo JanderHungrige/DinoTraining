@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, type DatasetCounts } from '../api/datasets';
 import type { ImageSource } from '../components/ImageSourceField';
+import { useT } from '../i18n';
 import { proposalFailure, proposeFor } from '../lib/proposeFor';
 import { saveAnnotations } from '../lib/saveAnnotations';
 import { useSessionImages } from './useSessionImages';
@@ -98,6 +99,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
   // A prescan's hits (doc 53). Null means no filter. The **full** list stays loaded, so
   // turning the filter off costs nothing and re-reads nothing — which is what makes
   // "check every image after all" a toggle rather than a restart.
+  const tr = useT();
   const [filter, setFilterState] = useState<readonly string[] | null>(null);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxesState] = useState<readonly CanvasBox[]>([]);
@@ -189,12 +191,12 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
       setError(null);
     } catch (cause) {
       if (mounted.current) {
-        setError(describe(cause, proposalFailure(source)));
+        setError(describe(cause, proposalFailure(source, tr)));
       }
     } finally {
       if (mounted.current) setProposing(false);
     }
-  }, [config, currentImage]);
+  }, [config, currentImage, tr]);
 
   const saveAt = useCallback(
     async (imagePath: string): Promise<boolean> => {
@@ -230,13 +232,13 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
         setError(null);
         return true;
       } catch (cause) {
-        if (mounted.current) setError(describe(cause, 'Could not save annotations.'));
+        if (mounted.current) setError(describe(cause, tr.t('studio.session.saveError')));
         return false;
       } finally {
         if (mounted.current) setBusy(false);
       }
     },
-    [config],
+    [config, tr],
   );
 
   const save = useCallback(async (): Promise<void> => {

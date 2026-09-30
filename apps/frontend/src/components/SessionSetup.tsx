@@ -22,6 +22,7 @@ import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
 import { useAnnotationTargets } from '../hooks/useAnnotationTargets';
 import { useStudioEntries } from '../hooks/useStudioEntries';
+import { useT } from '../i18n';
 import { stillListed } from '../lib/persisted';
 import { AnnotationTargetPicker } from './AnnotationTargetPicker';
 import { DatasetChoiceRow } from './DatasetChoiceRow';
@@ -30,7 +31,7 @@ import { FieldHint } from './FieldHint';
 import { ImageSourceField } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
 import { ProposalModePicker } from './ProposalModePicker';
-import { GROUNDING_DINO_HINT, headModeHint } from './promptGuidance';
+import { headModeHint } from './promptGuidance';
 
 /** Matches the Dataset Generator's default, and the only backbone a head can be run on. */
 const BACKBONE_ID = 'dinov2-small';
@@ -41,6 +42,8 @@ export interface SessionSetupProps {
 }
 
 export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
+  const tr = useT();
+  const { t } = tr;
   // Doc 69: every entry is remembered across tab switches and restarts.
   const {
     images,
@@ -74,7 +77,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   useEffect(() => {
     void listDatasets()
       .then(setDatasets)
-      .catch(() => setError('Could not load datasets.'));
+      .catch(() => setError(t('studio.setup.errorLoadDatasets')));
     void listHeadInstances()
       .then(setHeads)
       .catch(() => setHeads([]))
@@ -109,24 +112,24 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     setError(null);
 
     if (mode === 'head' && !selectedHead) {
-      setError('No head can propose boxes yet — train a detection head first.');
+      setError(t('studio.setup.errorNoHead'));
       return;
     }
 
     if (mode === 'foundation' && !selectedDetector) {
-      setError('No general detector is installed — get one in Admin / Models.');
+      setError(t('studio.setup.errorNoDetector'));
       return;
     }
 
     if (mode === 'foundation' && detectorNeedsConcept && !concept.trim()) {
       // Refused here rather than sent — the backend refuses it too, but a round trip to
       // learn that is worse than a message beside the field the user is looking at.
-      setError('Name what you are looking for — that model finds only what you ask for.');
+      setError(t('studio.setup.errorNoConcept'));
       return;
     }
 
     if (images.kind === 'folder' && !images.folder.trim()) {
-      setError('Choose a folder of images, or a dataset you already have.');
+      setError(t('studio.setup.errorNoFolder'));
       return;
     }
 
@@ -134,7 +137,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     let targetId = images.kind === 'dataset' ? images.datasetId : datasetId;
     if (!targetId) {
       if (!newName.trim()) {
-        setError('Choose an existing dataset or name a new one.');
+        setError(t('studio.setup.errorNoDataset'));
         return;
       }
       try {
@@ -146,7 +149,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         setDatasetOverride(created.id);
         setNewName('');
       } catch {
-        setError('Could not create the dataset.');
+        setError(t('studio.setup.errorCreate'));
         return;
       }
     }
@@ -187,7 +190,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         value={images}
         onChange={setImages}
         datasets={datasets}
-        datasetHint="Its boxes load onto the canvas and your edits replace them — this is how you correct or extend a dataset you already have."
+        datasetHint={t('studio.setup.datasetHint')}
       />
 
       {/* Hidden when the source *is* a dataset: that dataset is the target, and offering
@@ -208,7 +211,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
 
       {mode === 'head' && (
         <FieldHint id="studio-mode-hint">
-          {headModeHint(annotatable.find((head) => head.id === selectedHead)?.class_names ?? [])}
+          {headModeHint(annotatable.find((head) => head.id === selectedHead)?.class_names ?? [], tr)}
         </FieldHint>
       )}
 
@@ -217,7 +220,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
           foundations={foundations}
           selectedId={selectedDetector}
           onSelect={setFoundationOverride}
-          legend="Detector"
+          legend={t('studio.foundation.legend')}
           groupName="studio-detector"
           concept={concept}
           onConceptChange={setConcept}
@@ -231,7 +234,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
           selectedId={selectedHead}
           onSelect={setHeadOverride}
           loading={loadingHeads}
-          legend="Annotate with"
+          legend={t('studio.setup.headLegend')}
           groupName="studio-head"
         />
       )}
@@ -253,7 +256,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         )}
 
         <label className="setup__field" htmlFor="boxthreshold">
-          {mode === 'prompt' ? 'Box threshold' : 'Score threshold'}{' '}
+          {t(mode === 'prompt' ? 'studio.setup.boxThreshold' : 'studio.setup.scoreThreshold')}{' '}
           <span className="setup__value">{boxThreshold.toFixed(2)}</span>
           <input
             id="boxthreshold"
@@ -267,7 +270,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
         </label>
       </div>
 
-      {mode === 'prompt' && <FieldHint id="prompt-hint">{GROUNDING_DINO_HINT}</FieldHint>}
+      {mode === 'prompt' && <FieldHint id="prompt-hint">{t('studio.guidance.groundingDino')}</FieldHint>}
 
       {error && (
         <p className="admin__error" role="alert">
@@ -276,7 +279,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       )}
 
       <button type="submit" className="btn btn--primary" disabled={disabled}>
-        Start annotating
+        {t('studio.setup.start')}
       </button>
     </form>
   );

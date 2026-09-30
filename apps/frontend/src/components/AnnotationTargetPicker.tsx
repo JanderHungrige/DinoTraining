@@ -8,6 +8,7 @@
 import type { JSX } from 'react';
 
 import type { AnnotationTarget } from '../api/annotationTargets';
+import { useT } from '../i18n';
 import '../targets.css';
 
 export interface AnnotationTargetPickerProps {
@@ -17,10 +18,11 @@ export interface AnnotationTargetPickerProps {
 }
 
 export function AnnotationTargetPicker({ targets, value, onChange }: AnnotationTargetPickerProps): JSX.Element | null {
+  const { t } = useT();
   if (targets.length === 0) return null;
   return (
     <fieldset className="setup__modes targetpick">
-      <legend>What will this dataset train?</legend>
+      <legend>{t('studio.target.legend')}</legend>
       {targets.map((target) => (
         <label key={target.id} className={`targetpick__option${value === target.id ? ' targetpick__option--on' : ''}`}>
           <input

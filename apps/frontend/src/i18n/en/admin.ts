@@ -1,3 +1,224 @@
 /** `admin` texts (doc 112). English is the source; the current UI text, exactly. */
 
-export const adminEn = {} as const;
+export const adminEn = {
+  // Library
+  'admin.library.title': 'Your library',
+  'admin.library.lead':
+    'Everything this app has made for you. Deleting is permanent and is not undone by re-running anything — a head you delete has to be retrained.',
+  'admin.library.images_one': '{count} image',
+  'admin.library.images_other': '{count} images',
+  'admin.library.boxes_one': '{count} box',
+  'admin.library.boxes_other': '{count} boxes',
+  'admin.library.from': 'from {names}',
+  'admin.library.selectedGroup': 'Selected items',
+  'admin.library.selected': 'selected',
+  'admin.library.deleteMany': 'Delete {count} permanently',
+  'admin.library.keepThem': 'Keep them',
+  'admin.library.deleting': 'Deleting…',
+  'admin.library.deleteSelected': 'Delete selected',
+  'admin.library.clearSelection': 'Clear selection',
+  'admin.library.loading': 'Loading your library…',
+  'admin.library.datasets': 'Datasets',
+  'admin.library.datasetsEmpty': 'No datasets yet. Annotate a folder, generate one, or import a COCO export.',
+  'admin.library.heads': 'Trained heads',
+  'admin.library.headsEmpty': 'No heads yet. Train one in Training.',
+  'admin.library.finetunes': 'Fine-tuned models',
+  'admin.library.finetunesEmpty': 'No fine-tuned models yet. Fine-tune a detector in Training.',
+  'admin.library.selectRow': 'Select {name} — {detail}',
+  'admin.library.deleteNamed': 'Delete “{name}”',
+  'admin.library.keep': 'Keep',
+  'admin.library.deleteRow': 'Delete {name}',
+  'admin.library.delete': 'Delete',
+  'admin.library.listDatasets': 'datasets',
+  'admin.library.listHeads': 'heads',
+  'admin.library.listFinetunes': 'fine-tuned models',
+  'admin.library.listJoin': ' or ',
+  'admin.library.loadFailed': 'Could not load {lists}.',
+  'admin.library.deleteManyFailed':
+    'Could not delete {failed} of {total}: {names}. The lists below are what is really there.',
+  'admin.library.deleteFailed': 'Could not delete that. The list below is what is really there.',
+
+  // Admin / Models: the tab and the system panel
+  'admin.models.title': 'Admin / Models',
+  'admin.models.loading': 'Loading model catalogue…',
+  'admin.system.device': 'Compute device',
+  'admin.system.freeDisk': 'Free disk',
+  'admin.system.token': 'HuggingFace token',
+  'admin.system.tokenSet': 'Configured',
+  'admin.system.tokenUnset': 'Not set — gated models unavailable',
+  'admin.system.cache': 'Model cache',
+  'admin.system.languageNote': 'The app’s language is chosen with the language switch in the header.',
+  'admin.family.groundingDino': 'Grounding DINO — open-vocabulary detection',
+  'admin.family.rfDetr': 'RF-DETR — general object detection, and the one to fine-tune',
+  'admin.family.dinov2': 'DINOv2 — backbones',
+  'admin.family.dinov3': 'DINOv3 — backbones (gated)',
+  'admin.family.sam2': 'SAM 2.1 — segmentation (open)',
+  'admin.family.sam3': 'SAM 3 — segmentation (gated, your own token)',
+  'admin.family.depthAnything': 'Depth Anything V2 — monocular depth',
+
+  // One model card
+  'admin.model.downloading': 'Downloading…',
+  'admin.model.downloadingPercent': 'Downloading — {percent}%',
+  'admin.model.onDisk': '{size} MB on disk',
+  'admin.model.downloadSize': '~{size} MB download',
+  'admin.model.installed': 'Installed',
+  'admin.model.gated': 'Gated',
+  'admin.model.licensed': 'Licensed {licence}',
+  'admin.model.nonCommercial': 'Non-commercial',
+  'admin.model.removing': 'Removing…',
+  'admin.model.remove': 'Remove',
+  'admin.model.starting': 'Starting…',
+  'admin.model.download': 'Download',
+  'admin.models.loadFailed': 'Could not load the model catalogue.',
+  'admin.models.lostTrack': 'Lost track of the download.',
+  'admin.models.downloadFailed': 'Download failed.',
+  'admin.models.startFailed': 'Could not start the download.',
+  'admin.models.removeFailed': 'Could not remove the model.',
+
+  // Which model to use
+  'admin.guide.toggle': 'Which model should I use?',
+  'admin.guide.goodAt': 'Good at',
+  'admin.guide.watchOut': 'Watch out for',
+  'admin.guide.measured': 'Measured here:',
+
+  // Starter set
+  'admin.starter.done': 'done',
+  'admin.starter.failed': 'failed',
+  'admin.starter.readyTitle': 'Ready to use.',
+  'admin.starter.readyBody':
+    'Every model a first run needs is installed — annotate from a prompt, train a head, fine-tune a detector, or run depth.',
+  'admin.starter.title': 'Set this up',
+  'admin.starter.body':
+    'Nothing is bundled with the app — weights download on demand and are cached, so this is once per machine. These {count} give you every feature: a backbone for trained heads, a general detector, both halves of Grounded SAM, and depth.',
+  'admin.starter.downloading': 'Downloading…',
+  'admin.starter.downloadAll': 'Download all {count} ({size} GB)',
+  'admin.starter.note': 'One at a time, so the progress figures mean something. You can keep using the app.',
+
+  // HuggingFace token
+  'admin.token.manualTitle': 'A person at Meta approves this by hand',
+  'admin.token.manual': 'manual approval',
+  'admin.token.openPage': 'Open the model page',
+  'admin.token.haveRead': 'I have read the {licence}',
+  'admin.token.saveFailed': 'Could not save the token.',
+  'admin.token.title': 'HuggingFace access',
+  'admin.token.introBefore':
+    'Some models are gated by their publisher. DinoTraining never downloads them for you and never ships a token — you provide your own, and you start every download yourself. Everything needed for the open models, including',
+  'admin.token.introAfter': 'for segmentation masks, works without any of this.',
+  'admin.token.field': 'Your HuggingFace access token',
+  'admin.token.configured': 'Configured',
+  'admin.token.hintBefore': 'A ',
+  'admin.token.hintEm': 'read',
+  'admin.token.hintMiddle': ' token is enough. Create one at ',
+  'admin.token.hintStored': '. It is stored in ',
+  'admin.token.hintAfter': ', readable only by you, and never leaves this machine.',
+  'admin.token.saving': 'Saving…',
+  'admin.token.save': 'Save token',
+  'admin.token.remove': 'Remove',
+  'admin.token.stateConfigured': 'Configured ({hint})',
+  'admin.token.stored': 'stored',
+  'admin.token.stateUnset': 'Not set — gated models stay unavailable',
+  'admin.token.saved': 'Token saved. Gated models are now offered.',
+  'admin.token.needs': 'Models that need something from you',
+
+  // GPU
+  'admin.gpu.driverTitle': 'NVIDIA driver not responding',
+  'admin.gpu.driverFoot':
+    'Reinstalling or updating the driver usually fixes this. Until it answers, this app cannot tell whether a GPU is present.',
+  'admin.gpu.title': 'Your GPU is not being used',
+  'admin.gpu.driver': 'driver {version}',
+  'admin.gpu.footBefore':
+    'The installer ships a CPU build so it stays small. GPU support is a separate download of about',
+  'admin.gpu.footAfter':
+    "— it is large because it carries NVIDIA's CUDA runtime, not because the app is. Training and inference typically run several times faster on it.",
+  'admin.gpu.downloading': 'Downloading…',
+  'admin.gpu.download': 'Download GPU support ({size} GB)',
+
+  // Distribution notice
+  'admin.dist.title': 'Before you distribute this app',
+  'admin.dist.lead_one':
+    '{count} installed model comes with a licence obligation. Everything else you have installed is permissively licensed and can ship as-is.',
+  'admin.dist.lead_other':
+    '{count} installed models come with a licence obligation. Everything else you have installed is permissively licensed and can ship as-is.',
+  'admin.dist.foot':
+    'Removing a model here deletes its weights from the cache, which is what takes it out of a build — nothing else has to change. You can download it again afterwards.',
+
+  // Pretrained heads
+  'admin.heads.backboneFirst': 'Download the {backbone} backbone first.',
+  'admin.heads.incompatible': 'Not compatible with the selected backbone.',
+  'admin.heads.classes_one': '{count} class',
+  'admin.heads.classes_other': '{count} classes',
+  'admin.heads.installed': 'Installed',
+  'admin.heads.ready': 'Ready to use in the Inference Viewer',
+  'admin.heads.installing': 'Installing…',
+  'admin.heads.install': 'Install',
+  'admin.heads.title': 'Pretrained heads',
+  'admin.heads.note': 'Ready-made heads you can use without training. Choose a backbone to see which fit it.',
+  'admin.heads.compatibleWith': 'Compatible with',
+  'admin.heads.anyBackbone': 'Any backbone',
+  'admin.heads.loading': 'Loading head catalogue…',
+  'admin.heads.importTitle': 'Import a community head',
+  'admin.heads.loadFailed': 'Could not load the head catalogue.',
+  'admin.heads.installedNotice': 'Installed: {summary}',
+  'admin.heads.importedNotice': 'Imported: {summary}',
+  'admin.heads.installFailed': 'Could not install the head.',
+  'admin.heads.importFailed': 'Could not import that head.',
+
+  // Importing a community head
+  'admin.import.noteBefore': 'Community heads must be published as ',
+  'admin.import.noteFiles': '. Files in ',
+  'admin.import.noteOr': ' or ',
+  'admin.import.noteAfter': ' format are refused — loading one would run arbitrary code from the repository.',
+  'admin.import.repo': 'HuggingFace repo',
+  'admin.import.repoPlaceholder': 'owner/name',
+  'admin.import.headType': 'Head type',
+  'admin.import.backbone': 'Backbone',
+  'admin.import.classes': 'Classes',
+  'admin.import.classesPlaceholder': 'auto',
+  'admin.import.importing': 'Importing…',
+  'admin.import.submit': 'Import head',
+
+  // Connection
+  'admin.connection.title': 'Connection',
+  'admin.connection.lead':
+    'Everything this app does, it does through a local API — so your own AI assistant can do it too. Two ways to give it access, and both run entirely on this machine.',
+  'admin.connection.legend': 'How to connect',
+  'admin.connection.mcpHint': 'Typed tools your assistant calls directly. Best, if it supports MCP.',
+  'admin.connection.manualName': 'Any assistant',
+  'admin.connection.manualHint': 'One document to paste in. Works anywhere, including without MCP.',
+  'admin.connection.guideFailed': 'Could not load the API guide.',
+  'admin.connection.guideStatus': 'Could not load the API guide ({status}).',
+  'admin.connection.manualNote':
+    'Copy this document into your assistant and describe what you want. It documents every workflow in order, with the traps named — which is the part a schema cannot express. Use this when your assistant does not speak MCP.',
+  'admin.connection.copied': '✓ Copied',
+  'admin.connection.copyFailed': 'Could not copy — use Download',
+  'admin.connection.copy': 'Copy for your AI',
+  'admin.connection.downloadMd': 'Download .md',
+  'admin.connection.savePdf': 'Save as PDF',
+  'admin.connection.mdNote': 'Markdown is what these models read best — the PDF is for people.',
+  'admin.connection.loadingGuide': 'Loading the guide…',
+
+  // MCP
+  'admin.mcp.readFailed': 'Could not read the MCP details.',
+  'admin.mcp.clipboardFailed': 'Could not reach the clipboard — copy the command above by hand.',
+  'admin.mcp.introBefore': 'MCP gives your assistant',
+  'admin.mcp.introStrong': 'typed tools',
+  'admin.mcp.introAfter':
+    'rather than a document to interpret. It reads what each one needs from the tool schema, so it cannot invent a parameter or forget that a model has to be installed before it can be fine-tuned. This is the better option if your assistant supports it.',
+  'admin.mcp.step1': '1. Connect it',
+  'admin.mcp.step1Body':
+    'The server runs inside this app — there is nothing to install or launch. Run this once in a terminal, with the app running:',
+  'admin.mcp.copied': 'Copied',
+  'admin.mcp.copy': 'Copy the command',
+  'admin.mcp.step2': '2. Ask for what you want',
+  'admin.mcp.step2Body': 'Then talk to your assistant normally. It will pick the tools itself:',
+  'admin.mcp.quote':
+    '“Here is a link to a rail dataset. Download it, import it, fine-tune RF-DETR on it, then use the result to annotate the images in ~/photos.”',
+  'admin.mcp.toolsTitle_one': 'The {count} tool it gets',
+  'admin.mcp.toolsTitle_other': 'The {count} tools it gets',
+  'admin.mcp.toolsBody':
+    'Task-shaped rather than one per endpoint — the API has 61 operations, and handing over all of them would leave your assistant doing the orchestration.',
+  'admin.mcp.noteStrong': 'It only works on this machine.',
+  'admin.mcp.noteBody':
+    'The server is bound to loopback, so an assistant running here can reach it and one running anywhere else cannot. That is deliberate: there is no authentication, and the tools can read any file path they are given.',
+  'admin.mcp.reading': 'Reading the connection details…',
+} as const;

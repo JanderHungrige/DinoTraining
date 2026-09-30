@@ -6,6 +6,7 @@
 import { useState, type JSX } from 'react';
 
 import type { DatasetAudit, FixAction, PrepState } from '../../api/prep';
+import { useT } from '../../i18n';
 
 export interface FixStepProps {
   readonly audit: DatasetAudit | null;
@@ -38,13 +39,14 @@ function ClassRow(props: {
   readonly onEdit: (change: Partial<Row>) => void;
 }): JSX.Element {
   const { name, count, row, onEdit } = props;
+  const { t } = useT();
   return (
     <tr>
       <td>{name}</td>
       <td>{count ?? '—'}</td>
       <td>
         <input
-          aria-label={`Train ${name} as`}
+          aria-label={t('prepare.fix.trainNameAs', { name })}
           value={row.to}
           disabled={row.drop}
           onChange={(event) => onEdit({ to: event.target.value })}
@@ -53,7 +55,7 @@ function ClassRow(props: {
       <td>
         <input
           type="checkbox"
-          aria-label={`Leave out ${name}`}
+          aria-label={t('prepare.fix.leaveOutName', { name })}
           checked={row.drop}
           onChange={(event) => onEdit({ drop: event.target.checked })}
         />
@@ -63,6 +65,7 @@ function ClassRow(props: {
 }
 
 function ClassMap({ audit, state, busy, onFix }: FixStepProps & { readonly state: PrepState }): JSX.Element {
+  const { t } = useT();
   const [drafts, setDrafts] = useState<Drafts>({});
   const counts = audit?.summary.classes ?? {};
   const names = [...new Set([...Object.keys(counts), ...Object.keys(state.class_map)])].sort();
@@ -83,18 +86,15 @@ function ClassMap({ audit, state, busy, onFix }: FixStepProps & { readonly state
 
   return (
     <fieldset className="prep-classmap">
-      <legend>Classes as training will see them</legend>
-      <p className="prep-step__hint">
-        Merge a class into another by giving it the other&apos;s name, or leave it out. The stored
-        annotations keep their names, so this can always be changed back.
-      </p>
+      <legend>{t('prepare.fix.classesLegend')}</legend>
+      <p className="prep-step__hint">{t('prepare.fix.classesHint')}</p>
       <table>
         <thead>
           <tr>
-            <th>Class</th>
-            <th>Examples</th>
-            <th>Train as</th>
-            <th>Leave out</th>
+            <th>{t('prepare.table.class')}</th>
+            <th>{t('prepare.table.examples')}</th>
+            <th>{t('prepare.fix.trainAs')}</th>
+            <th>{t('prepare.fix.leaveOut')}</th>
           </tr>
         </thead>
         <tbody>
@@ -104,7 +104,7 @@ function ClassMap({ audit, state, busy, onFix }: FixStepProps & { readonly state
         </tbody>
       </table>
       <button type="button" className="btn" disabled={busy || Object.keys(drafts).length === 0} onClick={() => void save()}>
-        Save the class changes
+        {t('prepare.fix.saveClasses')}
       </button>
     </fieldset>
   );
@@ -112,10 +112,11 @@ function ClassMap({ audit, state, busy, onFix }: FixStepProps & { readonly state
 
 export function FixStep(props: FixStepProps): JSX.Element {
   const { audit, state, busy, onFix } = props;
+  const { t, tp } = useT();
   const [done, setDone] = useState('');
-  const run = async (action: FixAction, what: string, paths?: readonly string[]): Promise<void> => {
+  const run = async (action: FixAction, paths?: readonly string[]): Promise<void> => {
     const changed = await onFix(action, paths ? { paths } : {});
-    setDone(`${changed} picture(s) ${what}.`);
+    setDone(tp(action === 'include' ? 'prepare.fix.putBackDone' : 'prepare.fix.leftOut', changed));
   };
   const copies = audit?.copy_groups.length ?? 0;
   const unreadable = audit?.unreadable.length ?? 0;
@@ -123,26 +124,25 @@ export function FixStep(props: FixStepProps): JSX.Element {
   return (
     <div className="prep-step">
       <p className="prep-step__why">
-        These fixes are safe: nothing is deleted, and everything can be undone. Judgement calls —
-        blurry or wrongly labelled pictures — are yours; the audit shows you where to look.
+        {t('prepare.fix.why')}
       </p>
       <div className="prep-step__actions">
-        <button type="button" className="btn" disabled={busy || copies === 0} onClick={() => void run('exclude-copies', 'left out')}>
-          Keep one of each copy ({copies} group{copies === 1 ? '' : 's'})
+        <button type="button" className="btn" disabled={busy || copies === 0} onClick={() => void run('exclude-copies')}>
+          {tp('prepare.fix.copies', copies)}
         </button>
-        <button type="button" className="btn" disabled={busy || unreadable === 0} onClick={() => void run('exclude-unreadable', 'left out')}>
-          Leave out unreadable pictures ({unreadable})
+        <button type="button" className="btn" disabled={busy || unreadable === 0} onClick={() => void run('exclude-unreadable')}>
+          {t('prepare.fix.unreadable', { count: unreadable })}
         </button>
-        <button type="button" className="btn" disabled={busy || excluded.length === 0} onClick={() => void run('include', 'put back', excluded)}>
-          Put all {excluded.length} left-out picture(s) back
+        <button type="button" className="btn" disabled={busy || excluded.length === 0} onClick={() => void run('include', excluded)}>
+          {tp('prepare.fix.putBack', excluded.length)}
         </button>
       </div>
       {done && (
         <p role="status" className="prep-step__status">
-          {done} Run the audit again to see the effect.
+          {done} {t('prepare.fix.again')}
         </p>
       )}
-      {!audit && <p className="prep-step__note">Run the audit first: the fixes act on what it found.</p>}
+      {!audit && <p className="prep-step__note">{t('prepare.fix.auditFirst')}</p>}
       {state && <ClassMap {...props} state={state} />}
     </div>
   );

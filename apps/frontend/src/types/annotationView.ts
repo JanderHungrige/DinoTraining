@@ -12,6 +12,8 @@
  * Doc 61 settled that; `describeOutput` below is how the app says so out loud.
  */
 
+import { ENGLISH, type Translator } from '../i18n/translate';
+
 export type AnnotationView = 'masks' | 'boxes' | 'both';
 
 export const DEFAULT_VIEW: AnnotationView = 'masks';
@@ -47,18 +49,26 @@ export function viewsFor(hasMasks: boolean, hasBoxes: boolean): readonly Annotat
  * RF-DETR share no id pattern, and the next model will share one with nothing. Shown
  * *before* a run starts, which is the only point where it can still change the decision.
  */
-export function describeOutput(renderHint: string): string {
-  if (renderHint === 'masks') {
-    return 'Saves segmentation masks. The COCO export also carries a bounding box derived from each mask, so you get both.';
-  }
-  if (renderHint === 'boxes') {
-    return 'Saves bounding boxes.';
-  }
+export function describeOutput(renderHint: string, t: Translator['t'] = ENGLISH.t): string {
+  if (renderHint === 'masks') return t('app.output.masks');
+  if (renderHint === 'boxes') return t('app.output.boxes');
   return '';
 }
 
+const VIEW_LABEL_KEYS = {
+  masks: 'app.view.masks',
+  boxes: 'app.view.boxes',
+  both: 'app.view.both',
+} as const;
+
+/** A view's name in the current language (doc 112). */
+export function viewLabel(t: Translator['t'], view: AnnotationView): string {
+  return t(VIEW_LABEL_KEYS[view]);
+}
+
+/** English view names, for code outside the React tree. Rendered text uses `viewLabel`. */
 export const VIEW_LABELS: Readonly<Record<AnnotationView, string>> = Object.freeze({
-  masks: 'Segmentation',
-  boxes: 'Bounding boxes',
-  both: 'Both',
+  masks: viewLabel(ENGLISH.t, 'masks'),
+  boxes: viewLabel(ENGLISH.t, 'boxes'),
+  both: viewLabel(ENGLISH.t, 'both'),
 });

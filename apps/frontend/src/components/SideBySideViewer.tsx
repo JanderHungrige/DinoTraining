@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef, useState, type JSX, type ReactNode } fr
 
 import { fitContain, type RenderedImage } from '../lib/geometry';
 import { PAN_STEP, ZOOM_STEP, useViewTransform } from '../hooks/useViewTransform';
+import { useT } from '../i18n';
 
 /**
  * One result pane. A comparison is N of these, which is why the viewer takes a list
@@ -49,15 +50,15 @@ export interface SideBySideViewerProps {
 
 const EMPTY_SIZE = { width: 0, height: 0 };
 
-const DEFAULT_RESULTS: readonly ResultPane[] = [{ key: 'result', label: 'Result' }];
-
 export function SideBySideViewer({
   imageUrl,
   imageAlt,
   naturalWidth = 0,
   naturalHeight = 0,
-  results = DEFAULT_RESULTS,
+  results: given,
 }: SideBySideViewerProps): JSX.Element {
+  const { t } = useT();
+  const results = given ?? [{ key: 'result', label: t('run.compare.result') }];
   const view = useViewTransform();
   const frameRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState(EMPTY_SIZE);
@@ -208,7 +209,7 @@ export function SideBySideViewer({
     <div
       className="viewer"
       role="group"
-      aria-label="Image comparison"
+      aria-label={t('run.compare.ariaLabel')}
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
@@ -218,7 +219,7 @@ export function SideBySideViewer({
         className="viewer__panes"
         style={{ '--viewer-columns': results.length + 1 } as React.CSSProperties}
       >
-        {pane('original', 'Original', null, null, true)}
+        {pane('original', t('run.compare.original'), null, null, true)}
         {results.map((result) =>
           pane(
             result.key,
@@ -237,7 +238,7 @@ export function SideBySideViewer({
           onClick={() => view.zoomBy(1 / ZOOM_STEP)}
           disabled={!view.canZoomOut}
         >
-          Zoom out
+          {t('run.compare.zoomOut')}
         </button>
         <span className="viewer__zoom">{view.percent}%</span>
         <button
@@ -246,12 +247,12 @@ export function SideBySideViewer({
           onClick={() => view.zoomBy(ZOOM_STEP)}
           disabled={!view.canZoomIn}
         >
-          Zoom in
+          {t('run.compare.zoomIn')}
         </button>
         <button type="button" className="btn" onClick={view.reset}>
-          Reset
+          {t('run.compare.reset')}
         </button>
-        <span className="viewer__hint">Drag to pan · arrows and +/− work too</span>
+        <span className="viewer__hint">{t('run.compare.hint')}</span>
       </div>
     </div>
   );

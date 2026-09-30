@@ -26,6 +26,7 @@ import { isBoolean } from '../lib/persisted';
 import type { GeneratorConfig } from '../types/generatorConfig';
 import type { GeneratorSession } from '../types/generatorSession';
 import { usePersistentState } from './usePersistentState';
+import { useT } from '../i18n';
 
 /** How long each proposal stays on screen before it is saved: long enough to see a wrong
  *  box and press Stop, short enough that a folder of 300 still moves. */
@@ -56,6 +57,7 @@ export function useAutoplay(
   session: GeneratorSession,
   band: UnclearBand | null = null,
 ): Autoplay {
+  const tr = useT();
   const [running, setRunning] = useState(false);
   const [question, setQuestion] = useState<AutoplayQuestion | null>(null);
   // Resolves the pending question: the reviewed image, or null for Stop.
@@ -88,7 +90,11 @@ export function useAutoplay(
       hidden,
       holdMs: HOLD_MS,
       signal: abort.signal,
-      propose: (path) => proposeReview(config, path),
+      // Anything thrown that is not an Error still gets a readable reason in the summary.
+      propose: (path) =>
+        proposeReview(config, path, tr).catch((caught: unknown) => {
+          throw caught instanceof Error ? caught : new Error(tr.t('generator.autoplay.nothingProposed'));
+        }),
       save: (review) => live.current.save(review),
       isSaved: (path) => live.current.saved(path) !== undefined,
       show: (index, review) => {
@@ -110,7 +116,7 @@ export function useAutoplay(
       // (or the end) leaves the user somewhere they can look and correct.
       if (hidden) live.current.goTo(result.lastIndex);
     });
-  }, [config, hidden, band]);
+  }, [config, hidden, band, tr]);
 
   const settle = useCallback((review: ImageReview | null): void => {
     const resolve = reply.current;

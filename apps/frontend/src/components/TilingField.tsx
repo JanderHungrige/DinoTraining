@@ -16,6 +16,7 @@
 import type { JSX } from 'react';
 
 import { isWholeFrame, type TileGrid } from '../api/inference';
+import { useT } from '../i18n';
 
 export interface TilingFieldProps {
   readonly grid: TileGrid;
@@ -63,6 +64,7 @@ export function TilingField({
   imageWidth,
   disabled = false,
 }: TilingFieldProps): JSX.Element {
+  const { t, tp } = useT();
   const on = !isWholeFrame(grid);
   const suggest = suggestsTiling(trainedWidth, imageWidth);
 
@@ -84,13 +86,13 @@ export function TilingField({
           disabled={disabled}
           onChange={(event) => toggle(event.target.checked)}
         />
-        Tile the image
+        {t('run.tiling.toggle')}
       </label>
 
       {on && (
         <span className="tiling__grid">
           <label className="tiling__num">
-            <span>Columns</span>
+            <span>{t('run.tiling.columns')}</span>
             <input
               type="number"
               min={1}
@@ -106,7 +108,7 @@ export function TilingField({
             ×
           </span>
           <label className="tiling__num">
-            <span>Rows</span>
+            <span>{t('run.tiling.rows')}</span>
             <input
               type="number"
               min={1}
@@ -119,7 +121,7 @@ export function TilingField({
             />
           </label>
           <span className="tiling__count">
-            {grid.columns * grid.rows} tile{grid.columns * grid.rows === 1 ? '' : 's'}
+            {tp('run.tiling.count', grid.columns * grid.rows)}
           </span>
         </span>
       )}
@@ -128,9 +130,11 @@ export function TilingField({
           result as for preventing one. */}
       {suggest && trainedWidth && imageWidth && (
         <p className="tiling__hint" role="note">
-          This head trained on {trainedWidth} px images and this one is {imageWidth} px.
-          Objects arrive about {(imageWidth / trainedWidth).toFixed(1)}× smaller than it
-          learned to find{on ? '.' : ' — tiling is probably needed.'}
+          {t(on ? 'run.tiling.hintOn' : 'run.tiling.hintOff', {
+            trained: trainedWidth,
+            image: imageWidth,
+            factor: (imageWidth / trainedWidth).toFixed(1),
+          })}
         </p>
       )}
     </div>

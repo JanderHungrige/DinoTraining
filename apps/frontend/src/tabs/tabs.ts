@@ -6,6 +6,9 @@
  * `DEFAULT_TAB` — because someone returning to work should land where the work is.
  */
 
+import type { Key } from '../i18n/catalogue';
+import { ENGLISH, type Translator } from '../i18n/translate';
+
 export const TAB_IDS = [
   'intro',
   'studio',
@@ -21,85 +24,101 @@ export const TAB_IDS = [
 
 export type TabId = (typeof TAB_IDS)[number];
 
-export interface TabDefinition {
+interface TabEntry {
   readonly id: TabId;
-  readonly label: string;
+  /** Catalogue key of the tab's name (doc 112); translated where it is rendered. */
+  readonly labelKey: Key;
   /** One-line description of what the tab is for, shown while it is still a stub. */
-  readonly hint: string;
+  readonly hintKey: Key;
   /** The wave that makes this tab functional — surfaced in the stub panels. */
   readonly wave: number;
 }
 
-export const TABS: readonly TabDefinition[] = Object.freeze([
+export interface TabDefinition extends TabEntry {
+  /** English name, for code outside the React tree. Rendered text uses `tabLabel`. */
+  readonly label: string;
+  /** English hint, for code outside the React tree. Rendered text uses `tabHint`. */
+  readonly hint: string;
+}
+
+const ENTRIES: readonly TabEntry[] = [
   {
     id: 'intro',
-    label: 'Start here',
-    hint: 'What this app does, what a backbone and a head are, and what it cannot do yet.',
+    labelKey: 'app.tabs.introLabel',
+    hintKey: 'app.tabs.introHint',
     wave: 7,
   },
   {
     id: 'studio',
-    label: 'Annotation Studio',
     // Updated in Wave 5: a prompt is no longer the only way to get proposals.
-    hint: 'Label a folder of images — from a text prompt, or from a head you trained.',
+    labelKey: 'app.tabs.studioLabel',
+    hintKey: 'app.tabs.studioHint',
     wave: 1,
   },
   {
     // Between annotating and training, because that is where it happens (doc 89).
     id: 'prepare',
-    label: 'Prepare data',
-    hint: 'Check a dataset, fix it, split it and see it as the model will, then save a recipe.',
+    labelKey: 'app.tabs.prepareLabel',
+    hintKey: 'app.tabs.prepareHint',
     wave: 11,
   },
   {
     id: 'trainer',
     // "Head Trainer" named only half of what the tab does. Fine-tuning a whole model
     // lived at the bottom of it under an <h3> and was, predictably, never found.
-    label: 'Training',
-    hint: 'Train a head on a frozen DINO backbone, or fine-tune a whole detector.',
+    labelKey: 'app.tabs.trainerLabel',
+    hintKey: 'app.tabs.trainerHint',
     wave: 2,
   },
   {
     id: 'inference',
-    label: 'Inference Viewer',
     // Webcam is backlogged, not built — an intro that points at it would be a lie.
-    hint: 'Run trained heads and foundation models on one image, side by side.',
+    labelKey: 'app.tabs.inferenceLabel',
+    hintKey: 'app.tabs.inferenceHint',
     wave: 3,
   },
   {
     id: 'generator',
-    label: 'Dataset Generator',
-    hint: 'Auto-annotate new images with a trained head or a concept prompt, then review.',
+    labelKey: 'app.tabs.generatorLabel',
+    hintKey: 'app.tabs.generatorHint',
     wave: 4,
   },
   {
     // Beside the Generator, because that is where you come from: annotate, then watch it.
     id: 'inspect',
-    label: 'Inspect datasets',
-    hint: 'Play back a dataset — its videos and images — with the annotations it holds.',
+    labelKey: 'app.tabs.inspectLabel',
+    hintKey: 'app.tabs.inspectHint',
     wave: 9,
   },
   {
     id: 'library',
-    label: 'Library',
-    hint: 'Everything you have made — datasets, trained heads and fine-tuned models.',
+    labelKey: 'app.tabs.libraryLabel',
+    hintKey: 'app.tabs.libraryHint',
     wave: 7,
   },
   {
     id: 'admin',
-    label: 'Admin / Models',
-    hint: 'Download and remove models, manage the HF token, cache dir, and device.',
+    labelKey: 'app.tabs.adminLabel',
+    hintKey: 'app.tabs.adminHint',
     wave: 1,
   },
   {
     id: 'api',
     // Last, and a destination rather than a setting: you come here to connect something.
     // Burying it in Admin would repeat the mistake that hid fine-tuning for three waves.
-    label: 'Connection',
-    hint: 'Let your own AI assistant drive the app — over MCP, or with a document.',
+    labelKey: 'app.tabs.apiLabel',
+    hintKey: 'app.tabs.apiHint',
     wave: 9,
   },
-] as const);
+];
+
+export const TABS: readonly TabDefinition[] = Object.freeze(
+  ENTRIES.map((entry) => ({
+    ...entry,
+    label: ENGLISH.t(entry.labelKey),
+    hint: ENGLISH.t(entry.hintKey),
+  })),
+);
 
 export const DEFAULT_TAB: TabId = 'studio';
 
@@ -114,4 +133,14 @@ export function getTab(id: TabId): TabDefinition {
     throw new Error(`No tab definition for id: ${id}`);
   }
   return tab;
+}
+
+/** A tab's name in the current language. */
+export function tabLabel(t: Translator['t'], id: TabId): string {
+  return t(getTab(id).labelKey);
+}
+
+/** A tab's one-line hint in the current language. */
+export function tabHint(t: Translator['t'], id: TabId): string {
+  return t(getTab(id).hintKey);
 }

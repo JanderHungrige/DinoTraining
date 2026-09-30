@@ -1,3 +1,130 @@
 /** `generator` texts (doc 112). English is the source; the current UI text, exactly. */
 
-export const generatorEn = {} as const;
+export const generatorEn = {
+  // The Dataset Generator tab
+  'generator.tab.title': 'Dataset Generator',
+  'generator.tab.lead':
+    'Point a head you have already trained at new images. It proposes boxes, you accept or reject them, and the result becomes the dataset for the next head.',
+  'generator.tab.inspect': 'Inspect what I just annotated',
+  'generator.tab.changeSetup': 'Change setup',
+  'generator.tab.proposingWith': 'Proposing with',
+  'generator.tab.decoding': 'Decoding frames into the dataset — {done} of {total}…',
+  'generator.tab.listing': 'Listing images…',
+  'generator.tab.noImages': 'No images in that folder.',
+  'generator.tab.loadingImage': 'Loading image…',
+  'generator.tab.proposeMasks': 'Propose masks',
+  'generator.tab.proposeBoxes': 'Propose boxes',
+
+  // The toolbar
+  'generator.bar.label': 'Review this image',
+  'generator.bar.proposing': 'Proposing…',
+  'generator.bar.saving': 'Saving…',
+  'generator.bar.save': 'Save to dataset',
+  'generator.bar.previous': '← Previous',
+  'generator.bar.next': 'Next →',
+  'generator.bar.automation': 'Automation',
+  'generator.bar.autoProposeTitle': 'Propose as soon as each new image appears',
+  'generator.bar.autoProposeAria': 'Auto-propose: propose automatically on each new image',
+  'generator.bar.autoPropose': 'Auto-propose',
+  'generator.bar.autoSaveTitle': 'Save a changed image when you move on from it',
+  'generator.bar.autoSaveAria': 'Auto-save: save automatically when moving to another image',
+  'generator.bar.autoSave': 'Auto-save',
+
+  // Autoplay
+  'generator.autoplay.stop': '■ Stop',
+  'generator.autoplay.startTitle':
+    'Propose, show for half a second, save, and move on — from this image to the last',
+  'generator.autoplay.start': '▶ Start analysis',
+  'generator.autoplay.hiddenTitle': 'Run without drawing each image; show progress only',
+  'generator.autoplay.hiddenAria': 'Run hidden, without drawing each image',
+  'generator.autoplay.hidden': 'Run hidden',
+  'generator.autoplay.runningHidden': '— running hidden, image {done} of {total}',
+  'generator.autoplay.progressAria': 'Autoplay progress, {percent} percent',
+  'generator.autoplay.saved': '{count} saved',
+  'generator.autoplay.empty': '{count} with nothing found',
+  'generator.autoplay.failed': '{count} failed',
+  'generator.autoplay.skipped': '{count} already saved',
+  'generator.autoplay.asked': '{count} asked about',
+  'generator.autoplay.finished': 'Autoplay reached the last image.',
+  'generator.autoplay.stopped':
+    'Autoplay stopped here. Correct anything that is wrong; moving on saves it.',
+  'generator.autoplay.saveFailed': 'Autoplay stopped because an image could not be saved.',
+  'generator.autoplay.lastFailure': 'Last failure: {error}',
+  'generator.autoplay.nothingProposed': 'Nothing could be proposed.',
+
+  // Asking about unclear proposals
+  'generator.unclear.legend': 'During autoplay',
+  'generator.unclear.toggle': 'Ask me when a score is between',
+  'generator.unclear.lowAria': 'Lowest score to ask about',
+  'generator.unclear.and': 'and',
+  'generator.unclear.highAria': 'Highest score to ask about',
+  'generator.unclear.hint':
+    'Scores mean different things per model — pick the range where this one guesses.',
+  'generator.unclear.waitingAria': 'Autoplay is waiting for you',
+  'generator.unclear.paused': 'Paused on image {number} of {total}.',
+  'generator.unclear.scored_one':
+    '{count} proposal scored between {low} and {high} and is marked {unclear}. Click a box to cycle its label (or focus it and press 1 positive · 2 negative · 3 unclear), then continue. Left as it is, it saves as unclear.',
+  'generator.unclear.scored_other':
+    '{count} proposals scored between {low} and {high} and are marked {unclear}. Click a box to cycle its label (or focus it and press 1 positive · 2 negative · 3 unclear), then continue. Left as it is, it saves as unclear.',
+  'generator.unclear.word': 'unclear',
+  'generator.unclear.continue': 'Continue',
+  'generator.unclear.stopHere': 'Stop here',
+
+  // Setup
+  'generator.setup.detector': 'Detector',
+  'generator.setup.datasetHint':
+    'Its images are re-annotated into whichever dataset you choose below — the source is only where the pictures come from.',
+  'generator.setup.backbone': 'Backbone',
+  'generator.setup.threshold': 'Score threshold — {value}',
+  'generator.setup.starting': 'Starting…',
+  'generator.setup.start': 'Start generating',
+  'generator.mode.legend': 'What proposes the annotations',
+  'generator.mode.foundation': 'A general detector — finds everyday objects, nothing to set up',
+  'generator.mode.expert': 'A head you trained — proposes boxes',
+  'generator.mode.masks': 'Grounded SAM — type a concept, get masks',
+  'generator.destination.saveInto': 'Save into',
+  'generator.destination.createNew': 'Create a new dataset…',
+  'generator.destination.option_one': '{name} ({count} image)',
+  'generator.destination.option_other': '{name} ({count} images)',
+  'generator.destination.newName': 'New dataset name',
+  'generator.destination.placeholder': 'Bolts, round two',
+
+  // Session messages
+  'generator.session.proposeFailed': 'Nothing could be proposed for this image.',
+  'generator.session.saveFailed': 'Could not save to the dataset.',
+  'generator.session.listFailedDataset': 'Could not list that dataset.',
+  'generator.session.listFailedFolder': 'Could not list that folder.',
+  'generator.session.masksFirst': 'Propose masks before saving.',
+  'generator.session.notLoaded': 'The image has not loaded yet, so its boxes cannot be placed.',
+  'generator.session.masksFor_one': '{count} mask for “{concept}”',
+  'generator.session.masksFor_other': '{count} masks for “{concept}”',
+
+  // Inspect datasets
+  'generator.inspect.title': 'Inspect datasets',
+  'generator.inspect.lead':
+    'Play a dataset back with what it holds drawn on — a video, a folder, or its loose images.',
+  'generator.inspect.dataset': 'Dataset',
+  'generator.inspect.noDatasets': 'No datasets yet',
+  'generator.inspect.play': 'Play',
+  'generator.inspect.loose': 'Images not in a sequence · {count}',
+  'generator.inspect.loading': 'Loading the dataset…',
+  'generator.inspect.empty': 'This dataset has no images yet.',
+  'generator.inspect.loadFailed': 'Could not load that dataset.',
+  'generator.timeline.empty': 'Nothing is annotated in this sequence yet.',
+  'generator.timeline.barAria': '{name}: on {count} of {total} frames',
+  'generator.timeline.jumps': 'Jump between annotations',
+  'generator.timeline.hint': 'Click a bar to choose a class.',
+  'generator.timeline.first': '⇤ First',
+  'generator.timeline.previous': '◀ Previous',
+  'generator.timeline.next': 'Next ▶',
+  'generator.player.frame': 'Frame {index}',
+  'generator.player.noFrame': 'No frame',
+  'generator.player.transport': 'Playback',
+  'generator.player.back': '◀ Frame',
+  'generator.player.pause': '❚❚ Pause',
+  'generator.player.play': '▶ Play',
+  'generator.player.forward': 'Frame ▶',
+  'generator.player.position': 'Position in the sequence',
+  'generator.player.atFrame': ' · frame {index}',
+  'generator.player.notAnnotated': ' · not annotated',
+} as const;

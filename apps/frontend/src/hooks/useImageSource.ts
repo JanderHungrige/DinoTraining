@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { listDatasetImages } from '../api/datasets';
 import { resolveSource, type ResolvedSource, type SourceItem } from '../api/inference';
+import { useT } from '../i18n';
 
 export interface ImageSourceState {
   readonly items: readonly SourceItem[];
@@ -64,6 +65,7 @@ function baseName(path: string): string {
 }
 
 export function useImageSource(path: string | null, dataset: string | null = null): ImageSourceState {
+  const { t } = useT();
   const [source, setSource] = useState<ResolvedSource | null>(null);
   // Only the position is stored. The current item is derived, because seeding state from
   // data that has not arrived yet is how this codebase has produced bugs twice.
@@ -97,7 +99,7 @@ export function useImageSource(path: string | null, dataset: string | null = nul
         itemsRef.current = resolved.items;
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setError(describe(cause, 'Could not read that path.'));
+        setError(describe(cause, t('studio.images.readPath')));
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }

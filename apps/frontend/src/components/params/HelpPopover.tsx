@@ -8,6 +8,8 @@
 
 import { useEffect, useId, useRef, useState, type JSX } from 'react';
 
+import { useT } from '../../i18n';
+
 export interface HelpPopoverProps {
   readonly label: string;
   readonly help: string;
@@ -16,6 +18,7 @@ export interface HelpPopoverProps {
 }
 
 export function HelpPopover({ label, help, defaultText, why }: HelpPopoverProps): JSX.Element {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -46,7 +49,7 @@ export function HelpPopover({ label, help, defaultText, why }: HelpPopoverProps)
         ref={button}
         type="button"
         className="param-help__button"
-        aria-label={`About ${label}`}
+        aria-label={t('training.params.about', { label })}
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((current) => !current)}
@@ -57,7 +60,7 @@ export function HelpPopover({ label, help, defaultText, why }: HelpPopoverProps)
         <span ref={box} id={id} role="note" className="param-help__box">
           <span className="param-help__text">{help}</span>
           <span className="param-help__default">
-            <strong>Default: {defaultText}</strong> — {why}
+            <strong>{t('training.params.default', { value: defaultText })}</strong> — {why}
           </span>
         </span>
       )}

@@ -22,6 +22,7 @@ import {
   listDatasetClasses,
   type ClassInfo,
 } from '../api/datasetClasses';
+import { useT } from '../i18n';
 
 export interface DatasetClasses {
   /** Every class that can be chosen, sorted case-insensitively. */
@@ -57,6 +58,7 @@ export function useDatasetClasses(
   datasetId: string | null,
   inPlay: readonly string[] = [],
 ): DatasetClasses {
+  const { t } = useT();
   const [classes, setClasses] = useState<readonly ClassInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +77,7 @@ export function useDatasetClasses(
       .catch((cause: unknown) => {
         // Non-fatal: the picker still offers whatever is on the canvas. A vocabulary that
         // fails to load must not take the review surface down with it.
-        if (!controller.signal.aborted) setError(describe(cause, 'Could not load classes.'));
+        if (!controller.signal.aborted) setError(describe(cause, t('studio.classes.loadError')));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
@@ -98,11 +100,11 @@ export function useDatasetClasses(
           trimmed
         );
       } catch (cause) {
-        setError(describe(cause, 'Could not add that class.'));
+        setError(describe(cause, t('studio.classes.addError')));
         return null;
       }
     },
-    [datasetId],
+    [datasetId, t],
   );
 
   const remove = useCallback(
@@ -112,10 +114,10 @@ export function useDatasetClasses(
         setClasses(await deleteDatasetClass(datasetId, name));
         setError(null);
       } catch (cause) {
-        setError(describe(cause, 'Could not remove that class.'));
+        setError(describe(cause, t('studio.classes.removeError')));
       }
     },
-    [datasetId],
+    [datasetId, t],
   );
 
   return { names: merge(classes, inPlay), classes, loading, error, create, remove };

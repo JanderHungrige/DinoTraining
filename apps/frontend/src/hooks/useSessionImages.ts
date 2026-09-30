@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { listFolderImages } from '../api/annotate';
 import { listDatasetImages, storedToCanvasBoxes } from '../api/datasets';
 import type { ImageSource } from '../components/ImageSourceField';
+import { useT } from '../i18n';
 import type { CanvasBox } from '../types/annotation';
 import { sourceKey, VIDEO_NEEDS_DECODING } from '../lib/imageSource';
 
@@ -42,6 +43,7 @@ export function useSessionImages(
   source: ImageSource | null,
   describe: (cause: unknown, fallback: string) => string,
 ): SessionImages {
+  const { t } = useT();
   const [images, setImages] = useState<readonly string[]>([]);
   const [existing, setExisting] = useState<ReadonlyMap<string, readonly CanvasBox[]>>(
     new Map(),
@@ -75,7 +77,7 @@ export function useSessionImages(
     }
 
     const controller = new AbortController();
-    const noun = source.kind === 'dataset' ? 'dataset' : 'folder';
+    const isDataset = source.kind === 'dataset';
     setLoading(true);
 
     void (async () => {
@@ -96,11 +98,11 @@ export function useSessionImages(
         if (!mounted.current || controller.signal.aborted) return;
         setImages(found);
         setExisting(boxes);
-        setError(found.length === 0 ? `That ${noun} has no images.` : null);
+        setError(found.length === 0 ? t(isDataset ? 'studio.images.emptyDataset' : 'studio.images.emptyFolder') : null);
         setGeneration((current) => current + 1);
       } catch (cause) {
         if (mounted.current && !controller.signal.aborted) {
-          setError(describe(cause, `Could not read that ${noun}.`));
+          setError(describe(cause, t(isDataset ? 'studio.images.readDataset' : 'studio.images.readFolder')));
         }
       } finally {
         if (mounted.current && !controller.signal.aborted) setLoading(false);

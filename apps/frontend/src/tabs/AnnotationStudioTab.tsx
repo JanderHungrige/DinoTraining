@@ -26,9 +26,11 @@ import { MaskEditOverlay } from '../components/MaskEditOverlay';
 import { StudioActions } from '../components/StudioActions';
 import { StudioViewBar } from '../components/StudioViewBar';
 import { useMaskEditing } from '../hooks/useMaskEditing';
+import { useT } from '../i18n';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 
 export function AnnotationStudioTab(): JSX.Element {
+  const { t } = useT();
   const [config, setConfig] = useState<SessionConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Starts at 0 so nothing is ever hidden until the user asks. A review surface that opens
@@ -54,7 +56,7 @@ export function AnnotationStudioTab(): JSX.Element {
   const session = useAnnotationSession(config);
   const prescan = usePrescan();
   // Doc 104: what this dataset is annotated for, and what this picture still lacks.
-  const target = useAnnotationTargetList().find((t) => t.id === (config?.target ?? 'open'));
+  const target = useAnnotationTargetList().find((entry) => entry.id === (config?.target ?? 'open'));
   const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
   const maskEditing = useMaskEditing(session.currentImage, session.boxes, session.setBoxes, selectedId);
   const selectedBox = session.boxes.find((box) => box.id === selectedId) ?? null;
@@ -116,11 +118,7 @@ export function AnnotationStudioTab(): JSX.Element {
     return (
       <section className="studio">
         <h2 className="studio__title">Annotation Studio</h2>
-        <p className="studio__lead">
-          Point at a folder of images and choose what proposes the boxes — describe what
-          you are looking for, or run a head you already trained. Either way you accept,
-          reject or correct what comes back.
-        </p>
+        <p className="studio__lead">{t('studio.tab.lead')}</p>
         <SessionSetup onStart={setConfig} />
       </section>
     );
@@ -130,14 +128,14 @@ export function AnnotationStudioTab(): JSX.Element {
   // The label names the mode, so the button is not the only thing on screen that knows
   // which one is running — the setup form's radios are behind "Change folder" by now.
   // A prompt is the only source you *write*; the other two you pick and run.
-  const runLabel = config.source.kind === 'prompt' ? 'Run prompt' : 'Run model';
+  const runLabel = t(config.source.kind === 'prompt' ? 'studio.tab.runPrompt' : 'studio.tab.runModel');
 
   return (
     <section className="studio">
       <div className="studio__head">
         <h2 className="studio__title">Annotation Studio</h2>
         <button type="button" className="btn" onClick={() => setConfig(null)}>
-          Change folder
+          {t('studio.tab.changeFolder')}
         </button>
       </div>
 
@@ -166,7 +164,7 @@ export function AnnotationStudioTab(): JSX.Element {
         </p>
       )}
 
-      {session.loadingImages && <p role="status">Loading images…</p>}
+      {session.loadingImages && <p role="status">{t('studio.tab.loadingImages')}</p>}
 
       {currentImage && (
         <>
@@ -257,7 +255,7 @@ export function AnnotationStudioTab(): JSX.Element {
               />
             </div>
           ) : (
-            <p role="status">Loading image…</p>
+            <p role="status">{t('studio.tab.loadingImage')}</p>
           )}
 
           <StudioViewBar

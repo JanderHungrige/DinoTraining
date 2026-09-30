@@ -11,6 +11,7 @@ import type { JSX } from 'react';
 
 import { classColour, toCssColour } from '../../lib/overlayPalette';
 import type { Prediction } from '../../api/inference';
+import { ENGLISH, useT, type Translator } from '../../i18n';
 
 /** Enough to see whether the head was confident or merely least-unsure. */
 const TOP_N = 5;
@@ -25,7 +26,11 @@ interface Ranked {
   readonly score: number;
 }
 
-export function topLabels(prediction: Prediction, count = TOP_N): readonly Ranked[] {
+export function topLabels(
+  prediction: Prediction,
+  count = TOP_N,
+  { t }: Translator = ENGLISH,
+): readonly Ranked[] {
   const raw = prediction.payload['scores'];
   if (!Array.isArray(raw)) return [];
 
@@ -34,7 +39,7 @@ export function topLabels(prediction: Prediction, count = TOP_N): readonly Ranke
       index,
       // A pretrained default carries 1000 ImageNet ids with no names attached, and the
       // viewer must render something rather than throwing on an index it cannot name.
-      name: prediction.class_names[index] ?? `class ${index}`,
+      name: prediction.class_names[index] ?? t('run.overlay.className', { index }),
       score,
     }))
     .sort((a, b) => b.score - a.score)
@@ -42,7 +47,7 @@ export function topLabels(prediction: Prediction, count = TOP_N): readonly Ranke
 }
 
 export function LabelOverlay({ prediction }: LabelOverlayProps): JSX.Element | null {
-  const ranked = topLabels(prediction);
+  const ranked = topLabels(prediction, TOP_N, useT());
   if (ranked.length === 0) return null;
 
   return (

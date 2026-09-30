@@ -8,6 +8,7 @@
 import type { JSX } from 'react';
 
 import type { DatasetCounts } from '../api/datasets';
+import { useT } from '../i18n';
 
 export interface CounterBarProps {
   readonly counts: DatasetCounts;
@@ -22,32 +23,33 @@ export function CounterBar({
   imageTotal,
   dirty,
 }: CounterBarProps): JSX.Element {
+  const { t } = useT();
   return (
     <div className="counters" role="status" aria-live="polite">
       <span className="counters__item">
-        Image <strong>{imageTotal === 0 ? 0 : imageIndex + 1}</strong> / {imageTotal}
+        {t('studio.counter.image')} <strong>{imageTotal === 0 ? 0 : imageIndex + 1}</strong> / {imageTotal}
       </span>
       <span className="counters__sep" aria-hidden="true">
         ·
       </span>
       <span className="counters__item">
-        Saved images <strong>{counts.images}</strong>
+        {t('studio.counter.saved')} <strong>{counts.images}</strong>
       </span>
       {counts.masks > 0 && (
         <span className="counters__item">
-          Masks <strong>{counts.masks}</strong>
+          {t('studio.counter.masks')} <strong>{counts.masks}</strong>
         </span>
       )}
       <span className="counters__item counters__item--positive">
-        Positive <strong>{counts.positive}</strong>
+        {t('studio.counter.positive')} <strong>{counts.positive}</strong>
       </span>
       <span className="counters__item counters__item--negative">
-        Negative <strong>{counts.negative}</strong>
+        {t('studio.counter.negative')} <strong>{counts.negative}</strong>
       </span>
       <span className="counters__item counters__item--unclear">
-        Unclear <strong>{counts.unclear}</strong>
+        {t('studio.counter.unclear')} <strong>{counts.unclear}</strong>
       </span>
-      {dirty && <span className="counters__dirty">Unsaved changes</span>}
+      {dirty && <span className="counters__dirty">{t('studio.counter.unsaved')}</span>}
     </div>
   );
 }

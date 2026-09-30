@@ -3,14 +3,15 @@
 import type { JSX } from 'react';
 
 import type { MaskEditing, MaskTool } from '../hooks/useMaskEditing';
+import { useT, type Key } from '../i18n';
 import '../maskedit.css';
 
-const TOOLS: readonly { id: MaskTool; label: string; hint: string }[] = [
-  { id: 'none', label: 'Select', hint: 'Draw and pick boxes as usual' },
-  { id: 'add', label: '⊕ Add', hint: 'Click what belongs to the outline; SAM redraws it' },
-  { id: 'remove', label: '⊖ Remove', hint: 'Click what does not belong; SAM redraws it' },
-  { id: 'brush', label: 'Brush', hint: 'Drag to paint pixels in' },
-  { id: 'erase', label: 'Eraser', hint: 'Drag to take pixels out' },
+const TOOLS: readonly { id: MaskTool; label: Key; hint: Key }[] = [
+  { id: 'none', label: 'studio.mask.select', hint: 'studio.mask.selectHint' },
+  { id: 'add', label: 'studio.mask.add', hint: 'studio.mask.addHint' },
+  { id: 'remove', label: 'studio.mask.remove', hint: 'studio.mask.removeHint' },
+  { id: 'brush', label: 'studio.mask.brush', hint: 'studio.mask.brushHint' },
+  { id: 'erase', label: 'studio.mask.erase', hint: 'studio.mask.eraseHint' },
 ];
 
 export interface MaskEditBarProps {
@@ -21,11 +22,12 @@ export interface MaskEditBarProps {
 }
 
 export function MaskEditBar({ editing, selection, disabled }: MaskEditBarProps): JSX.Element {
+  const { t, tp } = useT();
   const { tool } = editing;
   const off = disabled || editing.busy;
   return (
-    <div className="maskbar" role="toolbar" aria-label="Outline tools">
-      <div className="maskbar__tools" role="radiogroup" aria-label="Tool">
+    <div className="maskbar" role="toolbar" aria-label={t('studio.mask.toolbar')}>
+      <div className="maskbar__tools" role="radiogroup" aria-label={t('studio.mask.tool')}>
         {TOOLS.map((entry) => (
           <button
             key={entry.id}
@@ -33,35 +35,35 @@ export function MaskEditBar({ editing, selection, disabled }: MaskEditBarProps):
             role="radio"
             aria-checked={tool === entry.id}
             className={`btn btn--small${tool === entry.id ? ' maskbar__on' : ''}`}
-            title={entry.hint}
+            title={t(entry.hint)}
             disabled={off || (entry.id !== 'none' && selection === 'none') || ((entry.id === 'brush' || entry.id === 'erase') && selection !== 'outline')}
             onClick={() => editing.setTool(entry.id)}
           >
-            {entry.label}
+            {t(entry.label)}
           </button>
         ))}
       </div>
       {(tool === 'brush' || tool === 'erase') && (
         <label className="maskbar__size">
-          Size <span className="setup__value">{editing.radius} px</span>
+          {t('studio.mask.size')} <span className="setup__value">{editing.radius} px</span>
           <input type="range" min={1} max={60} value={editing.radius} onChange={(e) => editing.setRadius(Number(e.target.value))} />
         </label>
       )}
       <button type="button" className="btn btn--small" disabled={off || !editing.canUndo} onClick={editing.undo}>
-        Undo
+        {t('studio.mask.undo')}
       </button>
       <button type="button" className="btn btn--small" disabled={off || editing.unoutlined === 0} onClick={editing.outlineAll}>
-        Outlines from my boxes{editing.unoutlined > 0 ? ` (${editing.unoutlined})` : ''}
+        {t('studio.mask.fromBoxes')}{editing.unoutlined > 0 ? ` (${editing.unoutlined})` : ''}
       </button>
       <span className="maskbar__hint" role="status">
         {editing.busy
-          ? 'Working…'
+          ? t('studio.mask.working')
           : selection === 'none'
-            ? 'Select a box or outline to edit it.'
+            ? t('studio.mask.selectFirst')
             : tool === 'add' || tool === 'remove'
-              ? `${editing.points.length} click${editing.points.length === 1 ? '' : 's'} on this outline — each one redraws it.`
+              ? tp('studio.mask.clicks', editing.points.length)
               : selection === 'box'
-                ? 'This box has no outline yet: ⊕ Add makes one.'
+                ? t('studio.mask.noOutline')
                 : ''}
       </span>
       {editing.error && <span className="run__warn" role="alert">{editing.error}</span>}

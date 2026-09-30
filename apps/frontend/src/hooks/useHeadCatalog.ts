@@ -17,6 +17,7 @@ import {
   type CatalogEntry,
   type ImportRequest,
 } from '../api/headCatalog';
+import { useT } from '../i18n';
 
 export interface UseHeadCatalogResult {
   readonly entries: readonly CatalogEntry[];
@@ -39,6 +40,7 @@ export function useHeadCatalog(backbone?: string): UseHeadCatalogResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const { t } = useT();
 
   const mounted = useRef(true);
   useEffect(() => {
@@ -55,11 +57,11 @@ export function useHeadCatalog(backbone?: string): UseHeadCatalogResult {
       setEntries(next);
       setError(null);
     } catch (cause) {
-      if (mounted.current) setError(describeError(cause, 'Could not load the head catalogue.'));
+      if (mounted.current) setError(describeError(cause, t('admin.heads.loadFailed')));
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [backbone]);
+  }, [backbone, t]);
 
   useEffect(() => {
     void refresh();
@@ -72,16 +74,16 @@ export function useHeadCatalog(backbone?: string): UseHeadCatalogResult {
         const instance = await installCatalogEntry(entryId);
         if (!mounted.current) return;
         // The backend's summary, not one composed here — doc 12's cross-tab contract.
-        setNotice(`Installed: ${instance.summary}`);
+        setNotice(t('admin.heads.installedNotice', { summary: instance.summary }));
         setError(null);
         await refresh();
       } catch (cause) {
-        if (mounted.current) setError(describeError(cause, 'Could not install the head.'));
+        if (mounted.current) setError(describeError(cause, t('admin.heads.installFailed')));
       } finally {
         if (mounted.current) setBusy((current) => ({ ...current, [entryId]: false }));
       }
     },
-    [refresh],
+    [refresh, t],
   );
 
   const importHead = useCallback(
@@ -90,20 +92,20 @@ export function useHeadCatalog(backbone?: string): UseHeadCatalogResult {
       try {
         const instance = await importCommunityHead(request);
         if (!mounted.current) return true;
-        setNotice(`Imported: ${instance.summary}`);
+        setNotice(t('admin.heads.importedNotice', { summary: instance.summary }));
         setError(null);
         await refresh();
         return true;
       } catch (cause) {
         // Returned rather than thrown so the form can stay open with its values
         // intact — a rejected import is usually a one-character fix in the repo id.
-        if (mounted.current) setError(describeError(cause, 'Could not import that head.'));
+        if (mounted.current) setError(describeError(cause, t('admin.heads.importFailed')));
         return false;
       } finally {
         if (mounted.current) setBusy((current) => ({ ...current, import: false }));
       }
     },
-    [refresh],
+    [refresh, t],
   );
 
   return { entries, loading, error, notice, busy, install, importHead, refresh };

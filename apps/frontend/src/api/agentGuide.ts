@@ -11,13 +11,21 @@ import { API_BASE_URL, API_PREFIX } from './client';
 
 export const GUIDE_FILENAME = 'dinotraining-api-guide.md';
 
+/** The backend answered, with an error status. Its own class so the UI can word it. */
+export class GuideLoadError extends Error {
+  constructor(readonly status: number) {
+    super(`Could not load the API guide (${status}).`);
+    this.name = 'GuideLoadError';
+  }
+}
+
 /** The guide as markdown. Plain `fetch` because `apiFetch` is a JSON door. */
 export async function fetchAgentGuide(signal?: AbortSignal): Promise<string> {
   const response = await fetch(`${API_BASE_URL}${API_PREFIX}/docs/agent-guide`, {
     ...(signal ? { signal } : {}),
   });
   if (!response.ok) {
-    throw new Error(`Could not load the API guide (${response.status}).`);
+    throw new GuideLoadError(response.status);
   }
   return response.text();
 }

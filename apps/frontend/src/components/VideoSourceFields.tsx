@@ -10,6 +10,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { probeSequence, type SequenceInfo } from '../api/video';
+import { useT } from '../i18n';
 import { hasNativeDialog, pickVideoFile } from '../lib/dialog';
 import { looksLikeVideo } from '../lib/imageSource';
 import type { VideoRange } from './ImageSourceField';
@@ -47,6 +48,7 @@ export function VideoSourceFields({
   disabled,
   onChange,
 }: VideoSourceFieldsProps): JSX.Element {
+  const { t } = useT();
   const [info, setInfo] = useState<SequenceInfo | null>(null);
   const [probeError, setProbeError] = useState<string | null>(null);
   const [hasPicker, setHasPicker] = useState(false);
@@ -62,7 +64,7 @@ export function VideoSourceFields({
       probeSequence(path, controller.signal)
         .then(setInfo)
         .catch(() => {
-          if (!controller.signal.aborted) setProbeError('That video could not be opened.');
+          if (!controller.signal.aborted) setProbeError(t('studio.video.probeError'));
         });
     }, 400);
     return () => {
@@ -77,7 +79,7 @@ export function VideoSourceFields({
   return (
     <div className="videosrc">
       <label className="genpanel__field" htmlFor={`${id}-video`}>
-        Video file
+        {t('studio.video.file')}
         <span className="setup__control">
           <input
             id={`${id}-video`}
@@ -94,7 +96,7 @@ export function VideoSourceFields({
               disabled={disabled}
               onClick={() => void pickVideoFile().then((picked) => picked && onChange(picked, range))}
             >
-              Video…
+              {t('studio.video.pick')}
             </button>
           )}
         </span>
@@ -102,7 +104,7 @@ export function VideoSourceFields({
 
       {path.trim() !== '' && !looksLikeVideo(path) && (
         <p className="srcfield__hint">
-          Not a video this app can decode — use .mp4, .mov, .avi, .mkv, .webm or .m4v.
+          {t('studio.video.notVideo')}
         </p>
       )}
       {probeError && (
@@ -115,11 +117,14 @@ export function VideoSourceFields({
 
       {info && (
         <p className="srcfield__hint" role="status">
-          {info.frames.toLocaleString()} frames
-          {info.fps ? ` at ${Math.round(info.fps)} fps` : ''} · {info.width}×{info.height}.{' '}
+          {t('studio.video.frames', { frames: info.frames.toLocaleString() })}
+          {info.fps ? ` ${t('studio.video.fps', { fps: Math.round(info.fps) })}` : ''} · {info.width}×{info.height}.{' '}
           {frames === 0
-            ? 'That range is past the end of the video.'
-            : `Decodes ${frames.toLocaleString()} frames into the dataset — about ${estimateMegabytes(info, frames).toLocaleString()} MB (estimate).`}
+            ? t('studio.video.pastEnd')
+            : t('studio.video.decodes', {
+                frames: frames.toLocaleString(),
+                mb: estimateMegabytes(info, frames).toLocaleString(),
+              })}
         </p>
       )}
     </div>
@@ -135,10 +140,11 @@ function VideoRangeInputs({
   readonly disabled: boolean;
   readonly onChange: (patch: Partial<VideoRange>) => void;
 }): JSX.Element {
+  const { t } = useT();
   return (
     <div className="videosrc__range">
       <label>
-        From frame
+        {t('studio.video.from')}
         <input
           type="number"
           min={0}
@@ -148,7 +154,7 @@ function VideoRangeInputs({
         />
       </label>
       <label>
-        Frames
+        {t('studio.video.count')}
         <input
           type="number"
           min={1}
@@ -158,16 +164,16 @@ function VideoRangeInputs({
         />
       </label>
       <label>
-        Every
+        {t('studio.video.every')}
         <input
           type="number"
           min={1}
           value={range.stride}
           disabled={disabled}
-          aria-label="Keep every Nth frame"
+          aria-label={t('studio.video.everyAria')}
           onChange={(event) => set({ stride: whole(event.target.value, range.stride, 1) })}
         />
-        th
+        {t('studio.video.th')}
       </label>
     </div>
   );

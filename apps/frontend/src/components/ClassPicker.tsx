@@ -18,6 +18,8 @@
 
 import { useEffect, useRef, useState, type JSX } from 'react';
 
+import { useT } from '../i18n';
+
 /** Sentinel option values. Neither can be a class name: one is empty and the other has a
  *  leading space, which `normalise` trims away server-side and this component trims too. */
 const UNNAMED = '';
@@ -50,6 +52,7 @@ export function ClassPicker({
   label,
   disabled = false,
 }: ClassPickerProps): JSX.Element {
+  const { t } = useT();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -100,9 +103,11 @@ export function ClassPicker({
           type="text"
           value={draft}
           maxLength={100}
-          placeholder={renaming ? editing.from : 'New class'}
+          placeholder={renaming ? editing.from : t('studio.class.newPlaceholder')}
           aria-label={
-            renaming ? `Rename ${editing.from}, ${label}` : `New class for ${label}`
+            renaming
+              ? t('studio.class.renameAria', { from: editing.from, label })
+              : t('studio.class.newAria', { label })
           }
           disabled={busy}
           onChange={(event) => setDraft(event.target.value)}
@@ -126,7 +131,7 @@ export function ClassPicker({
           disabled={busy || draft.trim() === ''}
           onClick={() => void commit()}
         >
-          {renaming ? 'Rename' : 'Add'}
+          {t(renaming ? 'studio.class.rename' : 'studio.class.add')}
         </button>
         <button
           type="button"
@@ -137,7 +142,7 @@ export function ClassPicker({
             setDraft('');
           }}
         >
-          Cancel
+          {t('common.cancel')}
         </button>
       </span>
     );
@@ -159,13 +164,13 @@ export function ClassPicker({
           onChange(event.target.value);
         }}
       >
-        <option value={UNNAMED}>— unnamed —</option>
+        <option value={UNNAMED}>{t('studio.class.unnamed')}</option>
         {listed.map((name) => (
           <option key={name} value={name}>
             {name}
           </option>
         ))}
-        <option value={NEW_CLASS}>New class…</option>
+        <option value={NEW_CLASS}>{t('studio.class.newOption')}</option>
       </select>
 
       {/* Renaming is offered only when there is a class to rename, and only where the
@@ -175,12 +180,12 @@ export function ClassPicker({
         <button
           type="button"
           className="classpicker__rename"
-          title={`Rename ${value} on every box in this image`}
+          title={t('studio.class.renameEverywhere', { name: value })}
           /* The row is part of the name. A class on several boxes means several of these
              buttons, and identical accessible names give a screen-reader user a list of
              indistinguishable controls — the scope is the same for all of them, but the
              control they are on is not. */
-          aria-label={`Rename ${value} on every box in this image, ${label}`}
+          aria-label={`${t('studio.class.renameEverywhere', { name: value })}, ${label}`}
           disabled={disabled}
           onClick={() => {
             setDraft(value);

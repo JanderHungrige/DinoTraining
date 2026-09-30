@@ -19,6 +19,7 @@ import type { JSX } from 'react';
 
 import { classColour, toCssColour } from '../../lib/overlayPalette';
 import type { Prediction } from '../../api/inference';
+import { ENGLISH, useT, type Translator } from '../../i18n';
 
 /** Beyond this the key is taller than the image it explains. */
 const MAX_ENTRIES = 8;
@@ -32,7 +33,11 @@ interface Entry {
   readonly name: string;
 }
 
-export function legendEntries(prediction: Prediction, limit = MAX_ENTRIES): readonly Entry[] {
+export function legendEntries(
+  prediction: Prediction,
+  limit = MAX_ENTRIES,
+  { t }: Translator = ENGLISH,
+): readonly Entry[] {
   const present = prediction.payload['present_classes'];
   if (!Array.isArray(present)) return [];
 
@@ -46,16 +51,17 @@ export function legendEntries(prediction: Prediction, limit = MAX_ENTRIES): read
       index,
       // The same fallback the rest of the app uses: a head whose names are unknown still
       // renders something rather than an empty row.
-      name: prediction.class_names[index] ?? `class ${index}`,
+      name: prediction.class_names[index] ?? t('run.overlay.className', { index }),
     }));
 }
 
 export function MaskLegend({ prediction }: MaskLegendProps): JSX.Element | null {
-  const entries = legendEntries(prediction);
+  const translator = useT();
+  const entries = legendEntries(prediction, MAX_ENTRIES, translator);
   if (entries.length === 0) return null;
 
   return (
-    <ul className="overlay__legend" aria-label={`Classes found by ${prediction.head_name}`}>
+    <ul className="overlay__legend" aria-label={translator.t('run.overlay.legend', { head: prediction.head_name })}>
       {entries.map((entry) => (
         <li key={entry.index} className="overlay__legenditem">
           {/* The swatch is decorative — the name beside it carries the meaning, so a

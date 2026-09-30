@@ -10,15 +10,17 @@ import { useEffect, useState, type JSX } from 'react';
 
 import { ApiError, getHealth } from '../api/client';
 import type { HealthResponse } from '../api/types';
+import { useT } from '../i18n';
 
 const POLL_INTERVAL_MS = 5_000;
 
 type Status =
   | { readonly kind: 'connecting' }
   | { readonly kind: 'ready'; readonly health: HealthResponse }
-  | { readonly kind: 'unreachable'; readonly message: string };
+  | { readonly kind: 'unreachable'; readonly message: string | null };
 
 export function BackendStatus(): JSX.Element {
+  const { t } = useT();
   const [status, setStatus] = useState<Status>({ kind: 'connecting' });
 
   useEffect(() => {
@@ -31,9 +33,9 @@ export function BackendStatus(): JSX.Element {
         if (!cancelled) setStatus({ kind: 'ready', health });
       } catch (error) {
         if (cancelled || controller.signal.aborted) return;
-        const message =
-          error instanceof ApiError ? error.message : 'Unexpected error contacting the backend.';
-        setStatus({ kind: 'unreachable', message });
+        // Only an ApiError carries a message worth showing; anything else is shown as
+        // `null` and worded at render, so a language switch rewords it too.
+        setStatus({ kind: 'unreachable', message: error instanceof ApiError ? error.message : null });
       }
     };
 
@@ -61,7 +63,7 @@ export function BackendStatus(): JSX.Element {
     return (
       <p className="status status--pending" role="status">
         <span className="status__dot" aria-hidden="true" />
-        Connecting to backend…
+        {t('app.backend.connecting')}
       </p>
     );
   }
@@ -69,7 +71,7 @@ export function BackendStatus(): JSX.Element {
   return (
     <p className="status status--error" role="alert">
       <span className="status__dot" aria-hidden="true" />
-      {status.message}
+      {status.message ?? t('app.backend.unexpected')}
     </p>
   );
 }

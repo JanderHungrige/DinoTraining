@@ -16,8 +16,9 @@ import { useMemo, type JSX } from 'react';
 
 import { FrameCanvas } from './FrameCanvas';
 import type { RenderedImage } from '../lib/geometry';
-import { describeEstimate, estimateSeconds, type SequenceInfo } from '../api/video';
+import { estimateSeconds, type SequenceInfo } from '../api/video';
 import type { SequenceRunState } from '../hooks/useSequenceRun';
+import { useT, type Translator } from '../i18n';
 
 export interface VideoPlayerProps {
   readonly info: SequenceInfo;
@@ -40,9 +41,24 @@ export interface VideoPlayerProps {
   readonly renderOverlay: (index: number, rendered: RenderedImage) => JSX.Element | null;
 }
 
-/** Seconds, when the source has a rate to convert with. */
-function asTime(frames: number, fps: number | null): string {
-  return fps ? `${(frames / fps).toFixed(1)}s` : `${frames} frames`;
+/** The estimate in words — `describeEstimate`'s thresholds, in the viewer's language. */
+function describeTime(seconds: number, t: Translator['t']): string {
+  if (seconds < 1) return t('run.player.estimateMoment');
+  if (seconds < 90) return t('run.player.estimateSeconds', { value: Math.round(seconds) });
+  if (seconds < 3600) return t('run.player.estimateMinutes', { value: Math.round(seconds / 60) });
+  return t('run.player.estimateHours', { value: (seconds / 3600).toFixed(1) });
+}
+
+/** A sentence with `{count}` in bold: split around the placeholder, which `t` leaves in. */
+function withBoldCount(sentence: string, count: number): JSX.Element {
+  const [before = '', after = ''] = sentence.split('{count}');
+  return (
+    <>
+      {before}
+      <strong>{count}</strong>
+      {after}
+    </>
+  );
 }
 
 export function VideoPlayer({
@@ -59,6 +75,7 @@ export function VideoPlayer({
   headCount,
   renderOverlay,
 }: VideoPlayerProps): JSX.Element {
+  const { t, tp } = useT();
   const { run, byFrame, index, playing } = state;
 
   // The stage is measured, not assumed: the frame is letterboxed into whatever space it
@@ -89,7 +106,7 @@ export function VideoPlayer({
     <section className="player">
       <div className="player__range">
         <label className="player__field">
-          <span>Start at frame</span>
+          <span>{t('run.player.startAt')}</span>
           <input
             type="number"
             min={0}
@@ -100,7 +117,7 @@ export function VideoPlayer({
           />
         </label>
         <label className="player__field">
-          <span>How many frames</span>
+          <span>{t('run.player.howMany')}</span>
           <input
             type="number"
             min={1}
@@ -111,7 +128,7 @@ export function VideoPlayer({
           />
         </label>
         <label className="player__field">
-          <span>Play at (fps)</span>
+          <span>{t('run.player.playAt')}</span>
           <input
             type="number"
             min={1}
@@ -126,13 +143,16 @@ export function VideoPlayer({
           Someone who sees four minutes picks a shorter range instead of cancelling three
           minutes in. */}
       <p className="player__estimate">
-        {info.kind === 'video' ? 'Video' : 'Folder'} · {info.frames} frames
-        {info.fps ? ` · ${info.fps.toFixed(1)} fps · ${asTime(info.frames, info.fps)}` : ''}
+        {info.kind === 'video' ? t('run.player.kindVideo') : t('run.player.kindFolder')} ·{' '}
+        {tp('run.player.frames', info.frames)}
+        {info.fps
+          ? ` · ${info.fps.toFixed(1)} fps · ${(info.frames / info.fps).toFixed(1)}s`
+          : ''}
         {planned > 0 && (
           <>
             {' — '}
-            analysing <strong>{planned}</strong> of them takes {describeEstimate(estimate)}
-            <span className="player__hint"> (an estimate)</span>
+            {withBoldCount(t('run.player.analysing', { time: describeTime(estimate, t) }), planned)}
+            <span className="player__hint"> {t('run.player.estimateNote')}</span>
           </>
         )}
       </p>
@@ -144,17 +164,19 @@ export function VideoPlayer({
           disabled={run?.state === 'running' || planned < 1 || nothingSelected}
           onClick={onRun}
         >
-          {run?.state === 'running' ? 'Analysing…' : `Analyse ${planned} frame${planned === 1 ? '' : 's'}`}
+          {run?.state === 'running'
+            ? t('run.player.analysingButton')
+            : tp('run.player.analyse', planned)}
         </button>
 
         {run?.state === 'running' && (
           <button type="button" className="btn btn--small" onClick={() => void state.stop()}>
-            Stop
+            {t('run.player.stop')}
           </button>
         )}
 
         {nothingSelected && (
-          <span className="player__hint">Pick at least one head or foundation model above.</span>
+          <span className="player__hint">{t('run.player.pickModel')}</span>
         )}
       </div>
 
@@ -164,9 +186,12 @@ export function VideoPlayer({
         <>
           <p role="status" className="player__progress">
             {run.state === 'running'
-              ? `Analysed ${run.done} of ${run.total} frames…`
-              : `${run.state === 'cancelled' ? 'Stopped' : 'Ready'} — ${byFrame.size} of ${run.total} frames analysed`}
-            {run.unreadable > 0 && ` · ${run.unreadable} could not be read`}
+              ? t('run.player.progress', { done: run.done, total: run.total })
+              : t(run.state === 'cancelled' ? 'run.player.stopped' : 'run.player.ready', {
+                  done: byFrame.size,
+                  total: run.total,
+                })}
+            {run.unreadable > 0 && ` · ${t('run.player.unreadable', { count: run.unreadable })}`}
           </p>
 
           <FrameCanvas
@@ -177,7 +202,7 @@ export function VideoPlayer({
             naturalWidth={info.width}
             naturalHeight={info.height}
             generation={run.job_id}
-            label={`Frame ${absolute}`}
+            label={t('run.player.frameLabel', { index: absolute })}
             renderOverlay={(geometry) => renderOverlay(index, geometry)}
           />
 
@@ -188,7 +213,7 @@ export function VideoPlayer({
               onClick={() => state.setPlaying(!playing)}
               disabled={byFrame.size === 0}
             >
-              {playing ? 'Pause' : 'Play'}
+              {playing ? t('run.player.pause') : t('run.player.play')}
             </button>
             <input
               className="player__scrub"
@@ -196,18 +221,18 @@ export function VideoPlayer({
               min={0}
               max={Math.max(0, analysedCount - 1)}
               value={index}
-              aria-label="Frame"
+              aria-label={t('run.player.slider')}
               onChange={(event) => {
                 state.setPlaying(false);
                 state.setIndex(Number(event.target.value));
               }}
             />
             <span className="player__counter">
-              frame {absolute}
+              {t('run.player.counter', { index: absolute })}
               {info.fps ? ` · ${(absolute / info.fps).toFixed(1)}s` : ''}
               {/* Says so rather than showing a bare frame: an un-analysed frame with no
                   overlay is otherwise indistinguishable from one where nothing was found. */}
-              {!byFrame.has(index) && <span className="player__hint"> · not analysed</span>}
+              {!byFrame.has(index) && <span className="player__hint"> · {t('run.player.notAnalysed')}</span>}
             </span>
           </div>
         </>

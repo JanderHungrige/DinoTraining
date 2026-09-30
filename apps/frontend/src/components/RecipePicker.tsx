@@ -7,6 +7,7 @@ import type { JSX, ReactNode } from 'react';
 
 import type { RecipeInfo } from '../api/prepPlan';
 import { NO_RECIPE } from '../hooks/useRecipeChoice';
+import { useT } from '../i18n';
 
 export interface RecipePickerProps {
   readonly datasetIds: readonly string[];
@@ -26,17 +27,18 @@ export function RecipePicker({
   onChoice,
   explainer,
 }: RecipePickerProps): JSX.Element | null {
+  const { t } = useT();
   if (datasetIds.length !== 1) return null;
   return (
     <div className="recipepicker">
       <label className="genpanel__field">
-        <span>Preparation recipe</span>
+        <span>{t('training.recipe.label')}</span>
         <select value={chosen?.recipe.id ?? NO_RECIPE} onChange={(event) => onChoice(event.target.value)}>
-          <option value={NO_RECIPE}>None — train on the data as it is</option>
+          <option value={NO_RECIPE}>{t('training.recipe.none')}</option>
           {[...recipes].reverse().map(({ recipe, out_of_date: outOfDate }) => (
             <option key={recipe.id} value={recipe.id} disabled={outOfDate.length > 0}>
               {recipe.name} · v{recipe.version}
-              {outOfDate.length > 0 ? ' (out of date)' : ''}
+              {outOfDate.length > 0 ? ` ${t('training.recipe.outOfDate')}` : ''}
             </option>
           ))}
         </select>
@@ -44,17 +46,15 @@ export function RecipePicker({
       {error && <p className="run__warn">{error}</p>}
       {chosen ? (
         <p className="trainer__hint">
-          Uses the recipe&apos;s split, class changes, tiles, unequal-class handling (
-          {chosen.recipe.imbalance}) and changed copies ({chosen.recipe.augmentation}).
+          {t('training.recipe.uses', {
+            imbalance: chosen.recipe.imbalance,
+            augmentation: chosen.recipe.augmentation,
+          })}
         </p>
       ) : explainer ? (
         explainer
       ) : (
-        <p className="run__warn">
-          No recipe: the pictures are split at random, so near-identical ones may sit on both
-          sides and the score may look better than the model is. The Prepare data tab makes a
-          recipe.
-        </p>
+        <p className="run__warn">{t('training.recipe.missing')}</p>
       )}
     </div>
   );

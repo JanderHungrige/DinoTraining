@@ -6,6 +6,7 @@
 import type { JSX } from 'react';
 
 import type { Parameters } from '../../hooks/useParameters';
+import { useT } from '../../i18n';
 import { ParameterField } from './ParameterField';
 import '../../params.css';
 
@@ -17,9 +18,14 @@ export interface ParameterFormProps {
 }
 
 export function ParameterForm({ params, recipeChosen = false, disabled = false }: ParameterFormProps): JSX.Element {
+  const { t } = useT();
   const { set } = params;
   if (!set) {
-    return <p className="trainer__dim">{params.error ? `Settings could not be loaded: ${params.error}` : 'Loading settings…'}</p>;
+    return (
+      <p className="trainer__dim">
+        {params.error ? t('training.params.loadFailed', { error: params.error }) : t('training.params.loading')}
+      </p>
+    );
   }
   const field = (key: string): JSX.Element => {
     const parameter = set.parameters.find((p) => p.key === key)!;
@@ -44,19 +50,21 @@ export function ParameterForm({ params, recipeChosen = false, disabled = false }
 
   return (
     <fieldset className="params" disabled={disabled}>
-      <legend>Training settings · {set.title}</legend>
+      <legend>{t('training.params.legend', { title: set.title })}</legend>
       <div className="params__grid">{basic.map((p) => field(p.key))}</div>
       {advanced.length > 0 && (
         <details className="params__advanced">
           <summary>
-            Advanced settings{changedAdvanced > 0 ? ` (${changedAdvanced} changed)` : ''}
+            {changedAdvanced > 0
+              ? t('training.params.advancedChanged', { count: changedAdvanced })
+              : t('training.params.advanced')}
           </summary>
           <div className="params__grid">{advanced.map((p) => field(p.key))}</div>
         </details>
       )}
       {anyChanged && (
         <button type="button" className="btn btn--small" onClick={params.resetAll}>
-          Reset all to defaults
+          {t('training.params.resetAll')}
         </button>
       )}
     </fieldset>

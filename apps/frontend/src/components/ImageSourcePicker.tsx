@@ -11,6 +11,7 @@ import { useEffect, useState, type FormEvent, type JSX } from 'react';
 
 import { useFileDrop } from '../hooks/useFileDrop';
 import type { DatasetInfo } from '../api/datasets';
+import { useT } from '../i18n';
 import { hasNativeDialog, pickFolder, pickImageFile } from '../lib/dialog';
 import { RevealDatasetButton } from './RevealDatasetButton';
 
@@ -33,6 +34,7 @@ export function ImageSourcePicker({
   value,
   busy = false,
 }: ImageSourcePickerProps): JSX.Element {
+  const { t, tp } = useT();
   // Only the user's override is stored; the shown value is derived. Seeding state from
   // `value` would strand the field empty whenever the path arrives after first render.
   const [draft, setDraft] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export function ImageSourcePicker({
     <form className="setup" onSubmit={submit}>
       <div className={`setup__row${drop.dropping ? ' setup__row--dropping' : ''}`}>
         <label className="setup__field setup__field--grow" htmlFor="source-path">
-          {drop.dropping ? 'Drop to load it' : 'Image or folder'}
+          {t(drop.dropping ? 'studio.picker.drop' : 'studio.picker.label')}
           <span className="setup__control">
             <input
               id="source-path"
@@ -87,15 +89,15 @@ export function ImageSourcePicker({
             {hasPicker && (
               <>
                 <button type="button" className="btn" onClick={() => browse(pickImageFile)}>
-                  Image…
+                  {t('studio.picker.image')}
                 </button>
                 <button type="button" className="btn" onClick={() => browse(pickFolder)}>
-                  Folder…
+                  {t('studio.picker.folder')}
                 </button>
               </>
             )}
             <button type="submit" className="btn btn--primary" disabled={busy}>
-              Load
+              {t('studio.picker.load')}
             </button>
           </span>
         </label>
@@ -106,17 +108,17 @@ export function ImageSourcePicker({
       {onPickDataset !== undefined && usable.length > 0 && (
         <div className="setup__row">
           <label className="setup__field setup__field--grow" htmlFor="source-dataset">
-            …or a dataset you already have
+            {t('studio.picker.orDataset')}
             <select
               id="source-dataset"
               value={datasetId}
               disabled={busy}
               onChange={(event) => onPickDataset(event.target.value)}
             >
-              <option value="">None</option>
+              <option value="">{t('studio.picker.none')}</option>
               {usable.map((entry) => (
                 <option key={entry.id} value={entry.id}>
-                  {entry.name} ({entry.counts?.images ?? 0} images)
+                  {tp('studio.choice.option', entry.counts?.images ?? 0, { name: entry.name })}
                 </option>
               ))}
             </select>
@@ -125,7 +127,7 @@ export function ImageSourcePicker({
         </div>
       )}
       {drop.available && (
-        <p className="fieldhint">Or drag an image or a folder onto this window.</p>
+        <p className="fieldhint">{t('studio.picker.dragHint')}</p>
       )}
     </form>
   );

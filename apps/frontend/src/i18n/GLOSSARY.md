@@ -36,6 +36,8 @@ for non-experts as the English ones; do not shorten them into jargon.
 | prompt | Prompt |
 | concept | Begriff |
 | tile / tiles | Kachel / Kacheln |
+| frame (of a video) | Einzelbild |
+| pause | anhalten |
 | audit / check the data | Prüfung / Daten prüfen |
 | finding | Befund |
 | augmentation / changed copies | veränderte Kopien |

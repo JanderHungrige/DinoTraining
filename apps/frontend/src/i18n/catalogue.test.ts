@@ -31,6 +31,11 @@ export const SAME_IN_BOTH = new Set<string>([
   'Stop',
   'Name',
   'Details',
+  // Kept as they are in German by the glossary.
+  'Annotation Studio',
+  'Training',
+  'Test',
+  'Prompt',
 ]);
 
 describe('the German catalogue', () => {

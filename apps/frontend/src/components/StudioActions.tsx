@@ -6,8 +6,10 @@
 import type { JSX } from 'react';
 
 import type { AnnotationSession } from '../hooks/useAnnotationSession';
+import { useT } from '../i18n';
 
 export function StudioActions({ session, runLabel }: { readonly session: AnnotationSession; readonly runLabel: string }): JSX.Element {
+  const { t } = useT();
   return (
     <div className="studio__actions">
       <button
@@ -16,7 +18,7 @@ export function StudioActions({ session, runLabel }: { readonly session: Annotat
         disabled={session.proposing || session.busy}
         onClick={() => void session.propose()}
       >
-        {session.proposing ? 'Detecting…' : runLabel}
+        {session.proposing ? t('studio.actions.detecting') : runLabel}
       </button>
       <button
         type="button"
@@ -24,7 +26,7 @@ export function StudioActions({ session, runLabel }: { readonly session: Annotat
         disabled={session.busy || !session.dirty}
         onClick={() => void session.save()}
       >
-        {session.busy ? 'Saving…' : 'Save'}
+        {session.busy ? t('studio.actions.saving') : t('common.save')}
       </button>
       <span className="studio__spacer" />
       <button
@@ -33,7 +35,7 @@ export function StudioActions({ session, runLabel }: { readonly session: Annotat
         disabled={!session.canGoPrevious || session.busy}
         onClick={() => void session.previous()}
       >
-        ← Previous
+        {t('studio.actions.previous')}
       </button>
       <button
         type="button"
@@ -41,7 +43,7 @@ export function StudioActions({ session, runLabel }: { readonly session: Annotat
         disabled={!session.canGoNext || session.busy}
         onClick={() => void session.next()}
       >
-        Next →
+        {t('studio.actions.next')}
       </button>
     </div>
   );

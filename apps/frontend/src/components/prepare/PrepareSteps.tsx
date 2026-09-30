@@ -8,6 +8,7 @@ import { useState, type JSX } from 'react';
 import type { PrepTarget } from '../../api/prep';
 import type { AugmentationPlan, BalancePlan, Strategy } from '../../api/prepPlan';
 import type { PrepareData } from '../../hooks/usePrepareData';
+import { useT, type Key } from '../../i18n';
 import { AuditStep } from './AuditStep';
 import { AugmentStep } from './AugmentStep';
 import { BalanceStep } from './BalanceStep';
@@ -38,19 +39,15 @@ export interface PrepareStepsProps {
 }
 
 /**
- * Why the chosen model does not use a step (doc 107), or ''. Fine-tuning a whole model
+ * Why the chosen model does not use a step (doc 107), as a catalogue key, or null. Fine-tuning a whole model
  * (RF-DETR, SAM 2, SAM 3) takes the recipe's split, classes and exclusions, but neither
  * class balancing nor changed copies: those are the DINO head's.
  */
-export function unusedReason(target: string, step: StepId): string {
-  if (target === '' || target.startsWith('head-')) return '';
-  if (step === 'balance') {
-    return 'Fine-tuning this model does not balance classes: every picture counts once. The recipe still records a choice, used if you train a DINO head with it.';
-  }
-  if (step === 'augment') {
-    return 'Fine-tuning this model trains on the pictures as they are: it makes no changed copies. The recipe still records a choice, used if you train a DINO head with it.';
-  }
-  return '';
+export function unusedReason(target: string, step: StepId): Key | null {
+  if (target === '' || target.startsWith('head-')) return null;
+  if (step === 'balance') return 'prepare.unused.balance';
+  if (step === 'augment') return 'prepare.unused.augment';
+  return null;
 }
 
 export function statusesFor(data: PrepareData, target: string): Record<StepId, StepStatus> {
@@ -69,6 +66,7 @@ export function statusesFor(data: PrepareData, target: string): Record<StepId, S
 
 export function PrepareSteps(props: PrepareStepsProps): JSX.Element {
   const { data, target, plans, choices } = props;
+  const { t } = useT();
   const [stepChoice, setStepChoice] = useState<StepId | ''>('');
   const targetId = target?.id ?? '';
   const statuses = statusesFor(data, targetId);
@@ -79,7 +77,7 @@ export function PrepareSteps(props: PrepareStepsProps): JSX.Element {
     <div className="prep-flow">
       <StepNav current={step} statuses={statuses} onSelect={setStepChoice} />
       <div className="prep-flow__body">
-        <h3 className="prep-flow__title">{STEP_LABEL[step]}</h3>
+        <h3 className="prep-flow__title">{t(STEP_LABEL[step])}</h3>
         <StepBody {...props} step={step} strategy={strategy} preset={preset} />
       </div>
     </div>
@@ -90,8 +88,9 @@ function StepBody(props: PrepareStepsProps & { step: StepId; strategy: Strategy;
   const { datasetId, datasetName, target, data, plans, choices, onChoose, onTrain, step, strategy, preset } = props;
   const targetId = target?.id ?? '';
   const grid = choices.grid ?? null;
+  const { t } = useT();
   const unused = unusedReason(targetId, step);
-  if (unused) return <p className="prep-step__status">{unused}</p>;
+  if (unused) return <p className="prep-step__status">{t(unused)}</p>;
   switch (step) {
     case 'audit':
       return (

@@ -17,6 +17,7 @@ import { showsBoxes, showsMasks, type AnnotationView } from '../types/annotation
 import type { CanvasBox } from '../types/annotation';
 import { BoxOverlay } from './overlays/BoxOverlay';
 import { CompositedMasks } from './overlays/CompositedMasks';
+import { ENGLISH, useT, type Translator } from '../i18n';
 
 export interface StoredOverlayProps {
   readonly boxes: readonly StoredBox[];
@@ -44,14 +45,18 @@ interface Outline {
 }
 
 /** Stored boxes (and mask extents) as the prediction shape `BoxOverlay` already draws. */
-export function asPrediction(entries: readonly Outline[], classNames: readonly string[]): Prediction {
+export function asPrediction(
+  entries: readonly Outline[],
+  classNames: readonly string[],
+  { t }: Translator = ENGLISH,
+): Prediction {
   return {
     instance_id: 'stored',
-    head_name: 'Stored annotations',
+    head_name: t('run.overlay.stored'),
     head_type_id: 'stored',
     task: 'detection',
     render_hint: 'boxes',
-    class_names: [...classNames, 'unnamed'],
+    class_names: [...classNames, t('run.overlay.unnamed')],
     payload: {
       boxes: entries.map((entry) => [entry.x, entry.y, entry.w, entry.h]),
       scores: entries.map((entry) => entry.score ?? 1),
@@ -71,6 +76,7 @@ export function StoredOverlay({
   rendered,
   view,
 }: StoredOverlayProps): JSX.Element | null {
+  const translator = useT();
   const positiveBoxes = boxes
     .filter((box) => box.label === 'positive')
     .map((box) => ({ ...box, name: box.prompt ?? null }));
@@ -100,7 +106,7 @@ export function StoredOverlay({
         />
       )}
       {outlines.length > 0 && (
-        <BoxOverlay prediction={asPrediction(outlines, classNames)} rendered={rendered} />
+        <BoxOverlay prediction={asPrediction(outlines, classNames, translator)} rendered={rendered} />
       )}
     </>
   );

@@ -6,15 +6,18 @@
  * each, and the user cannot tell they are the same thing.
  */
 
+import type { Key } from '../i18n/catalogue';
+import { ENGLISH, type Translator } from '../i18n/translate';
 import { apiFetch } from './client';
 import type { HeadTask, RenderHint } from './heads';
 
 export type HeadInstanceKind = 'pretrained-default' | 'community' | 'trained-here';
 
-export const KIND_LABELS: Readonly<Record<HeadInstanceKind, string>> = Object.freeze({
-  'pretrained-default': 'Default',
-  community: 'Community',
-  'trained-here': 'Trained here',
+/** Catalogue keys (doc 112), translated where rendered. */
+export const KIND_LABELS: Readonly<Record<HeadInstanceKind, Key>> = Object.freeze({
+  'pretrained-default': 'training.heads.kind.default',
+  community: 'training.heads.kind.community',
+  'trained-here': 'training.heads.kind.trainedHere',
 });
 
 export interface HeadInstanceInfo {
@@ -60,8 +63,8 @@ export interface HeadInstanceInfo {
  * written out twice, byte for byte, in two components; one edit would have made them
  * disagree with nothing failing.
  */
-export function describeHead(head: HeadInstanceInfo): string {
-  return `${KIND_LABELS[head.kind]} · ${head.summary}`;
+export function describeHead(head: HeadInstanceInfo, { t }: Translator = ENGLISH): string {
+  return `${t(KIND_LABELS[head.kind])} · ${head.summary}`;
 }
 
 export interface DeleteHeadResult {

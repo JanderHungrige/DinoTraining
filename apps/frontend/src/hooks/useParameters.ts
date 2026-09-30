@@ -15,6 +15,7 @@ import {
   type ParameterSetInfo,
   type ParameterValue,
 } from '../api/parameters';
+import { useT } from '../i18n';
 import { readPersisted, writePersisted, type Guard } from '../lib/persisted';
 
 export type Overrides = Readonly<Record<string, ParameterValue>>;
@@ -70,6 +71,7 @@ function useCatalogue(modelId: string): { set: ParameterSetInfo | null; error: s
 
 export function useParameters(modelId: string): Parameters {
   const { set, error } = useCatalogue(modelId);
+  const translator = useT();
   const family = set?.family ?? '';
   const [store, setStore] = useState<Record<string, Overrides>>({});
   const overrides: Overrides = useMemo(
@@ -98,11 +100,11 @@ export function useParameters(modelId: string): Parameters {
     const found: Record<string, string> = {};
     for (const parameter of set?.parameters ?? []) {
       const value = values[parameter.key];
-      const problem = value === undefined ? '' : problemWith(parameter, value);
+      const problem = value === undefined ? '' : problemWith(parameter, value, translator);
       if (problem) found[parameter.key] = problem;
     }
     return found;
-  }, [set, values]);
+  }, [set, values, translator]);
 
   const change = useCallback(
     (key: string, value: ParameterValue) => {

@@ -12,8 +12,9 @@
 import type { JSX } from 'react';
 
 import { ModelGuidePanel } from '../components/ModelGuidePanel';
-import { INTRO_CONCEPTS, INTRO_LEAD, INTRO_LIMITS, INTRO_STAGES } from './introContent';
-import { getTab, type TabId } from './tabs';
+import { useT } from '../i18n';
+import { introConcepts, introLead, introLimits, introStages } from './introContent';
+import { tabLabel, type TabId } from './tabs';
 
 export interface IntroTabProps {
   /** Jump to the tab a stage describes. Reading should turn into doing. */
@@ -21,19 +22,18 @@ export interface IntroTabProps {
 }
 
 export function IntroTab({ onNavigate }: IntroTabProps): JSX.Element {
+  const translator = useT();
+  const { t } = translator;
   return (
     <section className="intro">
-      <h2 className="studio__title">What this is</h2>
-      <p className="intro__lead">{INTRO_LEAD}</p>
+      <h2 className="studio__title">{t('intro.title')}</h2>
+      <p className="intro__lead">{introLead(translator)}</p>
 
-      <h3 className="intro__heading">The loop</h3>
-      <p className="intro__note">
-        The tabs are in the order you use them. You will go round more than once — that is
-        the point, not a sign you did it wrong the first time.
-      </p>
+      <h3 className="intro__heading">{t('intro.loop.heading')}</h3>
+      <p className="intro__note">{t('intro.loop.note')}</p>
 
       <ol className="intro__stages">
-        {INTRO_STAGES.map((stage, index) => (
+        {introStages(translator).map((stage, index) => (
           <li key={stage.tab} className="intro__stage">
             <div className="intro__stagehead">
               <span className="intro__step" aria-hidden="true">
@@ -45,20 +45,20 @@ export function IntroTab({ onNavigate }: IntroTabProps): JSX.Element {
                 className="btn intro__go"
                 onClick={() => onNavigate(stage.tab)}
               >
-                Open {getTab(stage.tab).label}
+                {t('intro.loop.open', { tab: tabLabel(t, stage.tab) })}
               </button>
             </div>
             <p className="intro__what">{stage.what}</p>
             <p className="intro__why">
-              <strong>Why here:</strong> {stage.why}
+              <strong>{t('intro.loop.whyHere')}</strong> {stage.why}
             </p>
           </li>
         ))}
       </ol>
 
-      <h3 className="intro__heading">Two words this app uses constantly</h3>
+      <h3 className="intro__heading">{t('intro.concepts.heading')}</h3>
       <dl className="intro__concepts">
-        {INTRO_CONCEPTS.map((concept) => (
+        {introConcepts(translator).map((concept) => (
           <div key={concept.term} className="intro__concept">
             <dt className="intro__term">{concept.term}</dt>
             <dd className="intro__body">{concept.body}</dd>
@@ -68,19 +68,14 @@ export function IntroTab({ onNavigate }: IntroTabProps): JSX.Element {
 
       {/* After the concepts and before the limits: it only makes sense once "backbone"
           and "head" mean something, and it answers the question the limits list provokes. */}
-      <h3 className="intro__heading">Choosing a model</h3>
-      <p className="intro__note">
-        Every model here does something the others do badly. The numbers in this panel were
-        all measured in this app, on the datasets in it.
-      </p>
+      <h3 className="intro__heading">{t('intro.model.heading')}</h3>
+      <p className="intro__note">{t('intro.model.note')}</p>
       <ModelGuidePanel />
 
-      <h3 className="intro__heading">What it cannot do yet</h3>
-      <p className="intro__note">
-        Listed because being told is better than concluding it is broken.
-      </p>
+      <h3 className="intro__heading">{t('intro.limits.heading')}</h3>
+      <p className="intro__note">{t('intro.limits.note')}</p>
       <ul className="intro__limits">
-        {INTRO_LIMITS.map((limit) => (
+        {introLimits(translator).map((limit) => (
           <li key={limit}>{limit}</li>
         ))}
       </ul>

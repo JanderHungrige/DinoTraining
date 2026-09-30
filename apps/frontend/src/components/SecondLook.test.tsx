@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SecondLook as State } from '../hooks/useSecondLook';
+import { ENGLISH } from '../i18n';
 import { SecondLook, figure } from './SecondLook';
 
 function look(overrides: Partial<State> = {}): State {
@@ -12,8 +13,8 @@ const INFO = { sample: ['/a.png', '/b.png'], verdicts: { '/a.png': 'changed' as 
 
 describe('SecondLook (doc 109)', () => {
   it('reads the figure as a share of what was judged', () => {
-    expect(figure(2, 12, 2 / 12)).toBe('2 of 12 needed a change (17 %)');
-    expect(figure(0, 0, null)).toBe('Nothing judged yet.');
+    expect(figure(2, 12, 2 / 12, ENGLISH)).toBe('2 of 12 needed a change (17 %)');
+    expect(figure(0, 0, null, ENGLISH)).toBe('Nothing judged yet.');
   });
 
   it('starts a sample', async () => {

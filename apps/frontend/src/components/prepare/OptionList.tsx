@@ -5,6 +5,8 @@
 
 import type { JSX } from 'react';
 
+import { useT } from '../../i18n';
+
 export interface Option<T extends string> {
   readonly id: T;
   readonly title: string;
@@ -23,6 +25,7 @@ export interface OptionListProps<T extends string> {
 
 export function OptionList<T extends string>(props: OptionListProps<T>): JSX.Element {
   const { name, label, options, recommended, value, onChange } = props;
+  const { t } = useT();
   return (
     <div className="prep-options" role="radiogroup" aria-label={label}>
       {options.map((option) => (
@@ -36,7 +39,7 @@ export function OptionList<T extends string>(props: OptionListProps<T>): JSX.Ele
           />
           <span className="prep-option__title">
             {option.title}
-            {option.id === recommended && <span className="badge">recommended</span>}
+            {option.id === recommended && <span className="badge">{t('prepare.option.recommended')}</span>}
             {option.badges?.map((badge) => (
               <span key={badge} className="badge">
                 {badge}

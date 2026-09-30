@@ -6,6 +6,8 @@
  * the COCO export.
  */
 
+import { ENGLISH, type Translator } from '../i18n/translate';
+
 export type Label = 'positive' | 'negative' | 'unclear';
 /**
  * Who proposed a box. Mirrors PROVENANCE_VALUES in backend/app/datasets/schema.py, where
@@ -26,10 +28,22 @@ export type Provenance =
 
 export const LABELS: readonly Label[] = Object.freeze(['positive', 'negative', 'unclear']);
 
+const LABEL_TITLE_KEYS = {
+  positive: 'app.verdict.positive',
+  negative: 'app.verdict.negative',
+  unclear: 'app.verdict.unclear',
+} as const;
+
+/** A verdict's name in the current language (doc 112). */
+export function labelTitle(t: Translator['t'], label: Label): string {
+  return t(LABEL_TITLE_KEYS[label]);
+}
+
+/** English verdict names, for code outside the React tree. Rendered text uses `labelTitle`. */
 export const LABEL_TITLES: Readonly<Record<Label, string>> = Object.freeze({
-  positive: 'Positive',
-  negative: 'Negative',
-  unclear: 'Unclear',
+  positive: labelTitle(ENGLISH.t, 'positive'),
+  negative: labelTitle(ENGLISH.t, 'negative'),
+  unclear: labelTitle(ENGLISH.t, 'unclear'),
 });
 
 /**

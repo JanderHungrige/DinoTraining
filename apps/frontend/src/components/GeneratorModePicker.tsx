@@ -9,20 +9,20 @@
 
 import type { JSX } from 'react';
 
+import { useT, type Key } from '../i18n';
+
 export type GeneratorMode = 'foundation' | 'expert' | 'masks';
 
 interface ModeOption {
   readonly mode: GeneratorMode;
-  readonly label: string;
+  /** A catalogue key, translated where it is rendered. */
+  readonly label: Key;
 }
 
 export const GENERATOR_MODES: readonly ModeOption[] = Object.freeze([
-  {
-    mode: 'foundation',
-    label: 'A general detector — finds everyday objects, nothing to set up',
-  },
-  { mode: 'expert', label: 'A head you trained — proposes boxes' },
-  { mode: 'masks', label: 'Grounded SAM — type a concept, get masks' },
+  { mode: 'foundation', label: 'generator.mode.foundation' },
+  { mode: 'expert', label: 'generator.mode.expert' },
+  { mode: 'masks', label: 'generator.mode.masks' },
 ]);
 
 export interface GeneratorModePickerProps {
@@ -34,9 +34,10 @@ export function GeneratorModePicker({
   mode,
   onChange,
 }: GeneratorModePickerProps): JSX.Element {
+  const { t } = useT();
   return (
     <fieldset className="genpanel__modes">
-      <legend>What proposes the annotations</legend>
+      <legend>{t('generator.mode.legend')}</legend>
       {GENERATOR_MODES.map((option) => (
         <label key={option.mode} className="genpanel__mode">
           <input
@@ -45,7 +46,7 @@ export function GeneratorModePicker({
             checked={mode === option.mode}
             onChange={() => onChange(option.mode)}
           />
-          <span>{option.label}</span>
+          <span>{t(option.label)}</span>
         </label>
       ))}
     </fieldset>
