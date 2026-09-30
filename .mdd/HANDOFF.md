@@ -10,7 +10,7 @@ do not read it for current state.
 - **Wave 15** (docs 111–114): in `dev` (`b5cbc70`, 2026-09-30), with the fixes from Jan's
   test. Its status stays `in_progress` until Jan confirms the demo-state.
 
-**Next:** Wave 16, the website and cloud compute.
+**Next:** Wave 15.5, annotating the normal way (docs 115–119, planned 2026-09-30 from Jan's test: saved = complete, umbrella terms, new-class question, add-only review). Then Wave 16, the website.
 
 ---
 
