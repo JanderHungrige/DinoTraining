@@ -163,6 +163,28 @@ Jan found three things unclear while annotating flames and their reflections.
 - **German placeholders were German:** "Straßenlaterne", although SAM 3 reads English.
   They are English again, and the add hint says to write phrases in English.
 
+## Also from Jan's test (2026-09-30): search terms, Back, tabs
+
+- **A comma now separates search terms.** "flame, reflection" used to come back as one
+  label.
+  - **Grounding DINO** separates phrases only at a full stop. `normalise_prompt` now turns
+    commas, semicolons and line breaks into full stops (`app/ml/concepts.py`).
+  - Its post-processor still joined the tokens of two terms, giving labels like "tree
+    light". Each box is now relabelled with the one term it matched most strongly.
+  - **SAM 3** read the whole text as one concept. It now runs one pass per term, and each
+    pass labels its own masks.
+  - **Checked** with the real grounding-dino-tiny: before, "car light" and "tree car
+    light"; after, only the terms asked for.
+- **Back to overview:**
+  - "Change folder" became "← Back to overview", the one way to end a session.
+  - With unsaved changes it asks first: save and go back, go back without saving, or
+    stay. A failed save stays.
+- **The session survives other tabs.**
+  - App keeps the Studio mounted once it has been opened, hidden while another tab shows.
+    The picture, unsaved edits and a running prescan are still there on return.
+  - The phrase keys are off while the Studio is hidden (`active`), so typing "a" in
+    another tab cannot mark a picture.
+
 ## Bugs
 
 (none yet)
