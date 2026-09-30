@@ -21,3 +21,15 @@ def register(mcp: MCPServer) -> None:
         `heads` for a head trained on a frozen backbone, `finetuned` for a fine-tuned model.
         """
         return await client.call("GET", f"/cards/{kind}/{instance_id}")
+
+    @mcp.tool()
+    async def export_model(
+        kind: Literal["heads", "finetuned"], instance_id: str, destination: str
+    ) -> Any:
+        """Write a trained model's export bundle (doc 121) as `<name>.zip` into the folder
+        `destination` (absolute, existing). For a head it holds the card (`model.json`),
+        the weights, `dino_runtime.py` (the app's own preprocessing, head and decoding
+        code), `predict.py` and `requirements.txt`; `python predict.py picture.jpg` prints
+        what the app would. Returns the zip's path."""
+        body = {"kind": kind, "instance_id": instance_id, "destination": destination}
+        return await client.call("POST", "/exports", json=body)

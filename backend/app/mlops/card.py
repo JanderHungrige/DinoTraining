@@ -63,6 +63,7 @@ def head_card(instance: HeadInstance) -> dict[str, Any]:
             "type_id": spec.id,
             "title": spec.title,
             "consumes": spec.consumes,
+            "render_hint": spec.render_hint,
             "module": _head_module(instance),
             "num_classes": instance.num_classes,
         },

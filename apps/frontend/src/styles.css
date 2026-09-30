@@ -3559,3 +3559,11 @@ body {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Doc 121: Export / Show where it is, beside a trained model in the Library. */
+.library__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
