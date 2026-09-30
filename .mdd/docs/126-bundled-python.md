@@ -65,6 +65,10 @@ runtime/
 - Linux `~/.local/share/DinoTraining/runtime/`
 - or `DINO_RUNTIME_DIR` when set.
 
+**Superseded in part by doc 129:** environments now live side by side in `envs/<id>/`,
+each with its own `installed.lock` and `installed.json`, and `current` names the one
+the backend runs in. The layout below is this doc's first version.
+
 ```
 runtime/
   python/        uv-managed CPython 3.12 (python-build-standalone)
