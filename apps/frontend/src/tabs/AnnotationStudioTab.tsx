@@ -92,9 +92,14 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   // Classes on the canvas right now, offered alongside the stored vocabulary (doc 60).
   // A proposal run's classes are on screen and unsaved; a picker that could not offer
   // them would be visibly wrong about what this image contains.
+  // A phrase with a class of its own is a class too, before any outline carries it (Jan,
+  // 2026-09-30: "+ phrase" added "flame reflection", and the list's picker did not offer it).
   const inPlay = useMemo(
-    () => boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
-    [boxes],
+    () => [
+      ...boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
+      ...pictures.phrases.map((phrase) => phrase.class_name),
+    ],
+    [boxes, pictures.phrases],
   );
   const vocabulary = useDatasetClasses(config?.datasetId ?? null, inPlay);
 
