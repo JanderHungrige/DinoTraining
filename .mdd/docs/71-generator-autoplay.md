@@ -127,3 +127,7 @@ Grounding DINO tiny, prompt "a chess piece.", over the 289-image chess folder:
 ## Bugs
 
 (none yet — populated by /mdd bug when issues are reported)
+
+## Changes
+
+- **2026-09-30 (Jan):** the autoplay button reads **"▶ Start analysis"** instead of "Play" (it read as playing back what was annotated), and the automation boxes moved to their own row below the buttons, named in full: **Auto-propose**, **Auto-save**, **Run hidden**. The prescan button lost its emoji.

@@ -1,5 +1,7 @@
 /**
- * Play / Stop and the "hidden" box, in the Generator's toolbar (doc 71).
+ * Start analysis / Stop in the Generator's toolbar, and the "Run hidden" box for the
+ * options row below it (doc 71). The button said "Play", which read as playing back what
+ * was already annotated rather than analysing the images (Jan, 2026-09-30).
  *
  * Stop is never disabled: it is the one control that must work while everything else is
  * locked, because stopping to correct a wrong box is what the half-second hold is for.
@@ -32,24 +34,30 @@ export function AutoplayControls({ autoplay, canPlay }: AutoplayControlsProps): 
           onClick={autoplay.play}
           title="Propose, show for half a second, save, and move on — from this image to the last"
         >
-          ▶ Play
+          ▶ Start analysis
         </button>
       )}
-      <label className="genbar__auto" title="Run without drawing each image; show progress only">
-        <input
-          type="checkbox"
-          checked={hidden}
-          disabled={running}
-          aria-label="Run hidden, without drawing each image"
-          onChange={(event) => autoplay.setHidden(event.target.checked)}
-        />
-        hidden
-      </label>
       {running && !hidden && progress && (
         <span className="genbar__count" role="status">
           {progress.done} / {progress.total}
         </span>
       )}
     </span>
+  );
+}
+
+/** The "Run hidden" choice, shown with the other automation boxes below the buttons. */
+export function AutoplayHiddenOption({ autoplay }: { readonly autoplay: Autoplay }): JSX.Element {
+  return (
+    <label className="genbar__auto" title="Run without drawing each image; show progress only">
+      <input
+        type="checkbox"
+        checked={autoplay.hidden}
+        disabled={autoplay.running}
+        aria-label="Run hidden, without drawing each image"
+        onChange={(event) => autoplay.setHidden(event.target.checked)}
+      />
+      Run hidden
+    </label>
   );
 }

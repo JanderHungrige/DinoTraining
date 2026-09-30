@@ -3,9 +3,9 @@
  * each with an "auto" box, so reviewing a folder is one click per image instead of four
  * spread across the width of the screen.
  *
- * The boxes have their own accessible names. Two controls both called "auto" would be
- * indistinguishable to a screen reader, and the visible word is only short because the
- * button beside it already says what it applies to.
+ * The automation boxes sit in a row of their own below the buttons, each named in full
+ * ("Auto-propose", "Auto-save"). A bare "auto" next to a button left people guessing which
+ * button it belonged to once the toolbar wrapped (Jan, 2026-09-30).
  */
 
 import type { JSX, ReactNode } from 'react';
@@ -27,8 +27,10 @@ export interface GeneratorActionBarProps {
   readonly onSave: () => void;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
-  /** Room for the autoplay controls, kept in the same cluster. */
+  /** Room for the autoplay button, kept in the same cluster. */
   readonly children?: ReactNode;
+  /** More option boxes for the row below, e.g. autoplay's "Run hidden". */
+  readonly options?: ReactNode;
 }
 
 export function GeneratorActionBar({
@@ -48,51 +50,51 @@ export function GeneratorActionBar({
   onPrevious,
   onNext,
   children,
+  options,
 }: GeneratorActionBarProps): JSX.Element {
   const busy = proposing || saving || locked;
 
   return (
-    <div className="studio__actions genbar" role="toolbar" aria-label="Review this image">
-      <span className="genbar__pair">
+    <div className="genbar__wrap">
+      <div className="studio__actions genbar" role="toolbar" aria-label="Review this image">
         <button type="button" className="btn btn--primary" disabled={busy} onClick={onPropose}>
           {proposing ? 'Proposing…' : proposeLabel}
         </button>
+        <button type="button" className="btn" disabled={busy || !dirty} onClick={onSave}>
+          {saving ? 'Saving…' : 'Save to dataset'}
+        </button>
+        <button type="button" className="btn" disabled={!canGoPrevious || busy} onClick={onPrevious}>
+          ← Previous
+        </button>
+        <button type="button" className="btn" disabled={!canGoNext || busy} onClick={onNext}>
+          Next →
+        </button>
+        {children}
+      </div>
+
+      <div className="genbar__options" role="group" aria-label="Automation">
         <label className="genbar__auto" title="Propose as soon as each new image appears">
           <input
             type="checkbox"
             checked={autoPropose}
             disabled={locked}
-            aria-label="Propose automatically on each new image"
+            aria-label="Auto-propose: propose automatically on each new image"
             onChange={(event) => onAutoProposeChange(event.target.checked)}
           />
-          auto
+          Auto-propose
         </label>
-      </span>
-
-      <span className="genbar__pair">
-        <button type="button" className="btn" disabled={busy || !dirty} onClick={onSave}>
-          {saving ? 'Saving…' : 'Save to dataset'}
-        </button>
         <label className="genbar__auto" title="Save a changed image when you move on from it">
           <input
             type="checkbox"
             checked={autoSave}
             disabled={locked}
-            aria-label="Save automatically when moving to another image"
+            aria-label="Auto-save: save automatically when moving to another image"
             onChange={(event) => onAutoSaveChange(event.target.checked)}
           />
-          auto
+          Auto-save
         </label>
-      </span>
-
-      <button type="button" className="btn" disabled={!canGoPrevious || busy} onClick={onPrevious}>
-        ← Previous
-      </button>
-      <button type="button" className="btn" disabled={!canGoNext || busy} onClick={onNext}>
-        Next →
-      </button>
-
-      {children}
+        {options}
+      </div>
     </div>
   );
 }

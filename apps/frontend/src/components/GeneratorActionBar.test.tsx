@@ -38,10 +38,23 @@ describe('GeneratorActionBar (doc 70)', () => {
 
   it('gives each auto box a name that says what it automates', () => {
     render(<GeneratorActionBar {...props()} />);
+    // Visible, not only for screen readers: a bare "auto" left people guessing.
+    expect(screen.getByText('Auto-propose')).toBeInTheDocument();
+    expect(screen.getByText('Auto-save')).toBeInTheDocument();
     expect(
       screen.getByRole('checkbox', { name: /propose automatically/i }),
     ).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /save automatically/i })).toBeChecked();
+  });
+
+  it('puts the automation boxes in their own row below the buttons', () => {
+    render(<GeneratorActionBar {...props()} options={<input type="checkbox" aria-label="extra" />} />);
+    const bar = screen.getByRole('toolbar', { name: /review this image/i });
+    const row = screen.getByRole('group', { name: /automation/i });
+    expect(within(bar).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(within(row).getAllByRole('checkbox')).toHaveLength(3);
+    // Below, in document order.
+    expect(bar.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('reports toggling each box separately', async () => {

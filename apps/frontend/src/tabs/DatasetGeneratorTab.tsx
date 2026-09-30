@@ -20,7 +20,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import { isAnnotationView, isBoolean, isShapeOf } from '../lib/persisted';
 import { useAutoPropose } from '../hooks/useAutoPropose';
 import { useAutoplay } from '../hooks/useAutoplay';
-import { AutoplayControls } from '../components/AutoplayControls';
+import { AutoplayControls, AutoplayHiddenOption } from '../components/AutoplayControls';
 import { AutoplayBar, AutoplaySummary } from '../components/AutoplayProgress';
 import { UnclearBandField } from '../components/UnclearBandField';
 import { UnclearQuestion } from '../components/UnclearQuestion';
@@ -257,6 +257,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
             onPrevious={() => void session.previous({ autoSave })}
             onNext={() => void session.next({ autoSave })}
             locked={autoplay.running}
+            options={<AutoplayHiddenOption autoplay={autoplay} />}
           >
             <AutoplayControls
               autoplay={autoplay}

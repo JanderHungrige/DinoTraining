@@ -68,7 +68,7 @@ export function PrescanPanel({
     return (
       <div className="prescan">
         <button type="button" className="btn btn--small" onClick={() => setOpen(true)}>
-          <span aria-hidden="true">⚡</span> Skip the empty images…
+          Skip the empty images…
         </button>
       </div>
     );

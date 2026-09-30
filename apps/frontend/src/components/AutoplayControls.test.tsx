@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Autoplay } from '../hooks/useAutoplay';
-import { AutoplayControls } from './AutoplayControls';
+import { AutoplayControls, AutoplayHiddenOption } from './AutoplayControls';
 import { AutoplayBar, AutoplaySummary, percentOf } from './AutoplayProgress';
 
 function autoplay(overrides: Partial<Autoplay> = {}): Autoplay {
@@ -24,11 +24,11 @@ function autoplay(overrides: Partial<Autoplay> = {}): Autoplay {
 const PROGRESS = { done: 34, total: 100, saved: 20, empty: 12, failed: 2, skipped: 0, asked: 0 };
 
 describe('AutoplayControls (doc 71)', () => {
-  it('offers Play when idle, and starts the run', async () => {
+  it('offers Start analysis when idle, and starts the run', async () => {
     const user = userEvent.setup();
     const state = autoplay();
     render(<AutoplayControls autoplay={state} canPlay />);
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     expect(state.play).toHaveBeenCalled();
   });
 
@@ -44,13 +44,18 @@ describe('AutoplayControls (doc 71)', () => {
   });
 
   it('does not let the hidden choice change mid-run', () => {
-    render(<AutoplayControls autoplay={autoplay({ running: true })} canPlay={false} />);
+    render(<AutoplayHiddenOption autoplay={autoplay({ running: true })} />);
     expect(screen.getByRole('checkbox', { name: /run hidden/i })).toBeDisabled();
   });
 
-  it('cannot play when there is nothing to play', () => {
+  it('does not call it Play, which read as playing back what was annotated', () => {
+    render(<AutoplayControls autoplay={autoplay()} canPlay />);
+    expect(screen.queryByRole('button', { name: /play/i })).toBeNull();
+  });
+
+  it('cannot start when there is nothing to analyse', () => {
     render(<AutoplayControls autoplay={autoplay()} canPlay={false} />);
-    expect(screen.getByRole('button', { name: /play/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /start analysis/i })).toBeDisabled();
   });
 });
 

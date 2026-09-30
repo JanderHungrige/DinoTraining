@@ -132,14 +132,14 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
     const user = userEvent.setup();
     await startMaskSession();
     await user.click(screen.getByRole('button', { name: /next/i }));
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
 
     expect(await screen.findByRole('button', { name: /stop/i })).toBeInTheDocument();
     await waitFor(
       () => expect(screen.getByText(/reached the last image/)).toBeInTheDocument(),
       { timeout: 4000 },
     );
-    // Started at b, not at a: Play begins where the user is.
+    // Started at b, not at a: Start begins where the user is.
     const saved = vi.mocked(datasetsApi.saveImageMasks).mock.calls.map(([, p]) => p.image_path);
     expect(saved).toEqual(['/photos/b.png', '/photos/c.png']);
     expect(screen.getByText(/2 saved/)).toBeInTheDocument();
@@ -150,7 +150,7 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
   it('stops on the image it is holding, without saving it', async () => {
     const user = userEvent.setup();
     await startMaskSession();
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     // The first proposal is on screen and being held.
     await screen.findByRole('button', { name: /Positive mask/ });
     await user.click(screen.getByRole('button', { name: /stop/i }));
@@ -159,7 +159,7 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
     expect(datasetsApi.saveImageMasks).not.toHaveBeenCalled();
     // Left editable, with the proposal the user stopped to correct.
     expect(screen.getByRole('button', { name: /Positive mask/ })).toBeEnabled();
-    expect(screen.getByRole('button', { name: /play/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /start analysis/i })).toBeEnabled();
   });
 
   it('in hidden mode shows a percentage instead of the image', async () => {
@@ -172,7 +172,7 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
     });
     await startMaskSession();
     await user.click(screen.getByRole('checkbox', { name: /run hidden/i }));
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
 
     expect(await screen.findByRole('progressbar', { name: /autoplay progress/i })).toBeInTheDocument();
     // No canvas while hidden: nothing is drawn per image.
@@ -186,7 +186,7 @@ describe('DatasetGeneratorTab — autoplay (doc 71)', () => {
   it('stops when the tab is left, instead of running on with nothing on screen', async () => {
     const user = userEvent.setup();
     await startMaskSession();
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     await screen.findByRole('button', { name: /Positive mask/ });
 
     cleanup();
@@ -206,7 +206,7 @@ describe('DatasetGeneratorTab — asking when unclear (doc 72)', () => {
   it('pauses, lets the user overrule, and saves their verdict — not the model\'s', async () => {
     const user = userEvent.setup();
     await startMaskSession();
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
 
     const question = await screen.findByRole('alert', { name: /waiting for you/i });
     expect(question).toHaveTextContent('Paused on image 1 of 3');
@@ -228,7 +228,7 @@ describe('DatasetGeneratorTab — asking when unclear (doc 72)', () => {
   it('saves an unanswered question as unclear', async () => {
     const user = userEvent.setup();
     await startMaskSession();
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     await screen.findByRole('alert', { name: /waiting for you/i });
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
@@ -240,13 +240,13 @@ describe('DatasetGeneratorTab — asking when unclear (doc 72)', () => {
   it('Stop here ends the run on that image, unsaved', async () => {
     const user = userEvent.setup();
     await startMaskSession();
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     await screen.findByRole('alert', { name: /waiting for you/i });
     await user.click(screen.getByRole('button', { name: /stop here/i }));
 
     expect(await screen.findByText(/stopped here/)).toBeInTheDocument();
     expect(datasetsApi.saveImageMasks).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /play/i })).toBeEnabled();
+    expect(screen.getByRole('button', { name: /start analysis/i })).toBeEnabled();
   });
 });
 
@@ -262,7 +262,7 @@ describe('DatasetGeneratorTab — inspect what I just annotated (doc 74)', () =>
   it('is not offered mid-run, where leaving would stop autoplay unasked', async () => {
     const user = userEvent.setup();
     await startMaskSession(vi.fn());
-    await user.click(screen.getByRole('button', { name: /play/i }));
+    await user.click(screen.getByRole('button', { name: /start analysis/i }));
     expect(screen.getByRole('button', { name: /inspect what i just annotated/i })).toBeDisabled();
   });
 });

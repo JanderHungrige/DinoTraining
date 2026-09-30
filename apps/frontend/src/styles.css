@@ -1123,7 +1123,19 @@ body {
   flex: 1;
 }
 
-/* Doc 70: Propose and Save beside Previous/Next, each with its "auto" box. */
+/* Doc 70: Propose and Save beside Previous/Next; the automation boxes in a row below. */
+.genbar__wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.genbar__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.25rem;
+}
+
 .genbar__pair {
   display: inline-flex;
   align-items: center;
