@@ -35,6 +35,11 @@ export const appDe: Catalogue<typeof appEn> = {
     'Lass deinen eigenen KI-Assistenten die App steuern – über MCP oder mit einem Dokument.',
   'app.stub.arrives': 'Kommt mit Welle {wave}.',
 
+  'app.addApps.question': 'DinoTraining zu deinem Programme-Ordner hinzufügen?',
+  'app.addApps.add': 'Hinzufügen',
+  'app.addApps.notNow': 'Jetzt nicht',
+  'app.addApps.added': 'Hinzugefügt: {path}',
+  'app.addApps.failed': 'Konnte nicht hinzugefügt werden: {message}',
   'app.backend.connecting': 'Verbindung zum Backend wird hergestellt …',
   'app.backend.unexpected': 'Unerwarteter Fehler bei der Verbindung zum Backend.',
   'app.client.unreachable':

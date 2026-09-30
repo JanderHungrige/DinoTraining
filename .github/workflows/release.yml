@@ -46,7 +46,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
           - os: macos-14
             label: macOS (Apple silicon)
-            bundles: dmg
+            # Doc 130: the plain .app, packed below. A .dmg invites a browser download,
+            # which quarantines it, and the unsigned app is then blocked.
+            bundles: app
             target: aarch64-apple-darwin
 
     steps:
@@ -111,13 +113,26 @@ jobs:
           fi
           echo "No model weights in the bundle."
 
+      # Doc 130: the Mac app as a tarball with its checksum, and the Homebrew formula for
+      # exactly this archive. Jan copies the formula into the tap.
+      - name: Pack the Mac app and render the formula
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('apps/desktop/src-tauri/tauri.conf.json'))['version'])")
+          OUT=apps/desktop/src-tauri/target/release/bundle/macos
+          NAME="DinoTraining_${VERSION}_aarch64.app.tar.gz"
+          tar -czf "$OUT/$NAME" -C "$OUT" DinoTraining.app
+          (cd "$OUT" && shasum -a 256 "$NAME" > "$NAME.sha256")
+          python scripts/render_formula.py "$VERSION" "$(cut -d' ' -f1 "$OUT/$NAME.sha256")" > "$OUT/dinotraining.rb"
+
       # Doc 126 promised small installers; the job summary shows whether they are.
       - name: Record the installer sizes
         shell: bash
         run: |
           {
             echo "### ${{ matrix.label }}"
-            find apps/desktop/src-tauri/target/release/bundle \( -name '*.dmg' -o -name '*.exe' -o -name '*.deb' \) \
+            find apps/desktop/src-tauri/target/release/bundle \( -name '*.tar.gz' -o -name '*.exe' -o -name '*.deb' \) \
               -exec du -h {} \;
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -125,7 +140,9 @@ jobs:
         with:
           name: installer-${{ matrix.os }}
           path: |
-            apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz
+            apps/desktop/src-tauri/target/release/bundle/macos/*.sha256
+            apps/desktop/src-tauri/target/release/bundle/macos/dinotraining.rb
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
             apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage

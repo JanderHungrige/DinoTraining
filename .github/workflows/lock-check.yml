@@ -11,6 +11,9 @@ on:
       - "backend/**"
       - "scripts/stage_runtime.py"
       - "scripts/test_stage_runtime.py"
+      - "scripts/install-mac.sh"
+      - "scripts/*formula*"
+      - "packaging/**"
       - ".github/workflows/lock-check.yml"
   pull_request:
     paths:
@@ -53,4 +56,9 @@ jobs:
 
       # Doc 126: the release build stages its runtime with this script on each OS.
       - name: Runtime staging tests
-        run: uv run --frozen --no-sync pytest -q -p no:cacheprovider ../scripts/test_stage_runtime.py
+        run: uv run --frozen --no-sync pytest -q -p no:cacheprovider ../scripts/test_stage_runtime.py ../scripts/test_render_formula.py
+
+      # Doc 130: the Mac install script, against local archives (no network).
+      - name: Mac install script tests
+        if: runner.os == 'macOS'
+        run: bash ../scripts/test_install_mac.sh

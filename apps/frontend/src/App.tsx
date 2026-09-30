@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
+import { AddToApplications } from './components/AddToApplications';
 import { BackendStatus } from './components/BackendStatus';
 import { LanguageSwitch } from './components/LanguageSwitch';
 import { LanguageProvider } from './i18n';
@@ -89,6 +90,7 @@ export function App(): JSX.Element {
           <LanguageSwitch />
           <BackendStatus />
         </header>
+        <AddToApplications />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 

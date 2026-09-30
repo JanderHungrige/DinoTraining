@@ -3,6 +3,7 @@
 //! Responsibilities stop at the window and the sidecar process. No ML, no business
 //! logic — that all lives behind `/api/v1` in the Python backend.
 
+pub mod mac_apps;
 pub mod progress;
 pub mod runtime;
 pub mod setup;
@@ -49,7 +50,9 @@ pub fn run() {
             setup_flow::setup_report,
             setup_flow::start_previous,
             switch::runtime_status,
-            switch::switch_variant
+            switch::switch_variant,
+            mac_apps::applications_offer,
+            mac_apps::add_to_applications
         ])
         .setup(|app| {
             let handle = app.handle().clone();

@@ -29,6 +29,11 @@ export const appEn = {
   'app.stub.arrives': 'Arrives in Wave {wave}.',
 
   // The backend badge and the API client's own messages.
+  'app.addApps.question': 'Add DinoTraining to your Applications folder?',
+  'app.addApps.add': 'Add',
+  'app.addApps.notNow': 'Not now',
+  'app.addApps.added': 'Added: {path}',
+  'app.addApps.failed': 'Could not add it: {message}',
   'app.backend.connecting': 'Connecting to backend…',
   'app.backend.unexpected': 'Unexpected error contacting the backend.',
   'app.client.unreachable': 'Cannot reach the DinoTraining backend at {url}. Is the sidecar running?',
