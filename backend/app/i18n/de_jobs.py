@@ -133,6 +133,13 @@ ENTRIES: dict[str, str] = {
     "Finished {#count} epochs": "{count} Epochs abgeschlossen",
     "Cancelled before epoch {#epoch}": "Vor Epoch {epoch} abgebrochen",
     "Cancelled during epoch {#epoch}": "Während Epoch {epoch} abgebrochen",
+    "Umbrella term {+text}: answered by every outline of {classes}.": (
+        "Oberbegriff {text}: beantwortet von jedem Umriss von {classes}."
+    ),
+    "Pictures left out for a class, as saved before it existed: {listed}.": (
+        "Bilder, die für eine Klasse ausgelassen wurden, weil sie vor ihr gespeichert "
+        "wurden: {listed}."
+    ),
     "SAM 3 trained on {#positives} positive queries and {#negatives} negatives per round: "
     "{#absent} absent, {#cross} cross, {#rejected} rejected, {#confusable} confusable, "
     "{#generic} generic.": (

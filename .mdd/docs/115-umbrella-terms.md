@@ -140,6 +140,20 @@ Also:
 - **Dropped while building:** the check for "an umbrella over itself" could never fire.
   That text is always a class, and "already a class" answers first.
 
+## The job note (added at the wave's end)
+
+- **What it says:** `describe_scope` adds two notes to a SAM 3 job: each umbrella with its
+  classes, and the pictures left out per class because they were saved before it
+  existed (doc 117). Both are translated into German.
+- **The wave's demo run** (1 epoch, "Wave 12 filled-ring convention", umbrella "shape" over
+  blob and ring, class star made after its 70 pictures):
+  - mIoU 0.217 → 0.450.
+  - The notes read "Oberbegriff shape: beantwortet von jedem Umriss von blob, ring." and
+    the pictures left out for star (70).
+  - The first German wording kept an English "on" inside the list; it was reworded to
+    "star (70)".
+  - The run's model, the umbrella and the class were deleted afterwards.
+
 ## Bugs
 
 (none yet)

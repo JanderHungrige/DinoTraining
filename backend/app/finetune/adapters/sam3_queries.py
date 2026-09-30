@@ -210,4 +210,19 @@ def describe(counts: Counter[str], rounds: int) -> str:
     )
 
 
-__all__ = ["GENERIC_POOL", "Query", "QuerySettings", "describe", "plan_queries"]
+def describe_scope(table: PhraseTable) -> list[str]:
+    """The job notes on umbrella terms (doc 115) and on pictures left out for a class
+    because they were saved before it existed (doc 117)."""
+    notes = [
+        f"Umbrella term {text}: answered by every outline of {', '.join(phrase.classes)}."
+        for text, phrase in sorted(table.phrases.items())
+        if phrase.classes
+    ]
+    left: Counter[str] = Counter(name for names in table.unknown.values() for name in names)
+    if left:
+        listed = ", ".join(f"{name} ({n})" for name, n in sorted(left.items()))
+        notes.append(f"Pictures left out for a class, as saved before it existed: {listed}.")
+    return notes
+
+
+__all__ = ["GENERIC_POOL", "Query", "QuerySettings", "describe", "describe_scope", "plan_queries"]

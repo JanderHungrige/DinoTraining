@@ -167,3 +167,22 @@ class TestTraining:
     def test_checked_members_make_a_checked_negative(self) -> None:
         checked = table(**{"/a": {"m8": "absent", "m9": "absent"}})
         assert ("screw", "absent", ()) in queries(sample(2), checked)
+
+
+def test_the_job_note_names_umbrellas_and_what_was_left_out() -> None:
+    """The wave's demo: the note shows 'screw' over m8, m9 and the m10 pictures left out."""
+    from app.finetune.adapters.sam3_queries import describe_scope
+    from app.i18n.translate import translate_text
+
+    t = table()
+    t.unknown = {"/a": {"m10"}, "/b": {"m10"}}
+    notes = describe_scope(t)
+    assert notes == [
+        "Umbrella term screw: answered by every outline of m8, m9.",
+        "Pictures left out for a class, as saved before it existed: m10 (2).",
+    ]
+    assert (
+        translate_text(notes[0], "de")
+        == "Oberbegriff screw: beantwortet von jedem Umriss von m8, m9."
+    )
+    assert translate_text(notes[1], "de").endswith("weil sie vor ihr gespeichert wurden: m10 (2).")

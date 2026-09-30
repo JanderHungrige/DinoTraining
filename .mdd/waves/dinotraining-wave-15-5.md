@@ -150,3 +150,17 @@ so this wave is 15.5, following the precedent of Wave 7.5.
   COCO exports are complete per category, but not all. Decide in 117; perhaps ask at import.
 - **The timestamp rule needs a class-rename check.** Doc 82's rename must not reset
   `created_at`, or every picture would fall out for the renamed class.
+
+## Build summary (2026-09-30)
+
+All five features are built, tested and checked in the running app. The status stays
+`in_progress` until Jan confirms the demo-state.
+
+- **Demo run:** a SAM 3 fine-tune of 1 epoch with umbrella "shape" over blob and ring, and
+  class star made after 70 saved pictures.
+  - mIoU 0.217 → 0.450.
+  - The job notes name the umbrella, and the 70 pictures left out for star.
+- **Found and fixed on the way:**
+  - A filter that started on the picture already shown hung on "Loading image…" (doc 119).
+    The prescan filter had the same trap.
+  - `ruff format tests` reformatted about 60 unrelated files; they were restored.
