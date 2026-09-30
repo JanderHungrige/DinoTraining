@@ -222,6 +222,14 @@ CREATE TABLE IF NOT EXISTS image_phrase_status (
     PRIMARY KEY (image_id, phrase_id)
 );
 
+-- Doc 115: an umbrella term ("screw") over several classes (m8, m9). Its phrases row has
+-- class_name '' and answers to every outline of its member classes; nothing per outline.
+CREATE TABLE IF NOT EXISTS phrase_classes (
+    phrase_id  INTEGER NOT NULL REFERENCES phrases(id) ON DELETE CASCADE,
+    class_name TEXT NOT NULL,
+    PRIMARY KEY (phrase_id, class_name)
+);
+
 CREATE INDEX IF NOT EXISTS idx_phrases_dataset ON phrases(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_mask_phrases_phrase ON mask_phrases(phrase_id);
 CREATE INDEX IF NOT EXISTS idx_images_dataset ON images(dataset_id);

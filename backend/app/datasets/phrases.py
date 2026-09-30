@@ -17,6 +17,7 @@ from app.core.config import Settings
 from app.datasets.class_names import normalise_class_name
 from app.datasets.db import transaction
 from app.datasets.phrase_links import check_variants, ensure_phrase, phrase_key, split_input
+from app.datasets.umbrella import add_umbrella, members_of, set_members
 
 Status = Literal["complete", "absent"]
 
@@ -33,6 +34,10 @@ class PhraseInfo(BaseModel):
     #: Pictures checked "all marked" / "not in this picture" for it.
     complete: int
     absent: int
+    #: Doc 115: the classes it answers for — its one class, or an umbrella's members.
+    classes: list[str] = []
+    #: An umbrella term ("screw" over m8 and m9): `class_name` is '' and `classes` its members.
+    umbrella: bool = False
 
 
 class PictureStatus(BaseModel):
@@ -93,7 +98,8 @@ class PhraseStore:
                     "SELECT name FROM dataset_classes WHERE dataset_id = ?", (dataset_id,)
                 )
             }
-        listed = {str(row["text"]): _info(row, counts) for row in rows}
+            umbrellas = members_of(connection, dataset_id)
+        listed = {str(row["text"]): _info(row, counts, umbrellas) for row in rows}
         for name in classes:
             key = phrase_key(name)
             if key not in listed:
@@ -103,16 +109,29 @@ class PhraseStore:
                     class_name=name or key,
                     variants=[],
                     confusable=[],
+                    classes=[key],
                     **counts.get(key, {"instances": 0, "complete": 0, "absent": 0}),
                 )
-        return sorted(listed.values(), key=lambda p: (normalise_class_name(p.class_name), p.text))
+        return sorted(
+            listed.values(), key=lambda p: (p.umbrella, normalise_class_name(p.class_name), p.text)
+        )
 
-    def add(self, dataset_id: str, text: str, class_name: str | None = None) -> PhraseInfo:
+    def add(
+        self,
+        dataset_id: str,
+        text: str,
+        class_name: str | None = None,
+        classes: list[str] | None = None,
+    ) -> PhraseInfo:
         """`"red car, crimson car"` → phrase "red car" with a variation. An existing phrase
-        gains the new variations rather than being refused."""
+        gains the new variations rather than being refused. With `classes`, an umbrella
+        term over them (doc 115)."""
         main, variants = split_input(text)
         with transaction(self._settings) as connection:
-            phrase_id = ensure_phrase(connection, dataset_id, main, class_name or main)
+            if classes is not None:
+                phrase_id = add_umbrella(connection, dataset_id, main, classes)
+            else:
+                phrase_id = ensure_phrase(connection, dataset_id, main, class_name or main)
             row = connection.execute("SELECT * FROM phrases WHERE id = ?", (phrase_id,)).fetchone()
             merged = list(dict.fromkeys([*json.loads(row["variants"]), *variants]))
             check_variants(connection, dataset_id, main, merged)
@@ -127,6 +146,7 @@ class PhraseStore:
         phrase_id: int,
         variants: list[str] | None = None,
         confusable: list[str] | None = None,
+        classes: list[str] | None = None,
     ) -> PhraseInfo:
         with transaction(self._settings) as connection:
             row = connection.execute(
@@ -142,6 +162,13 @@ class PhraseStore:
                 connection.execute(
                     "UPDATE phrases SET variants = ? WHERE id = ?", (json.dumps(clean), phrase_id)
                 )
+            if classes is not None:
+                if row["class_name"] != "":
+                    raise ValueError(
+                        f"'{row['text']}' belongs to class '{row['class_name']}'; only an "
+                        "umbrella term has several classes."
+                    )
+                set_members(connection, dataset_id, phrase_id, str(row["text"]), classes)
             if confusable is not None:
                 clean = list(dict.fromkeys(phrase_key(v) for v in confusable if v.strip()))
                 connection.execute(
@@ -160,15 +187,24 @@ class PhraseStore:
         return next(p for p in self.list_for(dataset_id) if p.id == phrase_id)
 
 
-def _info(row: sqlite3.Row, counts: dict[str, dict[str, int]]) -> PhraseInfo:
+def _info(
+    row: sqlite3.Row, counts: dict[str, dict[str, int]], umbrellas: dict[str, list[str]]
+) -> PhraseInfo:
     text = str(row["text"])
+    found = dict(counts.get(text, {"instances": 0, "complete": 0, "absent": 0}))
+    members = umbrellas.get(text)
+    if members is not None:
+        # Every outline of every member answers to it (doc 115).
+        found["instances"] = sum(counts.get(m, {}).get("instances", 0) for m in members)
     return PhraseInfo(
         id=int(row["id"]),
         text=text,
         class_name=str(row["class_name"]),
         variants=json.loads(row["variants"]),
         confusable=json.loads(row["confusable"]),
-        **counts.get(text, {"instances": 0, "complete": 0, "absent": 0}),
+        classes=members if members is not None else [phrase_key(str(row["class_name"]))],
+        umbrella=members is not None,
+        **found,
     )
 
 

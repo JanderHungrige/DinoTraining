@@ -24,6 +24,8 @@ class PhraseDef:
     class_name: str
     variants: tuple[str, ...] = ()
     confusable: tuple[str, ...] = ()
+    #: Doc 115: an umbrella term's member classes ("screw" → m8, m9); empty otherwise.
+    classes: tuple[str, ...] = ()
 
 
 @dataclass
@@ -61,7 +63,13 @@ def load_phrase_table(
         for info in PhraseStore(settings).list_for(dataset_id):
             table.phrases.setdefault(
                 info.text,
-                PhraseDef(info.text, info.class_name, tuple(info.variants), tuple(info.confusable)),
+                PhraseDef(
+                    info.text,
+                    info.class_name,
+                    tuple(info.variants),
+                    tuple(info.confusable),
+                    tuple(info.classes) if info.umbrella else (),
+                ),
             )
         with transaction(settings) as connection:
             rows = connection.execute(

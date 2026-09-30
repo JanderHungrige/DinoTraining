@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PhraseInfo } from '../../api/phrases';
 import { PictureChecks } from './PictureChecks';
 
-const P = (text: string): PhraseInfo => ({ id: 1, text, class_name: text, variants: [], confusable: [], instances: 0, complete: 0, absent: 0 });
+const P = (text: string): PhraseInfo => ({ id: 1, text, class_name: text, variants: [], confusable: [], instances: 0, complete: 0, absent: 0, classes: [text], umbrella: false });
 
 describe('PictureChecks (doc 105)', () => {
   it('shows each phrase\'s state and marks, or clears, one', async () => {

@@ -12,7 +12,7 @@ vi.mock('../api/phrases', async () => {
 });
 vi.mock('../api/quality', () => ({ getGuideline: vi.fn(async () => ''), saveGuideline: vi.fn() }));
 
-const CAR: PhraseInfo = { id: 1, text: 'car', class_name: 'car', variants: [], confusable: [], instances: 3, complete: 0, absent: 0 };
+const CAR: PhraseInfo = { id: 1, text: 'car', class_name: 'car', variants: [], confusable: [], instances: 3, complete: 0, absent: 0, classes: ['car'], umbrella: false };
 
 afterEach(() => localStorage.clear());
 

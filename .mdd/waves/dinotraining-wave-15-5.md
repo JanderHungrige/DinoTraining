@@ -3,7 +3,7 @@ id: dinotraining-wave-15-5
 title: "Wave 15.5: Annotating the normal way — saved means complete"
 initiative: dinotraining
 initiative_version: 13
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-15
 demo_state: "The user annotates m8 and m9 screws without ever pressing a check button, adds 'screw' as an umbrella term for both, and creates class m10 after twenty saved pictures. The app asks whether m10 occurs in those; 'review later' queues them, the review shows each picture's saved annotations, proposes only m10 and adds to them. SAM 3's job note shows 'screw' answered by m8 and m9 outlines, and the unreviewed pictures left out for m10."
 created: 2026-09-30
@@ -83,7 +83,7 @@ so this wave is 15.5, following the precedent of Wave 7.5.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | umbrella-terms | docs/115-umbrella-terms.md | planned | — |
+| 1 | umbrella-terms | docs/115-umbrella-terms.md | complete | — |
 | 2 | phrase-bar-slim | docs/116-phrase-bar-slim.md | planned | umbrella-terms |
 | 3 | saved-means-complete | docs/117-saved-means-complete.md | planned | — |
 | 4 | new-class-question | docs/118-new-class-question.md | planned | saved-means-complete |

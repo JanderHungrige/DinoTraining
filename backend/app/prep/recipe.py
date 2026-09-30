@@ -70,6 +70,8 @@ class RecipePhrase(BaseModel):
     class_name: str
     variants: list[str] = Field(default_factory=list)
     confusable: list[str] = Field(default_factory=list)
+    #: Doc 115: an umbrella term's member classes; empty for an ordinary phrase.
+    classes: list[str] = Field(default_factory=list)
 
 
 class Recipe(BaseModel):
@@ -214,7 +216,11 @@ def _prompts(dataset_id: str, settings: Settings | None) -> list[RecipePhrase]:
 
     return [
         RecipePhrase(
-            text=p.text, class_name=p.class_name, variants=p.variants, confusable=p.confusable
+            text=p.text,
+            class_name=p.class_name,
+            variants=p.variants,
+            confusable=p.confusable,
+            classes=p.classes if p.umbrella else [],
         )
         for p in PhraseStore(settings).list_for(dataset_id)
     ]

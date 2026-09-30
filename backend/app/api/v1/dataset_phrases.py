@@ -17,12 +17,16 @@ class NewPhrase(BaseModel):
     text: str = Field(min_length=1, max_length=400)
     #: The class it belongs to; defaults to the phrase itself.
     class_name: str | None = Field(default=None, max_length=100)
+    #: Doc 115: an umbrella term over these classes ("screw" for m8 and m9).
+    classes: list[str] | None = Field(default=None, max_length=50)
 
 
 class PhraseChange(BaseModel):
     variants: list[str] | None = None
     #: "Not to be confused with": wordings that must not find this (doc 108).
     confusable: list[str] | None = None
+    #: Doc 115: an umbrella term's classes, replaced.
+    classes: list[str] | None = None
 
 
 class StatusChange(BaseModel):
@@ -60,7 +64,7 @@ def list_phrases(dataset_id: str) -> list[PhraseInfo]:
 def add_phrase(dataset_id: str, body: NewPhrase) -> PhraseInfo:
     _require(dataset_id)
     try:
-        return PhraseStore().add(dataset_id, body.text, body.class_name)
+        return PhraseStore().add(dataset_id, body.text, body.class_name, body.classes)
     except ValueError as error:
         raise _unprocessable(error) from error
 
@@ -73,7 +77,9 @@ def add_phrase(dataset_id: str, body: NewPhrase) -> PhraseInfo:
 def change_phrase(dataset_id: str, phrase_id: int, body: PhraseChange) -> PhraseInfo:
     _require(dataset_id)
     try:
-        return PhraseStore().update(dataset_id, phrase_id, body.variants, body.confusable)
+        return PhraseStore().update(
+            dataset_id, phrase_id, body.variants, body.confusable, body.classes
+        )
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:

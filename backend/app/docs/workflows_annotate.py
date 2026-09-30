@@ -27,6 +27,8 @@ object, when to mark unclear. Follow it; if it is empty, offer to write one with
    that should both be found are two classes, each outlined. A wrong proposal in the same
    picture (a flame's reflection) is rejected, and the picture marked `complete`: the true
    outlines are then the whole answer, and no class is needed for the reflection.
+   **Umbrella terms** (doc 115): `{"text": "screw", "classes": ["m8", "m9"]}` names a
+   general concept over specific classes; every outline of m8 or m9 answers to "screw".
 3. **A check per picture and phrase.** `PUT /datasets/{id}/images/phrase-status`
    `{"path": ..., "phrase": "signal", "status": "complete" | "absent" | null}` (MCP
    `set_phrase_status`). `complete`: every instance here is outlined. `absent`: none here —

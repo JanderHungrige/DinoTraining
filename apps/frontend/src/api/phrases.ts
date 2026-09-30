@@ -18,6 +18,10 @@ export interface PhraseInfo {
   readonly instances: number;
   readonly complete: number;
   readonly absent: number;
+  /** Doc 115: the classes it answers for — its one class, or an umbrella's members. */
+  readonly classes: readonly string[];
+  /** An umbrella term ("screw" over m8 and m9); `class_name` is then ''. */
+  readonly umbrella: boolean;
 }
 
 export interface PictureStatus {
@@ -27,7 +31,14 @@ export interface PictureStatus {
 }
 
 const isPhrase = (v: unknown): v is PhraseInfo =>
-  hasFields(v, { text: 'string', class_name: 'string', variants: 'array', instances: 'number' });
+  hasFields(v, {
+    text: 'string',
+    class_name: 'string',
+    variants: 'array',
+    instances: 'number',
+    classes: 'array',
+    umbrella: 'boolean',
+  });
 const isStatus = (v: unknown): v is PictureStatus =>
   hasFields(v, { phrase_id: 'number', text: 'string', status: 'string' });
 
@@ -42,10 +53,19 @@ export function addPhrase(datasetId: string, text: string, className?: string): 
   return apiFetch(`${base(datasetId)}/phrases`, isPhrase, jsonBody({ text, class_name: className ?? null }));
 }
 
+/** Doc 115: an umbrella term over two or more classes ("screw" for m8 and m9). */
+export function addUmbrella(datasetId: string, text: string, classes: readonly string[]): Promise<PhraseInfo> {
+  return apiFetch(`${base(datasetId)}/phrases`, isPhrase, jsonBody({ text, classes }));
+}
+
 export function changePhrase(
   datasetId: string,
   phraseId: number,
-  change: { readonly variants?: readonly string[]; readonly confusable?: readonly string[] },
+  change: {
+    readonly variants?: readonly string[];
+    readonly confusable?: readonly string[];
+    readonly classes?: readonly string[];
+  },
 ): Promise<PhraseInfo> {
   return apiFetch(`${base(datasetId)}/phrases/${phraseId}`, isPhrase, {
     method: 'PATCH',

@@ -71,18 +71,30 @@ def _worded(
     return [Query(rng.choice(words), query.masks, query.kind)]
 
 
+def _looks(
+    text: str, sample: TrainingSample, table: PhraseTable, answers: dict[str, tuple[int, ...]]
+) -> list[Query]:
+    """A positive phrase's look-alikes, each a "none here". Not on a picture with a rejected
+    outline of it: the look-alike may well be there (a flame's reflection)."""
+    phrase = table.phrases.get(text)
+    if phrase is None or text in table.rejected.get(sample.path, ()):
+        return []
+    return [Query(look, (), "confusable") for look in phrase.confusable if look not in answers]
+
+
 def _pairs(
     sample: TrainingSample, names: tuple[str, ...], table: PhraseTable, settings: QuerySettings
 ) -> tuple[list[Query], list[Query]]:
     """(positives and explicit/rejected negatives, in-domain negatives subject to the cap).
 
     Doc 109: a phrase with an *unclear* outline on the picture is never a negative there —
-    the annotator's doubt is not "none here".
+    the annotator's doubt is not "none here". Umbrella terms (doc 115) follow their members.
     """
     per_mask = _mask_phrases(sample, names, table)
     doubtful = {phrase_key(names[m.class_index]) for m in sample.ignore_masks}
     classes = [phrase_key(name) for name in names]
-    texts = list(dict.fromkeys([*classes, *table.phrases]))
+    umbrellas = {t: p.classes for t, p in table.phrases.items() if p.classes}
+    texts = list(dict.fromkeys([*classes, *(t for t in table.phrases if t not in umbrellas)]))
     answers = {t: tuple(i for i, found in enumerate(per_mask) if t in found) for t in texts}
     taught: list[Query] = []
     negatives: list[Query] = []
@@ -101,19 +113,7 @@ def _pairs(
         state = status.get(text)
         if state == "complete" and found:
             taught.append(Query(text, found, "positive"))
-            # A rejected outline of this phrase here means a look-alike may well be in
-            # the picture (a flame's reflection): "none here" for it would be a lie.
-            phrase = table.phrases.get(text)
-            looks = (
-                ()
-                if text in table.rejected.get(sample.path, ())
-                else phrase.confusable
-                if phrase
-                else ()
-            )
-            for look in looks:
-                if look not in answers:
-                    taught.append(Query(look, (), "confusable"))
+            taught += _looks(text, sample, table, answers)
         elif text in doubtful:
             continue
         elif state == "absent":
@@ -128,7 +128,44 @@ def _pairs(
             and text in table.rejected.get(sample.path, ())
         ):
             taught.append(Query(text, (), "rejected"))
+    for text, members in umbrellas.items():
+        query = _umbrella(text, members, answers, doubtful, checked, status)
+        if query is not None:
+            (negatives if query.kind in ("cross", "absent") else taught).append(query)
+            if query.kind == "positive":
+                taught += _looks(text, sample, table, answers)
     return taught, negatives
+
+
+def _umbrella(
+    text: str,
+    members: tuple[str, ...],
+    answers: dict[str, tuple[int, ...]],
+    doubtful: set[str],
+    checked: set[str],
+    status: dict[str, str],
+) -> Query | None:
+    """An umbrella's query on one picture, from its members' state (doc 115).
+
+    Only when every member's answer here is known: a member checked elsewhere but not
+    here, or unclear here, leaves the umbrella out — a partial answer would teach that the
+    unoutlined screws are not screws.
+    """
+
+    def known(member: str) -> bool:
+        if member in doubtful:
+            return False
+        if member not in checked:
+            return True
+        state = status.get(member)
+        return state == "absent" or (state == "complete" and bool(answers.get(member)))
+
+    if not all(known(m) for m in members):
+        return None
+    found = tuple(sorted({i for m in members for i in answers.get(m, ())}))
+    if found:
+        return Query(text, found, "positive")
+    return Query(text, (), "absent" if any(m in checked for m in members) else "cross")
 
 
 def plan_queries(

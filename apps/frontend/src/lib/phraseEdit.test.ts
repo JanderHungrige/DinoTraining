@@ -9,7 +9,7 @@ const outline = (text: string, phrases?: string[]): CanvasBox => ({
   id: 'b', label: 'positive', provenance: 'sam3', x: 0, y: 0, w: 1, h: 1, text, mask: MASK, ...(phrases ? { phrases } : {}),
 });
 const phrase = (text: string, className: string): PhraseInfo => ({
-  id: 1, text, class_name: className, variants: [], confusable: [], instances: 0, complete: 0, absent: 0,
+  id: 1, text, class_name: className, variants: [], confusable: [], instances: 0, complete: 0, absent: 0, classes: [className], umbrella: false,
 });
 
 describe('phraseEdit (doc 105)', () => {

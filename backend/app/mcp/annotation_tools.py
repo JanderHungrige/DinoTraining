@@ -35,7 +35,12 @@ def register(mcp: MCPServer) -> None:
         return await client.call("GET", f"/datasets/{dataset_id}/phrases")
 
     @mcp.tool()
-    async def add_phrase(dataset_id: str, text: str, class_name: str | None = None) -> Any:
+    async def add_phrase(
+        dataset_id: str,
+        text: str,
+        class_name: str | None = None,
+        classes: list[str] | None = None,
+    ) -> Any:
         """Add a phrase, with comma-separated variations: "signal, railway signal, light
         signal" is one phrase with two variations, stored once and expanded at training.
 
@@ -43,10 +48,17 @@ def register(mcp: MCPServer) -> None:
         synonym is not needed. A phrase belongs to one class (`class_name`, default: the
         phrase itself). A variation that is already another phrase is refused with both
         named. Adding to an existing phrase merges the new variations.
+
+        `classes` (two or more) makes an umbrella term instead (doc 115): "screw" over m8
+        and m9 is answered by every outline of both classes, and nothing is linked per
+        outline. Use it for a general name over specific classes; use a variation for
+        another wording of one class.
         """
         body: dict[str, Any] = {"text": text}
         if class_name:
             body["class_name"] = class_name
+        if classes:
+            body["classes"] = classes
         return await client.call("POST", f"/datasets/{dataset_id}/phrases", json=body)
 
     @mcp.tool()

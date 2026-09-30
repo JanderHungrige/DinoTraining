@@ -14,7 +14,7 @@ vi.mock('../../api/phrases', async () => {
 const api = await import('../../api/phrases');
 
 const P = (text: string, className = text, variants: string[] = []): PhraseInfo => ({
-  id: 1, text, class_name: className, variants, confusable: [], instances: 3, complete: 0, absent: 0,
+  id: 1, text, class_name: className, variants, confusable: [], instances: 3, complete: 0, absent: 0, classes: [className], umbrella: false,
 });
 const MASK = { rle: { size: [1, 1] as [number, number], counts: [0, 1] }, png: '' };
 const OUTLINE: CanvasBox = { id: 'm1', label: 'positive', provenance: 'sam3', x: 0, y: 0, w: 1, h: 1, text: 'car', mask: MASK };
