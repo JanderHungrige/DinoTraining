@@ -33,7 +33,7 @@ wave_status: complete
 integration_contracts: []
 satisfies_contracts: []
 known_issues:
-  - "SAM 3 fine-tuning has not yet improved a model: the first runs ever to complete (2026-09-30, filled-ring set, one round) fell from 0.508 to 0.193 validation mIoU at the default learning rate 1e-4, and to 0.160 without generic negatives. The base-kept guard saved nothing, correctly. The learning rate is under test (see Verified)."
+  - "SAM 3's learning rate was measured on one dataset only (filled rings, one round): 1e-4 fell below the base, 1e-5 gained 0.434 → 0.603. The default is now 1e-5; other data may want another value."
   - "A class renamed by a recipe's class map keeps its picture checks under the old name; checks are matched by phrase text."
   - "Generic and confusable negatives assume the concept is not in the picture. A street lamp listed as 'not to be confused with' a signal is wrongly a negative on a picture that also shows a street lamp; the help text says to list look-alikes that rarely share a picture."
 security_read_sites: []
@@ -141,12 +141,17 @@ snapshot of the phrases with their variations and look-alikes when saved, as pro
   |---|---|---|---|
   | defaults (3 generic, 2 cross) | 76 positive, 169 negative (22 cross, 147 generic) | 0.193 | 651 s |
   | `num_negatives` 0 | 76 positive, 22 negative | 0.160 | 565 s |
+  | **learning rate 1e-5**, defaults otherwise | 76 positive, 169 negative | better than base → **held-out 0.434 → 0.603** | 690 s |
 
   - Both kept the base model and saved nothing. The job note reported the queries as
     specified.
-  - **Conclusion:** the negatives are not what hurts. Fine-tuning SAM 3's decoders at 1e-4
-    does, in one round, on 49 pictures. This is the first SAM 3 run ever to complete (doc
-    96 had none).
+  - **Conclusion:** the negatives are not what hurts. The learning rate is: at 1e-4 SAM 3's
+    decoders lose what they knew within one round, while at 1e-5 one round gains 0.17 on
+    pictures the model never saw.
+  - **Change:** the catalogue's SAM 3 default is now **1e-5**, with this measurement as its
+    reason.
+  - These are the first SAM 3 fine-tunes ever to complete (doc 96 had none), and the first
+    to beat the base model. The test model was deleted.
 
 ## Bugs
 

@@ -30,9 +30,11 @@ do not read it for current state.
 **Measured:**
 - **SAM 2 with click prompts:** 0.804 → **0.955** in one round (Wave 12's box-only
   training took six).
-- **SAM 3 runs end to end** — the first completed run ever — but one round at 1e-4 fell
-  from 0.508 to 0.193 validation mIoU (0.160 without generic negatives). The base was kept
-  and nothing saved. A run at 1e-5 is in doc 108.
+- **SAM 3 fine-tuning improves a model for the first time:** one round at 1e-5 took
+  held-out mIoU from 0.434 to **0.603**.
+  - At the old default 1e-4 it fell below the base (0.193 on validation; 0.160 without
+    generic negatives), and nothing was saved.
+  - The SAM 3 default is now 1e-5.
 
 **Found and fixed:**
 - **Outline editing:** `CompositedMasks` did not redraw an outline edited in place.

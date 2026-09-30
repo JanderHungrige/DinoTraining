@@ -65,7 +65,7 @@ def register(mcp: MCPServer) -> None:
         the base model, nothing is saved and `notes` says so; say that too.
 
         Omitted `epochs` and `learning_rate` take **this model's** defaults (doc 99: e.g.
-        SAM 3 4 rounds, DINO backbones 0.001) — see `get_training_parameters`. Every other
+        SAM 3 4 rounds at 1e-5, DINO backbones 0.001) — see `get_training_parameters`. Every other
         setting goes in `options`, e.g. `{"box_jitter": 0.2}` for SAM 2; an unknown one is
         refused with its name. `unfreeze_blocks` is for DINO backbones (default 4) and
         RF-DETR (default 0).

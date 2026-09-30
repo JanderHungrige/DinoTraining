@@ -115,7 +115,9 @@ SAM3 = ParameterSet(
             "four rounds is a first result in reasonable time.",
         ),
         learning_rate(
-            1e-4, "The rate for the decoders SAM 3 trains here; the large encoders stay frozen."
+            1e-5,
+            "Measured on the filled-ring set: one round at 1e-5 took held-out mIoU from 0.434 "
+            "to 0.603, while 1e-4 fell below the base model. SAM 3's decoders are sensitive.",
         ),
         Parameter(
             key="num_negatives",

@@ -175,6 +175,8 @@ class TestFinetuneDefaultsPerModel:
 
     def test_omitted_values_come_from_the_model(self) -> None:
         assert self._settings("sam3").epochs == 4
+        # Doc 108: 1e-4 made SAM 3 worse than its base; 1e-5 made it better.
+        assert self._settings("sam3").learning_rate == 1e-5
         assert self._settings("dinov2-small-classification").learning_rate == 1e-3
         assert self._settings("rf-detr-nano").epochs == 10
 
