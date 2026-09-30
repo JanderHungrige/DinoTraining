@@ -5,7 +5,7 @@
 
 import { useState, type JSX } from 'react';
 
-import { addPhrase, changePhrase, type PhraseInfo } from '../../api/phrases';
+import { addPhrase, changePhrase, markTheRest, type PhraseInfo } from '../../api/phrases';
 
 function list(text: string): string[] {
   return text.split(',').map((part) => part.trim()).filter(Boolean);
@@ -15,6 +15,7 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
   const [variants, setVariants] = useState<string | null>(null);
   const [confusable, setConfusable] = useState<string | null>(null);
   const [problem, setProblem] = useState('');
+  const [filled, setFilled] = useState('');
   const shownVariants = variants ?? phrase.variants.join(', ');
   const shownConfusable = confusable ?? phrase.confusable.join(', ');
   const changed = variants !== null || confusable !== null;
@@ -41,6 +42,17 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
     }
   };
 
+  const fill = async (): Promise<void> => {
+    try {
+      const done = await markTheRest(datasetId, phrase.text);
+      setProblem('');
+      setFilled(`Marked ${done.complete} all marked, ${done.absent} not in this picture.`);
+      onSaved();
+    } catch (cause) {
+      setProblem(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
   return (
     <li className="phrasemanage__row">
       <strong>{phrase.text}</strong> <span className="trainer__dim">({phrase.class_name})</span>
@@ -55,6 +67,15 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
       <button type="button" className="btn btn--small" disabled={!changed} onClick={() => void save()}>
         Save
       </button>
+      <button
+        type="button"
+        className="btn btn--small"
+        title="Only if every picture is fully annotated for this phrase: each unchecked picture becomes 'all marked' where it has an outline of it, 'not in this picture' where it has none."
+        onClick={() => void fill()}
+      >
+        Mark the rest
+      </button>
+      {filled && <span className="trainer__dim" role="status">{filled}</span>}
       {problem && <span className="run__warn" role="alert">{problem}</span>}
     </li>
   );

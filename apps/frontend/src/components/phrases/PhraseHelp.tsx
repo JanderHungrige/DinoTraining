@@ -17,8 +17,11 @@ export function PhraseHelp(): JSX.Element {
         <dd>
           SAM 3 learns from every picture you checked. <em>All marked</em> says every instance
           of this phrase here has an outline. <em>Not in this picture</em> says there is none,
-          and teaches the model <em>not</em> to find it here. A picture you did not check is
-          left out for that phrase, never guessed.
+          and teaches the model <em>not</em> to find it here. Once a phrase is checked on any
+          picture, a picture you did not check is left out for it, never guessed. A phrase
+          never checked keeps the automatic rule — no outline means none here — which is only
+          right if you annotated every instance. If you did, <em>Mark the rest</em> under
+          Manage phrases checks all remaining pictures in one step.
         </dd>
         <dt>Hard negatives</dt>
         <dd>

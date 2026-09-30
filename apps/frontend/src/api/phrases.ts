@@ -70,3 +70,13 @@ export function setPictureStatus(
     body: JSON.stringify({ path, phrase, status }),
   });
 }
+
+/** "This phrase is fully annotated": every unchecked picture becomes complete (it has an
+ *  outline of the phrase) or absent (it has none). Checks already set stay (doc 108). */
+export function markTheRest(datasetId: string, phrase: string): Promise<{ complete: number; absent: number }> {
+  return apiFetch(
+    `${base(datasetId)}/phrase-status/fill`,
+    (v: unknown): v is { complete: number; absent: number } => hasFields(v, { complete: 'number', absent: 'number' }),
+    jsonBody({ phrase }),
+  );
+}

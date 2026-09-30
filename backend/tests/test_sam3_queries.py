@@ -42,7 +42,11 @@ class TestChecked:
     def table(self, **statuses: str) -> PhraseTable:
         return PhraseTable(
             phrases={"car": PhraseDef("car", "car"), "bus": PhraseDef("bus", "bus")},
-            statuses={"/a": statuses} if statuses else {"/other": {"car": "absent"}},
+            # Both phrases checked somewhere else, so both are in checked mode.
+            statuses={
+                "/other": {"car": "absent", "bus": "absent"},
+                **({"/a": statuses} if statuses else {}),
+            },
         )
 
     def test_only_checked_pairs_teach(self) -> None:
@@ -81,6 +85,19 @@ class TestChecked:
         s = sample("/a", 0, 0)
         table.linked = {"/a": {s.masks[1].counts: ("red car",)}}
         assert ("red car", "positive", (1,)) in kinds(plan(s, table))
+
+
+class TestPerPhrase:
+    def test_checking_one_phrase_leaves_the_others_automatic(self) -> None:
+        """The trap Jan's question found (2026-09-30): with checked mode per dataset, one
+        picture checked for one phrase took the automatic negatives from all the rest."""
+        table = PhraseTable(
+            phrases={"car": PhraseDef("car", "car"), "bus": PhraseDef("bus", "bus")},
+            statuses={"/other": {"car": "complete"}},
+        )
+        # "car" is checked somewhere, so on this unchecked picture it teaches nothing;
+        # "bus" never was, so it is still an automatic "none here".
+        assert kinds(plan(sample("/a", 0), table)) == [("bus", "cross", ())]
 
 
 class TestWordingsAndNegatives:

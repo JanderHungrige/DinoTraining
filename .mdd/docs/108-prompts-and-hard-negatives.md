@@ -153,6 +153,27 @@ snapshot of the phrases with their variations and look-alikes when saved, as pro
   - These are the first SAM 3 fine-tunes ever to complete (doc 96 had none), and the first
     to beat the base model. The test model was deleted.
 
+## Amended 2026-09-30: checks switch per phrase, and "Mark the rest"
+
+- **What Jan's question uncovered:** *"not in this picture used to be automatic; now it
+  must be set actively — right?"* It showed a trap. The switch to checked mode was **per
+  dataset**, so checking a single picture for one phrase took the automatic negatives from
+  every phrase on every other picture. A try-out click could turn 70 teaching pictures into
+  1.
+- **Now:**
+  - The switch is **per phrase**. A phrase never checked anywhere keeps the automatic rule
+    (no outline → none here). A phrase checked somewhere learns only from its checked
+    pictures.
+  - **Mark the rest** (Manage phrases, `POST /datasets/{id}/phrase-status/fill`): for a
+    phrase the user knows is fully annotated, every unchecked picture becomes *all marked*
+    where an outline answers to it, and *not in this picture* where none does. Checks
+    already set stay.
+- **The trade-off, as told in the help text:** the automatic rule is right only for fully
+  annotated phrases. Checking is what makes negatives trustworthy on a dataset still being
+  annotated.
+- **Tests:** a test pins the per-phrase switch, and an API test pins Mark the rest. That
+  includes a class "Ring." matching the phrase "ring", and an existing check left alone.
+
 ## Bugs
 
 (none yet)

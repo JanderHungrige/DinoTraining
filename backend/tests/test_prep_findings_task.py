@@ -61,7 +61,7 @@ class TestRules:
     def test_never_checked_says_training_falls_back(self) -> None:
         phrases = PhraseFacts(phrases=[("ring", 60, 2)], pictures=5, unchecked=5, checked_any=0)
         result = found(AuditContext(facts(1, []), get_profile("sam3"), phrases=phrases))
-        assert "as before" in result["unchecked-pictures"].why  # type: ignore[attr-defined]
+        assert "keeps the old rule" in result["unchecked-pictures"].why  # type: ignore[attr-defined]
         assert "no-confirmed-negatives" not in result
 
 

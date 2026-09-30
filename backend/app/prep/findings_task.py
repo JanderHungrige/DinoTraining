@@ -110,15 +110,12 @@ def unchecked(ctx: AuditContext) -> Finding | None:
         else f"{facts.unchecked} pictures lack an 'all marked' or 'not in this picture' "
         "for at least one phrase.",
         why="SAM 3 learns 'none here' only from pictures you checked. Unchecked, a picture "
-        "without an outline could simply not have been annotated yet — so it teaches nothing"
-        + (
-            "; until any picture is checked, training treats every picture without an outline "
-            "as 'none here', as before."
-            if none_at_all
-            else "."
-        ),
+        "without an outline could simply not have been annotated yet — so it teaches nothing. "
+        "A phrase never checked anywhere keeps the old rule: every picture without its outline "
+        "counts as 'none here', which is right only if the dataset is fully annotated.",
         action="In the Annotation Studio's phrase bar, mark each picture per phrase: "
-        "A for all marked, N for not in this picture.",
+        "A for all marked, N for not in this picture. If a phrase is fully annotated, "
+        "'Mark the rest' under Manage phrases checks every remaining picture in one step.",
         metrics={"unchecked": facts.unchecked, "pictures": facts.pictures},
     )
 

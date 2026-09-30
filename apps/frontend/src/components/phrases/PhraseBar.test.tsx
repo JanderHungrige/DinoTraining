@@ -9,7 +9,7 @@ import { PhraseBar } from './PhraseBar';
 
 vi.mock('../../api/phrases', async () => {
   const actual = await vi.importActual<typeof import('../../api/phrases')>('../../api/phrases');
-  return { ...actual, addPhrase: vi.fn(), changePhrase: vi.fn() };
+  return { ...actual, addPhrase: vi.fn(), changePhrase: vi.fn(), markTheRest: vi.fn() };
 });
 const api = await import('../../api/phrases');
 
@@ -83,5 +83,18 @@ describe('PhraseBar (doc 105)', () => {
     expect(screen.getByText('How phrases work')).toBeInTheDocument();
     expect(screen.getByText(/You do not need every synonym/)).toBeInTheDocument();
     expect(screen.getByText(/num_cross_negatives/)).toBeInTheDocument();
+  });
+});
+
+describe('Mark the rest (doc 108, amended)', () => {
+  it('checks every remaining picture of a fully annotated phrase, and says how many', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.markTheRest).mockResolvedValue({ complete: 40, absent: 30 });
+    const { state } = renderBar([P('car')]);
+    await user.click(screen.getByText('Manage phrases'));
+    await user.click(screen.getByRole('button', { name: 'Mark the rest' }));
+    expect(api.markTheRest).toHaveBeenCalledWith('d1', 'car');
+    expect(await screen.findByText('Marked 40 all marked, 30 not in this picture.')).toBeInTheDocument();
+    expect(state.reload).toHaveBeenCalled();
   });
 });

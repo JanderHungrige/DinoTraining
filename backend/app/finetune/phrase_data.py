@@ -37,9 +37,12 @@ class PhraseTable:
     rejected: dict[str, set[str]] = field(default_factory=dict)
 
     @property
-    def checked_mode(self) -> bool:
-        """Any check anywhere: from then on only checked pairs teach (doc 108)."""
-        return any(self.statuses.values())
+    def checked_phrases(self) -> set[str]:
+        """Phrases checked on at least one picture. Per phrase, not per dataset (doc 108,
+        amended): checking one picture for "signal" must not take the automatic negatives
+        away from every other phrase — or from every other picture of a dataset where only
+        one was checked by way of trying it out."""
+        return {text for marks in self.statuses.values() for text in marks}
 
     def vocabulary(self) -> set[str]:
         words: set[str] = set()

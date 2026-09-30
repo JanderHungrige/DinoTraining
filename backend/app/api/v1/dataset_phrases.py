@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from app.datasets.phrase_status import set_status, statuses_for
+from app.datasets.phrase_status import fill_unchecked, set_status, statuses_for
 from app.datasets.phrases import PhraseInfo, PhraseStore, PictureStatus, Status
 from app.datasets.store import DatasetStore
 
@@ -115,6 +115,22 @@ def put_status(dataset_id: str, body: StatusChange) -> list[PictureStatus]:
         return set_status(dataset_id, body.path, body.phrase, body.status)
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+    except ValueError as error:
+        raise _unprocessable(error) from error
+
+
+class FillRequest(BaseModel):
+    phrase: str = Field(min_length=1)
+
+
+@router.post(
+    "/datasets/{dataset_id}/phrase-status/fill",
+    summary="The phrase is fully annotated: mark every unchecked picture complete or absent",
+)
+def fill(dataset_id: str, body: FillRequest) -> dict[str, int]:
+    _require(dataset_id)
+    try:
+        return fill_unchecked(dataset_id, body.phrase)
     except ValueError as error:
         raise _unprocessable(error) from error
 

@@ -84,4 +84,51 @@ def set_status(
     return statuses_for(dataset_id, path, settings)
 
 
-__all__ = ["set_status", "statuses_for"]
+def fill_unchecked(
+    dataset_id: str, phrase: str, settings: Settings | None = None
+) -> dict[str, int]:
+    """'This phrase is fully annotated': every picture not yet checked for it is marked —
+    `complete` where an accepted outline answers to it, `absent` where none does.
+
+    One step instead of a click per picture, for a dataset that is already exhaustively
+    annotated (an imported COCO set, or one finished by hand). Checks already set stay.
+    """
+    key = phrase_key(phrase)
+    with transaction(settings) as connection:
+        phrase_id = ensure_phrase(
+            connection, dataset_id, key, _class_for(connection, dataset_id, key)
+        )
+        unchecked = [
+            int(r["id"])
+            for r in connection.execute(
+                "SELECT i.id FROM images i WHERE i.dataset_id = ? AND COALESCE(i.excluded, 0) = 0"
+                " AND NOT EXISTS (SELECT 1 FROM image_phrase_status s"
+                "   WHERE s.image_id = i.id AND s.phrase_id = ?)",
+                (dataset_id, phrase_id),
+            )
+        ]
+        # An outline answers when its class *is* the phrase (the same key everywhere) or
+        # when it is linked to it.
+        answering = {
+            int(r["image_id"])
+            for r in connection.execute(
+                "SELECT m.image_id, m.prompt,"
+                " EXISTS (SELECT 1 FROM mask_phrases mp WHERE mp.mask_id = m.id"
+                "   AND mp.phrase_id = ?) AS linked"
+                " FROM masks m JOIN images i ON i.id = m.image_id"
+                " WHERE i.dataset_id = ? AND m.label = 'positive'",
+                (phrase_id, dataset_id),
+            )
+            if r["linked"] or phrase_key(r["prompt"] or "") == key
+        }
+        marks = [(i, phrase_id, "complete" if i in answering else "absent") for i in unchecked]
+        connection.executemany(
+            "INSERT INTO image_phrase_status (image_id, phrase_id, status) VALUES (?, ?, ?)", marks
+        )
+    return {
+        "complete": sum(1 for *_, status in marks if status == "complete"),
+        "absent": sum(1 for *_, status in marks if status == "absent"),
+    }
+
+
+__all__ = ["fill_unchecked", "set_status", "statuses_for"]

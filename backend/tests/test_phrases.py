@@ -163,3 +163,29 @@ class TestPictureStatus:
             url, json={"path": "/nope.jpg", "phrase": "car", "status": "absent"}
         )
         assert missing.status_code == 404
+
+
+class TestFillUnchecked:
+    async def test_marks_the_rest_complete_or_absent_and_keeps_existing_checks(
+        self, client: AsyncClient
+    ) -> None:
+        dataset = await make_dataset(client)
+        base = f"/api/v1/datasets/{dataset['id']}"
+        await client.put(f"{base}/images/masks", json=_masks("Ring.", [], path="/images/a.jpg"))
+        await client.put(f"{base}/images/masks", json=_masks("blob", [], path="/images/b.jpg"))
+        await client.put(f"{base}/images/masks", json=_masks("blob", [], path="/images/c.jpg"))
+        await client.put(
+            f"{base}/images/phrase-status",
+            json={"path": "/images/c.jpg", "phrase": "ring", "status": "complete"},
+        )
+        filled = (await client.post(f"{base}/phrase-status/fill", json={"phrase": "ring"})).json()
+        # a: its class "Ring." is the phrase "ring" → complete; b: no ring → absent;
+        # c: already checked (even if wrongly) — left as the user set it.
+        assert filled == {"complete": 1, "absent": 1}
+        statuses = {
+            p: (await client.get(f"{base}/images/phrase-status", params={"path": p})).json()
+            for p in ("/images/a.jpg", "/images/b.jpg", "/images/c.jpg")
+        }
+        assert [s["status"] for s in statuses["/images/a.jpg"]] == ["complete"]
+        assert [s["status"] for s in statuses["/images/b.jpg"]] == ["absent"]
+        assert [s["status"] for s in statuses["/images/c.jpg"]] == ["complete"]

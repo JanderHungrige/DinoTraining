@@ -1,8 +1,8 @@
 """Which phrase queries a picture teaches SAM 3 in one round (doc 108).
 
-Pure: a sample, the phrase table and the settings in; the queries out. Legacy datasets
-(no picture checked for anything) train as before doc 108; once any check exists, only
-checked pairs teach — an unannotated instance is not "none here".
+Pure: a sample, the phrase table and the settings in; the queries out. A phrase never
+checked on any picture trains as before doc 108; once a phrase is checked somewhere, only
+its checked pictures teach it — an unannotated instance is not "none here".
 """
 
 from __future__ import annotations
@@ -86,16 +86,19 @@ def _pairs(
     answers = {t: tuple(i for i, found in enumerate(per_mask) if t in found) for t in texts}
     taught: list[Query] = []
     negatives: list[Query] = []
-    if not table.checked_mode:
-        for text in texts:
-            if answers[text]:
-                taught.append(Query(text, answers[text], "positive"))
-            elif text in classes and text not in doubtful:
-                negatives.append(Query(text, (), "cross"))
-        return taught, negatives
+    checked = table.checked_phrases
     status = table.statuses.get(sample.path, {})
     for text in texts:
-        state, found = status.get(text), answers[text]
+        found = answers[text]
+        if text not in checked:
+            # Never checked anywhere: as before doc 108 — its outlines teach, and a class
+            # without one here is "none here".
+            if found:
+                taught.append(Query(text, found, "positive"))
+            elif text in classes and text not in doubtful:
+                negatives.append(Query(text, (), "cross"))
+            continue
+        state = status.get(text)
         if state == "complete" and found:
             taught.append(Query(text, found, "positive"))
             phrase = table.phrases.get(text)
