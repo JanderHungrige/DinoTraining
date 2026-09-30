@@ -85,7 +85,7 @@ so this wave is 15.5, following the precedent of Wave 7.5.
 |---|---------|-----|--------|------------|
 | 1 | umbrella-terms | docs/115-umbrella-terms.md | complete | — |
 | 2 | phrase-bar-slim | docs/116-phrase-bar-slim.md | complete | umbrella-terms |
-| 3 | saved-means-complete | docs/117-saved-means-complete.md | planned | — |
+| 3 | saved-means-complete | docs/117-saved-means-complete.md | complete | — |
 | 4 | new-class-question | docs/118-new-class-question.md | planned | saved-means-complete |
 | 5 | add-only-review | docs/119-add-only-review.md | planned | saved-means-complete, new-class-question |
 

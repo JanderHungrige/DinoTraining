@@ -21,6 +21,7 @@ import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
+import { usePromptClasses } from '../hooks/usePromptClasses';
 import { MaskEditBar } from '../components/MaskEditBar';
 import { MaskEditOverlay } from '../components/MaskEditOverlay';
 import { StudioActions } from '../components/StudioActions';
@@ -61,6 +62,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   const [concealed, setConcealed] = useState<ReadonlySet<string> | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
+  usePromptClasses(config);
   const prescan = usePrescan();
   // Doc 104: what this dataset is annotated for, and what this picture still lacks.
   const target = useAnnotationTargetList().find((entry) => entry.id === (config?.target ?? 'open'));

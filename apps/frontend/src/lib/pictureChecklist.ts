@@ -50,10 +50,10 @@ export function checkLine(
         : { layer, met: false, text: t('studio.check.noPhrase') };
     }
     case 'picture-status':
-      if (phraseCount === 0) return { layer, met: false, text: t('studio.check.noPhrases') };
-      return statuses.length >= phraseCount
-        ? { layer, met: true, text: tp('studio.check.checkedAll', phraseCount) }
-        : { layer, met: false, text: tp('studio.check.checkedSome', phraseCount, { checked: statuses.length }) };
+      // Doc 117: saving makes a picture complete for the classes that exist then, so this
+      // is never "still open"; hand checks are the exception and are said as such.
+      if (statuses.length > 0) return { layer, met: true, text: tp('studio.check.byHand', statuses.length) };
+      return { layer, met: true, text: tp('studio.check.completeWhenSaved', Math.max(phraseCount, 0)) };
     default:
       throw new Error(`Unhandled layer: ${layer satisfies never}`);
   }

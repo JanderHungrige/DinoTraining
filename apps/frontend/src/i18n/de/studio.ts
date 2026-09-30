@@ -49,6 +49,10 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.guide.optional': 'freiwillig',
 
   // What one picture still lacks (lib/pictureChecklist)
+  'studio.check.byHand_one': 'Von Hand für {count} Phrase geprüft',
+  'studio.check.byHand_other': 'Von Hand für {count} Phrasen geprüft',
+  'studio.check.completeWhenSaved_one': 'Vollständig für {count} Klasse, sobald gespeichert',
+  'studio.check.completeWhenSaved_other': 'Vollständig für {count} Klassen, sobald gespeichert',
   'studio.check.nothingYet': 'Noch nichts markiert',
   'studio.check.oneClass': 'Eine Klasse: {name}',
   'studio.check.severalClasses': 'Mehrere Klassen ({names}): ein Klassifikator überspringt dieses Bild',
@@ -57,11 +61,6 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.check.allOutlined': 'Alle {count} haben einen Umriss',
   'studio.check.someOutlined': '{done} von {count} haben einen Umriss',
   'studio.check.noPhrase': 'Noch keine Phrase',
-  'studio.check.noPhrases': 'Noch keine Phrasen in diesem Datensatz',
-  'studio.check.checkedAll_one': 'Für {count} Phrase geprüft',
-  'studio.check.checkedAll_other': 'Für alle {count} Phrasen geprüft',
-  'studio.check.checkedSome_one': 'Für {checked} von {count} Phrase geprüft',
-  'studio.check.checkedSome_other': 'Für {checked} von {count} Phrasen geprüft',
 
   // The canvas
   'studio.canvas.boxAria':

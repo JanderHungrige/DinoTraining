@@ -16,6 +16,7 @@ ENTRIES: dict[str, str] = {
     "Outlines (masks)": "Umrisse (Masks)",
     "Phrases": "Phrasen",
     "Checked per picture": "Pro Bild geprüft",
+    "Complete when saved": "Vollständig beim Speichern",
     # Targets
     "Keep all options open": "Alle Möglichkeiten offenhalten",
     "Boxes, outlines and phrases — any model can train on it later. Recommended.": (
@@ -42,6 +43,17 @@ ENTRIES: dict[str, str] = {
     ),
     "Only SAM 3 reads phrases; the class name already is one.": (
         "Nur SAM 3 liest Phrasen; der Klassenname ist schon eine."
+    ),
+    "Only SAM 3 uses it: which pictures are complete for which class.": (
+        "Nur SAM 3 nutzt das: welche Bilder für welche Klasse vollständig sind."
+    ),
+    (
+        "A saved picture counts as complete for the classes that exist then; SAM 3 learns "
+        "'not here' from it. Pictures saved before a class was added are reviewed for it."
+    ): (
+        "Ein gespeichertes Bild gilt als vollständig für die Klassen, die es dann gibt; SAM 3 "
+        "lernt daraus „nicht hier“. Bilder, die vor einer neuen Klasse gespeichert wurden, "
+        "werden für sie durchgesehen."
     ),
     "Only SAM 3 uses it: which pictures were checked for a phrase.": (
         "Nur SAM 3 nutzt das: welche Bilder für eine Phrase geprüft wurden."

@@ -27,11 +27,10 @@ describe('pictureChecklist (doc 104)', () => {
     expect(checkLine('phrases', [box('car', { phrases: ['car', 'red car'] }), box('Bus')], 0, [], ENGLISH).text).toBe('car, red car, bus');
   });
 
-  it('checked per picture compares statuses with the dataset\'s phrases', () => {
+  it('a saved picture is complete; hand checks are said as such (doc 117)', () => {
     const status = { phrase_id: 1, text: 'ring', status: 'complete' as const };
-    expect(checkLine('picture-status', [], 2, [status], ENGLISH)).toMatchObject({ met: false, text: 'Checked for 1 of 2 phrases' });
-    expect(checkLine('picture-status', [], 1, [status], ENGLISH)).toMatchObject({ met: true, text: 'Checked for all 1 phrase' });
-    expect(checkLine('picture-status', [], 0, [], ENGLISH).met).toBe(false);
+    expect(checkLine('picture-status', [], 2, [status], ENGLISH)).toMatchObject({ met: true, text: 'Checked by hand for 1 phrase' });
+    expect(checkLine('picture-status', [], 3, [], ENGLISH)).toMatchObject({ met: true, text: 'Complete for its 3 classes once saved' });
   });
 
   it('an empty picture has nothing marked yet', () => {

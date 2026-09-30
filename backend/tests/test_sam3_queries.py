@@ -39,14 +39,13 @@ class TestLegacy:
 
 
 class TestChecked:
+    """A picture saved before car and bus existed (doc 117): only hand checks teach."""
+
     def table(self, **statuses: str) -> PhraseTable:
         return PhraseTable(
             phrases={"car": PhraseDef("car", "car"), "bus": PhraseDef("bus", "bus")},
-            # Both phrases checked somewhere else, so both are in checked mode.
-            statuses={
-                "/other": {"car": "absent", "bus": "absent"},
-                **({"/a": statuses} if statuses else {}),
-            },
+            statuses={"/a": statuses} if statuses else {},
+            unknown={"/a": {"car", "bus"}},
         )
 
     def test_only_checked_pairs_teach(self) -> None:
@@ -98,17 +97,37 @@ class TestChecked:
         assert ("red car", "positive", (1,)) in kinds(plan(s, table))
 
 
-class TestPerPhrase:
-    def test_checking_one_phrase_leaves_the_others_automatic(self) -> None:
-        """The trap Jan's question found (2026-09-30): with checked mode per dataset, one
-        picture checked for one phrase took the automatic negatives from all the rest."""
+class TestSavedMeansComplete:
+    """Doc 117 (Jan, 2026-09-30): a saved picture is complete for the classes that existed
+    when it was saved; checking by hand is only the exception."""
+
+    def test_a_saved_picture_teaches_without_any_check(self) -> None:
+        table = PhraseTable(phrases={"car": PhraseDef("car", "car")})
+        assert kinds(plan(sample("/a", 0), table)) == [
+            ("car", "positive", (0,)),
+            ("bus", "cross", ()),
+        ]
+
+    def test_a_check_elsewhere_no_longer_takes_the_negatives_away(self) -> None:
+        """Doc 108's checked mode left every unchecked picture out once one was checked."""
+        table = PhraseTable(statuses={"/other": {"car": "complete", "bus": "absent"}})
+        assert kinds(plan(sample("/a", 0), table)) == [
+            ("car", "positive", (0,)),
+            ("bus", "cross", ()),
+        ]
+
+    def test_a_class_added_later_is_left_out_on_older_pictures_only_for_it(self) -> None:
+        """m10 made after this picture was saved: no 'no bus here', car still teaches."""
+        table = PhraseTable(unknown={"/a": {"bus"}})
+        assert kinds(plan(sample("/a", 0), table)) == [("car", "positive", (0,))]
+
+    def test_a_sub_phrase_follows_its_class(self) -> None:
         table = PhraseTable(
-            phrases={"car": PhraseDef("car", "car"), "bus": PhraseDef("bus", "bus")},
-            statuses={"/other": {"car": "complete"}},
+            phrases={"red car": PhraseDef("red car", "car")}, unknown={"/a": {"car"}}
         )
-        # "car" is checked somewhere, so on this unchecked picture it teaches nothing;
-        # "bus" never was, so it is still an automatic "none here".
-        assert kinds(plan(sample("/a", 0), table)) == [("bus", "cross", ())]
+        s = sample("/a", 0)
+        table.linked = {"/a": {s.masks[0].counts: ("red car",)}}
+        assert not [q for q in kinds(plan(s, table)) if q[0] == "red car"]
 
 
 class TestWordingsAndNegatives:

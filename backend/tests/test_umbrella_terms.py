@@ -156,9 +156,10 @@ class TestTraining:
         assert not [q for q in planned if q[0] == "screw" and q[1] != "positive"]
 
     def test_an_unknown_member_leaves_the_umbrella_out(self) -> None:
-        """m9 checked elsewhere but not here: its screws here may be unoutlined."""
-        checked_elsewhere = table(**{"/other": {"m9": "complete"}})
-        assert not [q for q in queries(sample(0), checked_elsewhere) if q[0] == "screw"]
+        """m9 made after this picture was saved (doc 117): its screws here may be unoutlined."""
+        later = table()
+        later.unknown = {"/a": {"m9"}}
+        assert not [q for q in queries(sample(0), later) if q[0] == "screw"]
 
     def test_an_unclear_member_leaves_the_umbrella_out(self) -> None:
         assert not [q for q in queries(sample(0, unclear=(1,)), table()) if q[0] == "screw"]

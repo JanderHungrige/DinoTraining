@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from app.core.config import Settings
+from app.datasets.completeness import class_since, saved_at
 from app.datasets.db import transaction
 from app.datasets.masks import MaskStore
 from app.datasets.phrase_links import phrase_key
@@ -37,14 +38,9 @@ class PhraseTable:
     linked: dict[str, dict[RleKey, tuple[str, ...]]] = field(default_factory=dict)
     #: path → phrases with a rejected outline on that picture.
     rejected: dict[str, set[str]] = field(default_factory=dict)
-
-    @property
-    def checked_phrases(self) -> set[str]:
-        """Phrases checked on at least one picture. Per phrase, not per dataset (doc 108,
-        amended): checking one picture for "signal" must not take the automatic negatives
-        away from every other phrase — or from every other picture of a dataset where only
-        one was checked by way of trying it out."""
-        return {text for marks in self.statuses.values() for text in marks}
+    #: Doc 117: path → classes the picture was saved *before* they existed. It was never
+    #: looked at for them, so it is left out for them unless checked by hand.
+    unknown: dict[str, set[str]] = field(default_factory=dict)
 
     def vocabulary(self) -> set[str]:
         words: set[str] = set()
@@ -72,6 +68,11 @@ def load_phrase_table(
                 ),
             )
         with transaction(settings) as connection:
+            since = class_since(connection, dataset_id)
+            for path, moment in saved_at(connection, dataset_id).items():
+                later = {name for name, start in since.items() if moment < start}
+                if later:
+                    table.unknown.setdefault(path, set()).update(later)
             rows = connection.execute(
                 "SELECT i.path, p.text, s.status FROM image_phrase_status s"
                 " JOIN images i ON i.id = s.image_id JOIN phrases p ON p.id = s.phrase_id"
