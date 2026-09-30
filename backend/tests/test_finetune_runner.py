@@ -155,3 +155,37 @@ def test_a_dataset_that_breaks_the_rules_is_refused_before_any_work(client: Test
         json={"finetune_id": "nope", "dataset_ids": [dataset_id], "name": "x"},
     )
     assert unknown.status_code == 404
+
+
+def test_cancelling_takes_effect_within_an_epoch(
+    env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Found live (doc 96): a SAM 3 epoch stuck in swap could not be cancelled, because the
+    # runner only looked between epochs.
+    seen: list[int] = []
+
+    def slow_epoch(self, state, data, epoch):  # type: ignore[no-untyped-def]
+        for index in range(1000):
+            if data.stopped:
+                break
+            seen.append(index)
+            if index == 3:
+                job.cancel_requested.set()
+            time.sleep(0.001)
+        return 1.0
+
+    monkeypatch.setattr(FakeAdapter, "train_epoch", slow_epoch)
+    monkeypatch.setattr(
+        runner_module,
+        "load_data",
+        lambda *a, **k: FinetuneData([sample("train")], [sample("val")], [], ("c",)),
+    )
+    runner = FoundationFinetuneRunner()
+    job = runner.submit(
+        FinetuneRequest("sam2.1-hiera-small", ("d",), "x", None, FinetuneSettings(epochs=3))
+    )
+    deadline = time.monotonic() + 10
+    while not job.finished and time.monotonic() < deadline:
+        time.sleep(0.02)
+    assert job.state == "cancelled" and "during epoch 1" in job.message
+    assert len(seen) < 10 and job.instance_id is None

@@ -49,4 +49,4 @@ def test_sam2_has_an_adapter_and_saves_only_its_decoder() -> None:
     assert isinstance(adapter, Sam2Adapter)
     assert (adapter.primary_metric, adapter.weights_kind) == ("miou", "sam-mask-decoder")
     with pytest.raises(LookupError):
-        get_adapter("sam3")  # doc 96
+        get_adapter("no-such-model")

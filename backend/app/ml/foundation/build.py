@@ -110,6 +110,17 @@ def _trained_spec(foundation_id: str, settings: Settings | None) -> FoundationSp
             class_names=instance.class_names,
             variant_head_type=head_type,
         )
+    if instance.weights_kind == "sam3-decoders":
+        return FoundationSpec(
+            id=instance.id,
+            model_id="sam3",
+            annotator_id="sam3",
+            segmenter_id=instance.id,
+            title=f"SAM 3 · {instance.name}",
+            description=instance.summary,
+            task="segmentation",
+            render_hint="masks",
+        )
     if instance.weights_kind == "sam-mask-decoder":
         # A fine-tuned SAM segments nothing on its own: it runs as Grounded SAM's second
         # half, Grounding DINO finding the objects and the user's SAM outlining them.

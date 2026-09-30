@@ -54,6 +54,8 @@ class RfDetrAdapter:
         module.train()
         total = 0.0
         for sample in data.train:
+            if data.stopped:
+                break
             with Image.open(sample.path) as opened:
                 image = opened.convert("RGB")
             inputs = processor(images=image, return_tensors="pt")  # type: ignore[operator]

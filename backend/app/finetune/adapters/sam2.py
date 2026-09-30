@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import random
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -30,14 +31,15 @@ from torch.nn import functional as F
 from app.core.config import Settings
 from app.core.paths import resolve_model_dir
 from app.datasets.rle import rle_decode
-from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState
+from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState, memory_budget
 from app.ml.training.samples import TrainingSample
 
 logger = logging.getLogger(__name__)
 
 INPUT = 1024
 LOW_RES = 256
-CACHE_BUDGET_BYTES = 3 * 1024**3
+#: A share of the machine's memory for cached embeddings (doc 96's lesson).
+CACHE_BUDGET_BYTES = memory_budget(0.15)
 #: Objects per picture per step, at most: a crowded picture is sampled, not all at once.
 MAX_OBJECTS = 16
 JITTER = 0.1
@@ -51,6 +53,7 @@ class Sam2State:
     device: str
     optimiser: torch.optim.Optimizer
     rng: random.Random
+    stop: threading.Event | None = None
     cache: dict[str, list[torch.Tensor]] = field(default_factory=dict)
     cached_bytes: int = 0
 
@@ -148,7 +151,9 @@ class Sam2Adapter:
         trainable = [p for p in model.parameters() if p.requires_grad]
         optimiser = torch.optim.AdamW(trainable, lr=settings.learning_rate, weight_decay=1e-4)
         model.eval()
-        return Sam2State(model, processor, device, optimiser, random.Random(settings.seed))
+        return Sam2State(
+            model, processor, device, optimiser, random.Random(settings.seed), stop=data.stop
+        )
 
     def _step(self, state: Sam2State, sample: TrainingSample) -> float | None:
         masks = _objects(sample)
@@ -173,7 +178,12 @@ class Sam2Adapter:
         state.model.mask_decoder.train()
         order = data.train[:]
         state.rng.shuffle(order)
-        losses = [loss for sample in order if (loss := self._step(state, sample)) is not None]
+        losses: list[float] = []
+        for sample in order:
+            if data.stopped:
+                break
+            if (loss := self._step(state, sample)) is not None:
+                losses.append(loss)
         state.model.mask_decoder.eval()
         return sum(losses) / max(1, len(losses))
 
@@ -182,6 +192,8 @@ class Sam2Adapter:
         assert isinstance(state, Sam2State)
         ious: list[float] = []
         for sample in samples:
+            if state.stop is not None and state.stop.is_set():
+                break  # cancelled: the runner discards a partial score
             pairs = [(m, b) for m in _objects(sample) if (b := _box(m)) is not None]
             if not pairs:
                 continue

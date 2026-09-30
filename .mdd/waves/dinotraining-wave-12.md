@@ -3,11 +3,11 @@ id: dinotraining-wave-12
 title: "Wave 12: Fine-Tuning SAM 2, SAM 3 and DINOv3"
 initiative: dinotraining
 initiative_version: 10
-status: in_progress
+status: complete
 depends_on: dinotraining-wave-11
 demo_state: "A user picks SAM 2 in Training, sees exactly what training data it needs and whether their prepared dataset meets it, fine-tunes it on their own masks, and sees held-out mIoU improve over the base model. The same works for DINOv3. SAM 3 either fine-tunes or states precisely why it cannot on this machine. An assistant over MCP asks for each model's data requirements and gets the same answer the user sees."
 created: 2026-09-29
-hash: 5683c92d
+hash: b15f6f7a
 ---
 
 # Wave 12: Fine-Tuning SAM 2, SAM 3 and DINOv3
@@ -63,9 +63,9 @@ input plan, imbalance) rather than inventing a second, weaker version of it.
 | 2 | finetune-framework | docs/93-finetune-framework.md | complete | data-requirements-contract |
 | 3 | sam2-finetune | docs/94-sam2-finetune.md | complete | finetune-framework |
 | 4 | dinov3-finetune | docs/95-dinov3-finetune.md | complete | finetune-framework |
-| 5 | sam3-finetune | — | planned | sam2-finetune |
-| 6 | finetune-ui | — | planned | sam2-finetune, dinov3-finetune |
-| 7 | finetune-for-agents | — | planned | data-requirements-contract, finetune-framework |
+| 5 | sam3-finetune | docs/96-sam3-finetune.md | complete | sam2-finetune |
+| 6 | finetune-ui | docs/97-finetune-ui.md | complete | sam2-finetune, dinov3-finetune |
+| 7 | finetune-for-agents | docs/98-finetune-for-agents.md | complete | data-requirements-contract, finetune-framework |
 
 ### Feature notes
 

@@ -6,6 +6,7 @@ from app.finetune.adapter import FinetuneAdapter
 from app.finetune.adapters.backbone import BackboneAdapter
 from app.finetune.adapters.rfdetr import RfDetrAdapter
 from app.finetune.adapters.sam2 import Sam2Adapter
+from app.finetune.adapters.sam3 import Sam3Adapter
 
 
 def get_adapter(finetune_id: str) -> FinetuneAdapter:
@@ -13,6 +14,8 @@ def get_adapter(finetune_id: str) -> FinetuneAdapter:
         return RfDetrAdapter(finetune_id)
     if finetune_id.startswith("sam2"):
         return Sam2Adapter(finetune_id)
+    if finetune_id == "sam3":
+        return Sam3Adapter(finetune_id)
     for task in ("classification", "segmentation"):
         suffix = f"-{task}"
         if finetune_id.startswith(("dinov2", "dinov3")) and finetune_id.endswith(suffix):

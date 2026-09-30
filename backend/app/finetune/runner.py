@@ -124,6 +124,7 @@ class FoundationFinetuneRunner:
         data = load_data(
             spec, request.dataset_ids, request.recipe_id, request.settings.seed, self._settings
         )
+        data.stop = job.cancel_requested
         job.held_out = "test" if data.test else "validation"
         if not data.test:
             job.notes.append(
@@ -168,6 +169,9 @@ class FoundationFinetuneRunner:
                 job.state, job.message = "cancelled", f"Cancelled before epoch {epoch}"
                 return None
             loss = adapter.train_epoch(state, data, epoch)
+            if job.cancel_requested.is_set():
+                job.state, job.message = "cancelled", f"Cancelled during epoch {epoch}"
+                return None
             metrics = adapter.evaluate(state, data.val) if data.val else {}
             job.history.append(EpochResult(epoch, loss, metrics))
             job.epoch = epoch

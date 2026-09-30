@@ -30,6 +30,7 @@ from app.datasets.rle import rle_decode
 from app.ml.annotators.base import MaskAnnotator, MaskProposal
 from app.ml.annotators.build import build_annotator
 from app.ml.annotators.grounded_sam import GroundedSamAnnotator
+from app.ml.annotators.sam3 import Sam3Annotator
 from app.ml.foundation.registry import FoundationSpec
 from app.ml.inference.payloads import (
     MAX_PNG_CLASSES,
@@ -62,9 +63,12 @@ class ConceptSegmenter:
         self, image: Image.Image, concept: str, threshold: float = DEFAULT_SCORE_THRESHOLD
     ) -> list[MaskProposal]:
         """The raw proposals — masks *and* boxes. Both callers start here."""
-        if self._spec.segmenter_id is not None:
+        if self._spec.segmenter_id is not None and self._spec.annotator_id == "sam3":
+            # Doc 96: the user's fine-tuned SAM 3, prompted by the concept directly.
+            annotator: MaskAnnotator = Sam3Annotator(self._spec.segmenter_id)
+        elif self._spec.segmenter_id is not None:
             # Doc 94: Grounded SAM with the user's fine-tuned SAM as its segmenting half.
-            annotator: MaskAnnotator = GroundedSamAnnotator(
+            annotator = GroundedSamAnnotator(
                 self._spec.id, self._spec.model_id, self._spec.segmenter_id
             )
         else:

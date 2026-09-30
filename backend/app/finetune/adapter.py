@@ -8,6 +8,8 @@ score, cancel and saving the best epoch are the runner's, once.
 
 from __future__ import annotations
 
+import os
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
@@ -24,6 +26,13 @@ class FinetuneData:
     val: list[TrainingSample]
     test: list[TrainingSample]
     class_names: tuple[str, ...]
+    #: Set by the runner to the job's cancel flag, so a long epoch stops between pictures
+    #: rather than only between epochs (found live on SAM 3, doc 96).
+    stop: threading.Event | None = None
+
+    @property
+    def stopped(self) -> bool:
+        return self.stop is not None and self.stop.is_set()
 
     @property
     def held_out(self) -> list[TrainingSample]:
@@ -38,6 +47,20 @@ class FinetuneSettings:
     seed: int = 42
     #: Adapter-specific options, e.g. DINOv3's unfrozen blocks (doc 95).
     options: dict[str, float] = field(default_factory=dict)
+
+
+def memory_budget(fraction: float, ceiling: int = 3 * 1024**3) -> int:
+    """A share of this machine's physical memory, for caches of frozen features.
+
+    A fixed 3 GB cache beside SAM 3's 3.4 GB of weights drove a 16 GB Mac into 24 GB of
+    swap, and a training epoch that should take minutes did not finish in half an hour
+    (doc 96). Budgets are a share of the machine instead.
+    """
+    try:
+        total = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+    except (ValueError, OSError, AttributeError):
+        total = 8 * 1024**3
+    return min(ceiling, int(total * fraction))
 
 
 class TrainingState(Protocol):

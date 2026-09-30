@@ -120,9 +120,9 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
         "with, so name classes the way you would ask for them ('rail signal', not "
         "'class_3'). Images where a phrase has no instance are useful: they teach 'none "
         "here'.",
-        what_trains="The detection and mask decoders; the image and text encoders stay frozen.",
-        available=False,
-        unavailable_reason="The SAM 3 training adapter is built in doc 96.",
+        what_trains="The detection and mask decoders and the scoring head (15 M of 840 M "
+        "parameters); the image and text encoders stay frozen. About 6 s per picture the "
+        "first round on an M1, then about 1 s.",
     ),
     *(
         FinetuneRequirements(
@@ -152,7 +152,7 @@ REQUIREMENTS: tuple[FinetuneRequirements, ...] = (
             "backbone never run on the variant.",
         )
         for backbone, size in (
-            ("dinov2-small", "ViT-S/14 (DINOv2)"),
+            ("dinov2-small", "ViT-S/14"),
             ("dinov3-vitb16", "ViT-B/16"),
             ("dinov3-vitl16", "ViT-L/16"),
         )

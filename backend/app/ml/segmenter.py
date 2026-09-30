@@ -96,9 +96,15 @@ def _fine_tuned(model_id: str) -> tuple[str, Path] | None:
         instance = store.get(model_id)
     except PathConfinementError:
         return None
-    if instance is None or instance.weights_kind != "sam-mask-decoder":
+    if instance is None:
         return None
-    return instance.base_model_id, store.directory(model_id) / DECODER_FILE
+    if instance.weights_kind == "sam-mask-decoder":
+        return instance.base_model_id, store.directory(model_id) / DECODER_FILE
+    if instance.weights_kind == "sam3-decoders":
+        from app.finetune.adapters.sam3 import DECODERS_FILE
+
+        return instance.base_model_id, store.directory(model_id) / DECODERS_FILE
+    return None
 
 
 def load_segmenter(model_id: str = DEFAULT_SEGMENTER) -> Segmenter:
@@ -154,7 +160,12 @@ def _load_tuned(model_id: str, base_id: str, decoder: Path) -> Segmenter:
     processor_cls, model_cls = _classes_for(_require_spec(base_id).family)
     directory = resolve_model_dir(base_id)
     model = model_cls.from_pretrained(str(directory)).to(device)
-    model.mask_decoder.load_state_dict(torch.load(decoder, map_location=device))
+    weights = torch.load(decoder, map_location=device)
+    if decoder.name.startswith("sam3"):
+        # SAM 3's trained parts are saved with their full names (doc 96).
+        model.load_state_dict(weights, strict=False)
+    else:
+        model.mask_decoder.load_state_dict(weights)
     model.eval()
     segmenter = Segmenter(model_id=model_id, device=device, processor=base.processor, model=model)
     with _lock:

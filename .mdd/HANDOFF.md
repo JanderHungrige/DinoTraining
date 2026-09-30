@@ -4,15 +4,69 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 11 build**. Waves 1–8 and docs
+**Last updated:** 2026-09-30, at the end of the **Wave 12 build**. Waves 1–8 and docs
 60–68 are in `dev` and `main`. **Wave 9** (docs 69–75) is in `dev` (`076f56a`) and waits
-for Jan's test before `main`. **Wave 10** (Look & Feel, docs 76–80) is built and pushed on
-`feat/dinotraining-wave-10`, **not merged**, and waits for the packaged-app demo.
-**Wave 11** (Guided Data Preparation, docs 81–91) is built, verified in the running app,
-and pushed on `feat/dinotraining-wave-11`, **not merged**. Wave 12 (fine-tuning SAM 2/3
-and DINOv3) is next; the website is Wave 13.
+for Jan's test before `main`. Three waves are built and pushed, each on its own branch, and
+none is merged:
+- **Wave 10** (Look & Feel, docs 76–80) on `feat/dinotraining-wave-10`;
+- **Wave 11** (Guided Data Preparation, docs 81–91) on `feat/dinotraining-wave-11`;
+- **Wave 12** (Fine-Tuning, docs 92–98) on `feat/dinotraining-wave-12`, which branches from
+  Wave 11.
+
+The website is Wave 13.
 
 ---
+
+## Wave 12 — Fine-tuning SAM 2, SAM 3 and DINO backbones (2026-09-30)
+
+| | |
+|---|---|
+| 92 | **Data-requirements contract.** One source per model for what the data must look like (RF-DETR, SAM 2.1, SAM 3, DINOv2/v3 × task), plus a preflight that names the rule, the numbers and the fix. |
+| 93 | **One runner, per-model adapters.** Preflight, the recipe's split, base vs fine-tuned on the same held-out pictures, and **the base model competing as round 0**: a fine-tune that is not better is not saved. |
+| 94 | **SAM 2.1.** Trains the mask decoder only (a few MB). Offered as "Grounded SAM · <name>". |
+| 95 | **DINO backbones.** The last blocks train with a task head and are saved as a variant with its own id. The baseline is a head on the frozen backbone. |
+| 96 | **SAM 3.** Hungarian matching and DETR losses on 15 M of 840 M parameters. Offered as "SAM 3 · <name>". |
+| 97 | **UI.** "Fine-tune a model": requirements card, readiness check, before/after. Doc 44's panel is removed. |
+| 98 | **Agents.** `get_finetune_requirements`, `check_dataset_for`, `start_finetune`; guide section 4 rewritten. |
+
+**Measured:**
+
+| Model | Data | Base → fine-tuned (held-out) |
+|---|---|---|
+| RF-DETR nano, 2 rounds | Blood cells, recipe | mAP 0.000 → **0.616** (a DINO head: 0.412) |
+| SAM 2.1 small | synthetic shapes it already outlines | mIoU 0.957 → 0.936 (worse; the runner now saves nothing) |
+| SAM 2.1 small | filled-ring convention | mIoU 0.804 → **0.957** |
+| DINOv2-small, 4 blocks | filled-ring convention | head on frozen 0.849 → variant **0.869** |
+| SAM 3 | filled-ring convention | base **0.434**; a full run was cancelled (memory shared with NinaNatur's 19 GB process) — see doc 96 |
+
+**Carry forward:**
+- **Fine-tuning teaches your outlines, not what a model already does.** It made SAM 2
+  worse on easy shapes. That is why the base model competes and why both numbers are
+  always reported.
+- **Memory is a budget, not a constant** (doc 96). A fixed 3 GB feature cache next to
+  SAM 3 swapped this 16 GB Mac (24.5 GB of swap), and an epoch could not even be
+  cancelled. Caches are now a share of physical memory, and cancelling is checked between
+  pictures.
+- **The old headline numbers were random-split numbers:** RF-DETR 0.96 against a head's
+  0.5–0.6 on rail. On a leak-free split, Blood cells give 0.62 against 0.41. The rail
+  comparison deserves a re-run with a recipe.
+- **DINOv3 was not run here.** It is gated, and downloading needs Jan's go-ahead. The code
+  path was verified with DINOv2-small.
+- **Synthetic data only for SAM.** The app holds no real instance-mask set of useful size.
+
+## Waiting on Jan — Wave 12
+
+- **See the demo-state:** Training → Fine-tune a model → SAM 2.1 on a dataset with masks
+  and a recipe. Read the card, fix what the check says, train, and compare before/after.
+- **Run SAM 3 once on a free machine** (doc 96): Training → Fine-tune a model → SAM 3 on
+  "Wave 12 filled-ring convention" with its recipe, 2 rounds. It is the one fine-tune not
+  yet seen to completion.
+- **Allow the DINOv3 download** if DINOv3 fine-tuning should be verified on real weights
+  (327 MB; gated, so the token must be set).
+- **Test data from this wave:** datasets "Wave 12 synthetic outlines" and "Wave 12
+  filled-ring convention", and fine-tuned instances (RF-DETR "blood rf-detr (wave 12
+  runner)", "outlines SAM" (the worse one, saved before the round-0 rule), "filled-ring
+  SAM", "rings DINOv2 variant", and SAM 3's), to delete in Library.
 
 ## Wave 10 — Look & Feel (2026-09-29), on its own branch
 
