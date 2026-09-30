@@ -43,6 +43,10 @@ export const setupEn = {
     'PyTorch is being exchanged. The backend is stopped meanwhile; your datasets and models stay as they are.',
   'setup.fail.rolledBack': 'Switching did not work: {reason} You are back on {to}, as before.',
   'setup.back': 'Back to the app',
+  'setup.update.title': "Updating DinoTraining's packages",
+  'setup.update.intro':
+    'This version of DinoTraining was tested with newer packages. Only what changed is downloaded; your datasets and models stay as they are.',
+  'setup.update.previous': 'Start with the previous packages (the update is tried again next time)',
   'setup.retry': 'Try again',
 
   'setup.game.label': 'Dino Run: a small game while DinoTraining installs. Press Space or click to jump.',

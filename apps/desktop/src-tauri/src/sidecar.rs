@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use crate::runtime::Runtime;
+use crate::runtime::{Env, Runtime};
 
 /// How long to wait for the backend to answer before giving up.
 /// Importing torch on a cold filesystem cache genuinely takes many seconds.
@@ -74,16 +74,19 @@ impl SidecarConfig {
     /// ([`Runtime::is_ready`]); this only says where it will be.
     pub fn resolve(resource_dir: Option<&Path>) -> Result<Self, SidecarError> {
         match Runtime::find(resource_dir) {
-            Some(runtime) => Ok(Self::bundled(&runtime)),
+            Some(runtime) => runtime
+                .current()
+                .map(|env| Self::bundled(&runtime, &env))
+                .ok_or(SidecarError::PythonMissing(runtime.root)),
             None => Self::for_development(),
         }
     }
 
     /// The packaged app: the uv-managed environment running the bundled backend source.
-    pub fn bundled(runtime: &Runtime) -> Self {
+    pub fn bundled(runtime: &Runtime, env: &Env) -> Self {
         Self {
             launch: Launch::Module {
-                python: runtime.env_python(),
+                python: env.python(),
                 backend_dir: runtime.backend_dir(),
             },
             host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
@@ -179,7 +182,7 @@ pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
     log::info!("Spawning backend: {} -m app", python.display());
     let mut command = Command::new(python);
     command.arg("-m").arg("app").current_dir(backend_dir);
-    crate::runtime::hide_console(&mut command);
+    crate::uv_sync::hide_console(&mut command);
     // An operation MPS lacks runs on the CPU instead of failing (doc 126). A value the
     // user set themselves is left alone.
     if cfg!(target_os = "macos") && std::env::var_os("PYTORCH_ENABLE_MPS_FALLBACK").is_none() {

@@ -40,14 +40,14 @@ describe('SetupGate', () => {
 
   it('a packaged app with its environment installed shows the app', async () => {
     shellFlag.inside = true;
-    status.mockResolvedValue({ needed: false, machine: null, auto: null });
+    status.mockResolvedValue({ needed: false, machine: null, auto: null, update: null });
     render(<SetupGate>app</SetupGate>);
     expect(await screen.findByText('app')).toBeInTheDocument();
   });
 
   it('a packaged app without its environment shows the setup, not the app', async () => {
     shellFlag.inside = true;
-    status.mockResolvedValue({ needed: true, machine: MACHINE, auto: null });
+    status.mockResolvedValue({ needed: true, machine: MACHINE, auto: null, update: null });
     render(<SetupGate>app</SetupGate>);
     expect(await screen.findByRole('heading', { name: 'Welcome to DinoTraining' })).toBeInTheDocument();
     expect(screen.queryByText('app')).not.toBeInTheDocument();

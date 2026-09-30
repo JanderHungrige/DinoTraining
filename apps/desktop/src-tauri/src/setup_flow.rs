@@ -11,7 +11,7 @@ use serde::Serialize;
 use tauri::{Emitter, Manager};
 
 use crate::progress::{looks_offline, Tracker};
-use crate::runtime::Runtime;
+use crate::runtime::{Env, Runtime};
 use crate::setup::{self, Machine, SetupFailure};
 
 /// Emitted while `uv sync` runs: [`crate::progress::Progress`].
@@ -21,6 +21,8 @@ pub const PROGRESS_EVENT: &str = "setup-progress";
 pub struct SetupState {
     machine: Mutex<Option<Machine>>,
     installing: AtomicBool,
+    /// Doc 129: the user chose to start on the previous packages after a failed update.
+    stale_ok: AtomicBool,
 }
 
 impl SetupState {
@@ -30,6 +32,10 @@ impl SetupState {
             return Err(SetupFailure::Failed { message: "An install is already running.".into() });
         }
         Ok(())
+    }
+
+    pub(crate) fn allow_stale(&self) {
+        self.stale_ok.store(true, Ordering::SeqCst);
     }
 
     pub(crate) fn end(&self) {
@@ -52,33 +58,50 @@ pub struct SetupStatus {
     /// For unattended installs and doc 131's smoke test; a variant this machine cannot
     /// take is ignored, so the screen asks as usual.
     pub auto: Option<String>,
+    /// Doc 129: an environment exists but is from an older lock. Its variant; the screen
+    /// updates it without asking, and can fall back to it.
+    pub update: Option<String>,
 }
 
 pub fn runtime(app: &tauri::AppHandle) -> Option<Runtime> {
     Runtime::find(app.path().resource_dir().ok().as_deref())
 }
 
+/// A packaged app whose environment is missing or outdated, unless the user chose to
+/// start on the outdated one (doc 129).
 pub fn needs_setup(app: &tauri::AppHandle) -> bool {
-    runtime(app).is_some_and(|runtime| !runtime.is_ready())
+    let Some(runtime) = runtime(app) else { return false };
+    if runtime.is_ready() {
+        return false;
+    }
+    let stale_ok = app.state::<SetupState>().stale_ok.load(Ordering::SeqCst);
+    !(stale_ok && runtime.current().is_some_and(|env| env.usable()))
+}
+
+/// The variant of an existing environment from an older lock (doc 129).
+fn outdated_variant(runtime: &Runtime) -> Option<String> {
+    let env = runtime.current().filter(Env::usable)?;
+    Some(env.installed().map_or_else(|| "cpu".to_string(), |installed| installed.variant))
 }
 
 #[tauri::command]
 pub fn setup_status(app: tauri::AppHandle, state: tauri::State<'_, SetupState>) -> SetupStatus {
     if !needs_setup(&app) {
-        return SetupStatus { needed: false, machine: None, auto: None };
+        return SetupStatus { needed: false, machine: None, auto: None, update: None };
     }
     let machine = state.machine();
-    let auto = std::env::var("DINO_SETUP_AUTO")
-        .ok()
-        .filter(|wanted| machine.choices.iter().any(|choice| choice.variant == wanted));
-    SetupStatus { needed: true, machine: Some(machine), auto }
+    let update = runtime(&app).and_then(|runtime| outdated_variant(&runtime));
+    let offered = |wanted: &String| machine.choices.iter().any(|choice| choice.variant == wanted);
+    let auto = std::env::var("DINO_SETUP_AUTO").ok().or_else(|| update.clone()).filter(offered);
+    SetupStatus { needed: true, machine: Some(machine), auto, update }
 }
 
 /// The setup screen's steps, into the app log: what a user sends when the first start
 /// goes wrong, and what doc 131's smoke test reads. Only known step names are logged.
 #[tauri::command]
 pub fn setup_report(step: String) {
-    const STEPS: [&str; 6] = ["shown", "installing", "starting", "ready", "opened", "failed"];
+    const STEPS: [&str; 7] =
+        ["shown", "installing", "starting", "resuming", "ready", "opened", "failed"];
     if STEPS.contains(&step.as_str()) {
         log::info!("Setup screen: {step}");
     }
@@ -104,23 +127,46 @@ pub async fn setup_install(
         .cloned()
         .ok_or(SetupFailure::Unsupported)?;
     state.begin()?;
-    let result = install(&app, runtime, choice.variant, &choice).await;
+    let result = install(&app, runtime.clone(), choice.variant, &choice).await;
     state.end();
-    result?;
-    crate::start_backend(app.clone())
-        .await
-        .map_err(|message| SetupFailure::Failed { message })?;
+    let previous = runtime.current();
+    activate(&runtime, &result?)?;
+    if let Err(message) = crate::start_backend(app.clone()).await {
+        // A new environment that does not start: point back at the old one, which the
+        // screen offers to start (doc 129). Nothing is removed.
+        if let Some(previous) = previous {
+            activate(&runtime, &previous)?;
+        }
+        return Err(SetupFailure::Failed { message });
+    }
     log::info!("Setup finished: the environment is installed and the backend answers");
+    tauri::async_runtime::spawn_blocking(move || runtime.remove_others());
     Ok(())
 }
 
-/// Disk, connection, then `uv sync` with progress events (doc 127).
+pub(crate) fn activate(runtime: &Runtime, env: &Env) -> Result<(), SetupFailure> {
+    runtime.activate(env).map_err(|error| SetupFailure::Failed { message: error.to_string() })
+}
+
+/// Doc 129: start on the previous packages after a failed update. The update is tried
+/// again at the next start.
+#[tauri::command]
+pub async fn start_previous(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, SetupState>,
+) -> Result<(), SetupFailure> {
+    log::warn!("Starting on the previous environment; the update is still pending");
+    state.allow_stale();
+    crate::start_backend(app.clone()).await.map_err(|message| SetupFailure::Failed { message })
+}
+
+/// Disk, connection, then `uv sync` into a new environment, with progress events (doc 127).
 pub(crate) async fn install(
     app: &tauri::AppHandle,
     runtime: Runtime,
     variant: &'static str,
     choice: &setup::Choice,
-) -> Result<(), SetupFailure> {
+) -> Result<Env, SetupFailure> {
     setup::check_disk(&runtime.root, choice)?;
     tauri::async_runtime::spawn_blocking(setup::check_online)
         .await
@@ -128,13 +174,12 @@ pub(crate) async fn install(
     sync(app, runtime, variant).await
 }
 
-/// `uv sync` alone, with progress events. The rollback of doc 128 uses it without the
-/// checks: the previous variant comes from uv's cache and needs no connection.
-pub(crate) async fn sync(
+/// `uv sync` into a new environment beside the current one, with progress events.
+async fn sync(
     app: &tauri::AppHandle,
     runtime: Runtime,
     variant: &'static str,
-) -> Result<(), SetupFailure> {
+) -> Result<Env, SetupFailure> {
     log::info!("Installing the {variant} environment into {}", runtime.root.display());
     let emitter = app.clone();
     let outcome = tauri::async_runtime::spawn_blocking(move || {
@@ -153,7 +198,7 @@ pub(crate) async fn sync(
     .map_err(|error| SetupFailure::Failed { message: error.to_string() })?;
 
     match outcome {
-        (Ok(()), _) => Ok(()),
+        (Ok(env), _) => Ok(env),
         (Err(_), true) => Err(SetupFailure::Offline),
         (Err(error), false) => {
             log::error!("Install failed: {error}");

@@ -11,7 +11,7 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use crate::runtime::hide_console;
+use crate::uv_sync::hide_console;
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Gpu {

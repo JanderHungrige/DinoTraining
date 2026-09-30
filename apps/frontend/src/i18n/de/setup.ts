@@ -45,6 +45,10 @@ export const setupDe: Catalogue<typeof setupEn> = {
     'PyTorch wird ausgetauscht. Das Backend ist so lange gestoppt; deine Datensätze und Modelle bleiben, wie sie sind.',
   'setup.fail.rolledBack': 'Der Wechsel hat nicht geklappt: {reason} Du bist wieder auf {to}, wie vorher.',
   'setup.back': 'Zurück zur App',
+  'setup.update.title': 'DinoTrainings Pakete werden aktualisiert',
+  'setup.update.intro':
+    'Diese Version von DinoTraining wurde mit neueren Paketen getestet. Geladen wird nur, was sich geändert hat; deine Datensätze und Modelle bleiben, wie sie sind.',
+  'setup.update.previous': 'Mit den bisherigen Paketen starten (das Update wird beim nächsten Mal wieder versucht)',
   'setup.retry': 'Noch einmal versuchen',
 
   'setup.game.label': 'Dino Run: ein kleines Spiel, während DinoTraining installiert. Leertaste oder Klick zum Springen.',

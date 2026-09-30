@@ -73,12 +73,15 @@ sister_projects: []
 
 1. The variant must be one of this machine's choices (doc 127).
 2. Disk space, then the connection (doc 127's checks).
-3. **Stop the backend**: running jobs end. The button says so before it starts.
-4. `uv sync --frozen --extra <variant>` with progress events (doc 127's parser).
-5. **Start the backend** and wait for `/health`, as the first start does.
-6. **When 4 or 5 fails:** sync the previous variant back. It comes from uv's cache, so
-   this works offline. Then restart and report "Switching failed: …; you are back on
-   the CPU." The app is never left without a working environment.
+3. `uv sync --frozen --extra <variant>` **into a new environment folder** (doc 129),
+   with progress events. **The backend keeps running meanwhile**, and a failure here has
+   stopped nothing and changed nothing.
+4. Stop the backend (running jobs end; the panel says so first), point `current` at the
+   new folder, start, and wait for `/health`.
+5. **The new build does not start:** point `current` back and start the old one:
+   seconds, nothing downloaded. Reported as "Switching did not work: …; you are back on
+   the CPU, as before."
+6. Success: the old folder is removed.
 
 - **The port:** a just-stopped backend can leave the port briefly unbindable. The
   startup waits up to 5 s for it to free, instead of failing at once.
@@ -96,10 +99,10 @@ sister_projects: []
 
 ## Verified (2026-10-01)
 
-- **Rust (5 new unit tests, 20 in all):** a failed switch goes back to what was
-  installed, or to the CPU when that is unknown; nothing to go back to when the switch
-  was to the same variant; an unknown previous variant is not invented; the
-  `rolled_back` failure carries where it went and why, nested.
+- **Rust:** the `rolled_back` failure carries where it went and why, nested. The
+  build-then-swap footing (build beside, activate, point back, clean up) is doc 129's,
+  tested and run live there. (A first version rolled back by re-syncing the old variant;
+  doc 129 replaced that with pointing back.)
 - **Frontend:**
   - the panel (13 tests): nothing without NVIDIA, on a Mac, or before the report; a
     checkout says how to install the GPU build, with no button; the packaged app on the

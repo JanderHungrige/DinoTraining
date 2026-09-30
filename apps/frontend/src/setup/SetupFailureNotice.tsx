@@ -36,11 +36,12 @@ function message(t: Translator['t'], lang: Language, failure: SetupFailure): str
 interface Props {
   readonly failure: SetupFailure;
   readonly onRetry: () => void;
-  /** Doc 128: a failed switch leaves a working app to go back to. */
-  readonly onBack?: () => void;
+  /** Docs 128/129: the way back to a working app — "Back to the app", "Start with the
+   *  previous packages". */
+  readonly secondary?: { readonly label: string; readonly onClick: () => void };
 }
 
-export function SetupFailureNotice({ failure, onRetry, onBack }: Props): JSX.Element {
+export function SetupFailureNotice({ failure, onRetry, secondary }: Props): JSX.Element {
   const { t, lang } = useT();
   return (
     <div className="firstrun__failure" role="alert">
@@ -52,9 +53,9 @@ export function SetupFailureNotice({ failure, onRetry, onBack }: Props): JSX.Ele
             <button type="button" className="btn btn--primary" onClick={onRetry}>
               {t('setup.retry')}
             </button>
-            {onBack && (
-              <button type="button" className="btn" onClick={onBack}>
-                {t('setup.back')}
+            {secondary && (
+              <button type="button" className="btn" onClick={secondary.onClick}>
+                {secondary.label}
               </button>
             )}
           </div>

@@ -34,6 +34,8 @@ export interface SetupStatus {
   readonly machine: Machine | null;
   /** `DINO_SETUP_AUTO`: install this variant without waiting for a click. */
   readonly auto: Variant | null;
+  /** Doc 129: an environment from an older lock exists; its variant. */
+  readonly update: Variant | null;
 }
 
 export type SetupFailure =
@@ -69,7 +71,7 @@ export function inShell(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
-const NOT_NEEDED: SetupStatus = { needed: false, machine: null, auto: null };
+const NOT_NEEDED: SetupStatus = { needed: false, machine: null, auto: null, update: null };
 
 export async function setupStatus(): Promise<SetupStatus> {
   if (!inShell()) return NOT_NEEDED;
@@ -102,6 +104,18 @@ export function switchVariant(variant: Variant): Promise<void> {
   return invokeInstall('switch_variant', variant);
 }
 
+/** Doc 129: start on the previous packages after a failed update. */
+export async function startPrevious(): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  try {
+    await invoke('start_previous');
+  } catch (error) {
+    if (isSetupFailure(error)) throw error;
+    const failure: SetupFailure = { kind: 'failed', message: String(error) };
+    throw failure;
+  }
+}
+
 /** Doc 128: null outside the packaged app (a checkout manages its own environment). */
 export async function runtimeStatus(): Promise<RuntimeStatus | null> {
   if (!inShell()) return null;
@@ -109,7 +123,7 @@ export async function runtimeStatus(): Promise<RuntimeStatus | null> {
   return invoke<RuntimeStatus | null>('runtime_status');
 }
 
-export type Step = 'shown' | 'installing' | 'starting' | 'ready' | 'opened' | 'failed';
+export type Step = 'shown' | 'installing' | 'starting' | 'resuming' | 'ready' | 'opened' | 'failed';
 
 /** Note a step of the setup screen in the app log. Never fails the screen. */
 export function report(step: Step): void {

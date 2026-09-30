@@ -10,7 +10,7 @@ import { useT } from '../i18n';
 import { DinoRun } from './DinoRun';
 import { SetupFailureNotice } from './SetupFailureNotice';
 import { MachineSummary, variantLabel } from './MachineSummary';
-import { onProgress, percent, report, setupInstall, CUDA_VERSION, type Machine, type Progress, type SetupFailure, type Variant } from './shell';
+import { onProgress, percent, report, setupInstall, startPrevious, CUDA_VERSION, type Machine, type Progress, type SetupFailure, type Variant } from './shell';
 import { SetupTips } from './SetupTips';
 import './setup.css';
 
@@ -18,6 +18,8 @@ type Stage =
   | { readonly kind: 'choose' }
   /** Downloading, installing, then starting the backend: one call to the shell. */
   | { readonly kind: 'installing'; readonly variant: Variant }
+  /** Doc 129: starting on the previous packages after a failed update. */
+  | { readonly kind: 'resuming' }
   | { readonly kind: 'ready' }
   | { readonly kind: 'failed'; readonly variant: Variant; readonly failure: SetupFailure };
 
@@ -31,9 +33,11 @@ interface SetupScreenProps {
    * failed switch can go back to the (rolled-back, working) app.
    */
   readonly switching?: { readonly run: (variant: Variant) => Promise<void>; readonly onBack: () => void };
+  /** Doc 129: an environment from an older lock is being updated; its variant. */
+  readonly update?: Variant | null;
 }
 
-export function SetupScreen({ machine, auto = null, onDone, switching }: SetupScreenProps): JSX.Element {
+export function SetupScreen({ machine, auto = null, onDone, switching, update = null }: SetupScreenProps): JSX.Element {
   const { t } = useT();
   const [stage, setStage] = useState<Stage>({ kind: 'choose' });
   const [progress, setProgress] = useState<Progress | null>(null);
@@ -87,24 +91,41 @@ export function SetupScreen({ machine, auto = null, onDone, switching }: SetupSc
     }
   }, [auto, install]);
 
-  const busy = stage.kind === 'installing' || stage.kind === 'ready';
+  const resume = useCallback(async () => {
+    setStage({ kind: 'resuming' });
+    try {
+      await startPrevious();
+      setStage({ kind: 'ready' });
+    } catch (failure) {
+      setStage({ kind: 'failed', variant: update ?? 'cpu', failure: failure as SetupFailure });
+    }
+  }, [update]);
+  const secondary = switching
+    ? { label: t('setup.back'), onClick: switching.onBack }
+    : update
+      ? { label: t('setup.update.previous'), onClick: () => void resume() }
+      : undefined;
+  const title = switching && auto
+    ? t(CUDA_VERSION[auto] ? 'setup.switch.titleGpu' : 'setup.switch.titleCpu')
+    : t(update ? 'setup.update.title' : 'setup.title');
+  const intro = t(switching ? 'setup.switch.intro' : update ? 'setup.update.intro' : 'setup.intro');
+
+  const busy = stage.kind === 'installing' || stage.kind === 'resuming' || stage.kind === 'ready';
   return (
     <div className="firstrun">
       <header className="firstrun__header">
-        <h1 className="firstrun__title">
-          {switching && auto ? t(CUDA_VERSION[auto] ? 'setup.switch.titleGpu' : 'setup.switch.titleCpu') : t('setup.title')}
-        </h1>
+        <h1 className="firstrun__title">{title}</h1>
         <LanguageSwitch />
       </header>
       <section className="firstrun__card" aria-live="polite">
-        <p className="firstrun__intro">{t(switching ? 'setup.switch.intro' : 'setup.intro')}</p>
+        <p className="firstrun__intro">{intro}</p>
         <MachineSummary machine={machine} />
         {stage.kind === 'choose' && <Choices machine={machine} onInstall={(v) => void install(v)} />}
         {stage.kind === 'failed' && (
           <SetupFailureNotice
             failure={stage.failure}
             onRetry={() => void install(stage.variant)}
-            {...(switching ? { onBack: switching.onBack } : {})}
+            {...(secondary ? { secondary } : {})}
           />
         )}
         {busy && <InstallProgress stage={stage} progress={progress} onOpen={open} />}
@@ -150,7 +171,7 @@ function InstallProgress({ stage, progress, onOpen }: InstallProgressProps): JSX
   const label =
     stage.kind === 'ready'
       ? t('setup.progress.ready')
-      : phase === 'done'
+      : phase === 'done' || stage.kind === 'resuming'
         ? t('setup.progress.starting')
         : t(`setup.progress.${phase}`, {
             done: String(Math.round(progress?.done_mb ?? 0)),

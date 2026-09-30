@@ -2,27 +2,19 @@
 //! Python and every package are installed into the user's data folder from the official
 //! sources, exactly as `uv.lock` pins them.
 //!
-//! This module holds no Tauri types, like `sidecar`: paths come in, processes go out.
+//! Environments live side by side (doc 129): every sync builds a new folder under
+//! `envs/`, and `current` names the one the backend runs in. The running environment is
+//! never touched, so an update or a switch that fails leaves a working app behind.
+//!
+//! Running uv lives in [`crate::uv_sync`]. This module holds no Tauri types, like `sidecar`: paths come in, processes go out.
 
-use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 
 use serde::{Deserialize, Serialize};
 
 /// The resource folder `scripts/stage_runtime.py` writes and `tauri.release.conf.json`
 /// bundles. The two are a pair and must agree.
 pub const RESOURCE_DIR: &str = "runtime";
-/// The Python the lock was made for (doc 125: `requires-python = ">=3.12,<3.13"`).
-pub const PYTHON: &str = "3.12";
-
-#[derive(Debug, thiserror::Error)]
-pub enum RuntimeError {
-    #[error("could not run uv: {0}")]
-    Spawn(#[from] std::io::Error),
-    #[error("installing the packages failed ({status}): {last_line}")]
-    Failed { status: String, last_line: String },
-}
 
 /// What was installed, so an update or a variant switch can tell what it has.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -32,26 +24,43 @@ pub struct Installed {
     pub installed_at: u64,
 }
 
+/// One environment folder under `envs/`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Env {
+    pub id: String,
+    pub dir: PathBuf,
+}
+
+impl Env {
+    pub fn python(&self) -> PathBuf {
+        if cfg!(windows) {
+            self.dir.join("Scripts").join("python.exe")
+        } else {
+            self.dir.join("bin").join("python")
+        }
+    }
+
+    pub(crate) fn lock_copy(&self) -> PathBuf {
+        self.dir.join("installed.lock")
+    }
+
+    pub fn installed(&self) -> Option<Installed> {
+        let text = std::fs::read_to_string(self.dir.join("installed.json")).ok()?;
+        serde_json::from_str(&text).ok()
+    }
+
+    /// Has a Python: it can start, even if its lock is older than the app's (doc 129).
+    pub fn usable(&self) -> bool {
+        self.python().is_file()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Runtime {
     /// `<resources>/runtime`, read-only.
     pub bundled: PathBuf,
     /// `<app data>/runtime`, writable.
     pub root: PathBuf,
-}
-
-/// No console window on Windows for a helper process. `uv`, `nvidia-smi` and the venv's
-/// `python.exe` are console programs; started from a GUI app each would flash (or, for
-/// the backend, keep open) a black window.
-pub fn hide_console(command: &mut Command) {
-    #[cfg(windows)]
-    {
-        use std::os::windows::process::CommandExt;
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-        command.creation_flags(CREATE_NO_WINDOW);
-    }
-    #[cfg(not(windows))]
-    let _ = command;
 }
 
 /// Where the app keeps its own files when nothing overrides it. Mirrors the Python side's
@@ -66,6 +75,10 @@ pub fn app_support_root() -> Option<PathBuf> {
     } else {
         home.join(".local").join("share").join("DinoTraining")
     })
+}
+
+pub(crate) fn since_epoch() -> std::time::Duration {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default()
 }
 
 impl Runtime {
@@ -89,112 +102,89 @@ impl Runtime {
         self.bundled.join(if cfg!(windows) { "uv.exe" } else { "uv" })
     }
 
-    pub fn env_dir(&self) -> PathBuf {
-        self.root.join("env")
+    pub(crate) fn envs_dir(&self) -> PathBuf {
+        self.root.join("envs")
     }
 
-    pub fn env_python(&self) -> PathBuf {
-        if cfg!(windows) {
-            self.env_dir().join("Scripts").join("python.exe")
-        } else {
-            self.env_dir().join("bin").join("python")
-        }
+    fn pointer(&self) -> PathBuf {
+        self.root.join("current")
     }
 
-    fn installed_lock(&self) -> PathBuf {
-        self.root.join("installed.lock")
+    pub(crate) fn env(&self, id: &str) -> Env {
+        Env { id: id.to_string(), dir: self.envs_dir().join(id) }
     }
 
-    fn installed_file(&self) -> PathBuf {
-        self.root.join("installed.json")
+    /// The environment the backend runs in, when there is one.
+    pub fn current(&self) -> Option<Env> {
+        let id = std::fs::read_to_string(self.pointer()).ok()?;
+        let env = self.env(id.trim());
+        env.dir.is_dir().then_some(env)
     }
 
     /// Installed, and from the lock this app version carries. An update with a new lock
     /// is not ready until it is synced (doc 129).
     pub fn is_ready(&self) -> bool {
+        let Some(env) = self.current() else { return false };
         let bundled = std::fs::read(self.backend_dir().join("uv.lock")).ok();
-        let installed = std::fs::read(self.installed_lock()).ok();
-        self.env_python().is_file() && bundled.is_some() && bundled == installed
+        let installed = std::fs::read(env.lock_copy()).ok();
+        env.usable() && bundled.is_some() && bundled == installed
     }
 
     pub fn installed(&self) -> Option<Installed> {
-        let text = std::fs::read_to_string(self.installed_file()).ok()?;
-        serde_json::from_str(&text).ok()
+        self.current()?.installed()
     }
 
-    /// A `uv` command that sees nothing of the user's own Python or uv setup.
-    pub fn uv_command(&self) -> Command {
-        let mut command = Command::new(self.uv());
-        command
-            .current_dir(self.backend_dir())
-            .env("UV_PYTHON_INSTALL_DIR", self.root.join("python"))
-            .env("UV_CACHE_DIR", self.root.join("cache"))
-            .env("UV_PROJECT_ENVIRONMENT", self.env_dir())
-            .env("UV_PYTHON_PREFERENCE", "only-managed")
-            .env("UV_NO_CONFIG", "1")
-            .env_remove("VIRTUAL_ENV")
-            .env_remove("PYTHONPATH");
-        hide_console(&mut command);
-        command
-    }
-
-    /// Install (or re-sync) the environment for `variant` (`cpu`, `cu126`, `cu130`),
-    /// streaming uv's output line by line. Records what was installed on success only, so
-    /// an interrupted sync is never taken for a finished one.
-    pub fn sync(&self, variant: &str, mut on_line: impl FnMut(&str)) -> Result<(), RuntimeError> {
+    /// Make `env` the one the backend runs in: one rename, so never half-written.
+    pub fn activate(&self, env: &Env) -> std::io::Result<()> {
         std::fs::create_dir_all(&self.root)?;
-        let mut child = self
-            .uv_command()
-            .args(["sync", "--frozen", "--extra", variant, "--python", PYTHON])
-            .stdout(Stdio::null())
-            .stderr(Stdio::piped())
-            .spawn()?;
-        let mut last_line = String::new();
-        if let Some(stderr) = child.stderr.take() {
-            for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-                on_line(&line);
-                if !line.trim().is_empty() {
-                    last_line = line;
-                }
+        let temporary = self.root.join("current.tmp");
+        std::fs::write(&temporary, &env.id)?;
+        std::fs::rename(&temporary, self.pointer())
+    }
+
+    /// Remove every environment but the current one: the one replaced, and leftovers of
+    /// an interrupted sync. Best effort: a folder still in use stays for next time.
+    pub fn remove_others(&self) {
+        let Some(current) = self.current() else { return };
+        let Ok(entries) = std::fs::read_dir(self.envs_dir()) else { return };
+        for entry in entries.flatten() {
+            if entry.file_name().to_string_lossy() == current.id {
+                continue;
+            }
+            match std::fs::remove_dir_all(entry.path()) {
+                Ok(()) => log::info!("Removed the old environment {}", entry.path().display()),
+                Err(error) => log::warn!("Could not remove {}: {error}", entry.path().display()),
             }
         }
-        let status = child.wait()?;
-        if !status.success() {
-            return Err(RuntimeError::Failed { status: status.to_string(), last_line });
-        }
-        std::fs::copy(self.backend_dir().join("uv.lock"), self.installed_lock())?;
-        let installed = Installed {
-            variant: variant.to_string(),
-            installed_at: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|elapsed| elapsed.as_secs())
-                .unwrap_or_default(),
-        };
-        std::fs::write(
-            self.installed_file(),
-            serde_json::to_string_pretty(&installed).unwrap_or_default(),
-        )?;
-        Ok(())
     }
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
-    fn temp(name: &str) -> PathBuf {
+    pub(crate) fn temp(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("dino-runtime-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
     }
 
-    fn bundle(dir: &Path, lock: &str) -> Runtime {
+    pub(crate) fn bundle(dir: &Path, lock: &str) -> Runtime {
         let backend = dir.join("resources").join(RESOURCE_DIR).join("backend");
         std::fs::create_dir_all(backend.join("app")).unwrap();
         std::fs::write(backend.join("app").join("main.py"), "").unwrap();
         std::fs::write(backend.join("uv.lock"), lock).unwrap();
         Runtime { bundled: backend.parent().unwrap().to_path_buf(), root: dir.join("data") }
+    }
+
+    /// What a successful sync leaves: a Python and the lock it was synced from.
+    fn fake_env(runtime: &Runtime, id: &str, lock: &str) -> Env {
+        let env = runtime.env(id);
+        std::fs::create_dir_all(env.python().parent().unwrap()).unwrap();
+        std::fs::write(env.python(), "").unwrap();
+        std::fs::write(env.lock_copy(), lock).unwrap();
+        env
     }
 
     #[test]
@@ -205,33 +195,54 @@ mod tests {
     }
 
     #[test]
-    fn ready_only_with_a_python_and_the_same_lock() {
+    fn ready_only_with_a_current_env_from_the_same_lock() {
         let dir = temp("ready");
         let runtime = bundle(&dir, "lock v1");
         assert!(!runtime.is_ready(), "nothing installed yet");
-        std::fs::create_dir_all(runtime.env_python().parent().unwrap()).unwrap();
-        std::fs::write(runtime.env_python(), "").unwrap();
-        assert!(!runtime.is_ready(), "installed from no known lock");
-        std::fs::write(runtime.root.join("installed.lock"), "lock v1").unwrap();
+        let env = fake_env(&runtime, "1", "lock v1");
+        assert!(!runtime.is_ready(), "built but not activated");
+        runtime.activate(&env).unwrap();
         assert!(runtime.is_ready());
-        // An app update brings a new lock: not ready until it is synced (doc 129).
+        // An app update brings a new lock: not ready until it is synced (doc 129)...
         std::fs::write(runtime.backend_dir().join("uv.lock"), "lock v2").unwrap();
+        assert!(!runtime.is_ready());
+        // ...but the old environment can still start.
+        assert!(runtime.current().unwrap().usable());
+    }
+
+    #[test]
+    fn activating_switches_and_removing_others_keeps_only_the_current() {
+        let dir = temp("switch");
+        let runtime = bundle(&dir, "lock");
+        let old = fake_env(&runtime, "1", "lock");
+        runtime.activate(&old).unwrap();
+        let new = fake_env(&runtime, "2", "lock");
+        let leftover = runtime.env("3"); // an interrupted sync: no Python, no lock
+        std::fs::create_dir_all(&leftover.dir).unwrap();
+
+        assert_eq!(runtime.current(), Some(old.clone()), "a new build does not switch by itself");
+        runtime.activate(&new).unwrap();
+        assert_eq!(runtime.current(), Some(new.clone()));
+        runtime.remove_others();
+        assert!(new.dir.is_dir());
+        assert!(!old.dir.exists() && !leftover.dir.exists());
+    }
+
+    #[test]
+    fn a_pointer_to_a_missing_folder_is_no_environment() {
+        let dir = temp("dangling");
+        let runtime = bundle(&dir, "lock");
+        runtime.activate(&runtime.env("gone")).unwrap();
+        assert!(runtime.current().is_none());
         assert!(!runtime.is_ready());
     }
 
     #[test]
-    fn uv_sees_nothing_of_the_users_own_python() {
-        let dir = temp("isolation");
+    fn a_new_env_never_reuses_an_existing_folder() {
+        let dir = temp("fresh");
         let runtime = bundle(&dir, "lock");
-        let command = runtime.uv_command();
-        let envs: Vec<(String, Option<String>)> = command
-            .get_envs()
-            .map(|(k, v)| (k.to_string_lossy().into(), v.map(|v| v.to_string_lossy().into())))
-            .collect();
-        let get = |key: &str| envs.iter().find(|(k, _)| k == key).and_then(|(_, v)| v.clone());
-        assert_eq!(get("UV_PYTHON_PREFERENCE").as_deref(), Some("only-managed"));
-        assert_eq!(get("UV_NO_CONFIG").as_deref(), Some("1"));
-        assert!(get("UV_PROJECT_ENVIRONMENT").unwrap().ends_with("env"));
-        assert!(envs.iter().any(|(k, v)| k == "VIRTUAL_ENV" && v.is_none()), "removed");
+        let first = runtime.new_env();
+        std::fs::create_dir_all(&first.dir).unwrap();
+        assert_ne!(runtime.new_env().dir, first.dir);
     }
 }

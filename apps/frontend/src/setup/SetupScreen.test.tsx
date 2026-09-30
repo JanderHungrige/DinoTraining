@@ -6,12 +6,14 @@ import type { Machine, Progress, SetupFailure } from './shell';
 
 const shell = vi.hoisted(() => ({
   install: vi.fn<(variant: string) => Promise<void>>(),
+  previous: vi.fn<() => Promise<void>>(),
   progress: null as ((p: Progress) => void) | null,
 }));
 
 vi.mock('./shell', async (original) => ({
   ...(await original<typeof import('./shell')>()),
   setupInstall: shell.install,
+  startPrevious: shell.previous,
   onProgress: (handler: (p: Progress) => void) => {
     shell.progress = handler;
     return Promise.resolve(() => undefined);
@@ -52,6 +54,7 @@ const PC: Machine = {
 
 beforeEach(() => {
   shell.install.mockReset();
+  shell.previous.mockReset();
   shell.progress = null;
 });
 
@@ -157,6 +160,32 @@ describe('SetupScreen', () => {
     expect(alert).toHaveTextContent('You are back on the CPU, as before.');
     fireEvent.click(screen.getByRole('button', { name: 'Back to the app' }));
     expect(onBack).toHaveBeenCalled();
+  });
+
+  it('doc 129: an update runs without a question, under its own title', () => {
+    shell.install.mockImplementation(() => new Promise(() => undefined));
+    render(<SetupScreen machine={PC} auto="cu130" update="cu130" onDone={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: "Updating DinoTraining's packages" })).toBeInTheDocument();
+    expect(shell.install).toHaveBeenCalledWith('cu130');
+  });
+
+  it('doc 129: a failed update can start on the previous packages', async () => {
+    shell.install.mockRejectedValue({ kind: 'offline' });
+    shell.previous.mockResolvedValue();
+    const onDone = vi.fn();
+    render(<SetupScreen machine={PC} auto="cpu" update="cpu" onDone={onDone} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('No internet connection');
+    fireEvent.click(screen.getByRole('button', { name: /Start with the previous packages/ }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(shell.previous).toHaveBeenCalledTimes(1);
+  });
+
+  it('a first install offers no previous packages', async () => {
+    shell.install.mockRejectedValue({ kind: 'offline' });
+    render(<SetupScreen machine={PC} onDone={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /CPU only/ }));
+    await screen.findByRole('alert');
+    expect(screen.queryByRole('button', { name: /previous packages/ })).not.toBeInTheDocument();
   });
 
   it('speaks German', () => {

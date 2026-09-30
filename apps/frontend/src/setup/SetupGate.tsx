@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState, type JSX, type ReactNode } from 'reac
 import { SetupScreen } from './SetupScreen';
 import { inShell, setupStatus, type Machine, type Variant } from './shell';
 
-type Gate = { readonly kind: 'checking' } | { readonly kind: 'app' } | { readonly kind: 'setup'; readonly machine: Machine; readonly auto: Variant | null };
+type Gate = { readonly kind: 'checking' } | { readonly kind: 'app' } | { readonly kind: 'setup'; readonly machine: Machine; readonly auto: Variant | null; readonly update: Variant | null };
 
 export function SetupGate({ children }: { readonly children: ReactNode }): JSX.Element | null {
   const [gate, setGate] = useState<Gate>(() => (inShell() ? { kind: 'checking' } : { kind: 'app' }));
@@ -22,7 +22,7 @@ export function SetupGate({ children }: { readonly children: ReactNode }): JSX.E
       .then((status) => {
         if (cancelled) return;
         setGate(
-          status.needed && status.machine ? { kind: 'setup', machine: status.machine, auto: status.auto } : { kind: 'app' },
+          status.needed && status.machine ? { kind: 'setup', machine: status.machine, auto: status.auto, update: status.update } : { kind: 'app' },
         );
       })
       .catch((error: unknown) => {
@@ -38,6 +38,6 @@ export function SetupGate({ children }: { readonly children: ReactNode }): JSX.E
   const done = useCallback(() => setGate({ kind: 'app' }), []);
 
   if (gate.kind === 'checking') return null;
-  if (gate.kind === 'setup') return <SetupScreen machine={gate.machine} auto={gate.auto} onDone={done} />;
+  if (gate.kind === 'setup') return <SetupScreen machine={gate.machine} auto={gate.auto} update={gate.update} onDone={done} />;
   return <>{children}</>;
 }

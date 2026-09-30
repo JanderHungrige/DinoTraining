@@ -9,6 +9,7 @@ pub mod setup;
 pub mod setup_flow;
 pub mod sidecar;
 pub mod switch;
+pub mod uv_sync;
 
 use tauri::{Emitter, Manager, RunEvent};
 
@@ -46,6 +47,7 @@ pub fn run() {
             setup_flow::setup_status,
             setup_flow::setup_install,
             setup_flow::setup_report,
+            setup_flow::start_previous,
             switch::runtime_status,
             switch::switch_variant
         ])
