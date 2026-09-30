@@ -17,12 +17,12 @@ describe('TargetGuide (doc 104)', () => {
   it('names the target, every layer with its level and why, and what this picture lacks', () => {
     render(<TargetGuide target={SAM3} boxes={[]} phraseCount={2} statuses={[]} />);
     expect(screen.getByText('Concept outlines (SAM 3)')).toBeInTheDocument();
-    expect(screen.getByText(/2 required still open on this picture/)).toBeInTheDocument();
+    expect(screen.getByText(/1 required still open on this picture/)).toBeInTheDocument();
     const layers = screen.getByRole('list', { name: 'What this model needs' });
     expect(within(layers).getByText('Boxes').parentElement).toHaveTextContent('optional Boxes — Derived from each outline.');
     const checks = screen.getByRole('list', { name: 'This picture' });
     // Only required and recommended layers are checked; optional ones are just explained.
     expect(within(checks).getAllByRole('listitem')).toHaveLength(2);
-    expect(checks).toHaveTextContent('Checked per picture: Checked for 0 of 2 phrases (still open)');
+    expect(checks).toHaveTextContent('Checked per picture: Complete for its 2 classes once saved');
   });
 });

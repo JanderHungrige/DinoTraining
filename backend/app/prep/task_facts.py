@@ -13,6 +13,7 @@ import numpy as np
 from scipy import ndimage
 
 from app.core.config import Settings
+from app.datasets.completeness import completeness
 from app.datasets.db import transaction
 from app.datasets.phrases import PhraseStore
 from app.datasets.rle import rle_decode
@@ -39,11 +40,8 @@ class PhraseFacts:
     #: (text, instances, variants) per phrase.
     phrases: list[tuple[str, int, int]] = field(default_factory=list)
     pictures: int = 0
-    #: Pictures not checked for every phrase.
-    unchecked: int = 0
-    #: Pictures checked for at least one phrase.
-    checked_any: int = 0
-    absent_marks: int = 0
+    #: Doc 117: class → saved pictures never looked at for it (saved before it existed).
+    saved_before: dict[str, int] = field(default_factory=dict)
 
 
 def _pieces(mask: np.ndarray) -> int:
@@ -100,19 +98,13 @@ def collect_phrases(dataset_id: str, settings: Settings | None = None) -> Phrase
         pictures = connection.execute(
             f"SELECT COUNT(*) FROM images i WHERE i.dataset_id = ? AND {_INCLUDED}", (dataset_id,)
         ).fetchone()[0]
-        per_picture = connection.execute(
-            "SELECT s.image_id, COUNT(*) AS n, SUM(s.status = 'absent') AS absent"
-            " FROM image_phrase_status s JOIN images i ON i.id = s.image_id"
-            f" WHERE i.dataset_id = ? AND {_INCLUDED} GROUP BY s.image_id",
-            (dataset_id,),
-        ).fetchall()
-    complete_pictures = sum(1 for row in per_picture if int(row["n"]) >= len(phrases))
+        found = completeness(connection, dataset_id)
     return PhraseFacts(
         phrases=[(p.text, p.instances, len(p.variants)) for p in phrases],
         pictures=int(pictures),
-        unchecked=int(pictures) - complete_pictures,
-        checked_any=len(per_picture),
-        absent_marks=sum(int(row["absent"] or 0) for row in per_picture),
+        saved_before={
+            name: int(str(info["unknown"])) for name, info in found.items() if info["unknown"]
+        },
     )
 
 

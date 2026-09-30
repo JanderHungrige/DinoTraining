@@ -142,6 +142,26 @@ export const studio2En = {
 
   'studio.actions.unsavedBlocked': 'This picture has unsaved changes. Save first, or turn Auto-save on.',
 
+  // A class made after pictures were saved (doc 118)
+  'studio.newClass.label': 'New classes and the pictures saved before them',
+  'studio.newClass.question_one': '{name} is new. {count} picture was saved before it.',
+  'studio.newClass.question_other': '{name} is new. {count} pictures were saved before it.',
+  'studio.newClass.why': 'Does {name} occur in them? Until you say, SAM 3 leaves them out for {name}.',
+  'studio.newClass.notThere': 'It does not occur there',
+  'studio.newClass.later': 'Review them later',
+  'studio.newClass.marked_one': '{count} picture marked: no {name}.',
+  'studio.newClass.marked_other': '{count} pictures marked: no {name}.',
+  'studio.newClass.pending_one': '{name}: {count} picture not reviewed yet.',
+  'studio.newClass.pending_other': '{name}: {count} pictures not reviewed yet.',
+  'studio.newClass.review': 'Review for {name}',
+
+  // Review for one class (doc 119)
+  'studio.review.label': 'Reviewing for {name}',
+  'studio.review.title': 'Reviewing for {name} — picture {position} of {total}.',
+  'studio.review.hint': 'Only {name} is proposed; your saved annotations stay. Save when done, or say there is none.',
+  'studio.review.notHere': 'No {name} here →',
+  'studio.review.end': 'End review',
+
   // Back to the overview (the session survives switching tabs until then)
   'studio.back.button': '← Back to overview',
   'studio.back.hint': 'Your place here is kept while you visit other tabs. Back ends this session.',

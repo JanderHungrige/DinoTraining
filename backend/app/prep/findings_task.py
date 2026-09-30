@@ -1,7 +1,7 @@
 """Audit rules that depend on what the model trains from (doc 107).
 
 Labels: one class per picture. Outlines: in one piece, and each object once. Phrases (SAM
-3): enough of each, every picture checked, variations, confirmed negatives. Each rule says
+3): enough of each, no pictures saved before a class existed (doc 117), variations. Each rule says
 what it found, why it matters for this model, and what to do — as every rule does (doc 81).
 """
 
@@ -96,27 +96,24 @@ def thin_phrases(ctx: AuditContext) -> Finding | None:
     )
 
 
-def unchecked(ctx: AuditContext) -> Finding | None:
+def saved_before_class(ctx: AuditContext) -> Finding | None:
+    """Doc 117: a class added after pictures were saved leaves those pictures unknown."""
     facts = ctx.phrases
-    if facts is None or facts.unchecked == 0:
+    if facts is None or not facts.saved_before:
         return None
-    none_at_all = facts.checked_any == 0
+    worst, count = max(facts.saved_before.items(), key=lambda item: item[1])
+    listed = ", ".join(f"{name} ({n})" for name, n in sorted(facts.saved_before.items()))
     return Finding(
-        id="unchecked-pictures",
+        id="saved-before-class",
         severity="warn",
-        title=f"{facts.unchecked} of {facts.pictures} pictures not checked for every phrase",
-        what="No picture has been marked for any phrase yet."
-        if none_at_all
-        else f"{facts.unchecked} pictures lack an 'all marked' or 'not in this picture' "
-        "for at least one phrase.",
-        why="SAM 3 learns 'none here' only from pictures you checked. Unchecked, a picture "
-        "without an outline could simply not have been annotated yet — so it teaches nothing. "
-        "A phrase never checked anywhere keeps the old rule: every picture without its outline "
-        "counts as 'none here', which is right only if the dataset is fully annotated.",
-        action="In the Annotation Studio's phrase bar, mark each picture per phrase: "
-        "A for all marked, N for not in this picture. If a phrase is fully annotated, "
-        "'Mark the rest' under Manage phrases checks every remaining picture in one step.",
-        metrics={"unchecked": facts.unchecked, "pictures": facts.pictures},
+        title=f"{count} of {facts.pictures} pictures were saved before class {worst} existed",
+        what=f"Pictures saved before the class existed, per class: {listed}.",
+        why="A saved picture counts as complete for the classes that existed when it was "
+        "saved. Pictures saved earlier were never looked at for a newer class, so SAM 3 "
+        "leaves them out for it instead of learning 'none here'.",
+        action="In the Annotation Studio, use 'Review for' that class: it shows only those "
+        "pictures, with their saved annotations, and adds to them.",
+        metrics={"pictures": count},
     )
 
 
@@ -135,21 +132,6 @@ def no_variants(ctx: AuditContext) -> Finding | None:
         "answers phrasings nobody typed.",
         action="Add variations under Manage phrases (comma-separated).",
         metrics={"phrases": len(bare)},
-    )
-
-
-def no_negatives(ctx: AuditContext) -> Finding | None:
-    facts = ctx.phrases
-    if facts is None or facts.checked_any == 0 or facts.absent_marks > 0:
-        return None
-    return Finding(
-        id="no-confirmed-negatives",
-        severity="info",
-        title="No picture is marked 'not in this picture'",
-        what="Every check so far says 'all marked'.",
-        why="Confirmed negatives are the strongest lesson in what a phrase is not — "
-        "especially pictures where something similar is there.",
-        action="Mark pictures without the phrase as 'not in this picture' (N), look-alikes first.",
     )
 
 
@@ -217,9 +199,8 @@ TASK_RULES = (
     fragmented,
     duplicated,
     thin_phrases,
-    unchecked,
+    saved_before_class,
     no_variants,
-    no_negatives,
 )
 
 __all__ = ["TASK_RULES"]

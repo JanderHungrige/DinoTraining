@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PhraseInfo } from '../../api/phrases';
 import { PictureChecks } from './PictureChecks';
 
-const P = (text: string): PhraseInfo => ({ id: 1, text, class_name: text, variants: [], confusable: [], instances: 0, complete: 0, absent: 0 });
+const P = (text: string): PhraseInfo => ({ id: 1, text, class_name: text, variants: [], confusable: [], instances: 0, complete: 0, absent: 0, classes: [text], umbrella: false });
 
 describe('PictureChecks (doc 105)', () => {
   it('shows each phrase\'s state and marks, or clears, one', async () => {
@@ -29,10 +29,5 @@ describe('PictureChecks (doc 105)', () => {
     expect(blob).toHaveTextContent('not checked');
     await user.click(within(blob).getByRole('button', { name: 'Not in this picture' }));
     expect(onMark).toHaveBeenCalledWith('blob', 'absent');
-  });
-
-  it('says a fully annotated phrase can be checked for the whole dataset at the end', () => {
-    render(<PictureChecks phrases={[P('ring')]} statuses={[]} active="ring" disabled={false} onMark={vi.fn()} />);
-    expect(screen.getByText(/“Mark the rest” under Manage phrases checks all remaining pictures/)).toBeInTheDocument();
   });
 });

@@ -180,10 +180,7 @@ def _contexts() -> list[AuditContext]:
         AuditContext(
             facts(1, []),
             get_profile("sam3"),
-            phrases=PhraseFacts([("ring", 139, 0), ("blob", 12, 2)], 70, 69, 1, 0),
-        ),
-        AuditContext(
-            facts(1, []), get_profile("sam3"), phrases=PhraseFacts([("ring", 60, 2)], 5, 5, 0)
+            phrases=PhraseFacts([("ring", 139, 0), ("blob", 12, 2)], 70, {"blob": 20}),
         ),
     ]
 

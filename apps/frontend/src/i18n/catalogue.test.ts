@@ -24,9 +24,9 @@ export const SAME_IN_BOTH = new Set<string>([
   'Inference Viewer',
   'Frame',
   // Model input stays English in German too: SAM 3 and Grounding DINO read English.
-  'signal, railway signal, light signal',
-  'railway signal, light signal',
-  'street lamp, traffic sign',
+  'screw',
+  'm8 bolt, hex screw m8',
+  'nail, rivet',
   'Deutsch',
   'DinoTraining',
   'OK',

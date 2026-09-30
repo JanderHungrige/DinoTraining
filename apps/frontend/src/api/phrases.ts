@@ -18,6 +18,10 @@ export interface PhraseInfo {
   readonly instances: number;
   readonly complete: number;
   readonly absent: number;
+  /** Doc 115: the classes it answers for — its one class, or an umbrella's members. */
+  readonly classes: readonly string[];
+  /** An umbrella term ("screw" over m8 and m9); `class_name` is then ''. */
+  readonly umbrella: boolean;
 }
 
 export interface PictureStatus {
@@ -27,7 +31,14 @@ export interface PictureStatus {
 }
 
 const isPhrase = (v: unknown): v is PhraseInfo =>
-  hasFields(v, { text: 'string', class_name: 'string', variants: 'array', instances: 'number' });
+  hasFields(v, {
+    text: 'string',
+    class_name: 'string',
+    variants: 'array',
+    instances: 'number',
+    classes: 'array',
+    umbrella: 'boolean',
+  });
 const isStatus = (v: unknown): v is PictureStatus =>
   hasFields(v, { phrase_id: 'number', text: 'string', status: 'string' });
 
@@ -42,10 +53,19 @@ export function addPhrase(datasetId: string, text: string, className?: string): 
   return apiFetch(`${base(datasetId)}/phrases`, isPhrase, jsonBody({ text, class_name: className ?? null }));
 }
 
+/** Doc 115: an umbrella term over two or more classes ("screw" for m8 and m9). */
+export function addUmbrella(datasetId: string, text: string, classes: readonly string[]): Promise<PhraseInfo> {
+  return apiFetch(`${base(datasetId)}/phrases`, isPhrase, jsonBody({ text, classes }));
+}
+
 export function changePhrase(
   datasetId: string,
   phraseId: number,
-  change: { readonly variants?: readonly string[]; readonly confusable?: readonly string[] },
+  change: {
+    readonly variants?: readonly string[];
+    readonly confusable?: readonly string[];
+    readonly classes?: readonly string[];
+  },
 ): Promise<PhraseInfo> {
   return apiFetch(`${base(datasetId)}/phrases/${phraseId}`, isPhrase, {
     method: 'PATCH',
@@ -87,5 +107,35 @@ export function markTheRest(datasetId: string, phrase: string): Promise<{ comple
     `${base(datasetId)}/phrase-status/fill`,
     (v: unknown): v is { complete: number; absent: number } => hasFields(v, { complete: 'number', absent: 'number' }),
     jsonBody({ phrase }),
+  );
+}
+
+/** Doc 117: per class, since when it exists and how many saved pictures are unknown for it. */
+export interface ClassCompleteness {
+  readonly since: string;
+  readonly unknown: number;
+}
+
+const isCompleteness = (v: unknown): v is Record<string, ClassCompleteness> =>
+  typeof v === 'object' && v !== null && Object.values(v).every((c) => hasFields(c, { since: 'string', unknown: 'number' }));
+
+export function getCompleteness(datasetId: string): Promise<Record<string, ClassCompleteness>> {
+  return apiFetch(`${base(datasetId)}/completeness`, isCompleteness);
+}
+
+/** The saved pictures never looked at for one class, by path (doc 119's review list). */
+export function unknownPictures(datasetId: string, className: string): Promise<string[]> {
+  return apiFetch(
+    `${base(datasetId)}/completeness/unknown?class_name=${encodeURIComponent(className)}`,
+    (v: unknown): v is string[] => Array.isArray(v) && v.every((p) => typeof p === 'string'),
+  );
+}
+
+/** Doc 118, "it does not occur there": the unknown pictures become `absent` for the class. */
+export function markAbsentInOlder(datasetId: string, className: string): Promise<{ marked: number }> {
+  return apiFetch(
+    `${base(datasetId)}/completeness/absent`,
+    (v: unknown): v is { marked: number } => hasFields(v, { marked: 'number' }),
+    jsonBody({ class_name: className }),
   );
 }

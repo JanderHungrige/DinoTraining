@@ -90,6 +90,29 @@ ENTRIES: dict[str, str] = {
         "prüft „Den Rest markieren“ unter „Phrasen verwalten“ alle übrigen Bilder in einem "
         "Schritt."
     ),
+    # saved before a class existed (doc 117)
+    "{count} of {total} pictures were saved before class {+name} existed": (
+        "{count} von {total} Bildern wurden gespeichert, bevor es die Klasse {+name} gab"
+    ),
+    "Pictures saved before the class existed, per class: {listed}.": (
+        "Bilder, die vor ihrer Klasse gespeichert wurden, pro Klasse: {listed}."
+    ),
+    (
+        "A saved picture counts as complete for the classes that existed when it was saved. "
+        "Pictures saved earlier were never looked at for a newer class, so SAM 3 leaves them "
+        "out for it instead of learning 'none here'."
+    ): (
+        "Ein gespeichertes Bild gilt als vollständig für die Klassen, die es beim Speichern "
+        "gab. Früher gespeicherte Bilder wurden nie auf eine neuere Klasse angesehen, deshalb "
+        "lässt SAM 3 sie für diese weg, statt „keins hier“ zu lernen."
+    ),
+    (
+        "In the Annotation Studio, use 'Review for' that class: it shows only those pictures, "
+        "with their saved annotations, and adds to them."
+    ): (
+        "Nutze im Annotation Studio „Durchsehen für“ diese Klasse: Es zeigt nur diese Bilder, "
+        "mit ihren gespeicherten Annotationen, und ergänzt sie."
+    ),
     # no variations
     "{count} phrase(s) without variations": "{count} Phrase(n) ohne Varianten",
     "Only one wording for: {phrases}.": "Nur eine Formulierung für: {phrases}.",

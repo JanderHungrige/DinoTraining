@@ -171,12 +171,18 @@ The Studio then marks each layer as required, recommended or optional, with the 
 and shows what the picture in view still lacks.
 
 **For SAM 3:**
-- A **phrase bar** above the picture holds the dataset's phrases as chips, and keys 1–9
-  switch between them.
-- Variations are typed comma-separated ("signal, railway signal, light signal"); two to
-  four are enough.
-- Each picture is marked **all marked** or **not in this picture** per phrase. Only checked
-  pictures teach.
+- **Every class is a phrase.** Classes are made in the annotation list; a picture you save
+  counts as complete for the classes that exist then, so no per-picture checks are needed.
+- **Umbrella terms** name several classes at once: "screw" over m8 and m9. SAM 3 learns
+  both levels from the same outlines.
+- **Variations** (technical vocabulary, comma-separated, two to four) and **look-alikes**
+  ("not to be confused with") per class.
+- **A class added later:** the Studio asks whether it occurs in the pictures already saved.
+  Either they are marked "does not occur", or **Review for** the class shows just those
+  pictures with their saved annotations and proposes only the new class, adding to them.
+- Re-running the proposer never replaces what is saved; it adds.
+- For imported or partly annotated datasets, per-picture checks (all marked / not in this
+  picture) are still there, folded away.
 
 **Outline tools:**
 - ⊕/⊖ clicks that SAM redraws the outline from;
@@ -430,6 +436,7 @@ state.
 | 13 | Every training setting explained, default recipes |
 | 14 | Annotating for the model: phrases, hard negatives, mask editing |
 | 15 | English and German |
+| 15.5 | Annotating the normal way: saved means complete, umbrella terms, review for a new class |
 | 16 | Website and cloud compute (planned) |
 
 **Branches:**

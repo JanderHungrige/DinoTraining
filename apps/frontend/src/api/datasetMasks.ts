@@ -62,6 +62,7 @@ let counter = 0;
 export function storedMasksToCanvasBoxes(masks: readonly StoredMaskDto[]): CanvasBox[] {
   return masks.map((mask) => ({
     id: `mask-${(counter += 1)}`,
+    saved: true,
     label: mask.label,
     provenance: mask.provenance,
     x: mask.x,

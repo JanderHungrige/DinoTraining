@@ -152,3 +152,75 @@
   align-items: center;
   gap: 0.3rem;
 }
+
+/* Doc 116: an umbrella term's chip, the class ticks of "+ Umbrella term", and the folded
+   picture checks. */
+.phrasechip--umbrella {
+  border-style: dashed;
+}
+
+.phrasechip--legacy {
+  opacity: 0.7;
+}
+
+.phrasebar__members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.phrasebar__members legend {
+  font-size: 0.85em;
+  padding: 0 0.25rem;
+}
+
+.phrasechecks__fold {
+  margin-top: 0.5rem;
+}
+
+.phrasechecks__fold > summary {
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+.phrasebar__members label {
+  gap: 0.3rem;
+}
+
+.phrasebar__add .phrasebar__members input {
+  min-width: 0;
+  width: auto;
+}
+
+/* Doc 118: the new-class question, a banner rather than a modal. */
+.newclass {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.newclass__ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-raised);
+}
+
+.newclass__ask p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.newclass__line {
+  margin: 0;
+  font-size: 0.9rem;
+}

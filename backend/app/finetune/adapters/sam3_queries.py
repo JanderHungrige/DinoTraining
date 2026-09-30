@@ -1,8 +1,9 @@
-"""Which phrase queries a picture teaches SAM 3 in one round (doc 108).
+"""Which phrase queries a picture teaches SAM 3 in one round (docs 108, 115, 117).
 
-Pure: a sample, the phrase table and the settings in; the queries out. A phrase never
-checked on any picture trains as before doc 108; once a phrase is checked somewhere, only
-its checked pictures teach it — an unannotated instance is not "none here".
+Pure: a sample, the phrase table and the settings in; the queries out. A saved picture is
+complete for the classes that existed when it was saved (doc 117); a class added later is
+left out on the pictures saved before it, unless they were checked by hand — an instance
+nobody looked for is not "none here".
 """
 
 from __future__ import annotations
@@ -71,64 +72,105 @@ def _worded(
     return [Query(rng.choice(words), query.masks, query.kind)]
 
 
+def _looks(
+    text: str, sample: TrainingSample, table: PhraseTable, answers: dict[str, tuple[int, ...]]
+) -> list[Query]:
+    """A positive phrase's look-alikes, each a "none here". Not on a picture with a rejected
+    outline of it: the look-alike may well be there (a flame's reflection)."""
+    phrase = table.phrases.get(text)
+    if phrase is None or text in table.rejected.get(sample.path, ()):
+        return []
+    return [Query(look, (), "confusable") for look in phrase.confusable if look not in answers]
+
+
+class _Picture:
+    """One picture's facts for the query decisions: explicit checks, unknown classes
+    (doc 117), unclear outlines and rejections."""
+
+    def __init__(self, sample: TrainingSample, table: PhraseTable, doubtful: set[str]) -> None:
+        self.status = table.statuses.get(sample.path, {})
+        self.unknown = table.unknown.get(sample.path, set())
+        self.rejected = table.rejected.get(sample.path, set())
+        self.doubtful = doubtful
+        self.table = table
+
+    def known(self, text: str) -> bool:
+        """Whether this picture's answer for `text` can be trusted: checked by hand, or
+        saved after its class existed. A sub-phrase follows its class."""
+        if self.status.get(text) in ("complete", "absent"):
+            return True
+        phrase = self.table.phrases.get(text)
+        own = phrase_key(phrase.class_name) if phrase and phrase.class_name else text
+        return text not in self.unknown and own not in self.unknown
+
+
 def _pairs(
     sample: TrainingSample, names: tuple[str, ...], table: PhraseTable, settings: QuerySettings
 ) -> tuple[list[Query], list[Query]]:
     """(positives and explicit/rejected negatives, in-domain negatives subject to the cap).
 
-    Doc 109: a phrase with an *unclear* outline on the picture is never a negative there —
-    the annotator's doubt is not "none here".
+    Doc 117: a picture teaches a class it is *known* for — checked by hand, or saved after
+    the class existed. Doc 109: a phrase with an *unclear* outline here is never a negative.
+    Umbrella terms (doc 115) follow their members.
     """
     per_mask = _mask_phrases(sample, names, table)
-    doubtful = {phrase_key(names[m.class_index]) for m in sample.ignore_masks}
+    here = _Picture(sample, table, {phrase_key(names[m.class_index]) for m in sample.ignore_masks})
     classes = [phrase_key(name) for name in names]
-    texts = list(dict.fromkeys([*classes, *table.phrases]))
+    umbrellas = {t: p.classes for t, p in table.phrases.items() if p.classes}
+    texts = list(dict.fromkeys([*classes, *(t for t in table.phrases if t not in umbrellas)]))
     answers = {t: tuple(i for i, found in enumerate(per_mask) if t in found) for t in texts}
     taught: list[Query] = []
     negatives: list[Query] = []
-    checked = table.checked_phrases
-    status = table.statuses.get(sample.path, {})
     for text in texts:
         found = answers[text]
-        if text not in checked:
-            # Never checked anywhere: as before doc 108 — its outlines teach, and a class
-            # without one here is "none here".
-            if found:
-                taught.append(Query(text, found, "positive"))
-            elif text in classes and text not in doubtful:
-                negatives.append(Query(text, (), "cross"))
-            continue
-        state = status.get(text)
-        if state == "complete" and found:
-            taught.append(Query(text, found, "positive"))
-            # A rejected outline of this phrase here means a look-alike may well be in
-            # the picture (a flame's reflection): "none here" for it would be a lie.
-            phrase = table.phrases.get(text)
-            looks = (
-                ()
-                if text in table.rejected.get(sample.path, ())
-                else phrase.confusable
-                if phrase
-                else ()
-            )
-            for look in looks:
-                if look not in answers:
-                    taught.append(Query(look, (), "confusable"))
-        elif text in doubtful:
-            continue
-        elif state == "absent":
+        state = here.status.get(text)
+        if state == "absent" and text not in here.doubtful:
             negatives.append(Query(text, (), "absent"))
-        elif state == "complete":
-            # "All marked" with no outline answering to it contradicts itself (a link
-            # missing?): skipped rather than guessed either way.
+        elif found and here.known(text):
+            taught.append(Query(text, found, "positive"))
+            taught += _looks(text, sample, table, answers)
+        elif found or text in here.doubtful or state == "complete":
+            # Outlines on a picture never looked at for it, doubt, or "all marked" with no
+            # outline (a contradiction): skipped rather than guessed either way.
             continue
-        elif (
-            settings.rejected_as_negatives
-            and not found
-            and text in table.rejected.get(sample.path, ())
-        ):
+        elif here.known(text):
+            if text in classes:
+                negatives.append(Query(text, (), "cross"))
+        elif settings.rejected_as_negatives and text in here.rejected:
             taught.append(Query(text, (), "rejected"))
+    for text, members in umbrellas.items():
+        query = _umbrella(text, members, answers, here)
+        if query is not None:
+            (negatives if query.kind in ("cross", "absent") else taught).append(query)
+            if query.kind == "positive":
+                taught += _looks(text, sample, table, answers)
     return taught, negatives
+
+
+def _umbrella(
+    text: str, members: tuple[str, ...], answers: dict[str, tuple[int, ...]], here: _Picture
+) -> Query | None:
+    """An umbrella's query on one picture, from its members' state (doc 115).
+
+    Only when every member's answer here is known: a member never looked at here, or
+    unclear here, leaves the umbrella out — a partial answer would teach that the
+    unoutlined screws are not screws.
+    """
+
+    def known(member: str) -> bool:
+        if member in here.doubtful:
+            return False
+        if here.status.get(member) == "complete" and not answers.get(member):
+            return False
+        return here.known(member)
+
+    if not all(known(m) for m in members):
+        return None
+    found = tuple(sorted({i for m in members for i in answers.get(m, ())}))
+    if found:
+        return Query(text, found, "positive")
+    checked = any(here.status.get(m) == "absent" for m in members)
+    return Query(text, (), "absent" if checked else "cross")
 
 
 def plan_queries(
@@ -168,4 +210,19 @@ def describe(counts: Counter[str], rounds: int) -> str:
     )
 
 
-__all__ = ["GENERIC_POOL", "Query", "QuerySettings", "describe", "plan_queries"]
+def describe_scope(table: PhraseTable) -> list[str]:
+    """The job notes on umbrella terms (doc 115) and on pictures left out for a class
+    because they were saved before it existed (doc 117)."""
+    notes = [
+        f"Umbrella term {text}: answered by every outline of {', '.join(phrase.classes)}."
+        for text, phrase in sorted(table.phrases.items())
+        if phrase.classes
+    ]
+    left: Counter[str] = Counter(name for names in table.unknown.values() for name in names)
+    if left:
+        listed = ", ".join(f"{name} ({n})" for name, n in sorted(left.items()))
+        notes.append(f"Pictures left out for a class, as saved before it existed: {listed}.")
+    return notes
+
+
+__all__ = ["GENERIC_POOL", "Query", "QuerySettings", "describe", "describe_scope", "plan_queries"]

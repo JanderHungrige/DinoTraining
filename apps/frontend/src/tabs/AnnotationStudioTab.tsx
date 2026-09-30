@@ -21,7 +21,11 @@ import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
+import { usePromptClasses } from '../hooks/usePromptClasses';
+import { useReview } from '../hooks/useReview';
 import { MaskEditBar } from '../components/MaskEditBar';
+import { NewClassQuestion } from '../components/NewClassQuestion';
+import { ReviewBanner } from '../components/ReviewBanner';
 import { MaskEditOverlay } from '../components/MaskEditOverlay';
 import { StudioActions } from '../components/StudioActions';
 import { StudioBack } from '../components/StudioBack';
@@ -61,6 +65,8 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   const [concealed, setConcealed] = useState<ReadonlySet<string> | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
+  usePromptClasses(config);
+  const review = useReview(config?.datasetId ?? null, session);
   const prescan = usePrescan();
   // Doc 104: what this dataset is annotated for, and what this picture still lacks.
   const target = useAnnotationTargetList().find((entry) => entry.id === (config?.target ?? 'open'));
@@ -156,6 +162,9 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
         dirty={session.dirty}
       />
 
+      <NewClassQuestion key={config.datasetId} datasetId={config.datasetId} watch={`${vocabulary.names.join('|')}#${session.index}`} onReview={(name) => void review.start(name)} />
+      <ReviewBanner review={review} position={session.index + 1} boxes={boxes} busy={session.busy} />
+
       {target && (
         <TargetGuide
           target={target}
@@ -214,10 +223,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
 
           <PhraseBar
             datasetId={config.datasetId}
-            items={items}
-            selectedId={selectedId}
             pictures={pictures}
-            onBoxesChange={setBoxes}
             open={['sam3', 'open', undefined].includes(config.target)}
             disabled={session.busy || !active}
           />
@@ -284,7 +290,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
             disabled={session.busy}
           />
 
-          <StudioActions session={session} runLabel={runLabel} />
+          <StudioActions session={session} runLabel={runLabel} {...(review.className ? { only: review.className } : {})} />
         </>
       )}
     </section>

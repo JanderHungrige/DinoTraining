@@ -164,6 +164,10 @@ class TestTheToolContract:
             "set_phrase_status",
             "get_annotation_guideline",
             "set_annotation_guideline",
+            # Doc 117/118: which saved pictures are unknown for a class, and the answer
+            # "it does not occur there".
+            "get_completeness",
+            "mark_absent_in_older_pictures",
         }
 
     async def test_every_tool_describes_itself(

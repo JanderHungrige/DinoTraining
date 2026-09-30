@@ -52,6 +52,10 @@ export const studioEn = {
   'studio.guide.optional': 'optional',
 
   // What one picture still lacks (lib/pictureChecklist)
+  'studio.check.byHand_one': 'Checked by hand for {count} phrase',
+  'studio.check.byHand_other': 'Checked by hand for {count} phrases',
+  'studio.check.completeWhenSaved_one': 'Complete for its {count} class once saved',
+  'studio.check.completeWhenSaved_other': 'Complete for its {count} classes once saved',
   'studio.check.nothingYet': 'Nothing marked yet',
   'studio.check.oneClass': 'One class: {name}',
   'studio.check.severalClasses': 'Several classes ({names}): a classifier skips this picture',
@@ -60,11 +64,6 @@ export const studioEn = {
   'studio.check.allOutlined': 'All {count} have an outline',
   'studio.check.someOutlined': '{done} of {count} have an outline',
   'studio.check.noPhrase': 'No phrase yet',
-  'studio.check.noPhrases': 'No phrases in this dataset yet',
-  'studio.check.checkedAll_one': 'Checked for all {count} phrase',
-  'studio.check.checkedAll_other': 'Checked for all {count} phrases',
-  'studio.check.checkedSome_one': 'Checked for {checked} of {count} phrase',
-  'studio.check.checkedSome_other': 'Checked for {checked} of {count} phrases',
 
   // The canvas
   'studio.canvas.boxAria': 'Box {number}{text}, {verdict}{score}. Press 1, 2 or 3 to relabel, Delete to remove.',
@@ -135,8 +134,4 @@ export const studioEn = {
   'studio.classes.addError': 'Could not add that class.',
   'studio.classes.removeError': 'Could not remove that class.',
 
-  // Phrases on an outline (lib/phraseEdit)
-  'studio.phrase.needsOutline': 'Phrases go on outlines — make one from this box first.',
-  'studio.phrase.otherClass': '"{phrase}" is a phrase of class {className}; this outline is {name}.',
-  'studio.phrase.unnamed': 'unnamed',
 } as const;

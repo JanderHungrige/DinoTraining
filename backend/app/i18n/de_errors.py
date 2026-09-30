@@ -80,6 +80,46 @@ ENTRIES: dict[str, str] = {
         "Das sieht nicht nach einem HuggingFace-Zugangstoken aus. Erstelle eins unter "
         "https://huggingface.co/settings/tokens – ein Lese-Token reicht."
     ),
+    # Phrases (docs 103, 115)
+    "A phrase cannot be empty.": "Eine Phrase darf nicht leer sein.",
+    "'{a}' is a phrase of class '{b}', not '{c}'.": (
+        "„{a}“ ist eine Phrase der Klasse „{b}“, nicht „{c}“."
+    ),
+    "'{a}' is a variation of '{b}'; use '{b2}' instead.": (
+        "„{a}“ ist eine Variante von „{b}“; nimm stattdessen „{b2}“."
+    ),
+    (
+        "'{a}' is already a phrase of its own; it cannot also be a variation of '{b}'. "
+        "Delete one, or merge them."
+    ): (
+        "„{a}“ ist schon eine eigene Phrase und kann nicht zugleich Variante von „{b}“ sein. "
+        "Lösch eine davon oder führ sie zusammen."
+    ),
+    (
+        "An umbrella term needs at least {#n} classes; for one class, add '{a}' as a "
+        "variation of it instead."
+    ): (
+        "Ein Oberbegriff braucht mindestens {#n} Klassen; für eine Klasse füg „{a}“ "
+        "stattdessen als Variante hinzu."
+    ),
+    "Not a class of this dataset: {names}.": "Keine Klasse dieses Datensatzes: {names}.",
+    "'{a}' is already a class; an umbrella term needs a name of its own.": (
+        "„{a}“ ist schon eine Klasse; ein Oberbegriff braucht einen eigenen Namen."
+    ),
+    "'{a}' is already a phrase of this dataset.": "„{a}“ ist schon eine Phrase dieses Datensatzes.",
+    "'{a}' is a variation of '{b}'; use another name.": (
+        "„{a}“ ist eine Variante von „{b}“; nimm einen anderen Namen."
+    ),
+    "'{a}' belongs to class '{b}'; only an umbrella term has several classes.": (
+        "„{a}“ gehört zur Klasse „{b}“; nur ein Oberbegriff hat mehrere Klassen."
+    ),
+    (
+        "'{a}' is an umbrella term: it already applies to every outline of its classes, "
+        "and is not linked to single outlines."
+    ): (
+        "„{a}“ ist ein Oberbegriff: Er gilt schon für jeden Umriss seiner Klassen und wird "
+        "nicht mit einzelnen Umrissen verknüpft."
+    ),
 }
 
 __all__ = ["ENTRIES"]

@@ -102,6 +102,15 @@ def link_mask(
     for text in phrases:
         if phrase_key(text) == default:
             continue
+        umbrella = connection.execute(
+            "SELECT 1 FROM phrases WHERE dataset_id = ? AND text = ? AND class_name = ''",
+            (dataset_id, phrase_key(text)),
+        ).fetchone()
+        if umbrella is not None:
+            raise ValueError(
+                f"'{phrase_key(text)}' is an umbrella term: it already applies to every outline "
+                "of its classes, and is not linked to single outlines."
+            )
         phrase_id = ensure_phrase(connection, dataset_id, text, class_name)
         connection.execute(
             "INSERT OR IGNORE INTO mask_phrases (mask_id, phrase_id) VALUES (?, ?)",

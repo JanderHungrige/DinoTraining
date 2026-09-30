@@ -12,20 +12,19 @@ vi.mock('../api/phrases', async () => {
 });
 vi.mock('../api/quality', () => ({ getGuideline: vi.fn(async () => ''), saveGuideline: vi.fn() }));
 
-const CAR: PhraseInfo = { id: 1, text: 'car', class_name: 'car', variants: [], confusable: [], instances: 3, complete: 0, absent: 0 };
+const CAR: PhraseInfo = { id: 1, text: 'car', class_name: 'car', variants: [], confusable: [], instances: 3, complete: 0, absent: 0, classes: ['car'], umbrella: false };
 
 afterEach(() => localStorage.clear());
 
 describe('phrases in German (doc 112)', () => {
   it('the phrase bar reads German, the phrases stay as written', () => {
     const pictures = { phrases: [CAR], statuses: [], error: '', reload: vi.fn(), mark: vi.fn(async () => undefined) };
-    renderInGerman(
-      <PhraseBar datasetId="d1" items={[]} selectedId={null} pictures={pictures} onBoxesChange={vi.fn()} open disabled={false} />,
-    );
+    renderInGerman(<PhraseBar datasetId="d1" pictures={pictures} open disabled={false} />);
     expect(screen.getByText('Phrasen')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Nicht in diesem Bild' })).toBeInTheDocument();
+    expect(screen.getByText('Nur für importierte oder teilweise annotierte Datensätze')).toBeInTheDocument();
     expect(screen.getByText('So funktionieren Phrasen')).toBeInTheDocument();
-    expect(screen.getByRole('rowheader', { name: 'car' })).toBeInTheDocument();
+    expect(screen.getByText('Oberbegriffe')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /car 3/ })).toBeInTheDocument();
   });
 
   it('the guideline reads German', async () => {

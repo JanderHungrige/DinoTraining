@@ -46,7 +46,12 @@ from app.finetune.adapter import (
     param,
 )
 from app.finetune.adapters.sam3_loss import FAMILY, LossWeights, matched_iou, phrase_loss
-from app.finetune.adapters.sam3_queries import QuerySettings, describe, plan_queries
+from app.finetune.adapters.sam3_queries import (
+    QuerySettings,
+    describe,
+    describe_scope,
+    plan_queries,
+)
 from app.finetune.phrase_data import PhraseTable, load_phrase_table
 from app.ml.training.samples import TrainingSample
 
@@ -176,7 +181,9 @@ class Sam3Adapter:
     def notes(self, state: TrainingState) -> list[str]:
         """What the queries were, for the job (doc 108)."""
         assert isinstance(state, Sam3State)
-        return [describe(state.counts, state.rounds)] if state.rounds else []
+        if not state.rounds:
+            return []
+        return [describe(state.counts, state.rounds), *describe_scope(state.table)]
 
     def train_epoch(self, state: TrainingState, data: FinetuneData, epoch: int) -> float:
         assert isinstance(state, Sam3State)

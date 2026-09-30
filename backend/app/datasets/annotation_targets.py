@@ -44,7 +44,7 @@ LABELS = {
     "boxes": "Boxes",
     "masks": "Outlines (masks)",
     "phrases": "Phrases",
-    "picture-status": "Checked per picture",
+    "picture-status": "Complete when saved",
 }
 
 
@@ -70,7 +70,7 @@ _MASKS_LATER = (
     "Outlines keep this dataset usable for SAM 2 and SAM 3 later — one click from your boxes."
 )
 _PHRASES_LATER = "Only SAM 3 reads phrases; the class name already is one."
-_STATUS_LATER = "Only SAM 3 uses it: which pictures were checked for a phrase."
+_STATUS_LATER = "Only SAM 3 uses it: which pictures are complete for which class."
 
 TARGETS: tuple[AnnotationTarget, ...] = (
     _t(
@@ -95,8 +95,9 @@ TARGETS: tuple[AnnotationTarget, ...] = (
             "picture-status": (
                 "recommended",
                 (
-                    "SAM 3 learns 'not here' only from pictures you checked, never from "
-                    "ones you skipped."
+                    "A saved picture counts as complete for the classes that exist then; "
+                    "SAM 3 learns 'not here' from it. Pictures saved before a class was "
+                    "added are reviewed for it."
                 ),
             ),
         },

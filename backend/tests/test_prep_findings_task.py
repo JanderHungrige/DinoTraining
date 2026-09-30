@@ -42,27 +42,23 @@ class TestRules:
         assert result["fragmented-outlines"].severity == "info"  # type: ignore[attr-defined]
         assert result["duplicate-outlines"].severity == "warn"  # type: ignore[attr-defined]
 
-    def test_sam3_phrases_thin_unchecked_bare_and_without_negatives(self) -> None:
+    def test_sam3_phrases_thin_bare_and_saved_before_a_class(self) -> None:
         phrases = PhraseFacts(
             phrases=[("ring", 139, 0), ("blob", 12, 2)],
             pictures=70,
-            unchecked=69,
-            checked_any=1,
-            absent_marks=0,
+            saved_before={"blob": 20, "star": 3},
         )
         result = found(AuditContext(facts(1, []), get_profile("sam3"), phrases=phrases))
         assert "blob (12)" in result["thin-phrases"].what  # type: ignore[attr-defined]
-        assert (
-            result["unchecked-pictures"].title == "69 of 70 pictures not checked for every phrase"
-        )  # type: ignore[attr-defined]
+        saved = result["saved-before-class"]
+        assert saved.title == "20 of 70 pictures were saved before class blob existed"  # type: ignore[attr-defined]
+        assert "blob (20), star (3)" in saved.what  # type: ignore[attr-defined]
         assert "ring" in result["no-variations"].what  # type: ignore[attr-defined]
-        assert "no-confirmed-negatives" in result
 
-    def test_never_checked_says_training_falls_back(self) -> None:
-        phrases = PhraseFacts(phrases=[("ring", 60, 2)], pictures=5, unchecked=5, checked_any=0)
+    def test_nothing_saved_before_a_class_says_nothing(self) -> None:
+        phrases = PhraseFacts(phrases=[("ring", 60, 2)], pictures=5)
         result = found(AuditContext(facts(1, []), get_profile("sam3"), phrases=phrases))
-        assert "keeps the old rule" in result["unchecked-pictures"].why  # type: ignore[attr-defined]
-        assert "no-confirmed-negatives" not in result
+        assert "saved-before-class" not in result
 
 
 @pytest.fixture
@@ -105,7 +101,9 @@ class TestCollection:
         assert masks.fragmented == [("/images/a.jpg", "ring", 2)]
         assert [(a, b) for _, a, b, _ in masks.duplicates] == [("ring", "ring")]
 
-    async def test_phrase_checks_are_counted_per_picture(self, client: AsyncClient) -> None:
+    async def test_pictures_saved_with_their_classes_are_complete(
+        self, client: AsyncClient
+    ) -> None:
         dataset = await make_dataset(client)
         base = f"/api/v1/datasets/{dataset['id']}"
         block = np.zeros((10, 10), dtype=bool)
@@ -130,12 +128,9 @@ class TestCollection:
             json={"path": "/images/a.jpg", "phrase": "ring", "status": "absent"},
         )
         phrases = collect_phrases(dataset["id"])
-        assert (phrases.pictures, phrases.unchecked, phrases.checked_any, phrases.absent_marks) == (
-            2,
-            1,
-            1,
-            1,
-        )
+        # Both pictures were saved with ring existing: nothing is unknown (doc 117; the
+        # class-added-later case is covered with a clock in test_completeness.py).
+        assert (phrases.pictures, phrases.saved_before) == (2, {})
 
 
 class TestFrames:
