@@ -18,7 +18,7 @@ describe('the intro in German', () => {
     renderInGerman(<IntroTab onNavigate={vi.fn()} />);
     expect(screen.getByRole('heading', { level: 2, name: 'Worum es hier geht' })).toBeInTheDocument();
     expect(screen.getByText('Ein eingefrorenes Backbone')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Modell-Ansicht öffnen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Inference Viewer öffnen' })).toBeInTheDocument();
     expect(screen.getAllByText('Warum an dieser Stelle:')).toHaveLength(9);
   });
 

@@ -46,7 +46,7 @@ describe('the Training tab in German', () => {
     } as JobInfo;
     renderInGerman(<TrainingProgress job={job} history={[]} onCancel={() => undefined} />);
 
-    expect(screen.getByText('· Durchgang 2/10')).toBeInTheDocument();
+    expect(screen.getByText('· Epoch 2/10')).toBeInTheDocument();
     expect(screen.getByText(/^3 Bilder übersprungen/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeInTheDocument();
   });

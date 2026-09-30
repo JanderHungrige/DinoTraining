@@ -55,7 +55,7 @@ class TestTranslateText:
 
     def test_prose_placeholders_are_translated_inside_the_sentence(self) -> None:
         assert translate_text("Fine-tune SAM 3 needs outlines (masks)", "de") == (
-            "„SAM 3 fine-tunen“ braucht Umrisse (Masken)"
+            "„SAM 3 fine-tunen“ braucht Umrisse (Masks)"
         )
         assert translate_text("RF-DETR (nano) is installed", "de") == (
             "RF-DETR (nano) ist installiert"

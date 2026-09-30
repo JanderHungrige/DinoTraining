@@ -66,7 +66,7 @@ describe('the Generator and Inspect in German', () => {
     );
     const alert = screen.getByRole('alert', { name: 'Die Analyse wartet auf dich' });
     expect(alert).toHaveTextContent('Angehalten bei Bild 2 von 9.');
-    expect(alert).toHaveTextContent('3 Vorschläge haben einen Wert zwischen 0.30 und 0.50');
+    expect(alert).toHaveTextContent('3 Vorschläge haben einen Score zwischen 0.30 und 0.50');
     expect(alert.querySelector('em')).toHaveTextContent('unklar');
   });
 

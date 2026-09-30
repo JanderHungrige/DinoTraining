@@ -14,7 +14,7 @@ export const studioDe: Catalogue<typeof studioEn> = {
 
   // Session setup
   'studio.setup.errorLoadDatasets': 'Die Datensätze ließen sich nicht laden.',
-  'studio.setup.errorNoHead': 'Noch kann kein Head Boxen vorschlagen — trainiere zuerst einen Detektions-Head.',
+  'studio.setup.errorNoHead': 'Noch kann kein Head Boxen vorschlagen — trainiere zuerst einen Detection-Head.',
   'studio.setup.errorNoDetector': 'Es ist kein allgemeiner Detektor installiert — hol dir einen unter Verwaltung / Modelle.',
   'studio.setup.errorNoConcept': 'Nenne, was du suchst — dieses Modell findet nur, wonach du fragst.',
   'studio.setup.errorNoFolder': 'Wähle einen Ordner mit Bildern oder einen Datensatz, den du schon hast.',
@@ -23,8 +23,8 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.setup.datasetHint':
     'Seine Boxen werden auf die Arbeitsfläche geladen, und deine Änderungen ersetzen sie — so korrigierst oder erweiterst du einen Datensatz, den du schon hast.',
   'studio.setup.headLegend': 'Annotieren mit',
-  'studio.setup.boxThreshold': 'Box-Schwelle',
-  'studio.setup.scoreThreshold': 'Konfidenz-Schwelle',
+  'studio.setup.boxThreshold': 'Box-Threshold',
+  'studio.setup.scoreThreshold': 'Score-Threshold',
   'studio.setup.start': 'Annotieren starten',
 
   // Which dataset
@@ -66,7 +66,7 @@ export const studioDe: Catalogue<typeof studioEn> = {
   // The canvas
   'studio.canvas.boxAria':
     'Box {number}{text}, {verdict}{score}. Drücke 1, 2 oder 3, um die Bewertung zu ändern, Entf zum Entfernen.',
-  'studio.canvas.score': ', Konfidenz {percent} %',
+  'studio.canvas.score': ', Score {percent} %',
   'studio.canvas.hint':
     'Zieh auf dem Bild, um eine Box zu zeichnen. Klick auf eine Box, um ihre Bewertung weiterzuschalten, oder nutze die Liste daneben. Wenn eine Box ausgewählt ist:',
   'studio.canvas.keyPositive': 'richtig',
@@ -79,13 +79,13 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.review.aria': 'Boxen',
   'studio.review.count_one': '{count} Box',
   'studio.review.count_other': '{count} Boxen',
-  'studio.review.belowCutoff': '{count} unter der Schwelle',
+  'studio.review.belowCutoff': '{count} unter dem Threshold',
   'studio.review.hidden': '{count} ausgeblendet',
   'studio.review.showAbove': 'Zeigen ab',
   'studio.review.removeBelow': '{count} darunter entfernen',
   'studio.review.emptyNone': 'Noch keine Boxen. Lass ein Modell laufen oder zieh auf dem Bild, um eine zu zeichnen.',
   'studio.review.emptyHidden': 'Alle Boxen sind ausgeblendet. Blende sie wieder ein, um sie zu prüfen.',
-  'studio.review.emptyCutoff': 'Alle Boxen liegen unter der Schwelle. Senke sie, um sie zu sehen.',
+  'studio.review.emptyCutoff': 'Alle Boxen liegen unter dem Threshold. Senke ihn, um sie zu sehen.',
   'studio.review.classOf': 'Klasse von Box {number}',
   'studio.review.true': 'Richtig',
   'studio.review.false': 'Falsch',
@@ -106,7 +106,7 @@ export const studioDe: Catalogue<typeof studioEn> = {
   // The counters
   'studio.counter.image': 'Bild',
   'studio.counter.saved': 'Gespeicherte Bilder',
-  'studio.counter.masks': 'Umrisse',
+  'studio.counter.masks': 'Masks',
   'studio.counter.positive': 'Richtig',
   'studio.counter.negative': 'Falsch',
   'studio.counter.unclear': 'Unklar',
@@ -118,7 +118,7 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.view.hide_other': 'Die {count} vorhandenen Boxen ausblenden',
   'studio.view.show_one': '{count} ausgeblendete Box zeigen',
   'studio.view.show_other': '{count} ausgeblendete Boxen zeigen',
-  'studio.actions.detecting': 'Erkennung läuft …',
+  'studio.actions.detecting': 'Detection läuft …',
   'studio.actions.saving': 'Speichert …',
   'studio.actions.previous': '← Zurück',
   'studio.actions.next': 'Weiter →',

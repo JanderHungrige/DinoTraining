@@ -34,9 +34,9 @@ ENTRIES: dict[str, str] = {
     "Pictures with rare classes are shown several times per round of training. Best for boxes "
     "when the rare classes have pictures of their own: every picture is mostly background, "
     "which can drown out a weighted loss.": (
-        "Bilder mit seltenen Klassen werden pro Trainingsdurchgang mehrmals gezeigt. Am besten "
+        "Bilder mit seltenen Klassen werden pro Epoch mehrmals gezeigt. Am besten "
         "für Boxen, wenn die seltenen Klassen eigene Bilder haben: Jedes Bild ist größtenteils "
-        "Hintergrund, und der kann eine stärkere Gewichtung übertönen."
+        "Hintergrund, und der kann einen gewichteten Loss übertönen."
     ),
     # Unequal classes: the recommendation
     "The largest class has {ratio}× the examples of the smallest. That is close enough to "
@@ -48,8 +48,8 @@ ENTRIES: dict[str, str] = {
     "background, which would drown out a weighted loss, so showing the pictures with '{name}' "
     "more often ({repeat}× per round) works better.": (
         "Die Klassen unterscheiden sich um {ratio}×, und dieses Modell findet Boxen. Jedes Bild "
-        "ist größtenteils Hintergrund, der eine stärkere Gewichtung übertönen würde – deshalb "
-        "wirkt es besser, die Bilder mit „{name}“ öfter zu zeigen ({repeat}× pro Durchgang)."
+        "ist größtenteils Hintergrund, der einen gewichteten Loss übertönen würde – deshalb "
+        "wirkt es besser, die Bilder mit „{name}“ öfter zu zeigen ({repeat}× pro Epoch)."
     ),
     "Classes differ by {ratio}×, but '{name}' appears in {images} pictures alongside the "
     "common classes. Showing those pictures more often would show the common classes more "
@@ -119,16 +119,14 @@ ENTRIES: dict[str, str] = {
     "Mirroring is left out because of {names}: mirrored, it may mean something else.": (
         "Spiegeln bleibt wegen {names} weg: Gespiegelt könnte es etwas anderes bedeuten."
     ),
-    "Unknown augmentation preset: {preset}": (
-        "Unbekannte Voreinstellung für veränderte Kopien: {preset}"
-    ),
+    "Unknown augmentation preset: {preset}": ("Unbekannte Augmentation-Voreinstellung: {preset}"),
     "The dataset has no images to preview.": "Der Datensatz hat keine Bilder für eine Vorschau.",
     # What the model sees: tiling (input_plan.py)
-    "Tiling is available for box targets only.": "Kacheln gibt es nur für Boxen als Ziel.",
+    "Tiling is available for box targets only.": "Tiling gibt es nur für Boxen als Ziel.",
     "A whole-image label describes the whole picture, so cutting it up would give each tile a "
     "label that may not be true for it.": (
         "Eine Klasse für das ganze Bild beschreibt das ganze Bild. Es zu zerschneiden, gäbe "
-        "jeder Kachel eine Klasse, die für sie vielleicht nicht stimmt."
+        "jedem Tile eine Klasse, die für es vielleicht nicht stimmt."
     ),
     "Outlines would have to be cut along with the picture, which is not supported yet.": (
         "Umrisse müssten mit dem Bild zerschnitten werden, und das geht noch nicht."
@@ -146,7 +144,7 @@ ENTRIES: dict[str, str] = {
     ),
     "Tiling is off, so {share} of objects stay below the {needed} px this model needs, and "
     "it cannot learn those.": (
-        "Kacheln sind aus, also bleiben {share} der Objekte unter den {needed} px, die dieses "
+        "Tiling ist aus, also bleiben {share} der Objekte unter den {needed} px, die dieses "
         "Modell braucht – und die kann es nicht lernen."
     ),
     "Whole images shrink the smallest tenth of objects to {p10} px, below the {needed} px "
@@ -155,11 +153,12 @@ ENTRIES: dict[str, str] = {
         "{needed} px, die dieses Modell braucht."
     ),
     "Cut into a {grid} grid, they arrive at {after} px.": (
-        "In ein {grid}-Raster geschnitten, kommen sie mit {after} px an."
+        "In ein {grid}-Raster aus Tiles geschnitten, kommen sie mit {after} px an."
     ),
     "Cut into a {grid} grid, they reach {after} px, still too small: this is the largest grid "
     "worth training on.": (
-        "In ein {grid}-Raster geschnitten, erreichen sie {after} px – immer noch zu klein: Das "
+        "In ein {grid}-Raster aus Tiles geschnitten, erreichen sie {after} px – immer noch zu "
+        "klein: Das "
         "ist das größte Raster, mit dem sich das Training lohnt."
     ),
     "Crop closer, or choose a model with a larger input.": (

@@ -41,6 +41,38 @@ SAME_IN_GERMAN = {
     "num_negatives",
     "num_cross_negatives",
 }
+#: Jan's decision of 2026-09-30: technical terms stay English in the German UI, so a
+#: parameter's `term` (shown in brackets after its label) is the English term verbatim.
+ENGLISH_TERMS = {
+    "epochs",
+    "learning rate",
+    "batch size",
+    "gradient accumulation",
+    "early stopping",
+    "weight decay",
+    "learning-rate schedule",
+    "warm-up",
+    "seed",
+    "validation fraction",
+    "test fraction",
+    "feature-cache share",
+    "unfreeze",
+    "gradient clipping",
+    "backbone learning-rate scale",
+    "focal loss",
+    "dice loss",
+    "IoU-head loss",
+    "classification loss",
+    "L1 box loss",
+    "GIoU loss",
+    "mask focal loss",
+    "box jitter",
+    "objects per image",
+    "point prompts",
+    "all variations",
+    "hard negatives from rejections",
+    "score threshold",
+}
 
 
 @pytest.fixture
@@ -84,7 +116,10 @@ async def test_every_static_text_is_german(client: AsyncClient, route: str) -> N
     untranslated = [
         f"{where}: {en!r}"
         for where, en, de in pairs
-        if en == de and en.strip() and en not in SAME_IN_GERMAN
+        if en == de
+        and en.strip()
+        and en not in SAME_IN_GERMAN
+        and not (where.endswith(".term") and en in ENGLISH_TERMS)
     ]
     assert untranslated == []
 
@@ -178,7 +213,8 @@ def test_the_objects_too_small_action_is_german_in_every_branch() -> None:
     assert len(actions) >= 3
     for action in actions:
         german = translate_text(action, "de")
-        assert all(word not in german for word in ("Tiling", "Cut into", "Whole images")), german
+        # "Tiling" itself is German too (Jan, 2026-09-30); the English sentences are not.
+        assert all(word not in german for word in ("Tiling is", "Cut into", "Whole images")), german
 
 
 def _report(convention: str | None) -> Any:

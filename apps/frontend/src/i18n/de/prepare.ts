@@ -17,15 +17,15 @@ export const prepareDe: Catalogue<typeof prepareEn> = {
   'prepare.nav.unused': ' (nicht genutzt)',
   'prepare.step.audit': 'Daten prüfen',
   'prepare.step.fix': 'Sicher korrigieren',
-  'prepare.step.split': 'Aufteilung',
+  'prepare.step.split': 'Split',
   'prepare.step.input': 'Was das Modell sieht',
-  'prepare.step.balance': 'Ungleiche Klassen',
-  'prepare.step.augment': 'Veränderte Kopien',
+  'prepare.step.balance': 'Class Imbalance',
+  'prepare.step.augment': 'Augmentation',
   'prepare.step.save': 'Rezept speichern',
   'prepare.unused.balance':
     'Beim Fine-Tuning dieses Modells werden Klassen nicht ausgeglichen: Jedes Bild zählt einmal. Das Rezept hält trotzdem eine Wahl fest; sie gilt, wenn du damit einen DINO-Head trainierst.',
   'prepare.unused.augment':
-    'Beim Fine-Tuning lernt dieses Modell die Bilder so, wie sie sind: Es macht keine veränderten Kopien. Das Rezept hält trotzdem eine Wahl fest; sie gilt, wenn du damit einen DINO-Head trainierst.',
+    'Beim Fine-Tuning lernt dieses Modell die Bilder so, wie sie sind: Es nutzt keine Augmentation. Das Rezept hält trotzdem eine Wahl fest; sie gilt, wenn du damit einen DINO-Head trainierst.',
   'prepare.option.recommended': 'empfohlen',
 
   // Shared table headings
@@ -81,15 +81,15 @@ export const prepareDe: Catalogue<typeof prepareEn> = {
 
   // Split
   'prepare.split.why':
-    'Das Modell lernt aus den Trainingsbildern und wird an Bildern bewertet, die es nie gesehen hat. Steckt eine Beinahe-Kopie eines Testbilds im Training – das nächste Bild eines Videos, ein weiteres Foto derselben Szene –, misst der Wert Erinnerung statt Lernen. Deshalb bleiben Videobilder und Szenen zusammen, und Bilder direkt an einer Grenze werden beiseitegelegt.',
-  'prepare.split.auto': 'Automatisch aufteilen (empfohlen)',
-  'prepare.split.again': 'Neu aufteilen',
-  'prepare.split.keep': 'Die Aufteilung behalten, die der Datensatz mitbringt',
-  'prepare.split.train': 'Training',
-  'prepare.split.val': 'Validierung',
+    'Das Modell lernt aus den Train-Bildern und bekommt seinen Score an Bildern, die es nie gesehen hat. Steckt eine Beinahe-Kopie eines Test-Bilds im Training – der nächste Frame eines Videos, ein weiteres Foto derselben Szene –, misst der Score Erinnerung statt Lernen. Deshalb bleiben Frames und Szenen zusammen, und Frames direkt an einer Grenze werden beiseitegelegt.',
+  'prepare.split.auto': 'Automatischer Split (empfohlen)',
+  'prepare.split.again': 'Neuer Split',
+  'prepare.split.keep': 'Den Split behalten, den der Datensatz mitbringt',
+  'prepare.split.train': 'Train',
+  'prepare.split.val': 'Validation',
   'prepare.split.test': 'Test',
   'prepare.split.buffer':
-    '{count} Bild(er) direkt an einer Grenze werden beiseitegelegt: zu nah an den Bildern der anderen Seite, um so oder so fair zu sein.',
+    '{count} Frame(s) direkt an einer Grenze werden beiseitegelegt: zu nah an den Frames der anderen Seite, um so oder so fair zu sein.',
 
   // What the model sees
   'prepare.input.why':
@@ -98,37 +98,37 @@ export const prepareDe: Catalogue<typeof prepareEn> = {
   'prepare.input.sizes':
     '{label}: Ein typisches Objekt ist {median} groß, das kleinste Zehntel {p10} px. Dieses Modell braucht etwa {needed} px – {share} sind kleiner.',
   'prepare.input.whole': 'Ganze Bilder',
-  'prepare.input.onTiles': 'Auf Kacheln',
-  'prepare.input.tiles': 'In Kacheln schneiden',
+  'prepare.input.onTiles': 'Auf Tiles',
+  'prepare.input.tiles': 'In Tiles schneiden',
   'prepare.input.recommended': 'Empfohlen',
   'prepare.input.off': 'Aus – ganze Bilder',
-  'prepare.input.grid': '{count} Kacheln entlang der langen Seite',
+  'prepare.input.grid': '{count} Tiles entlang der langen Seite',
   'prepare.input.seenAlt': 'So sieht das Modell {path}',
   'prepare.input.objects_one': '{count} Objekt',
   'prepare.input.objects_other': '{count} Objekte',
   'prepare.input.tooSmall': ', {count} zu klein (rot)',
   'prepare.input.cutOff': ', {count} abgeschnitten',
-  'prepare.input.oneTile': ' · eine Kachel',
+  'prepare.input.oneTile': ' · ein Tile',
 
   // Unequal classes
   'prepare.balance.counting': 'Zähle die Klassen …',
   'prepare.balance.why':
     'Ein Modell belohnt sich dafür, oft richtig zu liegen. Ist eine Klasse viel häufiger, kann es genau wirken, während es die seltenen meist übersieht – oft gerade die, auf die es ankommt.',
   'prepare.balance.ratio': 'Die größte Klasse hat {ratio} so viele Beispiele wie die kleinste.',
-  'prepare.balance.label': 'Wie mit ungleichen Klassen umgehen',
+  'prepare.balance.label': 'Umgang mit der Class Imbalance',
   'prepare.balance.countsAs': 'Zählt als',
-  'prepare.balance.perRound': 'Gezeigt pro Durchgang',
+  'prepare.balance.perRound': 'Gezeigt pro Epoch',
   'prepare.balance.notApplied':
     'Beim Fine-Tuning dieses Modells wird die Wahl noch nicht angewendet; sie wird im Rezept gespeichert, für später.',
 
   // Changed copies
   'prepare.augment.looking': 'Sehe mir die Klassen an …',
   'prepare.augment.why':
-    'Sieht ein Modell in jedem Durchgang dieselben Bilder, lernt es genau diese Bilder. Jedes ein wenig zu verändern – Licht, ein Ausschnitt, ein Spiegelbild – bringt ihm bei, was gleich bleibt: das Objekt. Boxen bewegen sich immer mit dem Bild.',
-  'prepare.augment.label': 'Wie die Bilder verändert werden',
+    'Sieht ein Modell in jeder Epoch dieselben Bilder, lernt es genau diese Bilder. Jedes ein wenig zu verändern – Licht, ein Ausschnitt, ein Spiegelbild – bringt ihm bei, was gleich bleibt: das Objekt. Boxen bewegen sich immer mit dem Bild.',
+  'prepare.augment.label': 'Wie die Augmentation die Bilder verändert',
   'prepare.augment.noMirroring': 'nicht spiegeln',
   'prepare.augment.originalAlt': 'Das Ausgangsbild',
-  'prepare.augment.changedAlt': 'Veränderte Kopie {n}',
+  'prepare.augment.changedAlt': 'Augmentierte Version {n}',
   'prepare.augment.original': 'Ausgangsbild',
   'prepare.augment.version': 'Kopie {n}',
 
@@ -136,12 +136,12 @@ export const prepareDe: Catalogue<typeof prepareEn> = {
   'prepare.save.why':
     'Das Rezept hält alles fest, was hier entschieden wurde. So nutzt das Training genau diese Vorbereitung, und ein trainiertes Modell kann sagen, wie seine Daten vorbereitet wurden. Speichern unter demselben Namen legt eine neue Version an; nichts wird überschrieben.',
   'prepare.save.model': 'Modell: {model}',
-  'prepare.save.tiles': 'Kacheln: {tiles}',
+  'prepare.save.tiles': 'Tiles: {tiles}',
   'prepare.save.tilesRecommended': 'wie empfohlen',
   'prepare.save.tilesOff': 'aus',
   'prepare.save.tilesGrid': '{count} entlang der langen Seite',
-  'prepare.save.balance': 'Ungleiche Klassen: {value}',
-  'prepare.save.augment': 'Veränderte Kopien: {value}',
+  'prepare.save.balance': 'Class Imbalance: {value}',
+  'prepare.save.augment': 'Augmentation: {value}',
   'prepare.save.augmentNone': 'keine',
   'prepare.save.strategyNone': 'bleiben, wie sie sind',
   'prepare.save.strategyWeighted': 'seltene Klassen zählen mehr',

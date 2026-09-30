@@ -1,6 +1,10 @@
 # German glossary (doc 114)
 
-One word per concept, everywhere. Address the user as **du** (informal, lowercase "du"
+One word per concept, everywhere. **Technical terms stay English** (Jan, 2026-09-30:
+"Fachbegriffe weiter in English, da sie so verwendet werden"): Epochs, Learning Rate,
+Batch Size, Mask, Frame, Tile, Threshold, Split, Augmentation, Hard Negatives, Foundation
+Model, Overfitting, Loss, Weights, Features, Layer, Prediction, Prescan, Inference.
+Plain words stay German: Bild, Datensatz, Klasse, Umriss, Box, Phrase, Rezept. Address the user as **du** (informal, lowercase "du"
 inside sentences), friendly and plain, like the English. Keep the explanations as clear
 for non-experts as the English ones; do not shorten them into jargon.
 
@@ -13,7 +17,7 @@ for non-experts as the English ones; do not shorten them into jargon.
 | annotation | Annotation |
 | annotate | annotieren |
 | box / bounding box | Box (pl. Boxen) |
-| outline / mask | Umriss (pl. Umrisse); "mask" in technical brackets: Maske |
+| outline / mask | Umriss (pl. Umrisse); the technical term: Mask |
 | class | Klasse |
 | phrase | Phrase |
 | variation (of a phrase) | Variante |
@@ -23,30 +27,30 @@ for non-experts as the English ones; do not shorten them into jargon.
 | checked (picture) | geprüft |
 | positive / negative / unclear (verdict) | richtig / falsch / unklar (buttons "True/False/Not sure": Richtig / Falsch / Unsicher) |
 | recipe | Rezept |
-| split (train/validation/test) | Aufteilung; sides: Training / Validierung / Test |
-| round (epochs) | Durchgang (Epochen) |
-| learning speed (learning rate) | Lerngeschwindigkeit (Lernrate) |
-| pictures per step (batch size) | Bilder pro Schritt (Batch-Größe) |
+| split (train/validation/test) | Split; sides: Train / Validation / Test |
+| round (epochs) | Epoch / Epochs |
+| learning speed (learning rate) | Learning Rate |
+| pictures per step (batch size) | Batch Size |
 | training | Training; train (verb): trainieren |
 | fine-tune | Fine-Tuning; fine-tunen |
 | head | Head (keep; explain once as "kleines Modell auf dem Backbone") |
 | backbone | Backbone |
-| foundation model | Basismodell |
+| foundation model | Foundation Model |
 | proposal / propose | Vorschlag / vorschlagen |
 | prompt | Prompt |
 | concept | Begriff |
-| tile / tiles | Kachel / Kacheln |
-| frame (of a video) | Einzelbild |
+| tile / tiles | Tile / Tiles (Tiling) |
+| frame (of a video) | Frame |
 | pause | anhalten |
 | audit / check the data | Prüfung / Daten prüfen |
 | finding | Befund |
-| augmentation / changed copies | veränderte Kopien |
-| unequal classes / class imbalance | ungleiche Klassen |
+| augmentation / changed copies | Augmentation |
+| unequal classes / class imbalance | Class Imbalance |
 | held-out / test pictures | zurückgehaltene Bilder / Testbilder |
-| score | Wert / Konfidenz (for model confidence: Konfidenz) |
-| threshold | Schwelle |
-| hard negatives | harte Negativbeispiele |
-| generic negatives / cross negatives | allgemeine Negativbeispiele / Kreuz-Negativbeispiele |
+| score | Score / Confidence |
+| threshold | Threshold |
+| hard negatives | Hard Negatives |
+| generic negatives / cross negatives | Generic Negatives / Cross Negatives |
 | guideline | Richtlinie |
 | second look | Zweiter Blick |
 | save / saved | speichern / gespeichert |
@@ -59,7 +63,7 @@ for non-experts as the English ones; do not shorten them into jargon.
 | Start here | Hier starten |
 | Annotation Studio | Annotation Studio (proper name, keep) |
 | Prepare data | Daten vorbereiten |
-| Inference Viewer | Modell-Ansicht |
+| Inference Viewer | Inference Viewer |
 | Dataset Generator | Datensatz-Generator |
 | Inspect datasets | Datensätze ansehen |
 

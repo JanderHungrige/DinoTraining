@@ -50,12 +50,12 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.system.tokenUnset': 'Nicht gesetzt — zugangsbeschränkte Modelle nicht verfügbar',
   'admin.system.cache': 'Modell-Cache',
   'admin.system.languageNote': 'Die Sprache der App wählst du mit dem Sprachschalter in der Kopfzeile.',
-  'admin.family.groundingDino': 'Grounding DINO — Erkennung mit freien Begriffen',
-  'admin.family.rfDetr': 'RF-DETR — allgemeine Objekterkennung, und das Modell zum Fine-Tunen',
+  'admin.family.groundingDino': 'Grounding DINO — Detection mit freien Begriffen',
+  'admin.family.rfDetr': 'RF-DETR — allgemeine Object Detection, und das Modell zum Fine-Tunen',
   'admin.family.dinov2': 'DINOv2 — Backbones',
   'admin.family.dinov3': 'DINOv3 — Backbones (zugangsbeschränkt)',
-  'admin.family.sam2': 'SAM 2.1 — Segmentierung (frei verfügbar)',
-  'admin.family.sam3': 'SAM 3 — Segmentierung (zugangsbeschränkt, mit deinem eigenen Token)',
+  'admin.family.sam2': 'SAM 2.1 — Segmentation (frei verfügbar)',
+  'admin.family.sam3': 'SAM 3 — Segmentation (zugangsbeschränkt, mit deinem eigenen Token)',
   'admin.family.depthAnything': 'Depth Anything V2 — Tiefe aus einem einzelnen Bild',
 
   // Eine Modellkarte
@@ -91,7 +91,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
     'Jedes Modell, das ein erster Durchlauf braucht, ist installiert — annotiere per Prompt, trainiere einen Head, fine-tune einen Detektor oder schätze Tiefe.',
   'admin.starter.title': 'Einrichten',
   'admin.starter.body':
-    'In der App ist nichts vorinstalliert — die Gewichte werden bei Bedarf heruntergeladen und zwischengespeichert, das passiert also nur einmal pro Rechner. Diese {count} geben dir alle Funktionen: ein Backbone für trainierte Heads, einen allgemeinen Detektor, beide Hälften von Grounded SAM und Tiefe.',
+    'In der App ist nichts vorinstalliert — die Weights werden bei Bedarf heruntergeladen und zwischengespeichert, das passiert also nur einmal pro Rechner. Diese {count} geben dir alle Funktionen: ein Backbone für trainierte Heads, einen allgemeinen Detektor, beide Hälften von Grounded SAM und Tiefe.',
   'admin.starter.downloading': 'Wird heruntergeladen …',
   'admin.starter.downloadAll': 'Alle {count} herunterladen ({size} GB)',
   'admin.starter.note':
@@ -106,7 +106,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.token.title': 'Zugang zu HuggingFace',
   'admin.token.introBefore':
     'Manche Modelle sind von ihrem Herausgeber zugangsbeschränkt. DinoTraining lädt sie nie für dich herunter und liefert keinen Token mit — du nutzt deinen eigenen und startest jeden Download selbst. Alles, was die frei verfügbaren Modelle brauchen, einschließlich',
-  'admin.token.introAfter': 'für Umrisse (Masken), funktioniert ganz ohne das.',
+  'admin.token.introAfter': 'für Segmentation Masks, funktioniert ganz ohne das.',
   'admin.token.field': 'Dein HuggingFace-Zugangstoken',
   'admin.token.configured': 'Eingerichtet',
   'admin.token.hintBefore': 'Ein Token mit ',
@@ -132,7 +132,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.gpu.footBefore':
     'Das Installationsprogramm enthält eine CPU-Version, damit es klein bleibt. GPU-Unterstützung ist ein separater Download von etwa',
   'admin.gpu.footAfter':
-    '— so groß, weil er NVIDIAs CUDA-Laufzeit enthält, nicht wegen der App. Training und Auswertung laufen damit meist um ein Vielfaches schneller.',
+    '— so groß, weil er NVIDIAs CUDA-Laufzeit enthält, nicht wegen der App. Training und Inference laufen damit meist um ein Vielfaches schneller.',
   'admin.gpu.downloading': 'Wird heruntergeladen …',
   'admin.gpu.download': 'GPU-Unterstützung herunterladen ({size} GB)',
 
@@ -143,7 +143,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.dist.lead_other':
     '{count} installierte Modelle bringen eine Lizenzpflicht mit. Alles andere, was du installiert hast, ist frei lizenziert und kann so mitgeliefert werden.',
   'admin.dist.foot':
-    'Ein Modell hier zu entfernen löscht seine Gewichte aus dem Cache — damit ist es aus einem Build heraus, sonst muss sich nichts ändern. Du kannst es danach wieder herunterladen.',
+    'Ein Modell hier zu entfernen löscht seine Weights aus dem Cache — damit ist es aus einem Build heraus, sonst muss sich nichts ändern. Du kannst es danach wieder herunterladen.',
 
   // Vortrainierte Heads
   'admin.heads.backboneFirst': 'Lade zuerst das Backbone {backbone} herunter.',
@@ -151,7 +151,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.heads.classes_one': '{count} Klasse',
   'admin.heads.classes_other': '{count} Klassen',
   'admin.heads.installed': 'Installiert',
-  'admin.heads.ready': 'Bereit zur Nutzung in der Modell-Ansicht',
+  'admin.heads.ready': 'Bereit zur Nutzung im Inference Viewer',
   'admin.heads.installing': 'Wird installiert …',
   'admin.heads.install': 'Installieren',
   'admin.heads.title': 'Vortrainierte Heads',

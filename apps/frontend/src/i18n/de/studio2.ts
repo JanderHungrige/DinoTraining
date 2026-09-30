@@ -4,14 +4,14 @@ import type { Catalogue } from '../types';
 export const studio2De: Catalogue<typeof studio2En> = {
   // Prescan (doc 53)
   'studio.prescan.open': 'Leere Bilder überspringen …',
-  'studio.prescan.aria': 'Vorab-Suche',
+  'studio.prescan.aria': 'Prescan',
   'studio.prescan.lead_one':
     'Lass das Modell zuerst über {count} Bild laufen und zeig dann nur die, in denen es etwas gefunden hat. Nichts wird gespeichert — das entscheidet nur, was du siehst.',
   'studio.prescan.lead_other':
     'Lass das Modell zuerst über alle {count} Bilder laufen und zeig dann nur die, in denen es etwas gefunden hat. Nichts wird gespeichert — das entscheidet nur, was du siehst.',
   'studio.prescan.lookingFor': 'Suchen nach',
   'studio.prescan.hint': 'Durch Kommas getrennt. Lass es leer, um jedes Bild zu behalten, in dem das Modell irgendetwas findet.',
-  'studio.prescan.confidence': 'Konfidenz',
+  'studio.prescan.confidence': 'Confidence',
   'studio.prescan.progress_one': '{scanned} von {total} · bisher {count} Treffer',
   'studio.prescan.progress_other': '{scanned} von {total} · bisher {count} Treffer',
   'studio.prescan.stop': 'Stoppen, Gefundenes behalten',
@@ -61,7 +61,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.mode.head': 'Ein Head, den du trainiert hast — schlägt Boxen für seine eigenen Klassen vor',
   'studio.foundation.legend': 'Detektor',
   'studio.foundation.loading': 'Detektoren werden geladen …',
-  'studio.foundation.none': 'Kein Basismodell im Katalog schlägt Boxen vor.',
+  'studio.foundation.none': 'Kein Foundation Model im Katalog schlägt Boxen vor.',
   'studio.foundation.notDownloaded_one':
     '{count} allgemeiner Detektor ist verfügbar, aber nicht heruntergeladen. Hol dir einen unter',
   'studio.foundation.notDownloaded_other':
@@ -74,9 +74,9 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.expert.legend': 'Experten-Head',
   'studio.expert.loading': 'Heads werden geladen …',
   'studio.expert.none':
-    'Kein installierter Head kann Boxen vorschlagen. Klassifikations-, Segmentierungs- und Tiefen-Heads laufen in der Modell-Ansicht; nur ein Detektions-Head schlägt Boxen vor — trainiere einen unter Training.',
-  'studio.expert.incompatible_one': '{count} Detektions-Head installiert, aber keiner wurde auf',
-  'studio.expert.incompatible_other': '{count} Detektions-Heads installiert, aber keiner wurde auf',
+    'Kein installierter Head kann Boxen vorschlagen. Classification-, Segmentation- und Depth-Heads laufen im Inference Viewer; nur ein Detection-Head schlägt Boxen vor — trainiere einen unter Training.',
+  'studio.expert.incompatible_one': '{count} Detection-Head installiert, aber keiner wurde auf',
+  'studio.expert.incompatible_other': '{count} Detection-Heads installiert, aber keiner wurde auf',
   'studio.expert.switch': ' trainiert. Wechsle das Backbone oder trainiere einen Head darauf.',
 
   // Prompt guidance (doc 39)
@@ -112,18 +112,18 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.video.file': 'Videodatei',
   'studio.video.pick': 'Video …',
   'studio.video.notVideo': 'Kein Video, das diese App lesen kann — nimm .mp4, .mov, .avi, .mkv, .webm oder .m4v.',
-  'studio.video.frames': '{frames} Einzelbilder',
+  'studio.video.frames': '{frames} Frames',
   'studio.video.fps': 'mit {fps} fps',
   'studio.video.pastEnd': 'Dieser Bereich liegt hinter dem Ende des Videos.',
-  'studio.video.decodes': 'Entpackt {frames} Einzelbilder in den Datensatz — etwa {mb} MB (geschätzt).',
-  'studio.video.from': 'Ab Einzelbild',
-  'studio.video.count': 'Einzelbilder',
-  'studio.video.every': 'Jedes',
-  'studio.video.everyAria': 'Jedes n-te Einzelbild behalten',
-  'studio.video.th': '. Bild',
+  'studio.video.decodes': 'Entpackt {frames} Frames in den Datensatz — etwa {mb} MB (geschätzt).',
+  'studio.video.from': 'Ab Frame',
+  'studio.video.count': 'Frames',
+  'studio.video.every': 'Jeden',
+  'studio.video.everyAria': 'Jeden n-ten Frame behalten',
+  'studio.video.th': '. Frame',
 
   // Concept segmenters (doc 65)
-  'studio.readiness.title': 'Begriffs-Segmentierung — schreib, was du willst, und bekomm Umrisse',
+  'studio.readiness.title': 'Concept Segmentation — schreib, was du willst, und bekomm Masks',
   'studio.readiness.before': 'Das sind',
   'studio.readiness.pipelines': 'Pipelines',
   'studio.readiness.after':

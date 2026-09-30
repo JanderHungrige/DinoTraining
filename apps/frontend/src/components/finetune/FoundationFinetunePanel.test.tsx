@@ -86,7 +86,7 @@ describe('FoundationFinetunePanel', () => {
     const user = userEvent.setup();
     vi.mocked(api.checkReadiness).mockResolvedValue(readiness(true));
     render(<FoundationFinetunePanel datasets={DATASETS} />);
-    const jitter = await screen.findByLabelText('box_jitter (box_jitter)');
+    const jitter = await screen.findByLabelText('box_jitter');
     await user.clear(jitter);
     await user.type(jitter, '0.25');
     const start = screen.getByRole('button', { name: 'Start fine-tuning' });

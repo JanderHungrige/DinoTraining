@@ -78,6 +78,26 @@ These are judgement calls from the build:
 - "Original" in the augmentation strip → *Ausgangsbild*;
 - the head's one-time explanation, *"kleine Modelle auf dem Backbone"*.
 
+## Amended 2026-09-30: technical terms stay English
+
+- **Jan's decision:** "Bitte Fachbegriffe weiter in English, da sie so verwendet werden."
+- **The German now uses the English term:**
+  - Epoch(s), Learning Rate, Batch Size, Mask(s), Frame(s), Tile(s)/Tiling, Threshold,
+    Score/Confidence, Split (Train / Validation / Test);
+  - Augmentation, Hard / Generic / Cross Negatives, Foundation Model, Class Imbalance;
+  - Overfitting, Loss, Weights, Features, Layer, Prediction, Prescan;
+  - Detection / Segmentation, Inference;
+  - the "Inference Viewer" tab.
+- **Plain words stay German:** Bild, Datensatz, Klasse, Umriss, Box, Phrase, Rezept,
+  Prüfung.
+- **Scale:** about 160 frontend values and 145 backend values. The glossary was updated
+  first.
+- **Tests:**
+  - Values now identical in both languages are allow-listed: `SAME_IN_BOTH`, and the
+    backend's `ENGLISH_TERMS` for parameter `term` fields.
+  - A parameter whose label already is its term no longer repeats it ("Epochs", not
+    "Epochs (epochs)").
+
 ## Bugs
 
 (none yet)

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 FRAGMENTS: dict[str, str] = {
     "boxes": "Boxen",
-    "outlines (masks)": "Umrisse (Masken)",
+    "outlines (masks)": "Umrisse (Masks)",
     "nothing usable": "nichts Brauchbares",
     "as two corners (left, top, right, bottom)": "als zwei Ecken (links, oben, rechts, unten)",
     "as fractions of the image size (0 to 1)": "als Anteile der Bildgröße (0 bis 1)",
@@ -41,7 +41,7 @@ ENTRIES: dict[str, str] = {
         "oder lass sie bei diesem Training weg (Schritt „Sicher korrigieren“)."
     ),
     # imbalance
-    "Classes are very unequal ({ratio}×)": "Die Klassen sind sehr ungleich ({ratio}×)",
+    "Classes are very unequal ({ratio}×)": "Starke Class Imbalance ({ratio}×)",
     "'{big}' has {most} examples, '{small}' only {least}.": (
         "„{big}“ hat {most} Beispiele, „{small}“ nur {least}."
     ),
@@ -54,7 +54,7 @@ ENTRIES: dict[str, str] = {
     ),
     "The Balance step can weight the rare classes up during training. Adding examples of the "
     "rare classes helps most.": (
-        "Der Schritt „Ungleiche Klassen“ kann die seltenen Klassen beim Training stärker "
+        "Der Schritt „Class Imbalance“ kann die seltenen Klassen beim Training stärker "
         "gewichten. Am meisten hilft es, mehr Beispiele der seltenen Klassen hinzuzufügen."
     ),
     # objects too small
@@ -76,12 +76,12 @@ ENTRIES: dict[str, str] = {
         "nicht lernen, egal wie gut sie annotiert sind."
     ),
     "{*reason} The Model step sets tiling up and shows you what the model sees.": (
-        "{*reason} Der Schritt „Was das Modell sieht“ richtet die Kacheln ein und zeigt dir, "
+        "{*reason} Der Schritt „Was das Modell sieht“ richtet das Tiling ein und zeigt dir, "
         "was das Modell sieht."
     ),
     # wrong annotation kind
     "{+label} needs boxes": "„{+label}“ braucht Boxen",
-    "{+label} needs outlines (masks)": "„{+label}“ braucht Umrisse (Masken)",
+    "{+label} needs outlines (masks)": "„{+label}“ braucht Umrisse (Masks)",
     "This dataset has {+have}, and this model trains from {+need}.": (
         "Dieser Datensatz hat {+have}, aber dieses Modell braucht zum Lernen {+need}."
     ),
@@ -92,7 +92,7 @@ ENTRIES: dict[str, str] = {
     "Choose a model that fits the annotations you have, or annotate with a tool that produces "
     "the right kind (Grounded SAM makes masks, Grounding DINO makes boxes).": (
         "Wähle ein Modell, das zu deinen Annotationen passt, oder annotiere mit einem Werkzeug, "
-        "das die richtige Art erzeugt (Grounded SAM macht Masken, Grounding DINO macht Boxen)."
+        "das die richtige Art erzeugt (Grounded SAM macht Masks, Grounding DINO macht Boxen)."
     ),
     # findings_quality.py
     "{count} image(s) cannot be opened": "{count} Bild(er) lassen sich nicht öffnen",
@@ -116,7 +116,7 @@ ENTRIES: dict[str, str] = {
     "Copies add no new information and make those examples count twice. If one copy is used "
     "for training and another for testing, the test only checks memory.": (
         "Kopien bringen nichts Neues und lassen diese Beispiele doppelt zählen. Landet eine "
-        "Kopie im Training und eine andere im Test, prüft der Test nur das Gedächtnis."
+        "Kopie in Train und eine andere in Test, prüft der Test nur das Gedächtnis."
     ),
     "Keep one image per group (Fix step).": (
         "Behalte ein Bild pro Gruppe (Schritt „Sicher korrigieren“)."
@@ -131,11 +131,11 @@ ENTRIES: dict[str, str] = {
     "testing and its twin for training, the test would be easier than new pictures are, and "
     "the score would look too good.": (
         "Das sind verschiedene Beispiele, und alle sind es wert, behalten zu werden. Käme aber "
-        "eines davon in den Test und sein Zwilling ins Training, wäre der Test leichter als neue "
-        "Bilder, und der Wert sähe zu gut aus."
+        "eines davon in Test und sein Zwilling in Train, wäre der Test leichter als neue "
+        "Bilder, und der Score sähe zu gut aus."
     ),
     "Nothing to do: the split step keeps each group on one side.": (
-        "Nichts zu tun: Die Aufteilung hält jede Gruppe auf einer Seite."
+        "Nichts zu tun: Der Split hält jede Gruppe auf einer Seite."
     ),
     "{share} of annotations are marked unclear": (
         "{share} der Annotationen sind als unklar markiert"
@@ -175,21 +175,20 @@ ENTRIES: dict[str, str] = {
         "die richtige Antwort ist."
     ),
     "The Balance step can sample annotated images more often. Or exclude some of the empty ones.": (
-        "Der Schritt „Ungleiche Klassen“ kann annotierte Bilder öfter zeigen. Oder lass einige "
+        "Der Schritt „Class Imbalance“ kann annotierte Bilder öfter zeigen. Oder lass einige "
         "der leeren weg."
     ),
-    "Frames from {count} video(s) or folder(s)": "Einzelbilder aus {count} Video(s) oder Ordner(n)",
+    "Frames from {count} video(s) or folder(s)": "Frames aus {count} Video(s) oder Ordner(n)",
     "Many images are consecutive frames, so neighbouring frames look almost identical.": (
-        "Viele Bilder sind aufeinanderfolgende Einzelbilder, benachbarte sehen also fast gleich "
-        "aus."
+        "Viele Bilder sind aufeinanderfolgende Frames, benachbarte sehen also fast gleich aus."
     ),
     "If neighbouring frames were split between training and testing, the test would see "
     "almost the same picture it trained on, and the score would look far too good.": (
-        "Würden benachbarte Einzelbilder auf Training und Test verteilt, sähe der Test fast "
-        "dasselbe Bild, auf dem trainiert wurde, und der Wert sähe viel zu gut aus."
+        "Würden benachbarte Frames auf Train und Test verteilt, sähe der Test fast dasselbe "
+        "Bild, auf dem trainiert wurde, und der Score sähe viel zu gut aus."
     ),
     "Nothing to do: the split step keeps each video's frames together.": (
-        "Nichts zu tun: Die Aufteilung hält die Einzelbilder jedes Videos zusammen."
+        "Nichts zu tun: Der Split hält die Frames jedes Videos zusammen."
     ),
 }
 

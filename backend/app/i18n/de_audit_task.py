@@ -108,7 +108,7 @@ ENTRIES: dict[str, str] = {
     "Every check so far says 'all marked'.": "Jede Prüfung bisher sagt „alles markiert“.",
     "Confirmed negatives are the strongest lesson in what a phrase is not — especially "
     "pictures where something similar is there.": (
-        "Bestätigte Negativbeispiele sind die stärkste Lektion darin, was eine Phrase nicht ist "
+        "Bestätigte Negatives sind die stärkste Lektion darin, was eine Phrase nicht ist "
         "– besonders Bilder, auf denen etwas Ähnliches zu sehen ist."
     ),
     "Mark pictures without the phrase as 'not in this picture' (N), look-alikes first.": (
@@ -116,11 +116,11 @@ ENTRIES: dict[str, str] = {
     ),
     # inconsistent frames
     "{count} frame(s) name an object differently from the frame before": (
-        "{count} Einzelbild(er) benennen ein Objekt anders als das Bild davor"
+        "{count} Frame(s) benennen ein Objekt anders als der Frame davor"
     ),
     "In {count} places an object keeps its place from one frame to the next but changes its "
     "class.": (
-        "An {count} Stellen bleibt ein Objekt von einem Einzelbild zum nächsten an seinem Platz, "
+        "An {count} Stellen bleibt ein Objekt von einem Frame zum nächsten an seinem Platz, "
         "wechselt aber die Klasse."
     ),
     "The model is shown the same thing under two names, and learns neither well; every model "
@@ -130,7 +130,7 @@ ENTRIES: dict[str, str] = {
     ),
     "Open the frames in Inspect datasets, decide which name is right, and write it into the "
     "dataset's annotation guideline so it stays decided.": (
-        "Öffne die Einzelbilder unter „Datensätze ansehen“, entscheide, welcher Name richtig "
+        "Öffne die Frames unter „Datensätze ansehen“, entscheide, welcher Name richtig "
         "ist, und schreib ihn in die Annotationsrichtlinie des Datensatzes, damit es "
         "entschieden bleibt."
     ),
@@ -210,16 +210,16 @@ ENTRIES: dict[str, str] = {
         "Übernimm die Zusammenführungen (die Voreinstellung) oder nimm den Haken bei denen "
         "weg, die wirklich verschiedene Dinge sind, etwa „glass“ und „glasses“."
     ),
-    "The export comes already split": "Der Export kommt schon aufgeteilt",
+    "The export comes already split": "Der Export bringt schon einen Split mit",
     "It has separate folders: {folders}.": "Er hat getrennte Ordner: {folders}.",
     "Whoever published the data chose which pictures are for testing. Keeping that choice "
     "makes your results comparable with theirs.": (
-        "Wer die Daten veröffentlicht hat, hat ausgewählt, welche Bilder zum Testen sind. "
+        "Wer die Daten veröffentlicht hat, hat ausgewählt, welche Bilder in Test gehören. "
         "Behältst du diese Wahl, sind deine Ergebnisse mit denen vergleichbar."
     ),
     "Keep it (recommended), unless the folders mix frames of one video, which the audit will "
     "point out.": (
-        "Behalte sie (empfohlen) – außer die Ordner mischen Einzelbilder eines Videos; darauf "
+        "Behalte ihn (empfohlen) – außer die Ordner mischen Frames eines Videos; darauf "
         "weist die Prüfung dich hin."
     ),
 }

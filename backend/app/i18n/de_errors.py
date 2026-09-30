@@ -19,13 +19,13 @@ ENTRIES: dict[str, str] = {
     "Unknown training job: {job}": "Unbekannter Trainingsauftrag: {job}",
     "Unknown head: {head}": "Unbekannter Head: {head}",
     "Unknown model: {model}": "Unbekanntes Modell: {model}",
-    "Unknown foundation model: {model}": "Unbekanntes Basismodell: {model}",
+    "Unknown foundation model: {model}": "Unbekanntes Foundation Model: {model}",
     "Unknown catalogue entry: {entry}": "Unbekannter Katalogeintrag: {entry}",
     "Unknown backbone: {backbone}": "Unbekanntes Backbone: {backbone}",
     "Unknown annotator: {annotator}": "Unbekannter Annotierer: {annotator}",
     "No such run: {job}": "Diesen Lauf gibt es nicht: {job}",
     "No such extraction: {job}": "Diese Extraktion gibt es nicht: {job}",
-    "No prescan job {job}": "Keinen Vorab-Scan {job}",
+    "No prescan job {job}": "Keinen Prescan {job}",
     "No such recipe: {recipe}": "Dieses Rezept gibt es nicht: {recipe}",
     "No such phrase: {phrase}": "Diese Phrase gibt es nicht: {phrase}",
     "No such fine-tune job: {job}": "Diesen Fine-Tuning-Auftrag gibt es nicht: {job}",
@@ -34,9 +34,9 @@ ENTRIES: dict[str, str] = {
     "No fine-tuned model {model}": "Kein fine-getuntes Modell {model}",
     "No fine-tunable model {model}": "Kein fine-tunebares Modell {model}",
     "This dataset has not been audited yet.": "Dieser Datensatz wurde noch nicht geprüft.",
-    "This dataset has not been split yet.": "Dieser Datensatz ist noch nicht aufgeteilt.",
+    "This dataset has not been split yet.": "Dieser Datensatz hat noch keinen Split.",
     "No second look has been started.": "Es wurde noch kein Zweiter Blick gestartet.",
-    "Frame {#index} is outside 0..{#last}": "Einzelbild {index} liegt außerhalb von 0..{last}",
+    "Frame {#index} is outside 0..{#last}": "Frame {index} liegt außerhalb von 0..{last}",
     # Refusals
     "Audit this dataset first: the fix uses its findings.": (
         "Prüfe diesen Datensatz zuerst: Die Korrektur nutzt die Befunde der Prüfung."

@@ -124,7 +124,11 @@ export function ParameterField(props: ParameterFieldProps): JSX.Element {
   return (
     <div className={`param-field${changed ? ' param-field--changed' : ''}`}>
       <label className="param-field__label" htmlFor={id}>
-        {parameter.label} <span className="param-field__term">({parameter.term})</span>
+        {parameter.label}
+        {/* German names the English term itself (Jan, 2026-09-30): "Epochs (epochs)" says it twice. */}
+        {parameter.term.toLowerCase() !== parameter.label.toLowerCase() && (
+          <> <span className="param-field__term">({parameter.term})</span></>
+        )}
       </label>
       <HelpPopover label={parameter.label} help={parameter.help} defaultText={defaultText} why={parameter.why} />
       <Input

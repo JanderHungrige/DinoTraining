@@ -9,67 +9,66 @@ _FIX_SCENES = "More examples, spread over more scenes, would fix that."
 ENTRIES: dict[str, str] = {
     # The split's warnings, per side
     "{names} never appears in val, so results for it cannot be measured there. " + _FIX_SCENES: (
-        "{names} kommt in der Validierung nie vor, dort lässt sich also kein Ergebnis dafür "
+        "{names} kommt in Validation nie vor, dort lässt sich also kein Ergebnis dafür "
         "messen. Mehr Beispiele, verteilt auf mehr Szenen, würden das beheben."
     ),
     "{names} never appear in val, so results for them cannot be measured there. " + _FIX_SCENES: (
-        "{names} kommen in der Validierung nie vor, dort lassen sich also keine Ergebnisse dafür "
+        "{names} kommen in Validation nie vor, dort lassen sich also keine Ergebnisse dafür "
         "messen. Mehr Beispiele, verteilt auf mehr Szenen, würden das beheben."
     ),
     "{names} never appears in test, so results for it cannot be measured there. " + _FIX_SCENES: (
-        "{names} kommt im Test nie vor, dort lässt sich also kein Ergebnis dafür messen. Mehr "
+        "{names} kommt in Test nie vor, dort lässt sich also kein Ergebnis dafür messen. Mehr "
         "Beispiele, verteilt auf mehr Szenen, würden das beheben."
     ),
     "{names} never appear in test, so results for them cannot be measured there. " + _FIX_SCENES: (
-        "{names} kommen im Test nie vor, dort lassen sich also keine Ergebnisse dafür messen. "
+        "{names} kommen in Test nie vor, dort lassen sich also keine Ergebnisse dafür messen. "
         "Mehr Beispiele, verteilt auf mehr Szenen, würden das beheben."
     ),
     "No image ended up in val: the dataset has too few separate scenes or stretches of video "
     "to spare one. Add images from other scenes or videos.": (
-        "Kein Bild ist in der Validierung gelandet: Der Datensatz hat zu wenige getrennte "
+        "Kein Bild ist in Validation gelandet: Der Datensatz hat zu wenige getrennte "
         "Szenen oder Videoabschnitte, um einen davon abzugeben. Füge Bilder aus anderen Szenen "
         "oder Videos hinzu."
     ),
     "No image ended up in test: the dataset has too few separate scenes or stretches of video "
     "to spare one. Add images from other scenes or videos.": (
-        "Kein Bild ist im Test gelandet: Der Datensatz hat zu wenige getrennte Szenen oder "
+        "Kein Bild ist in Test gelandet: Der Datensatz hat zu wenige getrennte Szenen oder "
         "Videoabschnitte, um einen davon abzugeben. Füge Bilder aus anderen Szenen oder Videos "
         "hinzu."
     ),
     "Only {#count} image(s) in val: too few to trust a score.": (
-        "Nur {count} Bild(er) in der Validierung: zu wenige, um einem Wert zu trauen."
+        "Nur {count} Bild(er) in Validation: zu wenige, um einem Score zu trauen."
     ),
     "Only {#count} image(s) in test: too few to trust a score.": (
-        "Nur {count} Bild(er) im Test: zu wenige, um einem Wert zu trauen."
+        "Nur {count} Bild(er) in Test: zu wenige, um einem Score zu trauen."
     ),
     "One group holds most of the images (one long scene or video), so the sides could not be "
     "balanced. The split is still leak-free.": (
         "Eine Gruppe enthält die meisten Bilder (eine lange Szene oder ein Video), deshalb "
-        "ließen sich die Seiten nicht ausgleichen. Die Aufteilung ist trotzdem ohne "
+        "ließen sich die Seiten nicht ausgleichen. Der Split ist trotzdem ohne "
         "Überschneidungen."
     ),
     "This dataset has not been audited, so photos of the same scene could not be found and "
     "may sit on different sides. Run the audit, then split again.": (
         "Dieser Datensatz wurde noch nicht geprüft, also konnten Fotos derselben Szene nicht "
         "gefunden werden und liegen vielleicht auf verschiedenen Seiten. Starte die Prüfung und "
-        "teile dann neu auf."
+        "mach dann einen neuen Split."
     ),
     "The validation and test shares must be between 0 and 1 together.": (
-        "Validierungs- und Testanteil müssen zusammen zwischen 0 und 1 liegen."
+        "Validation- und Test-Anteil müssen zusammen zwischen 0 und 1 liegen."
     ),
-    "There are no images to split.": "Es gibt keine Bilder zum Aufteilen.",
+    "There are no images to split.": "Es gibt keine Bilder für einen Split.",
     "Not every image came with a split from its source, so it cannot be kept.": (
-        "Nicht jedes Bild kam mit einer Aufteilung aus seiner Quelle, also lässt sie sich nicht "
-        "behalten."
+        "Nicht jedes Bild kam mit einem Split aus seiner Quelle, also lässt er sich nicht behalten."
     ),
     # Recipes
     "Unknown imbalance strategy: {strategy}": (
-        "Unbekannte Strategie für ungleiche Klassen: {strategy}"
+        "Unbekannte Strategie für Class Imbalance: {strategy}"
     ),
     "Unknown target: {target}": "Unbekanntes Ziel: {target}",
     "The dataset has not been split yet. Run the Split step first, so evaluation never sees "
     "pictures the model trained on.": (
-        "Der Datensatz ist noch nicht aufgeteilt. Führe zuerst den Schritt „Aufteilung“ aus, "
+        "Der Datensatz hat noch keinen Split. Führe zuerst den Schritt „Split“ aus, "
         "damit die Bewertung nie Bilder sieht, auf denen das Modell trainiert hat."
     ),
     "The dataset has not been audited yet. Run the Audit step first.": (
@@ -89,7 +88,7 @@ ENTRIES: dict[str, str] = {
         "gespeichert wurde."
     ),
     "The split changed since the recipe was saved.": (
-        "Die Aufteilung hat sich geändert, seit das Rezept gespeichert wurde."
+        "Der Split hat sich geändert, seit das Rezept gespeichert wurde."
     ),
     # The default recipe (doc 101)
     "Unknown head type: {head_type}": "Unbekannter Head-Typ: {head_type}",
@@ -97,49 +96,49 @@ ENTRIES: dict[str, str] = {
     "A {task} head has no preparation recipe: there is nothing to split or balance by class "
     "for it.": (
         "Ein Head für „{task}“ hat kein Vorbereitungsrezept: Es gibt nichts, was sich für ihn "
-        "nach Klassen aufteilen oder ausgleichen ließe."
+        "nach Klassen splitten oder ausgleichen ließe."
     ),
     "An up-to-date default recipe already exists.": ("Es gibt schon ein aktuelles Standardrezept."),
     "Checking the data (audit)…": "Daten werden geprüft …",
-    "Splitting without leaks…": "Aufteilen ohne Überschneidungen …",
+    "Splitting without leaks…": "Split ohne Überschneidungen …",
     "Choosing class balance and changed copies…": (
-        "Ausgleich der Klassen und veränderte Kopien werden gewählt …"
+        "Ausgleich der Klassen und Augmentation werden gewählt …"
     ),
     "Saving the recipe…": "Rezept wird gespeichert …",
     "Saved '{name}' v{#version}.": "„{name}“ v{version} gespeichert.",
     # The fine-tune job (doc 93)
     "No test pictures: base and fine-tuned are compared on the validation side, which also "
     "picked the best epoch, so the gain is optimistic.": (
-        "Keine Testbilder: Basismodell und fine-getuntes Modell werden auf der "
-        "Validierungsseite verglichen, die auch die beste Epoche ausgewählt hat – der Gewinn ist "
-        "also geschönt."
+        "Keine Test-Bilder: Foundation Model und fine-getuntes Modell werden auf Validation "
+        "verglichen, womit auch die beste Epoch ausgewählt wurde – der Gewinn ist also "
+        "geschönt."
     ),
     "On the held-out pictures the fine-tuned model scored {after} against the baseline's "
     "{before}: it is saved, but it is not the better model here.": (
-        "Auf den zurückgehaltenen Bildern erreichte das fine-getunte Modell {after} gegenüber "
+        "Auf den Held-out-Bildern erreichte das fine-getunte Modell {after} gegenüber "
         "{before} beim Ausgangsmodell: Es ist gespeichert, aber hier nicht das bessere Modell."
     ),
     "No epoch beat the base model on validation ({metric} {base} against at best {tried}), so "
     "nothing was saved: the base model is the better one for this data. More varied examples, "
     "or a lower learning rate, may change that.": (
-        "Keine Epoche war auf der Validierung besser als das Basismodell ({metric} {base} "
+        "Keine Epoch war auf Validation besser als das Foundation Model ({metric} {base} "
         "gegenüber höchstens {tried}), also wurde nichts gespeichert: Für diese Daten ist das "
-        "Basismodell das bessere. Abwechslungsreichere Beispiele oder eine niedrigere Lernrate "
-        "können das ändern."
+        "Foundation Model das bessere. Abwechslungsreichere Beispiele oder eine niedrigere "
+        "Learning Rate können das ändern."
     ),
     "No validation pictures to choose an epoch with; nothing was saved.": (
-        "Keine Validierungsbilder, um eine Epoche auszuwählen; es wurde nichts gespeichert."
+        "Keine Validation-Bilder, um eine Epoch auszuwählen; es wurde nichts gespeichert."
     ),
-    "The base model is kept": "Das Basismodell bleibt",
-    "Finished {#count} epochs": "{count} Epochen abgeschlossen",
-    "Cancelled before epoch {#epoch}": "Vor Epoche {epoch} abgebrochen",
-    "Cancelled during epoch {#epoch}": "Während Epoche {epoch} abgebrochen",
+    "The base model is kept": "Das Foundation Model bleibt",
+    "Finished {#count} epochs": "{count} Epochs abgeschlossen",
+    "Cancelled before epoch {#epoch}": "Vor Epoch {epoch} abgebrochen",
+    "Cancelled during epoch {#epoch}": "Während Epoch {epoch} abgebrochen",
     "SAM 3 trained on {#positives} positive queries and {#negatives} negatives per round: "
     "{#absent} absent, {#cross} cross, {#rejected} rejected, {#confusable} confusable, "
     "{#generic} generic.": (
-        "SAM 3 hat pro Durchgang mit {positives} positiven Anfragen und {negatives} "
-        "Negativbeispielen trainiert: {absent} „nicht in diesem Bild“, {cross} Kreuz, "
-        "{rejected} abgelehnt, {confusable} Verwechslungen, {generic} allgemein."
+        "SAM 3 hat pro Epoch mit {positives} Positive Queries und {negatives} Negatives "
+        "trainiert: {absent} „nicht in diesem Bild“, {cross} Cross, {rejected} abgelehnt, "
+        "{confusable} Verwechslungen, {generic} Generic."
     ),
 }
 

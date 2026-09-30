@@ -12,7 +12,7 @@ _MASKS = (
     "classes you train, because an object left without a mask is taught as background."
 )
 _MASKS_DE = (
-    "Ein Umriss (Maske) pro Objekt und Bild: ein Umriss genau dieses Objekts, gespeichert als "
+    "Ein Umriss (Mask) pro Objekt und Bild: ein Umriss genau dieses Objekts, gespeichert als "
     "Annotation mit seinem Klassennamen. Boxen allein reichen nicht; das Modell lernt Umrisse "
     "aus Umrissen. Erstelle Umrisse im Annotation Studio oder im Datensatz-Generator mit "
     "Grounded SAM und korrigiere sie dann. Lehne falsche Umrisse ab, statt sie zu löschen: "
@@ -28,15 +28,15 @@ FRAGMENTS: dict[str, str] = {
 ENTRIES: dict[str, str] = {
     # requirements.py
     "{model} — classification": "{model} — Klassifikation",
-    "{model} — segmentation": "{model} — Segmentierung",
+    "{model} — segmentation": "{model} — Segmentation",
     "RF-DETR starts from COCO detection and adapts in a few epochs, so it needs far less than "
     "a head trained from scratch, but not nothing.": (
-        "RF-DETR startet von der COCO-Erkennung und passt sich in wenigen Epochen an. Es "
+        "RF-DETR startet von der COCO-Detection und passt sich in wenigen Epochs an. Es "
         "braucht also viel weniger als ein Head, der von null lernt – aber nicht nichts."
     ),
     "Any size; resized (stretched) to 384 px. Small objects need tiles (see Prepare data → "
     "What the model sees).": (
-        "Jede Größe; wird auf 384 px verkleinert (gestreckt). Kleine Objekte brauchen Kacheln "
+        "Jede Größe; wird auf 384 px verkleinert (gestreckt). Kleine Objekte brauchen Tiles "
         "(siehe Daten vorbereiten → Was das Modell sieht)."
     ),
     "One box per object: a tight rectangle around each object, with its class name. Every "
@@ -49,7 +49,7 @@ ENTRIES: dict[str, str] = {
     ),
     "The projector and the detection decoder; the DINOv2 backbone stays frozen unless you "
     "unfreeze its last blocks.": (
-        "Der Projektor und der Erkennungs-Decoder; das DINOv2-Backbone bleibt eingefroren, außer "
+        "Der Projektor und der Detection-Decoder; das DINOv2-Backbone bleibt eingefroren, außer "
         "du gibst seine letzten Blöcke frei."
     ),
     "SAM already segments almost anything; fine-tuning teaches it where your objects' edges "
@@ -75,7 +75,7 @@ ENTRIES: dict[str, str] = {
     "Phrase nicht vorkommt, sind nützlich: Sie bringen „keins hier“ bei.",
     "The mask decoder only. The image encoder stays frozen, which keeps it fast and saves the "
     "result in a few megabytes.": (
-        "Nur der Masken-Decoder. Der Bild-Encoder bleibt eingefroren; das hält es schnell und "
+        "Nur der Mask-Decoder. Der Image-Encoder bleibt eingefroren; das hält es schnell und "
         "speichert das Ergebnis in wenigen Megabyte."
     ),
     "SAM 3 finds every instance of a phrase; it needs enough images per phrase to learn both "
@@ -87,19 +87,19 @@ ENTRIES: dict[str, str] = {
     "The detection and mask decoders and the scoring head (15 M of 840 M parameters); the "
     "image and text encoders stay frozen. About 6 s per picture the first round on an M1, "
     "then about 1 s.": (
-        "Die Erkennungs- und Masken-Decoder und der Bewertungs-Head (15 M von 840 M "
-        "Parametern); Bild- und Text-Encoder bleiben eingefroren. Etwa 6 s pro Bild im ersten "
-        "Durchgang auf einem M1, danach etwa 1 s."
+        "Die Detection- und Mask-Decoder und der Scoring-Head (15 M von 840 M Parametern); "
+        "Image- und Text-Encoder bleiben eingefroren. Etwa 6 s pro Bild in der ersten Epoch "
+        "auf einem M1, danach etwa 1 s."
     ),
     "Gated on HuggingFace: Meta approves access by hand.": (
         "Auf HuggingFace zugangsbeschränkt: Meta gibt den Zugang von Hand frei."
     ),
     "About 3.2 GB of weights; training needs roughly 16 GB of memory.": (
-        "Etwa 3.2 GB Gewichte; das Training braucht ungefähr 16 GB Arbeitsspeicher."
+        "Etwa 3.2 GB Weights; das Training braucht ungefähr 16 GB Arbeitsspeicher."
     ),
     "Unfreezing part of a backbone changes features every other head relies on; with less "
     "data it forgets more than it learns.": (
-        "Einen Teil des Backbones freizugeben verändert Merkmale, auf die sich jeder andere Head "
+        "Einen Teil des Backbones freizugeben verändert Features, auf die sich jeder andere Head "
         "verlässt; mit weniger Daten vergisst es mehr, als es lernt."
     ),
     "Any size; letterboxed to 448 px (224 for classification).": (
@@ -133,20 +133,20 @@ ENTRIES: dict[str, str] = {
     ),
     # preflight.py — the data
     "The dataset has boxes": "Der Datensatz hat Boxen",
-    "The dataset has instance masks": "Der Datensatz hat Umrisse pro Objekt",
-    "The dataset has phrase masks": "Der Datensatz hat Umrisse pro Phrase",
+    "The dataset has instance masks": "Der Datensatz hat Masks pro Objekt",
+    "The dataset has phrase masks": "Der Datensatz hat Masks pro Phrase",
     "The dataset has image labels": "Der Datensatz hat Klassen pro Bild",
     "{#count} found.": "{count} gefunden.",
     "No boxes found.": "Keine Boxen gefunden.",
-    "No instance masks found.": "Keine Umrisse pro Objekt gefunden.",
-    "No phrase masks found.": "Keine Umrisse pro Phrase gefunden.",
+    "No instance masks found.": "Keine Masks pro Objekt gefunden.",
+    "No phrase masks found.": "Keine Masks pro Phrase gefunden.",
     "No image labels found.": "Keine Klassen pro Bild gefunden.",
     "At least {#count} images with boxes": "Mindestens {count} Bilder mit Boxen",
     "At least {#count} images with instance masks": (
-        "Mindestens {count} Bilder mit Umrissen pro Objekt"
+        "Mindestens {count} Bilder mit Masks pro Objekt"
     ),
     "At least {#count} images with phrase masks": (
-        "Mindestens {count} Bilder mit Umrissen pro Phrase"
+        "Mindestens {count} Bilder mit Masks pro Phrase"
     ),
     "At least {#count} images with image labels": "Mindestens {count} Bilder mit Klassen pro Bild",
     "{#count} images.": "{count} Bilder.",
@@ -173,8 +173,8 @@ ENTRIES: dict[str, str] = {
     "None given.": "Keins angegeben.",
     "Prepare data → save a recipe, then choose it here. Its leak-free split is what the base "
     "and fine-tuned models are compared on.": (
-        "Daten vorbereiten → speichere ein Rezept und wähle es dann hier. Auf seiner Aufteilung "
-        "ohne Überschneidungen werden Basismodell und fine-getuntes Modell verglichen."
+        "Daten vorbereiten → speichere ein Rezept und wähle es dann hier. Auf seinem Split "
+        "ohne Überschneidungen werden Foundation Model und fine-getuntes Modell verglichen."
     ),
     "No such recipe.": "Dieses Rezept gibt es nicht.",
     "'{name}' v{#version}.": "„{name}“ v{version}.",

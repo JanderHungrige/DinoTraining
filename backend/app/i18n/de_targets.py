@@ -13,7 +13,7 @@ ENTRIES: dict[str, str] = {
     # Layers
     "One class per picture": "Eine Klasse pro Bild",
     "Boxes": "Boxen",
-    "Outlines (masks)": "Umrisse (Masken)",
+    "Outlines (masks)": "Umrisse (Masks)",
     "Phrases": "Phrasen",
     "Checked per picture": "Pro Bild geprüft",
     # Targets
@@ -101,10 +101,10 @@ ENTRIES: dict[str, str] = {
         "Unbekanntes Annotationsziel: {target}. Bekannt: {known}"
     ),
     # Prepare data profiles (profiles.py)
-    "Detection head on DINOv2": "Erkennungs-Head auf DINOv2",
-    "Detection head on DINOv3": "Erkennungs-Head auf DINOv3",
-    "Segmentation head on DINOv2": "Segmentierungs-Head auf DINOv2",
-    "Segmentation head on DINOv3": "Segmentierungs-Head auf DINOv3",
+    "Detection head on DINOv2": "Detection-Head auf DINOv2",
+    "Detection head on DINOv3": "Detection-Head auf DINOv3",
+    "Segmentation head on DINOv2": "Segmentation-Head auf DINOv2",
+    "Segmentation head on DINOv3": "Segmentation-Head auf DINOv3",
     "Classification head on DINOv2": "Klassifikations-Head auf DINOv2",
     "Classification head on DINOv3": "Klassifikations-Head auf DINOv3",
     "Fine-tune {model}": "{model} fine-tunen",

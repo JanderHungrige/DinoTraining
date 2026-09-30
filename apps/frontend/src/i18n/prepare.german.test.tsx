@@ -58,7 +58,7 @@ describe('Prepare data in German', () => {
       />,
     );
     expect(screen.getByRole('list', { name: 'Vorbereitungsschritte' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Ungleiche Klassen \(nicht genutzt\)/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Class Imbalance \(nicht genutzt\)/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Prüfung starten' })).toBeEnabled();
   });
 

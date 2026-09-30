@@ -15,9 +15,9 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.tabs.trainerLabel': 'Training',
   'app.tabs.trainerHint':
     'Trainiere einen Head auf einem eingefrorenen DINO-Backbone oder fine-tune einen ganzen Detektor.',
-  'app.tabs.inferenceLabel': 'Modell-Ansicht',
+  'app.tabs.inferenceLabel': 'Inference Viewer',
   'app.tabs.inferenceHint':
-    'Lass trainierte Heads und Basismodelle auf ein Bild los, direkt nebeneinander.',
+    'Lass trainierte Heads und Foundation Models auf ein Bild los, direkt nebeneinander.',
   'app.tabs.generatorLabel': 'Datensatz-Generator',
   'app.tabs.generatorHint':
     'Annotiere neue Bilder automatisch mit einem trainierten Head oder einem Begriff als Prompt und prüfe sie dann.',
@@ -49,7 +49,7 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.view.boxes': 'Boxen',
   'app.view.both': 'Beides',
   'app.output.masks':
-    'Speichert Umrisse (Segmentierungsmasken). Der COCO-Export enthält außerdem zu jedem Umriss eine daraus abgeleitete Box – du bekommst also beides.',
+    'Speichert Segmentation Masks. Der COCO-Export enthält außerdem zu jeder Mask eine daraus abgeleitete Box – du bekommst also beides.',
   'app.output.boxes': 'Speichert Boxen.',
 
   'app.appearance.title': 'Darstellung',

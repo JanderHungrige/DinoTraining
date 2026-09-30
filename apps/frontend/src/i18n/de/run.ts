@@ -3,15 +3,15 @@ import type { Catalogue } from '../types';
 
 export const runDe: Catalogue<typeof runEn> = {
   // The tab
-  'run.viewer.title': 'Modell-Ansicht',
+  'run.viewer.title': 'Inference Viewer',
   'run.viewer.lead':
-    'Wähle ein einzelnes Bild oder einen Ordner, such dir einen oder mehrere Heads aus und vergleiche das Original mit dem, was sie vorhergesagt haben.',
+    'Wähle ein einzelnes Bild oder einen Ordner, such dir einen oder mehrere Heads aus und vergleiche das Original mit ihren Predictions.',
   'run.viewer.modeLegend': 'Was du ansehen willst',
   'run.viewer.modeImageName': 'Ein einzelnes Bild',
   'run.viewer.modeImageHint': 'Ein Bild, jedes ausgewählte Modell, nebeneinander.',
   'run.viewer.modeVideoName': 'Ein Video oder ein Ordner',
   'run.viewer.modeVideoHint':
-    'Analysiere einen Bereich von Einzelbildern einmal und spiel ihn dann mit den Annotationen ab.',
+    'Analysiere einen Bereich von Frames einmal und spiel ihn dann mit den Annotationen ab.',
   'run.viewer.emptyFolder': 'In diesem Ordner sind keine Bilder.',
   'run.viewer.truncated_one': 'Es wird das erste {count} Bild in diesem Ordner gezeigt.',
   'run.viewer.truncated_other': 'Es werden die ersten {count} Bilder in diesem Ordner gezeigt.',
@@ -37,7 +37,7 @@ export const runDe: Catalogue<typeof runEn> = {
   // The head panel
   'run.heads.loading': 'Heads werden geladen …',
   'run.heads.nothingToRun':
-    'Noch nichts zum Ausführen da. Installiere ein Basismodell oder einen fertigen Head im Tab Verwaltung, oder trainiere einen Head im Tab Training.',
+    'Noch nichts zum Ausführen da. Installiere ein Foundation Model oder einen fertigen Head im Tab Verwaltung, oder trainiere einen Head im Tab Training.',
   'run.heads.task': 'Aufgabe',
   'run.heads.allTasks': 'Alle Aufgaben',
   'run.heads.trainedOn': 'Trainiert auf',
@@ -46,7 +46,7 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.heads.legend': 'Heads (kleine Modelle auf dem Backbone)',
   'run.heads.incompatible':
     'Registriert für {registered}; die Auswahl läuft gerade auf {current}.',
-  'run.heads.foundations': 'Basismodelle',
+  'run.heads.foundations': 'Foundation Models',
   'run.heads.nonCommercial': 'nicht kommerziell',
   'run.heads.whatToFind': 'Was gefunden werden soll',
   'run.heads.conceptHint':
@@ -64,27 +64,27 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.heads.loadFailed': 'Die Heads konnten nicht geladen werden.',
 
   // Tiling
-  'run.tiling.toggle': 'Bild in Kacheln teilen',
+  'run.tiling.toggle': 'Bild in Tiles teilen',
   'run.tiling.columns': 'Spalten',
   'run.tiling.rows': 'Zeilen',
-  'run.tiling.count_one': '{count} Kachel',
-  'run.tiling.count_other': '{count} Kacheln',
+  'run.tiling.count_one': '{count} Tile',
+  'run.tiling.count_other': '{count} Tiles',
   'run.tiling.hintOn':
     'Dieser Head wurde auf Bildern mit {trained} px trainiert, dieses Bild hat {image} px. Objekte erscheinen etwa {factor}× kleiner, als er sie zu finden gelernt hat.',
   'run.tiling.hintOff':
-    'Dieser Head wurde auf Bildern mit {trained} px trainiert, dieses Bild hat {image} px. Objekte erscheinen etwa {factor}× kleiner, als er sie zu finden gelernt hat – Kacheln sind wahrscheinlich nötig.',
+    'Dieser Head wurde auf Bildern mit {trained} px trainiert, dieses Bild hat {image} px. Objekte erscheinen etwa {factor}× kleiner, als er sie zu finden gelernt hat – Tiling ist wahrscheinlich nötig.',
 
   // The sequence player
-  'run.sequence.pickSource': 'Wähle oben einen Ordner mit Einzelbildern oder eine Videodatei.',
+  'run.sequence.pickSource': 'Wähle oben einen Ordner mit Frames oder eine Videodatei.',
   'run.sequence.notSequence':
-    'Dieser Pfad ist keine Bildfolge. Wähle einen Ordner mit Einzelbildern oder eine Videodatei, um sie abzuspielen.',
-  'run.player.startAt': 'Ab Einzelbild',
-  'run.player.howMany': 'Wie viele Einzelbilder',
+    'Dieser Pfad ist keine Bildfolge. Wähle einen Ordner mit Frames oder eine Videodatei, um sie abzuspielen.',
+  'run.player.startAt': 'Ab Frame',
+  'run.player.howMany': 'Wie viele Frames',
   'run.player.playAt': 'Abspielen mit (fps)',
   'run.player.kindVideo': 'Videodatei',
   'run.player.kindFolder': 'Ordner',
-  'run.player.frames_one': '{count} Einzelbild',
-  'run.player.frames_other': '{count} Einzelbilder',
+  'run.player.frames_one': '{count} Frame',
+  'run.player.frames_other': '{count} Frames',
   'run.player.analysing': '{count} davon zu analysieren dauert {time}',
   'run.player.estimateNote': '(geschätzt)',
   'run.player.estimateMoment': 'einen Moment',
@@ -92,26 +92,26 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.player.estimateMinutes': 'etwa {value} Min.',
   'run.player.estimateHours': 'etwa {value} Stunden',
   'run.player.analysingButton': 'Wird analysiert …',
-  'run.player.analyse_one': '{count} Einzelbild analysieren',
-  'run.player.analyse_other': '{count} Einzelbilder analysieren',
+  'run.player.analyse_one': '{count} Frame analysieren',
+  'run.player.analyse_other': '{count} Frames analysieren',
   'run.player.stop': 'Anhalten',
-  'run.player.pickModel': 'Wähle oben mindestens einen Head oder ein Basismodell.',
-  'run.player.progress': '{done} von {total} Einzelbildern analysiert …',
-  'run.player.stopped': 'Angehalten — {done} von {total} Einzelbildern analysiert',
-  'run.player.ready': 'Fertig — {done} von {total} Einzelbildern analysiert',
+  'run.player.pickModel': 'Wähle oben mindestens einen Head oder ein Foundation Model.',
+  'run.player.progress': '{done} von {total} Frames analysiert …',
+  'run.player.stopped': 'Angehalten — {done} von {total} Frames analysiert',
+  'run.player.ready': 'Fertig — {done} von {total} Frames analysiert',
   'run.player.unreadable': '{count} konnten nicht gelesen werden',
-  'run.player.frameLabel': 'Einzelbild {index}',
+  'run.player.frameLabel': 'Frame {index}',
   'run.player.pause': 'Pausieren',
   'run.player.play': 'Abspielen',
-  'run.player.slider': 'Einzelbild',
-  'run.player.counter': 'Einzelbild {index}',
+  'run.player.slider': 'Frame',
+  'run.player.counter': 'Frame {index}',
   'run.player.notAnalysed': 'nicht analysiert',
   'run.player.startFailed': 'Der Durchlauf konnte nicht gestartet werden.',
 
   // Overlays
   'run.overlay.className': 'Klasse {index}',
   'run.overlay.legend': 'Von {head} gefundene Klassen',
-  'run.overlay.segmentation': 'Segmentierung von {head}',
+  'run.overlay.segmentation': 'Segmentation von {head}',
   'run.overlay.depth': 'Tiefe von {head}',
   'run.overlay.stored': 'Gespeicherte Annotationen',
   'run.overlay.unnamed': 'ohne Namen',
@@ -122,11 +122,11 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.maskReview.ariaBare':
     'Umriss ({verdict}){score}. Drücke 1, 2 oder 3, um die Bewertung zu ändern.',
   'run.maskReview.hint':
-    'Klicke auf einen Umriss, um seine Bewertung weiterzuschalten, oder drücke 1, 2 oder 3, während er ausgewählt ist. Ein abgelehnter Umriss wird nicht gelöscht, sondern als Negativbeispiel behalten – das Training kann ihn nutzen.',
+    'Klicke auf einen Umriss, um seine Bewertung weiterzuschalten, oder drücke 1, 2 oder 3, während er ausgewählt ist. Ein abgelehnter Umriss wird nicht gelöscht, sondern als Negative behalten – das Training kann ihn nutzen.',
   'run.maskSource.annotator': 'Annotationsmodell',
   'run.maskSource.concept': 'Begriff',
   'run.maskSource.hintPhrases':
-    'Grounding DINO findet jede Phrase und SAM 2.1 macht daraus einen Umriss (Maske). Mehrere Phrasen, getrennt durch Punkte, funktionieren also gut – am besten auf Englisch. Hier ist nichts zugangsbeschränkt: kein Token, kein Konto.',
+    'Grounding DINO findet jede Phrase und SAM 2.1 macht daraus einen Umriss (Mask). Mehrere Phrasen, getrennt durch Punkte, funktionieren also gut – am besten auf Englisch. Hier ist nichts zugangsbeschränkt: kein Token, kein Konto.',
   'run.maskSource.hintSingle':
     'SAM 3 nimmt einen Begriff nach dem anderen – eine einzelne englische Nominalphrase wie „a bolt“. Mehrere Phrasen in einem Feld werden als ein langer Begriff gelesen und passen schlecht; lass sie einzeln laufen.',
 };

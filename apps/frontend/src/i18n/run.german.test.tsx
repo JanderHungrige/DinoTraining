@@ -83,7 +83,7 @@ describe('the Inference Viewer in German', () => {
   it('names the model groups and the run button in German', () => {
     renderInGerman(<HeadRunPanel state={runState()} onRun={vi.fn()} />);
 
-    expect(screen.getByRole('group', { name: 'Basismodelle' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Foundation Models' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '1 Modell ausführen' })).toBeEnabled();
     expect(screen.getByText(/nicht kommerziell/)).toBeInTheDocument();
   });
@@ -106,8 +106,8 @@ describe('the Inference Viewer in German', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Wie viele Einzelbilder')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '50 Einzelbilder analysieren' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Wie viele Frames')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '50 Frames analysieren' })).toBeInTheDocument();
     expect(screen.getByText(/davon zu analysieren dauert etwa/)).toBeInTheDocument();
   });
 });
