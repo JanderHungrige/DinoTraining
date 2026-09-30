@@ -23,6 +23,7 @@ import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
 import { usePromptClasses } from '../hooks/usePromptClasses';
 import { MaskEditBar } from '../components/MaskEditBar';
+import { NewClassQuestion } from '../components/NewClassQuestion';
 import { MaskEditOverlay } from '../components/MaskEditOverlay';
 import { StudioActions } from '../components/StudioActions';
 import { StudioBack } from '../components/StudioBack';
@@ -157,6 +158,8 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
         imageTotal={session.images.length}
         dirty={session.dirty}
       />
+
+      <NewClassQuestion key={config.datasetId} datasetId={config.datasetId} watch={`${vocabulary.names.join('|')}#${session.index}`} />
 
       {target && (
         <TargetGuide

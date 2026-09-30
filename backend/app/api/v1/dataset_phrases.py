@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from app.datasets.completeness import completeness, unknown_pictures
+from app.datasets.completeness import completeness, mark_absent, unknown_pictures
 from app.datasets.db import transaction
 from app.datasets.phrase_status import fill_unchecked, set_status, statuses_for
 from app.datasets.phrases import PhraseInfo, PhraseStore, PictureStatus, Status
@@ -171,6 +171,23 @@ def get_unknown(dataset_id: str, class_name: str = Query(min_length=1)) -> list[
     _require(dataset_id)
     with transaction() as connection:
         return [path for _, path in unknown_pictures(connection, dataset_id, class_name)]
+
+
+class ClassRequest(BaseModel):
+    class_name: str = Field(min_length=1, max_length=100)
+
+
+@router.post(
+    "/datasets/{dataset_id}/completeness/absent",
+    summary="The class does not occur in the pictures saved before it: mark them absent",
+)
+def post_absent(dataset_id: str, body: ClassRequest) -> dict[str, int]:
+    _require(dataset_id)
+    try:
+        with transaction() as connection:
+            return {"marked": mark_absent(connection, dataset_id, body.class_name)}
+    except ValueError as error:
+        raise _unprocessable(error) from error
 
 
 __all__ = ["router"]

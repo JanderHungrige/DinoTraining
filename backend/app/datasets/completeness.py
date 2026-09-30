@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from app.datasets.phrase_links import phrase_key
+from app.datasets.phrase_links import ensure_phrase, phrase_key
 from app.ml.concepts import prompt_terms
 
 
@@ -82,4 +82,20 @@ def completeness(connection: sqlite3.Connection, dataset_id: str) -> dict[str, d
     }
 
 
-__all__ = ["class_since", "completeness", "saved_at", "unknown_pictures"]
+def mark_absent(connection: sqlite3.Connection, dataset_id: str, class_name: str) -> int:
+    """Doc 118, "it does not occur there": every picture unknown for the class is checked
+    `absent` for it. Pictures already known or checked are left alone."""
+    key = phrase_key(class_name)
+    if key not in class_since(connection, dataset_id):
+        raise ValueError(f"Not a class of this dataset: {key}.")
+    pictures = unknown_pictures(connection, dataset_id, key)
+    phrase_id = ensure_phrase(connection, dataset_id, key, key)
+    connection.executemany(
+        "INSERT OR IGNORE INTO image_phrase_status (image_id, phrase_id, status)"
+        " VALUES (?, ?, 'absent')",
+        [(image_id, phrase_id) for image_id, _ in pictures],
+    )
+    return len(pictures)
+
+
+__all__ = ["class_since", "completeness", "mark_absent", "saved_at", "unknown_pictures"]

@@ -114,3 +114,39 @@ class TestCompleteness:
         older = next(path for path in table.unknown if path.endswith("a.jpg"))
         assert table.unknown[older] == {"m10"}
         assert not [p for p in table.unknown if p.endswith("b.jpg")]
+
+
+class TestItDoesNotOccurThere:
+    """Doc 118: the first answer to 'm10 is new — does it occur in the older pictures?'"""
+
+    async def test_marks_only_the_unknown_pictures_absent(
+        self, client: AsyncClient, clock: Clock
+    ) -> None:
+        dataset_id = await _m8_then_m10(client, clock)
+        url = f"/api/v1/datasets/{dataset_id}/completeness/absent"
+        marked = await client.post(url, json={"class_name": "M10"})
+        assert marked.json() == {"marked": 1}
+        assert (await _completeness(client, dataset_id))["m10"]["unknown"] == 0
+        again = await client.post(url, json={"class_name": "m10"})
+        assert again.json() == {"marked": 0}
+
+    async def test_training_then_learns_none_here_from_them(
+        self, client: AsyncClient, clock: Clock
+    ) -> None:
+        dataset_id = await _m8_then_m10(client, clock)
+        url = f"/api/v1/datasets/{dataset_id}/completeness/absent"
+        await client.post(url, json={"class_name": "m10"})
+        table = load_phrase_table((dataset_id,))
+        older = next(path for path in table.statuses if path.endswith("a.jpg"))
+        assert table.statuses[older] == {"m10": "absent"}
+
+    async def test_an_unknown_class_is_refused_with_the_reason(
+        self, client: AsyncClient, clock: Clock
+    ) -> None:
+        dataset_id = await _m8_then_m10(client, clock)
+        url = f"/api/v1/datasets/{dataset_id}/completeness/absent"
+        response = await client.post(
+            url, json={"class_name": "m99"}, headers={"Accept-Language": "de"}
+        )
+        assert response.status_code == 422
+        assert "Keine Klasse dieses Datensatzes: m99." in response.text

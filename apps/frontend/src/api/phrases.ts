@@ -109,3 +109,33 @@ export function markTheRest(datasetId: string, phrase: string): Promise<{ comple
     jsonBody({ phrase }),
   );
 }
+
+/** Doc 117: per class, since when it exists and how many saved pictures are unknown for it. */
+export interface ClassCompleteness {
+  readonly since: string;
+  readonly unknown: number;
+}
+
+const isCompleteness = (v: unknown): v is Record<string, ClassCompleteness> =>
+  typeof v === 'object' && v !== null && Object.values(v).every((c) => hasFields(c, { since: 'string', unknown: 'number' }));
+
+export function getCompleteness(datasetId: string): Promise<Record<string, ClassCompleteness>> {
+  return apiFetch(`${base(datasetId)}/completeness`, isCompleteness);
+}
+
+/** The saved pictures never looked at for one class, by path (doc 119's review list). */
+export function unknownPictures(datasetId: string, className: string): Promise<string[]> {
+  return apiFetch(
+    `${base(datasetId)}/completeness/unknown?class_name=${encodeURIComponent(className)}`,
+    (v: unknown): v is string[] => Array.isArray(v) && v.every((p) => typeof p === 'string'),
+  );
+}
+
+/** Doc 118, "it does not occur there": the unknown pictures become `absent` for the class. */
+export function markAbsentInOlder(datasetId: string, className: string): Promise<{ marked: number }> {
+  return apiFetch(
+    `${base(datasetId)}/completeness/absent`,
+    (v: unknown): v is { marked: number } => hasFields(v, { marked: 'number' }),
+    jsonBody({ class_name: className }),
+  );
+}

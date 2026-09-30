@@ -195,3 +195,32 @@
   min-width: 0;
   width: auto;
 }
+
+/* Doc 118: the new-class question, a banner rather than a modal. */
+.newclass {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.newclass__ask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-raised);
+}
+
+.newclass__ask p {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.newclass__line {
+  margin: 0;
+  font-size: 0.9rem;
+}

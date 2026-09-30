@@ -84,6 +84,22 @@ def register(mcp: MCPServer) -> None:
         )
 
     @mcp.tool()
+    async def get_completeness(dataset_id: str) -> Any:
+        """Per class: since when it exists in the dataset, and how many saved pictures are
+        `unknown` for it — saved before the class existed, so never looked at for it (doc
+        117). SAM 3 leaves those out for that class until they are reviewed or marked."""
+        return await client.call("GET", f"/datasets/{dataset_id}/completeness")
+
+    @mcp.tool()
+    async def mark_absent_in_older_pictures(dataset_id: str, class_name: str) -> Any:
+        """The class does not occur in the pictures saved before it: mark each of them
+        'absent' for it (doc 118). Ask your user first — never assume it. If the class may
+        be in them, leave them unknown and review them instead (the Studio's 'Review for').
+        """
+        body = {"class_name": class_name}
+        return await client.call("POST", f"/datasets/{dataset_id}/completeness/absent", json=body)
+
+    @mcp.tool()
     async def get_annotation_guideline(dataset_id: str) -> Any:
         """The dataset's written annotation conventions. Read it before annotating or
         judging annotations, and follow it; if it is empty, offer to write one with the

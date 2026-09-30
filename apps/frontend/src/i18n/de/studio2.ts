@@ -145,6 +145,19 @@ export const studio2De: Catalogue<typeof studio2En> = {
 
   'studio.actions.unsavedBlocked': 'Dieses Bild hat ungespeicherte Änderungen. Speichere zuerst oder schalte „Automatisch speichern“ ein.',
 
+  // Eine Klasse, angelegt nachdem Bilder gespeichert wurden (Doc 118)
+  'studio.newClass.label': 'Neue Klassen und die Bilder, die vor ihnen gespeichert wurden',
+  'studio.newClass.question_one': '{name} ist neu. {count} Bild wurde davor gespeichert.',
+  'studio.newClass.question_other': '{name} ist neu. {count} Bilder wurden davor gespeichert.',
+  'studio.newClass.why': 'Kommt {name} darin vor? Bis du es sagst, lässt SAM 3 sie für {name} weg.',
+  'studio.newClass.notThere': 'Kommt dort nicht vor',
+  'studio.newClass.later': 'Später durchsehen',
+  'studio.newClass.marked_one': '{count} Bild markiert: kein {name}.',
+  'studio.newClass.marked_other': '{count} Bilder markiert: kein {name}.',
+  'studio.newClass.pending_one': '{name}: {count} Bild noch nicht durchgesehen.',
+  'studio.newClass.pending_other': '{name}: {count} Bilder noch nicht durchgesehen.',
+  'studio.newClass.review': 'Durchsehen für {name}',
+
   // Back to the overview (the session survives switching tabs until then)
   'studio.back.button': '← Zurück zur Übersicht',
   'studio.back.hint': 'Deine Stelle hier bleibt erhalten, während du andere Tabs besuchst. „Zurück“ beendet diese Sitzung.',
