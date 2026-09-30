@@ -4,21 +4,57 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30. **Waves 1–12 are in `dev` and `main`** (`04045b3`), including
-the rewritten README, the generator controls Jan asked for (Start analysis, named
-automation boxes below the buttons) and `dev.sh` reinstalling npm dependencies when the
-lockfile changed.
+**Last updated:** 2026-09-30, at the end of the **Wave 13 build**. Waves 1–12 are in `dev`
+and `main` (`04045b3`). **Wave 13** (docs 99–102) is built and pushed on
+`feat/dinotraining-wave-13` (branched from `dev` `40b4b19`, which holds the plan for Waves
+13–15). It is **not merged**, and its status stays `in_progress` until Jan confirms the
+demo-state.
 
-**Next: Waves 13–15**, planned 2026-09-30 and confirmed by Jan (variants stored once and
-expanded at training; English base + German; three waves, language last):
-- **13** every training parameter explained with a ?, default recipes (docs 99–102);
-- **14** annotate for the model — phrases, picture status, hard negatives, mask editing
-  (docs 103–110);
-- **15** English/German (docs 111–114).
-
-The website is Wave 16.
+**Next:** Wave 14, annotating for the model (phrases, picture status, hard negatives, mask
+editing; docs 103–110). Then Wave 15, English/German (docs 111–114). The website is Wave 16.
 
 ---
+
+## Wave 13 — Every training setting explained, default recipes (2026-09-30)
+
+| | |
+|---|---|
+| 99 | **Parameter catalogue.** One declaration per family (DINO head, RF-DETR, SAM 2.1, SAM 3, DINO backbone): plain name, term, help, default + why, range, basic/advanced. `GET /training/parameters[/{model}]`; fine-tune requests are resolved against it (unknown option or out of range → 422 naming it). Adapter constants became settings with unchanged defaults. |
+| 100 | **Parameter form.** "Rounds (epochs)" with a **?** (explanation, default, why; Esc returns focus), Advanced folded with a changed count, reset per field and all, recipe-set fields locked. Only overrides are state, per family. |
+| 101 | **Default recipes.** `POST /datasets/{id}/recipes/default` (a job): audit, the leak-free split (kept if made or imported), recommended balance and copies, "Default for <model>", idempotent. Profiles for every trainable model. The "What is a recipe?" card, with Create the default recipe and Open Prepare data. |
+| 102 | **Agents.** `get_training_parameters`, `create_default_recipe` (`get_job` kind `default-recipe`), `train_head` `parameters`, `start_finetune` `options` with per-model defaults; the guide updated. |
+
+**Found and fixed while building:**
+- **Head `batch_size` (16) was accepted and never read**: every head trained one picture
+  per step. It is now honest (gradient accumulation), with default 1, so no result moves.
+  `save_best_only` was never honoured either, and is left out of the catalogue.
+- **`keep-source` split stored no settings,** so a recipe refused a dataset that was split
+  (Wave 11).
+- **A cleared number field showed "NaN"** (NaN ≠ NaN in the draft sync).
+
+**Verified live:**
+- The ? popovers and Advanced settings for RF-DETR and the DINO head.
+- The default recipe on "Wave 11 intake check": the imported split was kept (16/3/1),
+  weighted loss, the indoor preset, and the preflight passed.
+- Open Prepare data landed at the dataset and model.
+- MCP returned the same catalogue, and the same recipe.
+
+**Gates:** backend 1725, frontend 995, ruff, `mypy app` and tsc all clean.
+
+**Not clean, and older than this wave:** `mypy app tests` stops on `head_testkit` being
+imported under two module names. With `--explicit-package-bases` it reports about 164 old
+typing errors in 40 test files. A background task chip was offered for it.
+
+## Waiting on Jan — Wave 13
+
+1. **Training → DINO head, and Fine-tune a model:**
+   - Open a **?**, and read whether the explanations make sense to a non-expert.
+   - Change a value, reset it, and open *Advanced settings*.
+2. **A dataset without a recipe:**
+   - Read the "What is a recipe?" card.
+   - Press **Create the default recipe**, and check that it is selected.
+   - Try **Open Prepare data**.
+3. **Merge:** if it holds, merge `feat/dinotraining-wave-13` → `dev`, and later → `main`.
 
 ## Wave 12 — Fine-tuning SAM 2, SAM 3 and DINO backbones (2026-09-30)
 

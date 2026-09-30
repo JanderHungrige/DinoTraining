@@ -3,7 +3,7 @@ id: dinotraining-wave-13
 title: "Wave 13: Every Training Knob, Explained, and Default Recipes"
 initiative: dinotraining
 initiative_version: 12
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-12
 demo_state: "In Training, every model shows all the parameters the backend honours, each as 'Plain name (technical term)' with a ? giving a short explanation and a good default, grouped Basic/Advanced with a reset. A user who starts without a recipe is told what a recipe is and where it is made, and creates the model's default recipe in one click. An assistant gets the same parameters and creates the same default recipe over MCP."
 created: 2026-09-30

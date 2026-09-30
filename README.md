@@ -220,6 +220,15 @@ Measured in this app, on data with a leak-free split:
 - RF-DETR reached 0.62 test mAP on blood cells, against 0.41 for a DINO head.
 - SAM 2 went from 0.80 to 0.96 mIoU on an outline convention it could not know.
 
+**Settings, explained.** Every setting a model's training honours is shown as
+"Plain name (technical term)", e.g. *Rounds (epochs)* or *Box looseness (box jitter)*, with
+a **?** that explains it and gives the default and why. Basic settings come first; the rest
+sit under *Advanced settings*. Changed values are marked and can be reset.
+
+**No recipe yet?** Where a recipe can be chosen and none is, a card explains what a recipe
+is and offers **Create the default recipe**: Prepare data's steps with every recommendation
+taken, in one click. **Open Prepare data** goes there at this dataset and model instead.
+
 ### Inference Viewer
 
 Run trained heads and foundation models on one picture, side by side with the original.
@@ -385,7 +394,10 @@ state.
 | 10 | Look and feel |
 | 11 | Guided data preparation |
 | 12 | Fine-tuning SAM 2, SAM 3 and DINO backbones |
-| 13 | Website and cloud compute (planned) |
+| 13 | Every training setting explained, default recipes |
+| 14 | Annotating for the model: phrases, hard negatives, mask editing (planned) |
+| 15 | English and German (planned) |
+| 16 | Website and cloud compute (planned) |
 
 **Branches:**
 - `main` is stable;
