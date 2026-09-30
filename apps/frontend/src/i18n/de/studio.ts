@@ -133,8 +133,4 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.classes.addError': 'Diese Klasse ließ sich nicht hinzufügen.',
   'studio.classes.removeError': 'Diese Klasse ließ sich nicht entfernen.',
 
-  // Phrases on an outline (lib/phraseEdit)
-  'studio.phrase.needsOutline': 'Phrasen gehören an Umrisse — mach zuerst einen aus dieser Box.',
-  'studio.phrase.otherClass': '„{phrase}“ ist eine Phrase der Klasse {className}; dieser Umriss ist {name}.',
-  'studio.phrase.unnamed': 'ohne Namen',
 };

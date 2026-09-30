@@ -1,33 +1,42 @@
 /** `phrases` texts (doc 112). English is the source; the current UI text, exactly. */
 
 export const phrasesEn = {
-  // The phrase bar
+  // The phrase bar (doc 116): an overview; nothing here creates a class
   'phrases.bar.title': 'Phrases',
   'phrases.bar.titleOptional': 'Phrases (optional)',
-  'phrases.bar.chipsLabel': 'Phrases — keys 1–9 pick one',
+  'phrases.bar.chipsLabel': 'Classes and umbrella terms, with their outlines',
   'phrases.bar.also': 'Also: {variants}',
   'phrases.bar.noVariations': 'No variations yet',
-  'phrases.bar.addLabel': '+ phrase',
-  'phrases.bar.addPlaceholder': 'signal, railway signal, light signal',
-  'phrases.bar.addButton': 'Add',
-  'phrases.bar.addHint': 'Commas separate variations of one phrase.',
-  'phrases.bar.classLabel': 'belongs to',
-  'phrases.bar.ownClass': 'a class of its own (new)',
-  'phrases.bar.ownClassHint': ' It becomes a new class: outlines you link to it train as “{name}”.',
-  'phrases.bar.joinsClass': ' It joins class {name}: a more specific way to ask SAM 3 for some of its outlines. Outlines linked to it still train as {name} for boxes and heads.',
-  'phrases.bar.keys': 'Keys: 1–9 pick a phrase · A all marked · N not in this picture.',
+  'phrases.bar.over': 'Umbrella over {members}',
 
-  // The selected outline's phrases
-  'phrases.selected.needsOutline': '#{number}: phrases go on outlines — make one from this box first.',
-  'phrases.selected.groupLabel': 'Phrases of outline {number}',
-  'phrases.selected.answersTo': '#{number} answers to',
-  'phrases.selected.classAlways': 'Its class name is always one of its phrases',
-  'phrases.selected.remove': 'Remove {phrase} from outline {number}',
-  'phrases.selected.add': 'Add “{phrase}”',
-  'phrases.selected.otherClass': '"{phrase}" is a phrase of class {className}; this outline is {outline}.',
-  'phrases.selected.unnamed': 'unnamed',
+  // + Umbrella term (doc 115)
+  'phrases.umbrella.addLabel': '+ Umbrella term',
+  'phrases.umbrella.placeholder': 'screw',
+  'phrases.umbrella.classesLabel': 'over the classes',
+  'phrases.umbrella.add': 'Add',
+  'phrases.umbrella.hint': 'A general name over several classes, e.g. “screw” for m8 and m9. Every outline of those classes answers to it. Write it in English — SAM 3 reads English.',
+  'phrases.umbrella.needTwo': 'Tick at least two classes.',
+  'phrases.umbrella.noClasses': 'An umbrella term needs two classes. Make classes in the annotation list first.',
 
-  // This picture's checks
+  // Manage phrases
+  'phrases.manage.title': 'Manage phrases',
+  'phrases.manage.variations': 'Variations',
+  'phrases.manage.variationsPlaceholder': 'm8 bolt, hex screw m8',
+  'phrases.manage.confusable': 'Not to be confused with',
+  'phrases.manage.confusablePlaceholder': 'nail, rivet',
+  'phrases.manage.save': 'Save',
+  'phrases.manage.confusableHint':
+    'Names only, and only for things that rarely share a picture with it. SAM 3 is asked for them on complete pictures and learns to find nothing. Something that sits in the same picture (a reflection, a shadow): reject its outline instead — see “How phrases work”.',
+  'phrases.manage.delete': 'Delete',
+  'phrases.manage.deleteConfirm': 'Really delete “{phrase}”?',
+  'phrases.manage.deleteHint': 'Removes the phrase, its links to outlines and its picture checks. The outlines themselves stay, with their class.',
+  'phrases.manage.implicit': 'A class’s own phrase: it lasts as long as outlines of class {name} exist.',
+  'phrases.manage.umbrella': 'umbrella over {members}',
+  'phrases.manage.legacy': 'Older sub-phrase of class {name}, linked to single outlines. It still trains; a new sub-kind is made as a class of its own.',
+
+  // Picture checks — folded (doc 116)
+  'phrases.checks.section': 'Only for imported or partly annotated datasets',
+  'phrases.checks.intro': 'A picture you save counts as complete for the classes it has then. Check by hand only where that is not true — for example a dataset imported with some classes left out.',
   'phrases.checks.caption': 'This picture',
   'phrases.checks.complete': 'all marked',
   'phrases.checks.absent': 'not in this picture',
@@ -35,45 +44,31 @@ export const phrasesEn = {
   'phrases.checks.markComplete': 'All marked',
   'phrases.checks.markAbsent': 'Not in this picture',
   'phrases.checks.clear': 'clear',
-  'phrases.checks.restHint':
-    'Annotated every instance of a phrase in the whole dataset? Then you need not check each picture: at the end, “Mark the rest” under Manage phrases checks all remaining pictures in one step.',
   'phrases.checks.clearLabel': 'Clear the check for {phrase}',
-
-  // Manage phrases
-  'phrases.manage.title': 'Manage phrases',
-  'phrases.manage.variations': 'Variations',
-  'phrases.manage.variationsPlaceholder': 'railway signal, light signal',
-  'phrases.manage.confusable': 'Not to be confused with',
-  'phrases.manage.confusablePlaceholder': 'street lamp, traffic sign',
-  'phrases.manage.save': 'Save',
-  'phrases.manage.confusableHint':
-    'Names only, and only for things that rarely share a picture with it. SAM 3 is asked for them on pictures marked “all marked” and learns to find nothing. Something that sits in the same picture (a reflection, a shadow): reject its outline instead — see “How phrases work”.',
-  'phrases.manage.delete': 'Delete',
-  'phrases.manage.deleteConfirm': 'Really delete “{phrase}”?',
-  'phrases.manage.deleteHint': 'Removes the phrase, its links to outlines and its picture checks. The outlines themselves stay, with their class.',
-  'phrases.manage.implicit': 'A class’s own phrase: it lasts as long as outlines of class {name} exist.',
-  'phrases.manage.markRest': 'Mark the rest',
-  'phrases.manage.markRestHint':
+  'phrases.checks.keys': 'Keys while this is open: 1–9 pick a phrase · A all marked · N not in this picture.',
+  'phrases.checks.markRest': 'Mark the rest',
+  'phrases.checks.markRestFor': 'Mark the rest for',
+  'phrases.checks.markRestHint':
     "Only if every picture is fully annotated for this phrase: each unchecked picture becomes 'all marked' where it has an outline of it, 'not in this picture' where it has none.",
-  'phrases.manage.marked': 'Marked {complete} all marked, {absent} not in this picture.',
+  'phrases.checks.marked': 'Marked {complete} all marked, {absent} not in this picture.',
 
   // How phrases work — *emphasis* and `code` are rendered as such.
   'phrases.help.title': 'How phrases work',
-  'phrases.help.variationsTerm': 'Phrase variations',
-  'phrases.help.variationsText':
-    'Type the phrase the way you would ask for it, plus 2–4 other wordings, separated by commas. The model learns them as one concept. You do not need every synonym: a few teach it that the wording can vary, and it generalises from there.',
-  'phrases.help.checksTerm': 'All marked · Not in this picture',
-  'phrases.help.checksText':
-    'SAM 3 learns from every picture you checked. *All marked* says every instance of this phrase here has an outline. *Not in this picture* says there is none, and teaches the model *not* to find it here. Once a phrase is checked on any picture, a picture you did not check is left out for it, never guessed. A phrase never checked keeps the automatic rule — no outline means none here — which is only right if you annotated every instance. If you did, *Mark the rest* under Manage phrases checks all remaining pictures in one step.',
-  'phrases.help.classesTerm': 'Phrases and classes',
+  'phrases.help.classesTerm': 'Classes are phrases',
   'phrases.help.classesText':
-    'A *class* is what boxes and heads learn, and every class name is also a phrase. “+ phrase” asks where the new phrase *belongs to*: *a class of its own* makes a new thing to find (it gets its own outlines); an existing class makes a more specific wording for some of that class’s outlines, e.g. “red car” in class car — select an outline and add the phrase to it. Commas give one phrase several wordings, not several phrases.',
-  'phrases.help.lookalikesTerm': 'Look-alikes and wrong proposals',
+    'SAM 3 is asked by name: every class name is a phrase, and its outlines are the answer. Make classes in the annotation list below — for sub-kinds too, e.g. *m8* and *m9* rather than one class “screw”. A picture you save counts as complete for the classes it has then.',
+  'phrases.help.umbrellaTerm': 'Umbrella terms',
+  'phrases.help.umbrellaText':
+    'A general name over several classes: *screw* over *m8* and *m9*. SAM 3 learns both levels from the same outlines — “screw” finds every m8 and m9, “m8” only the m8. Boxes and heads keep learning m8 and m9.',
+  'phrases.help.variationsTerm': 'Variations',
+  'phrases.help.variationsText':
+    'Other wordings of one class — technical vocabulary, 2–4 are enough, separated by commas, in English. The model learns them as one concept and generalises from there.',
+  'phrases.help.lookalikesTerm': 'Look-alikes',
   'phrases.help.lookalikesText':
-    '*Two things you both want found* (signal and street light): give each its own class, outline both. Each is then automatically a negative for the other; nothing goes under “not to be confused with”. *A wrong proposal* (a reflection proposed as a flame): reject it (✗), and mark the picture *All marked* for flame. The flame outlines are then the whole answer on that picture, so the model learns the reflection is not one — no new class needed. Add a class “flame reflection” only if you want reflections found too. *Not to be confused with* is for names of things that rarely share a picture with the phrase; it is never asked on a picture where you rejected an outline of the phrase.',
+    '*Not to be confused with* names things that look similar but rarely share a picture with the class: a *nail* for a screw. SAM 3 is asked for them and learns to find nothing, which sharpens the boundary. Something wrong *in the same picture* (a reflection proposed as a flame) is rejected (✗) instead: the saved outlines are then the whole answer. If the look-alike should be found too, make it a class.',
   'phrases.help.negativesTerm': 'Hard negatives',
   'phrases.help.negativesText':
-    'Pictures marked *not in this picture* are the strongest lessons, especially when something similar *is* there. Training also adds generic unrelated phrases (generic negatives, `num_negatives`) and other phrases of your dataset (cross negatives, `num_cross_negatives`) — see SAM 3’s training settings.',
+    'Training also asks for unrelated everyday phrases (generic negatives, `num_negatives`) and for your other classes on pictures without them (cross negatives, `num_cross_negatives`) — see SAM 3’s training settings.',
 
   // The annotation guideline
   'phrases.guideline.loading': 'Loading the guideline…',

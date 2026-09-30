@@ -1,4 +1,4 @@
-/** The three ideas behind phrases, explained where they are used (doc 105). */
+/** The ideas behind phrases, explained where they are used (docs 105, 116). */
 
 import type { JSX, ReactNode } from 'react';
 
@@ -21,10 +21,10 @@ export function PhraseHelp(): JSX.Element {
       <dl>
         <dt>{t('phrases.help.classesTerm')}</dt>
         <dd>{rich(t('phrases.help.classesText'))}</dd>
+        <dt>{t('phrases.help.umbrellaTerm')}</dt>
+        <dd>{rich(t('phrases.help.umbrellaText'))}</dd>
         <dt>{t('phrases.help.variationsTerm')}</dt>
         <dd>{rich(t('phrases.help.variationsText'))}</dd>
-        <dt>{t('phrases.help.checksTerm')}</dt>
-        <dd>{rich(t('phrases.help.checksText'))}</dd>
         <dt>{t('phrases.help.lookalikesTerm')}</dt>
         <dd>{rich(t('phrases.help.lookalikesText'))}</dd>
         <dt>{t('phrases.help.negativesTerm')}</dt>

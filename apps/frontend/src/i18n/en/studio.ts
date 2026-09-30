@@ -135,8 +135,4 @@ export const studioEn = {
   'studio.classes.addError': 'Could not add that class.',
   'studio.classes.removeError': 'Could not remove that class.',
 
-  // Phrases on an outline (lib/phraseEdit)
-  'studio.phrase.needsOutline': 'Phrases go on outlines — make one from this box first.',
-  'studio.phrase.otherClass': '"{phrase}" is a phrase of class {className}; this outline is {name}.',
-  'studio.phrase.unnamed': 'unnamed',
 } as const;

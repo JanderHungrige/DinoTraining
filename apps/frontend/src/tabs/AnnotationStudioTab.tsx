@@ -214,10 +214,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
 
           <PhraseBar
             datasetId={config.datasetId}
-            items={items}
-            selectedId={selectedId}
             pictures={pictures}
-            onBoxesChange={setBoxes}
             open={['sam3', 'open', undefined].includes(config.target)}
             disabled={session.busy || !active}
           />
