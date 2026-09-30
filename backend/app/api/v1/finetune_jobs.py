@@ -86,7 +86,7 @@ def _describe(job: FoundationFinetuneJob) -> JobInfo:
         final_metrics=job.final_metrics,
         held_out=job.held_out,
         history=[EpochInfo(**vars(e)) for e in job.history],
-        notes=job.notes,
+        notes=[*job.notes, *job.adapter_notes],
         message=job.message,
         instance_id=job.instance_id,
     )

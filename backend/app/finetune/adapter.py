@@ -26,6 +26,8 @@ class FinetuneData:
     val: list[TrainingSample]
     test: list[TrainingSample]
     class_names: tuple[str, ...]
+    #: The datasets the samples came from — SAM 3 reads their phrases and checks (doc 108).
+    dataset_ids: tuple[str, ...] = ()
     #: Set by the runner to the job's cancel flag, so a long epoch stops between pictures
     #: rather than only between epochs (found live on SAM 3, doc 96).
     stop: threading.Event | None = None

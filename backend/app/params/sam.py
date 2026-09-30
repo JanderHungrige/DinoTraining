@@ -84,6 +84,21 @@ SAM2 = ParameterSet(
             minimum=1,
             maximum=128,
         ),
+        Parameter(
+            key="point_prompts",
+            label="Click prompts per object",
+            term="point prompts",
+            help="In half the training steps each object's box comes with this many clicks "
+            "inside it, so the fine-tuned SAM still answers the Studio's ⊕/⊖ clicks. 0 trains "
+            "on boxes only.",
+            default=1,
+            why="One click is what the Studio's outline tool sends first; half the steps keep "
+            "box-only prompts as good as before (doc 108).",
+            kind="int",
+            level="advanced",
+            minimum=0,
+            maximum=5,
+        ),
         cache_share(0.15),
         SEED,
     ),
@@ -101,6 +116,57 @@ SAM3 = ParameterSet(
         ),
         learning_rate(
             1e-4, "The rate for the decoders SAM 3 trains here; the large encoders stay frozen."
+        ),
+        Parameter(
+            key="num_negatives",
+            label="Generic negatives",
+            term="num_negatives",
+            help="Per picture and round, this many unrelated everyday phrases (car, person, "
+            "dog, …) are asked and must find nothing — so SAM 3 does not answer every phrase "
+            "with your objects. Phrases sharing a word with yours are left out. 0 turns it off.",
+            default=3,
+            why="Two to four works well in published SAM 3 fine-tuning (SAM3_LoRA); each adds "
+            "one query per picture, so more also means slower rounds.",
+            kind="int",
+            minimum=0,
+            maximum=10,
+        ),
+        Parameter(
+            key="num_cross_negatives",
+            label="Cross negatives",
+            term="num_cross_negatives",
+            help="Your own phrases known to be absent from a picture ('not in this picture', "
+            "or another class) are asked there and must find nothing. With more than 50 "
+            "phrases only this many are sampled per picture; below that all are used.",
+            default=2,
+            why="SAM3_LoRA's default: enough to learn which description is meant, without one "
+            "picture turning into hundreds of queries on a large vocabulary.",
+            kind="int",
+            minimum=0,
+            maximum=20,
+        ),
+        Parameter(
+            key="all_variations",
+            label="Every wording each round",
+            term="all variations",
+            help="On: each variation of a phrase is its own query every round (more steps). "
+            "Off: one wording is picked at random each round, so all are seen over the rounds.",
+            default=False,
+            why="Off keeps a round as long as before while every wording is still learnt.",
+            kind="bool",
+            level="advanced",
+        ),
+        Parameter(
+            key="rejected_as_negatives",
+            label="Rejected outlines as negatives",
+            term="hard negatives from rejections",
+            help="A picture where you rejected the model's outline for a phrase, and accepted "
+            "none, teaches 'not here' for that phrase even if it was not checked.",
+            default=True,
+            why="A rejection is the most specific lesson there is: the model thought it was "
+            "there, and it was not.",
+            kind="bool",
+            level="advanced",
         ),
         weight_decay(1e-4),
         loss_weight(

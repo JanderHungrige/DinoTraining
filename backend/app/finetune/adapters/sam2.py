@@ -58,6 +58,8 @@ class Sam2Knobs:
     jitter: float = 0.1
     max_objects: int = 16
     cache_bytes: int = 0
+    #: Doc 108: clicks added to each box prompt in half the steps.
+    points: int = 1
 
     @classmethod
     def from_settings(cls, settings: FinetuneSettings) -> Sam2Knobs:
@@ -71,6 +73,7 @@ class Sam2Knobs:
             jitter=get("box_jitter"),
             max_objects=int(get("max_objects")),
             cache_bytes=memory_budget(get("cache_share")),
+            points=int(get("point_prompts")),
         )
 
 
@@ -109,6 +112,13 @@ def _jittered(
         x1 + rng.uniform(-jitter, jitter) * w,
         y1 + rng.uniform(-jitter, jitter) * h,
     ]
+
+
+def _clicks(mask: np.ndarray, count: int, rng: random.Random) -> list[list[float]]:
+    """`count` points inside the outline, where the Studio's ⊕ would land (doc 108)."""
+    ys, xs = np.nonzero(mask)
+    picks = [rng.randrange(len(xs)) for _ in range(count)] if len(xs) else []
+    return [[float(xs[i]) + 0.5, float(ys[i]) + 0.5] for i in picks]
 
 
 def _embeddings(
@@ -214,10 +224,17 @@ class Sam2Adapter:
         pairs = pairs[: state.knobs.max_objects]
         embeds, size = _embeddings(state, sample)
         jitter = state.knobs.jitter
-        boxes = _scaled([_jittered(b, state.rng, jitter) for _, b in pairs], size).to(
-            state.device
-        )
-        out = state.model(image_embeddings=embeds, input_boxes=boxes[None], multimask_output=False)
+        boxes = _scaled([_jittered(b, state.rng, jitter) for _, b in pairs], size).to(state.device)
+        prompts: dict[str, torch.Tensor] = {"input_boxes": boxes[None]}
+        if state.knobs.points and state.rng.random() < 0.5:
+            clicks = [_clicks(m, state.knobs.points, state.rng) for m, _ in pairs]
+            h, w = size
+            scaled = [[[x * INPUT / w, y * INPUT / h] for x, y in c] for c in clicks]
+            prompts["input_points"] = torch.tensor([scaled], dtype=torch.float32).to(state.device)
+            prompts["input_labels"] = torch.ones(
+                1, len(pairs), state.knobs.points, dtype=torch.long
+            ).to(state.device)
+        out = state.model(image_embeddings=embeds, multimask_output=False, **prompts)
         logits = out.pred_masks[0, :, 0]
         target = _low_res([m for m, _ in pairs]).to(state.device)
         loss = _loss(logits, out.iou_scores[0, :, 0], target, state.knobs)

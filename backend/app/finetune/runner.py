@@ -67,6 +67,8 @@ class FoundationFinetuneJob:
     final_metrics: dict[str, float] = field(default_factory=dict)
     held_out: str = ""
     notes: list[str] = field(default_factory=list)
+    #: Replaced after each epoch rather than appended, so it states the latest totals.
+    adapter_notes: list[str] = field(default_factory=list)
     message: str = ""
     instance_id: str | None = None
     cancel_requested: threading.Event = field(default_factory=threading.Event, repr=False)
@@ -169,6 +171,7 @@ class FoundationFinetuneRunner:
                 job.state, job.message = "cancelled", f"Cancelled before epoch {epoch}"
                 return None
             loss = adapter.train_epoch(state, data, epoch)
+            _adapter_notes(job, adapter, state)
             if job.cancel_requested.is_set():
                 job.state, job.message = "cancelled", f"Cancelled during epoch {epoch}"
                 return None
@@ -228,6 +231,17 @@ class FoundationFinetuneRunner:
             parameters=request.settings.as_parameters(),
         )
         job.instance_id = instance.id
+
+
+def _adapter_notes(
+    job: FoundationFinetuneJob, adapter: FinetuneAdapter, state: TrainingState
+) -> None:
+    """An adapter's own account of what it trained on (doc 108: SAM 3's queries), kept
+    current so a cancelled job still says it."""
+    notes = getattr(adapter, "notes", None)
+    if notes is None:
+        return
+    job.adapter_notes = notes(state)
 
 
 _runner: FoundationFinetuneRunner | None = None

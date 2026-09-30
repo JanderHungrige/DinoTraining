@@ -26,6 +26,7 @@ from __future__ import annotations
 import logging
 import random
 import threading
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -45,6 +46,8 @@ from app.finetune.adapter import (
     param,
 )
 from app.finetune.adapters.sam3_loss import FAMILY, LossWeights, matched_iou, phrase_loss
+from app.finetune.adapters.sam3_queries import QuerySettings, describe, plan_queries
+from app.finetune.phrase_data import PhraseTable, load_phrase_table
 from app.ml.training.samples import TrainingSample
 
 logger = logging.getLogger(__name__)
@@ -65,6 +68,11 @@ class Sam3State:
     text: dict[str, tuple[Any, torch.Tensor]] = field(default_factory=dict)
     positions: tuple[torch.Tensor, ...] | None = None
     weights: LossWeights = field(default_factory=LossWeights)
+    #: Doc 108: phrases, checks and negatives, and what training used of them.
+    table: PhraseTable = field(default_factory=PhraseTable)
+    queries: QuerySettings = field(default_factory=QuerySettings)
+    counts: Counter[str] = field(default_factory=Counter)
+    rounds: int = 0
     #: The feature cache's share of memory (doc 99; 8 %, as the model takes 3.4 GB).
     cache_bytes: int = 0
     score_threshold: float = 0.5
@@ -72,13 +80,18 @@ class Sam3State:
     cached_bytes: int = 0
 
 
-def _objects(sample: TrainingSample, phrases: tuple[str, ...]) -> dict[str, list[np.ndarray]]:
-    found: dict[str, list[np.ndarray]] = {phrase: [] for phrase in phrases}
-    for mask in sample.masks:
-        found[phrases[mask.class_index]].append(
-            rle_decode(list(mask.counts), mask.size).astype(bool)
-        )
-    return found
+def _decoded(sample: TrainingSample) -> list[np.ndarray]:
+    return [rle_decode(list(m.counts), m.size).astype(bool) for m in sample.masks]
+
+
+def query_settings(settings: FinetuneSettings) -> QuerySettings:
+    """Doc 108's negatives and wordings, from the catalogue (doc 99)."""
+    return QuerySettings(
+        num_negatives=int(param(settings, FAMILY, "num_negatives")),
+        num_cross_negatives=int(param(settings, FAMILY, "num_cross_negatives")),
+        all_variations=bool(param(settings, FAMILY, "all_variations")),
+        rejected_as_negatives=bool(param(settings, FAMILY, "rejected_as_negatives")),
+    )
 
 
 def _vision(state: Sam3State, sample: TrainingSample) -> tuple[Any, tuple[int, int]]:
@@ -144,28 +157,45 @@ class Sam3Adapter:
             weights=LossWeights.from_settings(settings),
             cache_bytes=memory_budget(param(settings, FAMILY, "cache_share")),
             score_threshold=param(settings, FAMILY, "score_threshold"),
+            table=load_phrase_table(data.dataset_ids, app_settings),
+            queries=query_settings(settings),
         )
-        for phrase in data.class_names:
-            tokens = processor(text=phrase, return_tensors="pt").to(device)
-            with torch.no_grad():
-                state.text[phrase] = (model.get_text_features(**tokens), tokens["attention_mask"])
         return state
 
     def _forward(self, state: Sam3State, vision: Any, phrase: str) -> Any:
+        if phrase not in state.text:
+            # Encoded once per wording; variations, look-alikes and generic negatives arrive
+            # as they are planned (doc 108).
+            tokens = state.processor(text=phrase, return_tensors="pt").to(state.device)
+            with torch.no_grad():
+                features = state.model.get_text_features(**tokens)
+            state.text[phrase] = (features, tokens["attention_mask"])
         text, attention = state.text[phrase]
         return state.model(vision_embeds=vision, text_embeds=text, attention_mask=attention)
+
+    def notes(self, state: TrainingState) -> list[str]:
+        """What the queries were, for the job (doc 108)."""
+        assert isinstance(state, Sam3State)
+        return [describe(state.counts, state.rounds)] if state.rounds else []
 
     def train_epoch(self, state: TrainingState, data: FinetuneData, epoch: int) -> float:
         assert isinstance(state, Sam3State)
         order = data.train[:]
         state.rng.shuffle(order)
+        state.rounds += 1
         losses: list[float] = []
         for sample in order:
             if data.stopped:
                 break
+            queries = plan_queries(sample, state.phrases, state.table, state.queries, state.rng)
+            if not queries:
+                continue
             vision, size = _vision(state, sample)
-            for phrase, masks in _objects(sample, state.phrases).items():
-                out = self._forward(state, vision, phrase)
+            decoded = _decoded(sample)
+            for query in queries:
+                state.counts[query.kind] += 1
+                out = self._forward(state, vision, query.text)
+                masks = [decoded[i] for i in query.masks]
                 loss = phrase_loss(out, masks, size, state.weights)
                 state.optimiser.zero_grad(set_to_none=True)
                 loss.backward()  # type: ignore[no-untyped-call]
@@ -179,10 +209,17 @@ class Sam3Adapter:
         for sample in samples:
             if state.stop is not None and state.stop.is_set():
                 break  # cancelled: the runner discards a partial score
+            queries = plan_queries(
+                sample, state.phrases, state.table, state.queries, state.rng, evaluation=True
+            )
+            if not queries:
+                continue
             vision, size = _vision(state, sample)
-            for phrase, truths in _objects(sample, state.phrases).items():
+            decoded = _decoded(sample)
+            for query in queries:
+                truths = [decoded[i] for i in query.masks]
                 with torch.no_grad():
-                    out = self._forward(state, vision, phrase)
+                    out = self._forward(state, vision, query.text)
                 found = state.processor.post_process_instance_segmentation(
                     out, threshold=state.score_threshold, target_sizes=[size]
                 )[0]

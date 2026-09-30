@@ -11,6 +11,7 @@ from __future__ import annotations
 import random
 
 from app.core.config import Settings
+from app.datasets.db import transaction
 from app.datasets.masks import MaskStore
 from app.datasets.store import DatasetStore
 from app.finetune.adapter import FinetuneData
@@ -18,7 +19,26 @@ from app.finetune.requirements import FinetuneRequirements
 from app.ml.training.samples import TrainingSample, build_samples
 
 
-def _usable(samples: list[TrainingSample], spec: FinetuneRequirements) -> list[TrainingSample]:
+def _checked_paths(dataset_ids: tuple[str, ...], settings: Settings | None) -> set[str]:
+    """Pictures checked for a phrase (doc 108): a picture marked 'not in this picture' has
+    no outline and is still a lesson."""
+    with transaction(settings) as connection:
+        return {
+            str(row["path"])
+            for dataset_id in dataset_ids
+            for row in connection.execute(
+                "SELECT DISTINCT i.path FROM image_phrase_status s JOIN images i"
+                " ON i.id = s.image_id WHERE i.dataset_id = ?",
+                (dataset_id,),
+            )
+        }
+
+
+def _usable(
+    samples: list[TrainingSample], spec: FinetuneRequirements, checked: set[str] | None = None
+) -> list[TrainingSample]:
+    if spec.annotation_kind == "phrase-masks":
+        return [s for s in samples if s.segmented or s.path in (checked or set())]
     if spec.annotation_kind == "boxes":
         return [s for s in samples if s.targets]
     if spec.annotation_kind == "image-labels":
@@ -39,14 +59,17 @@ def load_data(
         if spec.annotation_kind in ("instance-masks", "phrase-masks")
         else sample_set.class_names
     )
-    usable = _usable(sample_set.samples, spec)
+    checked = (
+        _checked_paths(dataset_ids, settings) if spec.annotation_kind == "phrase-masks" else set()
+    )
+    usable = _usable(sample_set.samples, spec, checked)
     if recipe_id is not None:
         sides = {side: [s for s in usable if s.split == side] for side in ("train", "val", "test")}
-        return FinetuneData(sides["train"], sides["val"], sides["test"], names)
+        return FinetuneData(sides["train"], sides["val"], sides["test"], names, dataset_ids)
     shuffled = usable[:]
     random.Random(seed).shuffle(shuffled)
     held = max(1, len(shuffled) // 5)
-    return FinetuneData(shuffled[held:], shuffled[:held], [], names)
+    return FinetuneData(shuffled[held:], shuffled[:held], [], names, dataset_ids)
 
 
 __all__ = ["load_data"]

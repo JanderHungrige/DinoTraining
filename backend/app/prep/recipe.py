@@ -63,6 +63,15 @@ class RecipeTiling(BaseModel):
     overlap: float
 
 
+class RecipePhrase(BaseModel):
+    """A phrase as it was when the recipe was saved (doc 108): provenance for SAM 3."""
+
+    text: str
+    class_name: str
+    variants: list[str] = Field(default_factory=list)
+    confusable: list[str] = Field(default_factory=list)
+
+
 class Recipe(BaseModel):
     id: str
     name: str
@@ -82,6 +91,9 @@ class Recipe(BaseModel):
     augment_copies: int
     #: Open problems from the audit, by title: saved knowingly, and shown with the recipe.
     open_problems: list[str] = Field(default_factory=list)
+    #: SAM 3's phrases when saved (doc 108). Training reads the live phrases; this records
+    #: which wordings and look-alikes a recipe was made with.
+    prompts: list[RecipePhrase] | None = None
 
     def training_fields(self) -> dict[str, object]:
         """The training request fields this recipe sets (doc 90 adds the rest)."""
@@ -189,11 +201,23 @@ def save_recipe(
         augmentation=request.augmentation,
         augment_copies=request.augment_copies,
         open_problems=[f.title for f in audit.findings if f.severity == "problem"],
+        prompts=_prompts(dataset_id, settings) if request.target == "sam3" else None,
     )
     directory = dataset_dir(dataset_id, settings) / RECIPE_DIR
     directory.mkdir(parents=True, exist_ok=True)
     (directory / f"{recipe.id}.json").write_text(recipe.model_dump_json(indent=2), encoding="utf-8")
     return recipe
+
+
+def _prompts(dataset_id: str, settings: Settings | None) -> list[RecipePhrase]:
+    from app.datasets.phrases import PhraseStore
+
+    return [
+        RecipePhrase(
+            text=p.text, class_name=p.class_name, variants=p.variants, confusable=p.confusable
+        )
+        for p in PhraseStore(settings).list_for(dataset_id)
+    ]
 
 
 def check(recipe: Recipe, settings: Settings | None = None) -> list[str]:
