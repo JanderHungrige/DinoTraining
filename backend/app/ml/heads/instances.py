@@ -53,6 +53,9 @@ class HeadInstance:
     source_digest: str | None = None
     epochs_trained: int = 0
     best_epoch: int | None = None
+    #: Doc 120: one dict per epoch (epoch, train_loss, val_loss, metrics); None when the
+    #: head was trained before Wave 15.6 and nothing was recorded.
+    history: tuple[dict[str, object], ...] | None = None
 
     @property
     def summary(self) -> str:

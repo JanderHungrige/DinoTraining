@@ -31,6 +31,7 @@ from app.api.v1 import (
     heads,
     health,
     inference,
+    model_cards,
     models,
     prep_audit,
     prep_augment,
@@ -92,3 +93,4 @@ api_router.include_router(prep_default_recipe.router, tags=["prepare-data"])
 api_router.include_router(prep_recipes.router, tags=["prepare-data"])
 api_router.include_router(finetune_requirements.router, tags=["fine-tuning"])
 api_router.include_router(finetune_jobs.router, tags=["fine-tuning"])
+api_router.include_router(model_cards.router, tags=["mlops"])

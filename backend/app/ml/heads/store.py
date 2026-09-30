@@ -29,7 +29,7 @@ _COLUMNS = (
     "id, name, kind, head_type_id, task, backbone_id, backbone_family, embed_dim, "
     "num_classes, class_names, dataset_ids, metrics, primary_metric, "
     "primary_metric_value, config, source_repo, source_digest, epochs_trained, "
-    "best_epoch, weights_path, created_at"
+    "best_epoch, weights_path, created_at, history"
 )
 
 
@@ -91,6 +91,7 @@ def _row_to_instance(row: object) -> HeadInstance:
         source_digest=data["source_digest"],
         epochs_trained=int(data["epochs_trained"]),
         best_epoch=data["best_epoch"],
+        history=tuple(json.loads(data["history"])) if data.get("history") else None,
     )
 
 
@@ -124,6 +125,7 @@ class HeadInstanceStore:
         source_digest: str | None = None,
         epochs_trained: int = 0,
         best_epoch: int | None = None,
+        history: list[dict[str, object]] | None = None,
     ) -> HeadInstance:
         """Persist weights then metadata.
 
@@ -148,7 +150,7 @@ class HeadInstanceStore:
         with transaction(self._settings) as connection:
             connection.execute(
                 f"INSERT INTO head_instances ({_COLUMNS}) VALUES ("  # noqa: S608 - fixed columns
-                "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     instance_id,
                     name,
@@ -171,6 +173,7 @@ class HeadInstanceStore:
                     best_epoch,
                     str(path),
                     _now(),
+                    None if history is None else json.dumps(history),
                 ),
             )
 

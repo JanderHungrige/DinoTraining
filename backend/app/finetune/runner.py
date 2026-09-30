@@ -14,7 +14,7 @@ import logging
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from app.core.config import Settings, get_settings
 from app.finetune.adapter import FinetuneAdapter, FinetuneData, FinetuneSettings, TrainingState
@@ -229,6 +229,7 @@ class FoundationFinetuneRunner:
             baseline_metrics=job.baseline_metrics,
             weights_kind=adapter.weights_kind,
             parameters=request.settings.as_parameters(),
+            history=[asdict(entry) for entry in job.history],
         )
         job.instance_id = instance.id
 

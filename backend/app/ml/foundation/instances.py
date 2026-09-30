@@ -58,6 +58,8 @@ class FoundationInstance:
     #: Doc 99: every training parameter the run used, defaults included, so a result can
     #: be reproduced. Empty for models fine-tuned before the catalogue existed.
     parameters: dict[str, float | int | bool | str] = field(default_factory=dict)
+    #: Doc 120: one dict per epoch (epoch, train_loss, metrics); None before Wave 15.6.
+    history: tuple[dict[str, object], ...] | None = None
 
     @property
     def summary(self) -> str:
@@ -120,6 +122,7 @@ class FoundationInstanceStore:
         baseline_metrics: dict[str, float] | None = None,
         weights_kind: str = "full",
         parameters: dict[str, float | int | bool | str] | None = None,
+        history: list[dict[str, object]] | None = None,
     ) -> FoundationInstance:
         """Write weights and manifest, replacing an earlier best from the same run.
 
@@ -149,6 +152,7 @@ class FoundationInstanceStore:
             baseline_metrics=baseline_metrics or {},
             weights_kind=weights_kind,
             parameters=dict(parameters or {}),
+            history=None if history is None else tuple(history),
         )
         (directory / MANIFEST).write_text(json.dumps(_as_dict(instance), indent=2))
         logger.info("Saved fine-tuned model %s (%s)", instance_id, name)
@@ -180,6 +184,7 @@ def _as_dict(instance: FoundationInstance) -> dict[str, object]:
         "baseline_metrics": instance.baseline_metrics,
         "weights_kind": instance.weights_kind,
         "parameters": instance.parameters,
+        "history": None if instance.history is None else list(instance.history),
     }
 
 
@@ -199,6 +204,7 @@ def _read(manifest: Path) -> FoundationInstance:
         baseline_metrics={str(k): float(v) for k, v in (raw.get("baseline_metrics") or {}).items()},
         weights_kind=str(raw.get("weights_kind", "full")),
         parameters=dict(raw.get("parameters") or {}),
+        history=tuple(raw["history"]) if raw.get("history") else None,
     )
 
 

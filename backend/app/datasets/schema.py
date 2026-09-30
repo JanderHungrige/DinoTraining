@@ -44,6 +44,8 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "masks": {"producer": "TEXT"},
     # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a
     # photo, which is not part of any sequence.
+    # Doc 120: per-epoch history, for the model card and MLflow. NULL for older heads.
+    "head_instances": {"history": "TEXT"},
     "images": {
         "sequence": "TEXT",
         "frame_index": "INTEGER",
@@ -167,7 +169,9 @@ CREATE TABLE IF NOT EXISTS head_instances (
     epochs_trained       INTEGER NOT NULL DEFAULT 0,
     best_epoch           INTEGER,
     weights_path         TEXT NOT NULL,
-    created_at           TEXT NOT NULL
+    created_at           TEXT NOT NULL,
+    -- Doc 120: the per-epoch results as JSON, NULL for heads trained before Wave 15.6.
+    history              TEXT
 );
 
 -- The dataset's class vocabulary (doc 60). Until this table existed a class was only
