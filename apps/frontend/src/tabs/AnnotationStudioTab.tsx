@@ -18,7 +18,11 @@ import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
-import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { MaskEditBar } from '../components/MaskEditBar';
+import { MaskEditOverlay } from '../components/MaskEditOverlay';
+import { StudioActions } from '../components/StudioActions';
+import { StudioViewBar } from '../components/StudioViewBar';
+import { useMaskEditing } from '../hooks/useMaskEditing';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 
 export function AnnotationStudioTab(): JSX.Element {
@@ -49,6 +53,8 @@ export function AnnotationStudioTab(): JSX.Element {
   // Doc 104: what this dataset is annotated for, and what this picture still lacks.
   const target = useAnnotationTargetList().find((t) => t.id === (config?.target ?? 'open'));
   const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
+  const maskEditing = useMaskEditing(session.currentImage, session.boxes, session.setBoxes, selectedId);
+  const selectedBox = session.boxes.find((box) => box.id === selectedId) ?? null;
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
@@ -213,6 +219,16 @@ export function AnnotationStudioTab(): JSX.Element {
                 onSelect={setSelectedId}
                 view={view}
                 disabled={session.busy}
+                overlay={(rendered) => (
+                  <MaskEditOverlay
+                    rendered={rendered}
+                    tool={maskEditing.tool}
+                    radius={maskEditing.radius}
+                    points={maskEditing.points}
+                    onClick={maskEditing.click}
+                    onStroke={maskEditing.stroke}
+                  />
+                )}
               />
               <BoxReviewList
                 boxes={items}
@@ -236,63 +252,23 @@ export function AnnotationStudioTab(): JSX.Element {
             <p role="status">Loading image…</p>
           )}
 
-          <div className="studio__viewbar">
-            <AnnotationViewToggle
-              view={view}
-              onChange={setView}
-              hasMasks={anySegmented}
-              hasBoxes={boxes.length > 0}
-              disabled={session.busy}
-              groupName="studio-view"
-            />
+          <StudioViewBar
+            view={view}
+            onView={setView}
+            hasMasks={anySegmented}
+            boxCount={boxes.length}
+            concealed={concealed?.size ?? null}
+            onToggleConceal={toggleConceal}
+            disabled={session.busy}
+          />
 
-            {/* Hiding what is already there is what makes drawing on a busy image
-                possible: thirty proposals cover the thing you wanted to add. Nothing is
-                deleted — hidden boxes are still saved, the same rule the slider follows. */}
-            {(boxes.length > 0 || concealed !== null) && (
-              <button type="button" className="btn btn--small" onClick={toggleConceal}>
-                {concealed === null
-                  ? `Hide the ${boxes.length} box${boxes.length === 1 ? '' : 'es'} already here`
-                  : `Show ${concealed.size} hidden box${concealed.size === 1 ? '' : 'es'}`}
-              </button>
-            )}
-          </div>
+          <MaskEditBar
+            editing={maskEditing}
+            selection={selectedBox === null ? 'none' : selectedBox.mask ? 'outline' : 'box'}
+            disabled={session.busy}
+          />
 
-          <div className="studio__actions">
-            <button
-              type="button"
-              className="btn btn--primary"
-              disabled={session.proposing || session.busy}
-              onClick={() => void session.propose()}
-            >
-              {session.proposing ? 'Detecting…' : runLabel}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={session.busy || !session.dirty}
-              onClick={() => void session.save()}
-            >
-              {session.busy ? 'Saving…' : 'Save'}
-            </button>
-            <span className="studio__spacer" />
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoPrevious || session.busy}
-              onClick={() => void session.previous()}
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoNext || session.busy}
-              onClick={() => void session.next()}
-            >
-              Next →
-            </button>
-          </div>
+          <StudioActions session={session} runLabel={runLabel} />
         </>
       )}
     </section>

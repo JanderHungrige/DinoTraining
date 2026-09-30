@@ -160,6 +160,15 @@ describe('compositing', () => {
 });
 
 describe('what it refuses to do', () => {
+  it('repaints an outline edited in place, whose id did not change (doc 106)', async () => {
+    PIXELS['FILLED'] = [255, 255, 255, 255];
+    PIXELS['HOLE'] = [255, 0, 255, 255];
+    const { rerender } = renderMasks([mask('a', 'FILLED')]);
+    await waitFor(() => expect(pixel(1)[3]).toBeGreaterThan(0));
+    rerender(<CompositedMasks masks={[mask('a', 'HOLE')]} width={2} height={2} rendered={RENDERED} selectedId={null} />);
+    await waitFor(() => expect(pixel(1)[3]).toBe(0));
+  });
+
   it('renders nothing at all when there are no masks', () => {
     const { container } = renderMasks([]);
 

@@ -36,6 +36,7 @@ import {
   useState,
   type JSX,
   type KeyboardEvent,
+  type ReactNode,
 } from 'react';
 
 import { fitContain, toDisplay, type Rect, type RenderedImage } from '../lib/geometry';
@@ -63,6 +64,8 @@ export interface AnnotationCanvasProps {
   /** Which half of a segmented annotation to draw (doc 67). */
   readonly view?: AnnotationView;
   readonly disabled?: boolean;
+  /** Doc 106: a layer over the picture (the outline tools), given its on-screen geometry. */
+  readonly overlay?: (rendered: RenderedImage) => ReactNode;
 }
 
 const EMPTY_RENDER: RenderedImage = {
@@ -107,6 +110,7 @@ export function AnnotationCanvas({
   hidden = EMPTY_HIDDEN,
   view = 'both',
   disabled = false,
+  overlay,
 }: AnnotationCanvasProps): JSX.Element {
   const plain = boxes.map((entry) => entry.box);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -249,6 +253,8 @@ export function AnnotationCanvas({
               </button>
             );
           })}
+
+        {overlay?.(rendered)}
 
         {draw.draft && (
           <div
