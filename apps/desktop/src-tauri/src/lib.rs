@@ -5,6 +5,7 @@
 
 pub mod mac_apps;
 pub mod progress;
+pub mod resources;
 pub mod runtime;
 pub mod setup;
 pub mod setup_flow;
@@ -108,14 +109,9 @@ fn install_signal_handlers(_app: tauri::AppHandle) {
     // Windows Ctrl-C handling arrives with the Wave 5 packaging work.
 }
 
-/// Where Tauri put the bundled resources, or None in a development run.
-///
-/// Asked of Tauri rather than derived from `current_exe`, because the answer differs by
-/// platform and getting it wrong means falling back to `python -m app` in a packaged build
-/// — which fails with "no venv" on a user's machine and reads as a broken install.
+/// Where the bundled resources are, or None in a development run (see `resources`).
 fn resource_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
-    use tauri::Manager;
-    app.path().resource_dir().ok()
+    resources::resource_dir(app)
 }
 
 /// Spawn the sidecar and report the outcome to the UI; returns the failure too, for the

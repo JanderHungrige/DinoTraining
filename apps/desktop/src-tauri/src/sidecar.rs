@@ -23,6 +23,8 @@ const DEFAULT_PORT: u16 = 8756;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SidecarError {
+    #[error("the app's bundled runtime is missing: reinstall DinoTraining")]
+    RuntimeMissing,
     #[error("could not locate the backend at {0}")]
     BackendMissing(PathBuf),
     #[error("could not find a Python interpreter — expected a venv at {0}")]
@@ -78,7 +80,11 @@ impl SidecarConfig {
                 .current()
                 .map(|env| Self::bundled(&runtime, &env))
                 .ok_or(SidecarError::PythonMissing(runtime.root)),
-            None => Self::for_development(),
+            // A release build never runs a developer's venv: on the build machine it would
+            // run another backend than the one shipped, and work well enough that nobody
+            // noticed (found live, doc 130: a start through a symlink did exactly that).
+            None if cfg!(debug_assertions) => Self::for_development(),
+            None => Err(SidecarError::RuntimeMissing),
         }
     }
 

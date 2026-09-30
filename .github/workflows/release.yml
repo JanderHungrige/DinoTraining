@@ -136,6 +136,54 @@ jobs:
               -exec du -h {} \;
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # --- doc 131: what a user downloads, installed and started -------------------------
+      #
+      # Install silently, first start unattended (Python and PyTorch download, ~1 GB),
+      # /health, a torch check in the installed environment, and a second start that
+      # must need no setup. CPU only: the runners have no GPU.
+      - name: Smoke test (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ARCHIVE=$(ls apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz)
+          DINO_ARCHIVE="$PWD/$ARCHIVE" DINO_INSTALL_DIR="$RUNNER_TEMP/Applications" bash scripts/install-mac.sh
+          EXE=$(ls "$RUNNER_TEMP"/Applications/DinoTraining.app/Contents/MacOS/* | head -n 1)
+          python scripts/smoke_installed.py "$EXE" --work "$RUNNER_TEMP/smoke"
+
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get install -y xvfb
+          DEB=$(ls apps/desktop/src-tauri/target/release/bundle/deb/*.deb)
+          sudo apt-get install -y "./$DEB"
+          PKG=$(dpkg-deb -f "$DEB" Package)
+          EXE=$(dpkg -L "$PKG" | grep '^/usr/bin/' | head -n 1)
+          # The webview needs a display; xvfb-run gives it a virtual one.
+          python scripts/smoke_installed.py "$EXE" --wrap "xvfb-run -a" --work "$RUNNER_TEMP/smoke"
+          sudo apt-get remove -y "$PKG"
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $dir = Join-Path $env:LOCALAPPDATA 'DinoTraining'
+          if (-not (Test-Path $dir)) { Get-ChildItem $env:LOCALAPPDATA -Directory | Select-Object Name; throw "not installed at $dir" }
+          $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
+          python scripts/smoke_installed.py $exe.FullName --work "$env:RUNNER_TEMP/smoke"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Start-Process -FilePath (Join-Path $dir 'uninstall.exe') -ArgumentList '/S' -Wait
+
+      - name: Keep the app log of a failed smoke test
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log-${{ matrix.os }}
+          path: ${{ runner.temp }}/smoke/app.log
+          if-no-files-found: ignore
+
       - uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.os }}

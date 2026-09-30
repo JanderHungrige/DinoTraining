@@ -64,7 +64,7 @@ pub struct SetupStatus {
 }
 
 pub fn runtime(app: &tauri::AppHandle) -> Option<Runtime> {
-    Runtime::find(app.path().resource_dir().ok().as_deref())
+    Runtime::find(crate::resources::resource_dir(app).as_deref())
 }
 
 /// A packaged app whose environment is missing or outdated, unless the user chose to

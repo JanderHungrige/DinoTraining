@@ -20,6 +20,10 @@ pub const RESOURCE_DIR: &str = "runtime";
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Installed {
     pub variant: String,
+    /// The extras besides the variant ([`crate::uv_sync::APP_EXTRAS`]). Missing in an
+    /// environment from before they were recorded, which then counts as outdated.
+    #[serde(default)]
+    pub extras: Vec<String>,
     /// Seconds since the Unix epoch.
     pub installed_at: u64,
 }
@@ -127,7 +131,11 @@ impl Runtime {
         let Some(env) = self.current() else { return false };
         let bundled = std::fs::read(self.backend_dir().join("uv.lock")).ok();
         let installed = std::fs::read(env.lock_copy()).ok();
-        env.usable() && bundled.is_some() && bundled == installed
+        let extras = env.installed().map(|installed| installed.extras).unwrap_or_default();
+        env.usable()
+            && bundled.is_some()
+            && bundled == installed
+            && extras == crate::uv_sync::APP_EXTRAS.map(String::from)
     }
 
     pub fn installed(&self) -> Option<Installed> {
@@ -179,11 +187,16 @@ pub(crate) mod tests {
     }
 
     /// What a successful sync leaves: a Python and the lock it was synced from.
-    fn fake_env(runtime: &Runtime, id: &str, lock: &str) -> Env {
+    pub(crate) fn fake_env(runtime: &Runtime, id: &str, lock: &str) -> Env {
         let env = runtime.env(id);
         std::fs::create_dir_all(env.python().parent().unwrap()).unwrap();
         std::fs::write(env.python(), "").unwrap();
         std::fs::write(env.lock_copy(), lock).unwrap();
+        std::fs::write(
+            env.dir.join("installed.json"),
+            r#"{"variant": "cpu", "extras": ["export"], "installed_at": 0}"#,
+        )
+        .unwrap();
         env
     }
 
@@ -226,6 +239,20 @@ pub(crate) mod tests {
         runtime.remove_others();
         assert!(new.dir.is_dir());
         assert!(!old.dir.exists() && !leftover.dir.exists());
+    }
+
+    #[test]
+    fn an_environment_without_the_apps_extras_is_outdated() {
+        let dir = temp("extras");
+        let runtime = bundle(&dir, "lock");
+        let env = fake_env(&runtime, "1", "lock");
+        runtime.activate(&env).unwrap();
+        assert!(runtime.is_ready());
+        // Built before the extras were recorded (doc 131 found `export` missing).
+        std::fs::write(env.dir.join("installed.json"), r#"{"variant": "cpu", "installed_at": 0}"#)
+            .unwrap();
+        assert!(!runtime.is_ready());
+        assert!(runtime.current().unwrap().usable(), "still startable meanwhile");
     }
 
     #[test]

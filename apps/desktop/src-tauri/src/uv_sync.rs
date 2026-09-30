@@ -8,6 +8,10 @@ use crate::runtime::{since_epoch, Env, Installed, Runtime};
 
 /// The Python the lock was made for (doc 125: `requires-python = ">=3.12,<3.13"`).
 pub const PYTHON: &str = "3.12";
+/// Extras every installed app gets besides its PyTorch variant: `export` is doc 122's ONNX
+/// export. Without it the export silently lacked `model.onnx` (found by doc 131's smoke
+/// test, the first time an installed environment was checked).
+pub const APP_EXTRAS: [&str; 1] = ["export"];
 
 #[derive(Debug, thiserror::Error)]
 pub enum RuntimeError {
@@ -66,7 +70,7 @@ impl Runtime {
         std::fs::create_dir_all(self.envs_dir())?;
         let mut child = self
             .uv_command(&env)
-            .args(["sync", "--frozen", "--extra", variant, "--python", PYTHON])
+            .args(sync_args(variant))
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
             .spawn()?;
@@ -84,8 +88,11 @@ impl Runtime {
             return Err(RuntimeError::Failed { status: status.to_string(), last_line });
         }
         std::fs::copy(self.backend_dir().join("uv.lock"), env.lock_copy())?;
-        let installed =
-            Installed { variant: variant.to_string(), installed_at: since_epoch().as_secs() };
+        let installed = Installed {
+            variant: variant.to_string(),
+            extras: APP_EXTRAS.map(String::from).to_vec(),
+            installed_at: since_epoch().as_secs(),
+        };
         std::fs::write(
             env.dir.join("installed.json"),
             serde_json::to_string_pretty(&installed).unwrap_or_default(),
@@ -95,8 +102,28 @@ impl Runtime {
 
 }
 
+/// `uv sync --frozen --extra <variant> --extra export --python 3.12`.
+pub fn sync_args(variant: &str) -> Vec<String> {
+    let mut args = vec!["sync".to_string(), "--frozen".into(), "--extra".into(), variant.into()];
+    for extra in APP_EXTRAS {
+        args.extend(["--extra".to_string(), extra.to_string()]);
+    }
+    args.extend(["--python".to_string(), PYTHON.to_string()]);
+    args
+}
+
 #[cfg(test)]
 mod tests {
+    use super::sync_args;
+
+    #[test]
+    fn the_app_installs_its_variant_and_the_onnx_export() {
+        assert_eq!(
+            sync_args("cu130").join(" "),
+            "sync --frozen --extra cu130 --extra export --python 3.12"
+        );
+    }
+
     use crate::runtime::tests::{bundle, temp};
 
     #[test]
