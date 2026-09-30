@@ -6,7 +6,7 @@
  * to exist, so it must be visible even where it cannot be trained.
  */
 
-import { useMemo, type JSX } from 'react';
+import { useMemo, type JSX, type ReactNode } from 'react';
 
 import type { BackboneInfo } from '../api/backbones';
 import type { DatasetInfo } from '../api/datasets';
@@ -16,9 +16,6 @@ export interface TrainerSelection {
   readonly datasetIds: readonly string[];
   readonly backboneId: string;
   readonly headTypeId: string;
-  readonly epochs: number;
-  readonly learningRate: number;
-  readonly earlyStoppingPatience: number;
 }
 
 export interface TrainerFormProps {
@@ -30,6 +27,10 @@ export interface TrainerFormProps {
   readonly starting: boolean;
   readonly onChange: (next: TrainerSelection) => void;
   readonly onSubmit: () => void;
+  /** Doc 100: the catalogue's parameter form, in place of hand-written fields. */
+  readonly settings?: ReactNode;
+  /** Why a setting cannot be sent, e.g. "Rounds: Between 1 and 1000." — or ''. */
+  readonly settingsProblem?: string;
 }
 
 /** Why the run cannot start, or null when it can. Shown next to the button: a disabled
@@ -66,10 +67,12 @@ export function TrainerForm({
   starting,
   onChange,
   onSubmit,
+  settings,
+  settingsProblem = '',
 }: TrainerFormProps): JSX.Element {
   const blocked = useMemo(
-    () => blockingReason(value, headTypes, backbones),
-    [value, headTypes, backbones],
+    () => blockingReason(value, headTypes, backbones) ?? (settingsProblem || null),
+    [value, headTypes, backbones, settingsProblem],
   );
 
   const toggleDataset = (id: string): void => {
@@ -164,40 +167,7 @@ export function TrainerForm({
         </ul>
       </fieldset>
 
-      <fieldset className="trainer__group trainer__group--inline" disabled={disabled}>
-        <legend>Training</legend>
-        <label>
-          Epochs
-          <input
-            type="number"
-            min={1}
-            max={1000}
-            value={value.epochs}
-            onChange={(event) => onChange({ ...value, epochs: Number(event.target.value) })}
-          />
-        </label>
-        <label>
-          Learning rate
-          <input
-            type="number"
-            step="0.0001"
-            min={0.0001}
-            value={value.learningRate}
-            onChange={(event) => onChange({ ...value, learningRate: Number(event.target.value) })}
-          />
-        </label>
-        <label>
-          Early stop patience
-          <input
-            type="number"
-            min={1}
-            value={value.earlyStoppingPatience}
-            onChange={(event) =>
-              onChange({ ...value, earlyStoppingPatience: Number(event.target.value) })
-            }
-          />
-        </label>
-      </fieldset>
+      {settings}
 
       <div className="trainer__actions">
         <button className="btn" type="submit" disabled={disabled || starting || blocked !== null}>

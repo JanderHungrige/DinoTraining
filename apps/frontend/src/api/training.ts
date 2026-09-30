@@ -53,6 +53,8 @@ export interface TrainingRequest {
   readonly head_type_id: string;
   readonly backbone_id: string;
   readonly dataset_ids: readonly string[];
+  /** Doc 100 spreads the catalogue's values in; unknown keys never reach here. */
+  readonly [parameter: string]: unknown;
   readonly epochs?: number;
   readonly batch_size?: number;
   readonly learning_rate?: number;
@@ -62,6 +64,9 @@ export interface TrainingRequest {
   readonly split_seed?: number;
   readonly save_best_only?: boolean;
   readonly early_stopping_patience?: number;
+  /** Doc 99: "constant" or "cosine", with optional warm-up rounds. */
+  readonly lr_schedule?: string;
+  readonly warmup_epochs?: number;
   readonly augment?: boolean;
   /** Doc 90: train as a saved preparation recipe says. */
   readonly recipe_id?: string;

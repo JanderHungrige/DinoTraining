@@ -14,7 +14,9 @@ import { listRequirements, type FinetuneRequirements } from '../../api/finetune'
 import { useFoundationFinetune, useReadiness, type FoundationFinetune } from '../../hooks/useFoundationFinetune';
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useRecipeChoice } from '../../hooks/useRecipeChoice';
-import { isNumber, isString, stillListed } from '../../lib/persisted';
+import { finetuneFields, useParameters } from '../../hooks/useParameters';
+import { isString, stillListed } from '../../lib/persisted';
+import { blockingParameter, ParameterForm } from '../params/ParameterForm';
 import { RecipePicker } from '../RecipePicker';
 import { FinetuneResult, ReadinessList, RequirementsCard } from './FinetuneParts';
 import '../../finetune.css';
@@ -32,29 +34,6 @@ function useRequirements(): { specs: readonly FinetuneRequirements[]; error: str
     };
   }, []);
   return { specs, error };
-}
-
-function Settings(props: {
-  readonly backbone: boolean;
-  readonly epochs: number;
-  readonly onEpochs: (value: number) => void;
-  readonly blocks: number;
-  readonly onBlocks: (value: number) => void;
-}): JSX.Element {
-  return (
-    <div className="inspect__pickers">
-      <label className="genpanel__field">
-        <span>Rounds (epochs)</span>
-        <input type="number" min={1} max={50} value={props.epochs} onChange={(e) => props.onEpochs(Number(e.target.value))} />
-      </label>
-      {props.backbone && (
-        <label className="genpanel__field">
-          <span>Backbone blocks to train</span>
-          <input type="number" min={1} max={12} value={props.blocks} onChange={(e) => props.onBlocks(Number(e.target.value))} />
-        </label>
-      )}
-    </div>
-  );
 }
 
 function Pickers(props: {
@@ -94,6 +73,7 @@ function Pickers(props: {
 
 function RunControls(props: {
   readonly ready: boolean;
+  readonly blocked: string;
   readonly run: FoundationFinetune;
   readonly onStart: () => void;
 }): JSX.Element {
@@ -102,9 +82,15 @@ function RunControls(props: {
   return (
     <>
       <div className="prep-step__actions">
-        <button type="button" className="btn btn--primary" disabled={!props.ready || run.starting || run.running} onClick={props.onStart}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={!props.ready || Boolean(props.blocked) || run.starting || run.running}
+          onClick={props.onStart}
+        >
           {run.starting ? 'Starting…' : 'Start fine-tuning'}
         </button>
+        {props.blocked && <span className="trainer__blocked">{props.blocked}</span>}
         {run.running && (
           <button type="button" className="btn" onClick={() => void run.cancel()}>
             Cancel
@@ -126,8 +112,6 @@ export function FoundationFinetunePanel({ datasets }: { readonly datasets: reado
   const { specs, error: listError } = useRequirements();
   const [modelChoice, setModelChoice] = usePersistentState('finetune.model', '', isString);
   const [datasetChoice, setDatasetChoice] = usePersistentState('finetune.dataset', '', isString);
-  const [epochs, setEpochs] = usePersistentState('finetune.rounds', 6, isNumber);
-  const [blocks, setBlocks] = usePersistentState('finetune.blocks', 4, isNumber);
   const [nameOverride, setNameOverride] = useState('');
   const [recipeChoice, setRecipeChoice] = useState('');
   const withImages = datasets.filter((d) => d.counts.images > 0);
@@ -140,7 +124,10 @@ export function FoundationFinetunePanel({ datasets }: { readonly datasets: reado
   const run = useFoundationFinetune();
   const dataset = withImages.find((d) => d.id === datasetId);
   const name = nameOverride || `${dataset?.name ?? 'dataset'} · ${spec?.label ?? ''}`;
-  const backbone = modelId.startsWith('dinov');
+  // Doc 100: every setting comes from the model's catalogue (doc 99), defaults included —
+  // no hand-written rounds, blocks or learning rate here any more.
+  const params = useParameters(modelId);
+  const blocked = params.set ? blockingParameter(params) : 'Loading settings…';
 
   const start = (): void => {
     void run.start({
@@ -148,9 +135,7 @@ export function FoundationFinetunePanel({ datasets }: { readonly datasets: reado
       dataset_ids: [datasetId],
       name,
       ...(recipeId ? { recipe_id: recipeId } : {}),
-      epochs,
-      learning_rate: backbone ? 1e-3 : 1e-4,
-      ...(backbone ? { options: { unfreeze_blocks: blocks } } : {}),
+      ...finetuneFields(params.values),
     });
   };
 
@@ -172,13 +157,14 @@ export function FoundationFinetunePanel({ datasets }: { readonly datasets: reado
       {spec && <RequirementsCard spec={spec} />}
       <RecipePicker datasetIds={datasetId ? [datasetId] : []} {...recipes} onChoice={setRecipeChoice} />
       {readiness && <ReadinessList readiness={readiness} />}
-      <Settings backbone={backbone} epochs={epochs} onEpochs={setEpochs} blocks={blocks} onBlocks={setBlocks} />
+      <ParameterForm params={params} disabled={run.running} />
       <label className="genpanel__field">
         <span>Name</span>
         <input value={name} onChange={(e) => setNameOverride(e.target.value)} />
       </label>
       <RunControls
         ready={Boolean(readiness?.ready)}
+        blocked={blocked}
         run={run}
         onStart={start}
       />

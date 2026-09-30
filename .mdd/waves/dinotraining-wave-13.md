@@ -83,7 +83,7 @@ The website moves to Wave 16 (29 files retargeted, grep clean).
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
 | 1 | parameter-catalogue | docs/99-parameter-catalogue.md | complete | — |
-| 2 | parameter-form | docs/100-parameter-form.md | planned | parameter-catalogue |
+| 2 | parameter-form | docs/100-parameter-form.md | complete | parameter-catalogue |
 | 3 | default-recipes | docs/101-default-recipes.md | planned | — |
 | 4 | training-knobs-for-agents | docs/102-training-knobs-for-agents.md | planned | parameter-catalogue, default-recipes |
 

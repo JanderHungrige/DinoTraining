@@ -52,9 +52,6 @@ const VALID: TrainerSelection = {
   datasetIds: ['ds1'],
   backboneId: 'dinov2-small',
   headTypeId: 'linear-classifier',
-  epochs: 20,
-  learningRate: 0.001,
-  earlyStoppingPatience: 5,
 };
 
 describe('blockingReason', () => {

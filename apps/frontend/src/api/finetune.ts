@@ -70,8 +70,11 @@ export interface StartFinetune {
   readonly dataset_ids: readonly string[];
   readonly name: string;
   readonly recipe_id?: string;
-  readonly epochs: number;
-  readonly learning_rate: number;
+  /** Omitted → the model's own default (doc 99). */
+  readonly epochs?: number;
+  readonly learning_rate?: number;
+  readonly seed?: number;
+  /** Every other catalogue parameter (doc 99); unknown keys are refused with a 422. */
   readonly options?: Readonly<Record<string, number>>;
 }
 

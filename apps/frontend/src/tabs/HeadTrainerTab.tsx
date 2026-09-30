@@ -20,6 +20,8 @@ import { FoundationFinetunePanel } from '../components/finetune/FoundationFinetu
 import { HeadInstanceList } from '../components/HeadInstanceList';
 import { RecipePicker } from '../components/RecipePicker';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
+import { blockingParameter, ParameterForm } from '../components/params/ParameterForm';
+import { useParameters } from '../hooks/useParameters';
 import { useRecipeChoice } from '../hooks/useRecipeChoice';
 import type { TrainRequest } from '../types/navigation';
 import { usePersistentState } from '../hooks/usePersistentState';
@@ -47,11 +49,8 @@ const DEFAULTS: TrainerSelection = {
   datasetIds: [],
   backboneId: '',
   headTypeId: '',
-  // Mirrors TrainingConfig's defaults so the form and the backend agree on "good
-  // defaults" — two sets of defaults is how a UI quietly trains something else.
-  epochs: 20,
-  learningRate: 0.001,
-  earlyStoppingPatience: 5,
+  // Rounds, learning speed and the rest are doc 99's catalogue now (doc 100): the
+  // defaults live in one place, the backend, and cannot drift from a copy here.
 };
 
 /** Which of the two things this tab does. */
@@ -94,6 +93,7 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
     selection.backboneId || null,
   );
   const run = useTrainingRun({ onComplete: () => void refreshHeads() });
+  const params = useParameters('head');
 
   useEffect(() => {
     void refreshHeads();
@@ -185,21 +185,21 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
           <RecipePicker datasetIds={live.datasetIds} {...recipes} onChoice={setRecipeChoice} />
 
           <TrainerForm
-        datasets={datasets}
-        backbones={installed}
-        headTypes={headTypes}
-        value={live}
-        disabled={run.running}
-        starting={run.starting}
-        onChange={setSelection}
+            datasets={datasets}
+            backbones={installed}
+            headTypes={headTypes}
+            value={live}
+            disabled={run.running}
+            starting={run.starting}
+            onChange={setSelection}
+            settings={<ParameterForm params={params} recipeChosen={Boolean(recipeId)} disabled={run.running} />}
+            settingsProblem={params.set ? blockingParameter(params) : 'Loading settings…'}
             onSubmit={() =>
               void run.start({
                 head_type_id: live.headTypeId,
                 backbone_id: live.backboneId,
                 dataset_ids: live.datasetIds,
-                epochs: live.epochs,
-                learning_rate: live.learningRate,
-                early_stopping_patience: live.earlyStoppingPatience,
+                ...params.values,
                 ...(recipeId ? { recipe_id: recipeId } : {}),
               })
             }
