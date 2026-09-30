@@ -84,6 +84,11 @@ export interface CanvasBox {
    * separately and storing both would double every segmented object in the export.
    */
   readonly mask?: CanvasMask;
+  /**
+   * Doc 103: the SAM 3 phrases a mask answers to, its class name first as the store
+   * returns it. Absent means "just its class". Re-sent on save, so a re-save keeps them.
+   */
+  readonly phrases?: readonly string[];
 }
 
 /** Does this annotation carry a segmentation? The one test that decides how it is saved. */

@@ -20,8 +20,11 @@ import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
 import { listFoundations, proposesBoxes, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
 import type { SessionConfig } from '../hooks/useAnnotationSession';
+import { useAnnotationTargets } from '../hooks/useAnnotationTargets';
 import { useStudioEntries } from '../hooks/useStudioEntries';
 import { stillListed } from '../lib/persisted';
+import { AnnotationTargetPicker } from './AnnotationTargetPicker';
+import { DatasetChoiceRow } from './DatasetChoiceRow';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
 import { FieldHint } from './FieldHint';
 import { ImageSourceField } from './ImageSourceField';
@@ -59,6 +62,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     headOverride,
     setHeadOverride,
   } = useStudioEntries();
+  const targets = useAnnotationTargets();
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [loadingHeads, setLoadingHeads] = useState(true);
@@ -147,9 +151,11 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       }
     }
 
+    targets.commit(targetId);
     onStart({
       images,
       datasetId: targetId,
+      target: targets.target,
       source:
         mode === 'foundation'
           ? {
@@ -187,37 +193,16 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
       {/* Hidden when the source *is* a dataset: that dataset is the target, and offering
           a second choice would let the two disagree without saying so. */}
       {images.kind === 'folder' && (
-        <div className="setup__row">
-          <label className="setup__field" htmlFor="dataset">
-            Dataset
-            <select
-              id="dataset"
-              value={datasetId}
-              onChange={(event) => setDatasetOverride(event.target.value)}
-            >
-              <option value="">Create a new one…</option>
-              {datasets.map((dataset) => (
-                <option key={dataset.id} value={dataset.id}>
-                  {dataset.name} ({dataset.counts.images} images)
-                </option>
-              ))}
-            </select>
-          </label>
-
-          {!datasetId && (
-            <label className="setup__field" htmlFor="newname">
-              New dataset name
-              <input
-                id="newname"
-                type="text"
-                value={newName}
-                placeholder="Cats"
-                onChange={(event) => setNewName(event.target.value)}
-              />
-            </label>
-          )}
-        </div>
+        <DatasetChoiceRow
+          datasets={datasets}
+          datasetId={datasetId}
+          newName={newName}
+          onDataset={setDatasetOverride}
+          onNewName={setNewName}
+        />
       )}
+
+      <AnnotationTargetPicker targets={targets.targets} value={targets.target} onChange={targets.setTarget} />
 
       <ProposalModePicker mode={mode} onChange={setMode} />
 

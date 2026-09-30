@@ -11,6 +11,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     agent_docs,
     annotate,
+    annotation_targets,
     annotators,
     backbones,
     dataset_classes,
@@ -69,6 +70,7 @@ api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])
 api_router.include_router(dataset_phrases.router, tags=["datasets"])
+api_router.include_router(annotation_targets.router, tags=["datasets"])
 api_router.include_router(dataset_images.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])

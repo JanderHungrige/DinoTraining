@@ -8,6 +8,9 @@ import { CounterBar } from '../components/CounterBar';
 import { BoxReviewList } from '../components/BoxReviewList';
 import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
+import { TargetGuide } from '../components/TargetGuide';
+import { useAnnotationTargetList } from '../hooks/useAnnotationTargetList';
+import { usePicturePhrases } from '../hooks/usePicturePhrases';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
 import { usePrescan } from '../hooks/usePrescan';
 import { useBoxEditing } from '../hooks/useBoxEditing';
@@ -42,6 +45,9 @@ export function AnnotationStudioTab(): JSX.Element {
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
   const prescan = usePrescan();
+  // Doc 104: what this dataset is annotated for, and what this picture still lacks.
+  const target = useAnnotationTargetList().find((t) => t.id === (config?.target ?? 'open'));
+  const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
@@ -129,6 +135,15 @@ export function AnnotationStudioTab(): JSX.Element {
         imageTotal={session.images.length}
         dirty={session.dirty}
       />
+
+      {target && (
+        <TargetGuide
+          target={target}
+          boxes={boxes}
+          phraseCount={pictures.phrases.length}
+          statuses={pictures.statuses}
+        />
+      )}
 
       {session.error && (
         <p className="admin__error" role="alert">

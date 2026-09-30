@@ -57,6 +57,8 @@ export interface SessionConfig {
    *  canvas and edits replace them. */
   readonly datasetId: string;
   readonly source: ProposalSource;
+  /** Doc 104: what the dataset is annotated for; "open" when not given. */
+  readonly target?: string;
 }
 
 export interface AnnotationSession {

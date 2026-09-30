@@ -1,0 +1,75 @@
+/* Doc 104: what a dataset is annotated for. */
+
+/* The frame and legend are `.setup__modes`', so it reads like the choice beside it. */
+.targetpick {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.targetpick__option--on .targetpick__name {
+  font-weight: 700;
+}
+
+.targetguide {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  background: var(--bg-raised);
+}
+
+.targetguide > summary {
+  cursor: pointer;
+}
+
+.targetguide__missing {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.targetguide__body {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.targetguide__layers,
+.targetguide__checks {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.targetguide__checks {
+  list-style: none;
+  padding-left: 0;
+}
+
+.targetguide__title {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+}
+
+.targetguide__badge {
+  display: inline-block;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.targetguide__badge--required {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.targetguide__met {
+  color: var(--accent);
+}
+
+.targetguide__open {
+  color: var(--danger);
+}
