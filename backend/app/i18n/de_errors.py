@@ -120,6 +120,18 @@ ENTRIES: dict[str, str] = {
         "„{a}“ ist ein Oberbegriff: Er gilt schon für jeden Umriss seiner Klassen und wird "
         "nicht mit einzelnen Umrissen verknüpft."
     ),
+    # MLflow (doc 123)
+    "The tracking URI must start with http:// or https://.": (
+        "Die Tracking-URI muss mit http:// oder https:// beginnen."
+    ),
+    "MLflow is not set up: no tracking URI.": "MLflow ist nicht eingerichtet: keine Tracking-URI.",
+    "MLflow at {uri} is not reachable: {*reason}": (
+        "MLflow unter {uri} ist nicht erreichbar: {reason}"
+    ),
+    "MLflow answered {#code}: {*reason}": "MLflow antwortete {code}: {reason}",
+    "Connected. Experiment '{name}' has id {id}.": (
+        "Verbunden. Das Experiment „{name}“ hat die ID {id}."
+    ),
 }
 
 __all__ = ["ENTRIES"]

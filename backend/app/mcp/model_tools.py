@@ -33,3 +33,11 @@ def register(mcp: MCPServer) -> None:
         what the app would. Returns the zip's path."""
         body = {"kind": kind, "instance_id": instance_id, "destination": destination}
         return await client.call("POST", "/exports", json=body)
+
+    @mcp.tool()
+    async def get_mlflow_status() -> Any:
+        """Whether training runs go to MLflow (doc 123): the tracking URI, experiment, whether
+        models are registered, and which kind of credentials is set (never the values).
+        When set up, every head training and fine-tune appears there as a run with params,
+        per-epoch metrics, the model card and export bundle, and a registered version."""
+        return await client.call("GET", "/mlops/status")

@@ -3567,3 +3567,21 @@ body {
   align-items: center;
   gap: 0.35rem;
 }
+
+/* Doc 123: the MLflow settings, one field per line. */
+.mlflow__form {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+
+.mlflow__form label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mlflow__form .mlflow__check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}

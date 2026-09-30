@@ -31,6 +31,7 @@ from app.api.v1 import (
     heads,
     health,
     inference,
+    mlops,
     model_cards,
     model_exports,
     models,
@@ -96,3 +97,4 @@ api_router.include_router(finetune_requirements.router, tags=["fine-tuning"])
 api_router.include_router(finetune_jobs.router, tags=["fine-tuning"])
 api_router.include_router(model_cards.router, tags=["mlops"])
 api_router.include_router(model_exports.router, tags=["mlops"])
+api_router.include_router(mlops.router, tags=["mlops"])

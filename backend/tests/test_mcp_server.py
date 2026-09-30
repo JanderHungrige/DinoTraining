@@ -171,6 +171,7 @@ class TestTheToolContract:
             # Wave 15.6: trained models' cards, export and MLflow.
             "get_model_card",
             "export_model",
+            "get_mlflow_status",
         }
 
     async def test_every_tool_describes_itself(

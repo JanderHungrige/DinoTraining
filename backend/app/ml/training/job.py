@@ -6,7 +6,9 @@ local one share one vocabulary, and callers can depend on the protocol alone.
 
 from __future__ import annotations
 
+import logging
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Literal, Protocol
 
@@ -15,6 +17,12 @@ from torch import Tensor
 from app.ml.training.config import TrainingConfig
 
 JobState = Literal["pending", "running", "complete", "failed", "cancelled"]
+
+logger = logging.getLogger(__name__)
+
+#: Doc 123: called with each new job; MLflow tracking registers here at startup. A hook
+#: attaches listeners — ("epoch" | "finish" | "saved", job) — without the runner knowing.
+JOB_HOOKS: list[Callable[[TrainingJob], None]] = []
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,17 +68,36 @@ class TrainingJob:
     head_instance_id: str | None = None
     cancel_requested: threading.Event = field(default_factory=threading.Event, repr=False)
     best_state: dict[str, Tensor] | None = field(default=None, repr=False)
+    listeners: list[Callable[[str, TrainingJob], None]] = field(default_factory=list, repr=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+
+    def __post_init__(self) -> None:
+        for hook in JOB_HOOKS:
+            hook(self)
+
+    def _tell(self, event: str) -> None:
+        for listener in self.listeners:
+            try:
+                listener(event, self)
+            except Exception:  # noqa: BLE001 - a listener must never break training
+                logger.exception("Job %s listener failed on %s", self.job_id, event)
 
     def record(self, entry: EpochRecord) -> None:
         with self._lock:
             self.history.append(entry)
             self.epoch = entry.epoch
+        self._tell("epoch")
 
     def finish(self, state: JobState, message: str = "") -> None:
         with self._lock:
             self.state = state
             self.message = message
+        self._tell("finish")
+
+    def mark_saved(self, instance_id: str) -> None:
+        """The run is saved as a head instance (so the UI can link straight to it)."""
+        self.head_instance_id = instance_id
+        self._tell("saved")
 
     @property
     def finished(self) -> bool:
