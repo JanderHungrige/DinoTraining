@@ -160,6 +160,7 @@ class TestTheDocumentStaysValid:
         assert tiled["categories"] == [{"id": 1, "name": "person"}]
 
     def test_the_file_name_says_which_tile(self) -> None:
+        # "/" on every OS: the Windows runner once got "rgb\\0_r0c0.png" here.
         tiled, _ = retile(document([]), 1000, 100, 2, 2)
         names = [i["file_name"] for i in tiled["images"]]
         assert "rgb/0_r0c0.png" in names
