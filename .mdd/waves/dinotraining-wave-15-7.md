@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-15-6
 demo_state: "On a clean Windows PC with an NVIDIA card, a ~70 MB installer installs the app; its first start detects the GPU, downloads PyTorch with CUDA from pytorch.org with progress (resumable), and the backend reports CUDA; the same installer on a PC without NVIDIA sets up CPU, a Mac with Apple Silicon sets up MPS, an Intel Mac is told plainly it is not supported. Switching CPU ⇄ GPU later works from the GPU panel, and an app update only fetches what changed. CI installs and starts the app on all three platforms."
 created: 2026-09-30
-hash: 27035511
+hash: 45f1ae91
 ---
 
 # Wave 15.7: Installer — bundled Python, PyTorch from the source, GPU chosen at setup
@@ -80,12 +80,12 @@ and Apple has not shipped NVIDIA drivers since 2018.
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
 | 1 | dependency-lock | docs/125-dependency-lock.md | complete | — |
-| 2 | bundled-python | docs/126-bundled-python.md | planned | dependency-lock |
-| 3 | first-run-setup | docs/127-first-run-setup.md | planned | bundled-python |
-| 4 | accelerator-switch | docs/128-accelerator-switch.md | planned | first-run-setup |
-| 5 | update-sync | docs/129-update-sync.md | planned | first-run-setup |
-| 6 | mac-distribution | docs/130-mac-distribution.md | planned | bundled-python, first-run-setup |
-| 7 | installer-smoke-ci | docs/131-installer-smoke-ci.md | planned | bundled-python, first-run-setup, mac-distribution |
+| 2 | bundled-python | docs/126-bundled-python.md | complete | dependency-lock |
+| 3 | first-run-setup | docs/127-first-run-setup.md | complete | bundled-python |
+| 4 | accelerator-switch | docs/128-accelerator-switch.md | complete | first-run-setup |
+| 5 | update-sync | docs/129-update-sync.md | complete | first-run-setup |
+| 6 | mac-distribution | docs/130-mac-distribution.md | complete | bundled-python, first-run-setup |
+| 7 | installer-smoke-ci | docs/131-installer-smoke-ci.md | complete | bundled-python, first-run-setup, mac-distribution |
 
 ### Feature notes
 

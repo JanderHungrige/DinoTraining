@@ -13,7 +13,7 @@ test_files:
   - scripts/test_smoke_installed.py
 data_flow: greenfield
 last_synced: 2026-10-01
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [installer, ci, smoke-test, release, windows, linux, macos]
@@ -23,7 +23,8 @@ wave: dinotraining-wave-15-7
 wave_status: active
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "CPU only: the runners have no GPU, so the CUDA variants and the CPU/GPU switch are not smoke-tested (see docs 125 and 128)."
 security_read_sites: []
 sister_projects: []
 ---
@@ -72,3 +73,30 @@ sister_projects: []
   platforms).
 - **CPU only:** the runners have no GPU. The CUDA variants are checked in the lock
   (doc 125) and switched in the app (doc 128).
+
+## Verified (2026-10-01)
+
+- **`test_smoke_installed.py` (5):** a working install passes and reports; a second start
+  that reinstalls fails; an app that exits fails with the reason; no current environment
+  is a failure; hard-linked files count once.
+- **Against the real installed app on the M1** (script install, empty runtime):
+  - first run: it failed. **The installed environment had no `onnxruntime`**: the app
+    synced only the PyTorch extra, so doc 122's ONNX export was missing in every packaged
+    app. Fixed in doc 126's sync (the `export` extra with every variant; an environment
+    without the app's extras counts as outdated);
+  - after the fix: first start 60 s, second 3 s, torch 2.13.0, torchvision 0.28.0,
+    onnxruntime 1.30.0.
+- **The release workflow, dry run** (run 36786933587, nothing published): **all three
+  platforms green on the first run.**
+
+| | Installer | First start | Second start | Environment + cache + Python |
+|---|---|---|---|---|
+| Windows (NSIS, `/S`) | **18 MB** (Wave 8: 172 MB) | 30 s | 6 s | 960 + 902 + 61 MB |
+| Linux (`.deb`, xvfb) | **26 MB** (Wave 8: 361 MB) | 54 s | 36 s | 1296 + 1239 + 99 MB |
+| macOS (script, `.app.tar.gz`) | **23 MB** (Wave 8: 298 MB) | 28 s | 6 s | 908 + 851 + 67 MB |
+
+  - Each installed PyTorch ran (`2.13.0+cpu` on Windows and Linux) and imported
+    onnxruntime 1.30.0.
+  - **The first time the Windows app was ever installed and started** (Wave 8 only built
+    it).
+  - The release also carries the rendered `dinotraining.rb` for its archive.
