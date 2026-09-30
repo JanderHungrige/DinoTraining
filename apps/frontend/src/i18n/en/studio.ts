@@ -120,10 +120,6 @@ export const studioEn = {
   'studio.view.hide_other': 'Hide the {count} boxes already here',
   'studio.view.show_one': 'Show {count} hidden box',
   'studio.view.show_other': 'Show {count} hidden boxes',
-  'studio.actions.detecting': 'Detecting…',
-  'studio.actions.saving': 'Saving…',
-  'studio.actions.previous': '← Previous',
-  'studio.actions.next': 'Next →',
 
   // Errors the session hooks write
   'studio.session.saveError': 'Could not save annotations.',

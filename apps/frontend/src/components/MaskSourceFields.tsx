@@ -62,7 +62,7 @@ export function MaskSourceFields({
             <input
               type="text"
               value={concept}
-              placeholder={promptStyle === 'phrases' ? 'a bolt. a nut.' : 'a bolt'}
+              placeholder="a bolt, a nut"
               aria-describedby="concept-hint"
               onChange={(event) => onConceptChange(event.target.value)}
             />

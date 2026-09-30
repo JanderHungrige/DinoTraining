@@ -46,7 +46,7 @@ export const runEn = {
   'run.heads.nonCommercial': 'non-commercial',
   'run.heads.whatToFind': 'What to find',
   'run.heads.conceptHint':
-    'Concept models segment only what you name. Separate several with full stops.',
+    'Concept models segment only what you name. Separate several with commas or full stops.',
   'run.heads.runNone': 'Run models',
   'run.heads.run_one': 'Run {count} model',
   'run.heads.run_other': 'Run {count} models',
@@ -120,7 +120,7 @@ export const runEn = {
   'run.maskSource.annotator': 'Annotator',
   'run.maskSource.concept': 'Concept',
   'run.maskSource.hintPhrases':
-    'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by full stops work well. Nothing here is gated — no token, no account.',
+    'Grounding DINO finds each phrase and SAM 2.1 turns it into a mask, so several phrases separated by commas or full stops work well. Nothing here is gated — no token, no account.',
   'run.maskSource.hintSingle':
-    'SAM 3 takes one concept at a time — a single noun phrase like “a bolt”. Several phrases in one box are read as one long concept and match poorly; run them one at a time.',
+    'SAM 3 looks for one concept per pass — a short noun phrase like “a bolt”. Separate several with commas or full stops: each is searched on its own and labels its own masks.',
 } as const;

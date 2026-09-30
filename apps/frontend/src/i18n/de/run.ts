@@ -50,7 +50,7 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.heads.nonCommercial': 'nicht kommerziell',
   'run.heads.whatToFind': 'Was gefunden werden soll',
   'run.heads.conceptHint':
-    'Begriffsmodelle segmentieren nur, was du benennst – am besten auf Englisch. Trenne mehrere Begriffe mit Punkten.',
+    'Begriffsmodelle segmentieren nur, was du benennst – am besten auf Englisch. Trenne mehrere Begriffe mit Kommas oder Punkten.',
   'run.heads.runNone': 'Modelle ausführen',
   'run.heads.run_one': '{count} Modell ausführen',
   'run.heads.run_other': '{count} Modelle ausführen',
@@ -126,7 +126,7 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.maskSource.annotator': 'Annotationsmodell',
   'run.maskSource.concept': 'Begriff',
   'run.maskSource.hintPhrases':
-    'Grounding DINO findet jede Phrase und SAM 2.1 macht daraus einen Umriss (Mask). Mehrere Phrasen, getrennt durch Punkte, funktionieren also gut – am besten auf Englisch. Hier ist nichts zugangsbeschränkt: kein Token, kein Konto.',
+    'Grounding DINO findet jede Phrase und SAM 2.1 macht daraus einen Umriss (Mask). Mehrere Phrasen, getrennt durch Kommas oder Punkte, funktionieren also gut – am besten auf Englisch. Hier ist nichts zugangsbeschränkt: kein Token, kein Konto.',
   'run.maskSource.hintSingle':
-    'SAM 3 nimmt einen Begriff nach dem anderen – eine einzelne englische Nominalphrase wie „a bolt“. Mehrere Phrasen in einem Feld werden als ein langer Begriff gelesen und passen schlecht; lass sie einzeln laufen.',
+    'SAM 3 sucht einen Begriff pro Durchlauf – eine kurze englische Nominalphrase wie „a bolt“. Trenne mehrere mit Kommas oder Punkten: Jeder wird für sich gesucht und benennt seine eigenen Masks.',
 };

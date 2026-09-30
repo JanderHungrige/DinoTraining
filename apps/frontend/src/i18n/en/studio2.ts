@@ -67,7 +67,7 @@ export const studio2En = {
   'studio.foundation.noTraining': '— RF-DETR needs no training and no prompt.',
   'studio.foundation.nonCommercial': 'non-commercial',
   'studio.foundation.whatToFind': 'What to find',
-  'studio.foundation.conceptHint': '{model} finds only what you name here. Separate several with full stops.',
+  'studio.foundation.conceptHint': '{model} finds only what you name here. Separate several with commas or full stops.',
   'studio.expert.legend': 'Expert head',
   'studio.expert.loading': 'Loading heads…',
   'studio.expert.none':
@@ -78,7 +78,7 @@ export const studio2En = {
 
   // Prompt guidance (doc 39)
   'studio.guidance.groundingDino':
-    'Grounding DINO reads each phrase between full stops as a separate thing to look for. One label type: “a bolt”. Several: “a bolt. a nut. a washer.” Lower case, a leading “a”, and a full stop after each — that is the form it was trained on. It will also find things you did not ask for, which is what the reject key is for.',
+    'Grounding DINO reads each phrase between commas or full stops as a separate thing to look for. One label type: “a bolt”. Several: “a bolt, a nut, a washer”. Lower case and a leading “a” — the form it was trained on. It will also find things you did not ask for, which is what the reject key is for.',
   'studio.guidance.headNone':
     'No prompt here: a trained head already knows what it is looking for. It proposes its own classes, and you accept, reject or correct them.',
   'studio.guidance.andMore': '{list} and {count} more',
@@ -139,6 +139,8 @@ export const studio2En = {
   'studio.reveal.title': "Show this dataset's images in the file manager",
   'studio.reveal.opening': 'Opening…',
   'studio.reveal.open': 'Open folder',
+
+  'studio.actions.unsavedBlocked': 'This picture has unsaved changes. Save first, or turn Auto-save on.',
 
   // Back to the overview (the session survives switching tabs until then)
   'studio.back.button': '← Back to overview',

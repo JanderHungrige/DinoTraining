@@ -35,6 +35,8 @@ export const phrasesEn = {
   'phrases.checks.markComplete': 'All marked',
   'phrases.checks.markAbsent': 'Not in this picture',
   'phrases.checks.clear': 'clear',
+  'phrases.checks.restHint':
+    'Annotated every instance of a phrase in the whole dataset? Then you need not check each picture: at the end, “Mark the rest” under Manage phrases checks all remaining pictures in one step.',
   'phrases.checks.clearLabel': 'Clear the check for {phrase}',
 
   // Manage phrases

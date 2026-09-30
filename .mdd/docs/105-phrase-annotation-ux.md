@@ -185,6 +185,25 @@ Jan found three things unclear while annotating flames and their reflections.
   - The phrase keys are off while the Studio is hidden (`active`), so typing "a" in
     another tab cannot mark a picture.
 
+## Also from Jan's test (2026-09-30, second round)
+
+- **The Studio's action bar is the Generator's (doc 70):**
+  - Run and "Save to dataset" sit directly beside Previous and Next.
+  - Auto-propose and Auto-save are named in full below them.
+  - **Auto-propose** (off by default) runs once per picture that arrives with nothing on
+    it, never over existing boxes.
+  - **Auto-save** (on by default) is what the Studio always did: moving on saves first.
+    - With Auto-save off, moving on from unsaved changes is refused with a note, instead
+      of dropping them.
+    - The Generator does drop them; in the Studio that would lose the work on a picture's
+      outlines.
+- **Below "All marked / Not in this picture":** a note that a fully annotated phrase can be
+  checked for the whole dataset at the end with "Mark the rest".
+- **The prompt hints** now say commas or full stops separate terms:
+  - Grounding DINO, the concept field, and the Inference Viewer.
+  - SAM 3's hint no longer says "one concept at a time; run them one by one". It says each
+    term is searched on its own.
+
 ## Bugs
 
 (none yet)

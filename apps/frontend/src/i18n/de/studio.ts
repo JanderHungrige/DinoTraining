@@ -118,10 +118,6 @@ export const studioDe: Catalogue<typeof studioEn> = {
   'studio.view.hide_other': 'Die {count} vorhandenen Boxen ausblenden',
   'studio.view.show_one': '{count} ausgeblendete Box zeigen',
   'studio.view.show_other': '{count} ausgeblendete Boxen zeigen',
-  'studio.actions.detecting': 'Detection läuft …',
-  'studio.actions.saving': 'Speichert …',
-  'studio.actions.previous': '← Zurück',
-  'studio.actions.next': 'Weiter →',
 
   // Errors the session hooks write
   'studio.session.saveError': 'Die Annotationen ließen sich nicht speichern.',

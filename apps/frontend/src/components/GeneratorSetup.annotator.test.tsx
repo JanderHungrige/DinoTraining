@@ -157,7 +157,7 @@ describe('GeneratorSetup — annotator choice', () => {
     );
   });
 
-  it('tells the user SAM 3 takes one concept at a time', async () => {
+  it('tells the user SAM 3 searches each concept on its own', async () => {
     // Verified against real weights: "a red circle. a blue square." given to SAM 3 as one
     // prompt returns a single mask at score 0.372, while the same two phrases run
     // separately score 0.977 and 0.968. Grounded SAM handles the joined form correctly,
@@ -171,12 +171,12 @@ describe('GeneratorSetup — annotator choice', () => {
     await screen.findByRole('radio', { name: /Bolt finder/ });
 
     await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
-    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt. a nut.');
-    expect(screen.getByText(/several phrases separated by full stops/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt, a nut');
+    expect(screen.getByText(/several phrases separated by commas or full stops/i)).toBeInTheDocument();
 
     await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'sam3');
-    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt');
-    expect(screen.getByText(/one concept at a time/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt, a nut');
+    expect(screen.getByText(/one concept per pass/i)).toBeInTheDocument();
   });
 
   it('keeps the multi-phrase guidance on every Grounded SAM size', async () => {
@@ -194,8 +194,8 @@ describe('GeneratorSetup — annotator choice', () => {
     await user.click(screen.getByRole('radio', { name: /Grounded SAM/ }));
     await user.selectOptions(await screen.findByLabelText(/^annotator$/i), 'grounded-sam-large');
 
-    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt. a nut.');
-    expect(screen.getByText(/several phrases separated by full stops/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^concept$/i)).toHaveAttribute('placeholder', 'a bolt, a nut');
+    expect(screen.getByText(/several phrases separated by commas or full stops/i)).toBeInTheDocument();
   });
 
   it('starts the size that was chosen, not the default one', async () => {

@@ -70,7 +70,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.foundation.noTraining': '— RF-DETR braucht kein Training und keinen Prompt.',
   'studio.foundation.nonCommercial': 'nicht kommerziell',
   'studio.foundation.whatToFind': 'Was gefunden werden soll',
-  'studio.foundation.conceptHint': '{model} findet nur, was du hier nennst. Trenne mehrere mit Punkten.',
+  'studio.foundation.conceptHint': '{model} findet nur, was du hier nennst. Trenne mehrere mit Kommas oder Punkten.',
   'studio.expert.legend': 'Experten-Head',
   'studio.expert.loading': 'Heads werden geladen …',
   'studio.expert.none':
@@ -81,7 +81,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
 
   // Prompt guidance (doc 39)
   'studio.guidance.groundingDino':
-    'Grounding DINO liest jede Phrase zwischen zwei Punkten als eigenes Ding, nach dem es suchen soll. Schreib die Phrasen auf Englisch. Eine Art von Label: „a bolt“. Mehrere: „a bolt. a nut. a washer.“ Kleinbuchstaben, ein „a“ vorne und ein Punkt nach jeder Phrase — in dieser Form wurde es trainiert. Es findet auch Dinge, nach denen du nicht gefragt hast; dafür ist die Ablehnen-Taste da.',
+    'Grounding DINO liest jede Phrase zwischen Kommas oder Punkten als eigenes Ding, nach dem es suchen soll. Schreib die Phrasen auf Englisch. Eine Art von Label: „a bolt“. Mehrere: „a bolt, a nut, a washer“. Kleinbuchstaben und ein „a“ vorne — in dieser Form wurde es trainiert. Es findet auch Dinge, nach denen du nicht gefragt hast; dafür ist die Ablehnen-Taste da.',
   'studio.guidance.headNone':
     'Hier gibt es keinen Prompt: Ein trainierter Head weiß schon, wonach er sucht. Er schlägt seine eigenen Klassen vor, und du nimmst sie an, lehnst sie ab oder korrigierst sie.',
   'studio.guidance.andMore': '{list} und {count} weitere',
@@ -142,6 +142,8 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.reveal.title': 'Die Bilder dieses Datensatzes im Dateimanager zeigen',
   'studio.reveal.opening': 'Öffnet …',
   'studio.reveal.open': 'Ordner öffnen',
+
+  'studio.actions.unsavedBlocked': 'Dieses Bild hat ungespeicherte Änderungen. Speichere zuerst oder schalte „Automatisch speichern“ ein.',
 
   // Back to the overview (the session survives switching tabs until then)
   'studio.back.button': '← Zurück zur Übersicht',

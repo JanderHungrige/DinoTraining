@@ -36,6 +36,8 @@ export const phrasesDe: Catalogue<typeof phrasesEn> = {
   'phrases.checks.markComplete': 'Alles markiert',
   'phrases.checks.markAbsent': 'Nicht in diesem Bild',
   'phrases.checks.clear': 'zurücksetzen',
+  'phrases.checks.restHint':
+    'Jedes Vorkommen einer Phrase im ganzen Datensatz annotiert? Dann musst du nicht jedes Bild einzeln prüfen: Am Ende markiert „Den Rest markieren“ unter „Phrasen verwalten“ alle übrigen Bilder in einem Schritt.',
   'phrases.checks.clearLabel': 'Prüfung für {phrase} zurücksetzen',
 
   // Phrasen verwalten

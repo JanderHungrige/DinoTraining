@@ -22,34 +22,37 @@ export function PictureChecks({ phrases, statuses, active, disabled, onMark }: P
   const { t } = useT();
   const byText = new Map(statuses.map((s) => [s.text, s.status]));
   return (
-    <table className="phrasechecks">
-      <caption>{t('phrases.checks.caption')}</caption>
-      <tbody>
-        {phrases.map((phrase) => {
-          const status = byText.get(phrase.text);
-          return (
-            <tr key={phrase.text} className={phrase.text === active ? 'phrasechecks__active' : ''}>
-              <th scope="row">{phrase.text}</th>
-              <td className={`phrasechecks__state phrasechecks__state--${status ?? 'unchecked'}`}>
-                {t(status ? SAID[status] : 'phrases.checks.unchecked')}
-              </td>
-              <td className="phrasechecks__actions">
-                <button type="button" className="btn btn--small" disabled={disabled || status === 'complete'} onClick={() => onMark(phrase.text, 'complete')}>
-                  {t('phrases.checks.markComplete')}
-                </button>
-                <button type="button" className="btn btn--small" disabled={disabled || status === 'absent'} onClick={() => onMark(phrase.text, 'absent')}>
-                  {t('phrases.checks.markAbsent')}
-                </button>
-                {status && (
-                  <button type="button" className="btn btn--small" disabled={disabled} aria-label={t('phrases.checks.clearLabel', { phrase: phrase.text })} onClick={() => onMark(phrase.text, null)}>
-                    {t('phrases.checks.clear')}
+    <>
+      <table className="phrasechecks">
+        <caption>{t('phrases.checks.caption')}</caption>
+        <tbody>
+          {phrases.map((phrase) => {
+            const status = byText.get(phrase.text);
+            return (
+              <tr key={phrase.text} className={phrase.text === active ? 'phrasechecks__active' : ''}>
+                <th scope="row">{phrase.text}</th>
+                <td className={`phrasechecks__state phrasechecks__state--${status ?? 'unchecked'}`}>
+                  {t(status ? SAID[status] : 'phrases.checks.unchecked')}
+                </td>
+                <td className="phrasechecks__actions">
+                  <button type="button" className="btn btn--small" disabled={disabled || status === 'complete'} onClick={() => onMark(phrase.text, 'complete')}>
+                    {t('phrases.checks.markComplete')}
                   </button>
-                )}
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+                  <button type="button" className="btn btn--small" disabled={disabled || status === 'absent'} onClick={() => onMark(phrase.text, 'absent')}>
+                    {t('phrases.checks.markAbsent')}
+                  </button>
+                  {status && (
+                    <button type="button" className="btn btn--small" disabled={disabled} aria-label={t('phrases.checks.clearLabel', { phrase: phrase.text })} onClick={() => onMark(phrase.text, null)}>
+                      {t('phrases.checks.clear')}
+                    </button>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {phrases.length > 0 && <p className="phrasebar__note">{t('phrases.checks.restHint')}</p>}
+    </>
   );
 }
