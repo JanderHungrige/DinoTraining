@@ -169,11 +169,10 @@ class SequenceRunner:
 
         for foundation_id in config.foundation_ids:
             model = build_foundation(foundation_id, self._settings)
-            predictions.append(
-                predict_with(model, image, config.concept, config.score_threshold)
-            )
+            predictions.append(predict_with(model, image, config.concept, config.score_threshold))
 
         return predictions
+
 
 _runner: SequenceRunner | None = None
 

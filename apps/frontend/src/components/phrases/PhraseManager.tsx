@@ -5,7 +5,7 @@
 
 import { useState, type JSX } from 'react';
 
-import { addPhrase, changePhrase, markTheRest, type PhraseInfo } from '../../api/phrases';
+import { addPhrase, changePhrase, deletePhrase, markTheRest, type PhraseInfo } from '../../api/phrases';
 import { useT } from '../../i18n';
 
 function list(text: string): string[] {
@@ -18,6 +18,7 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
   const [confusable, setConfusable] = useState<string | null>(null);
   const [problem, setProblem] = useState('');
   const [filled, setFilled] = useState('');
+  const [confirming, setConfirming] = useState(false);
   const shownVariants = variants ?? phrase.variants.join(', ');
   const shownConfusable = confusable ?? phrase.confusable.join(', ');
   const changed = variants !== null || confusable !== null;
@@ -55,6 +56,18 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
     }
   };
 
+  const remove = async (): Promise<void> => {
+    if (phrase.id === null) return;
+    try {
+      await deletePhrase(datasetId, phrase.id);
+      setProblem('');
+      onSaved();
+    } catch (cause) {
+      setProblem(cause instanceof Error ? cause.message : String(cause));
+    }
+    setConfirming(false);
+  };
+
   return (
     <li className="phrasemanage__row">
       <strong>{phrase.text}</strong> <span className="trainer__dim">({phrase.class_name})</span>
@@ -64,7 +77,12 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
       </label>
       <label>
         {t('phrases.manage.confusable')}
-        <input value={shownConfusable} placeholder={t('phrases.manage.confusablePlaceholder')} onChange={(e) => setConfusable(e.target.value)} />
+        <input
+          value={shownConfusable}
+          placeholder={t('phrases.manage.confusablePlaceholder')}
+          title={t('phrases.manage.confusableHint')}
+          onChange={(e) => setConfusable(e.target.value)}
+        />
       </label>
       <button type="button" className="btn btn--small" disabled={!changed} onClick={() => void save()}>
         {t('phrases.manage.save')}
@@ -77,6 +95,23 @@ function Row({ datasetId, phrase, onSaved }: { readonly datasetId: string; reado
       >
         {t('phrases.manage.markRest')}
       </button>
+      {phrase.id === null ? (
+        <span className="trainer__dim">{t('phrases.manage.implicit', { name: phrase.class_name })}</span>
+      ) : confirming ? (
+        <>
+          <span className="run__warn">{t('phrases.manage.deleteConfirm', { phrase: phrase.text })}</span>
+          <button type="button" className="btn btn--small btn--danger" title={t('phrases.manage.deleteHint')} onClick={() => void remove()}>
+            {t('phrases.manage.delete')}
+          </button>
+          <button type="button" className="btn btn--small" onClick={() => setConfirming(false)}>
+            {t('common.cancel')}
+          </button>
+        </>
+      ) : (
+        <button type="button" className="btn btn--small" title={t('phrases.manage.deleteHint')} onClick={() => setConfirming(true)}>
+          {t('phrases.manage.delete')}
+        </button>
+      )}
       {filled && <span className="trainer__dim" role="status">{filled}</span>}
       {problem && <span className="run__warn" role="alert">{problem}</span>}
     </li>
@@ -88,6 +123,7 @@ export function PhraseManager({ datasetId, phrases, onSaved }: { readonly datase
   return (
     <details className="phrasemanage">
       <summary>{t('phrases.manage.title')}</summary>
+      <p className="phrasebar__note">{t('phrases.manage.confusableHint')}</p>
       <ul>
         {phrases.map((phrase) => (
           <Row key={phrase.text} datasetId={datasetId} phrase={phrase} onSaved={onSaved} />

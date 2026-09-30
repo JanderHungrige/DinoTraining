@@ -24,8 +24,7 @@ Redistribution = Literal["free", "non-commercial", "copyleft", "restricted"]
 REDISTRIBUTION_NOTES: dict[Redistribution, str] = {
     "free": "",
     "non-commercial": (
-        "Cannot be used or shipped commercially. Remove it before distributing a "
-        "commercial build."
+        "Cannot be used or shipped commercially. Remove it before distributing a commercial build."
     ),
     "copyleft": (
         "Commercial use is allowed, but distributing it obliges releasing this whole "
@@ -198,7 +197,6 @@ _SPECS: tuple[ModelSpec, ...] = (
         approx_size_mb=123,
         description="Largest RF-DETR offered here. Best accuracy, highest latency.",
     ),
-
     # --- foundation depth (doc 36) -----------------------------------------------
     # Depth Anything **V2**, not V3. V3 has no `transformers` integration — its config is
     # a bespoke `__object__` block, and its pip package pins `numpy<2` against this

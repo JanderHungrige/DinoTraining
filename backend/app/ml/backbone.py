@@ -183,9 +183,7 @@ def _grid_dims(height: int, width: int, patch_size: int) -> tuple[int, int]:
     up as a message instead of as a model that trains slightly wrong.
     """
     if height % patch_size or width % patch_size:
-        raise ValueError(
-            f"Input {height}x{width} is not divisible by patch size {patch_size}"
-        )
+        raise ValueError(f"Input {height}x{width} is not divisible by patch size {patch_size}")
     return height // patch_size, width // patch_size
 
 

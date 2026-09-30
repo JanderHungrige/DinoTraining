@@ -142,9 +142,7 @@ def _slice(features: BackboneFeatures, index: int) -> BackboneFeatures:
     )
 
 
-def merge_tiles(
-    per_tile: list[Prediction], tiles: list[Tile], head: ResolvedHead
-) -> Prediction:
+def merge_tiles(per_tile: list[Prediction], tiles: list[Tile], head: ResolvedHead) -> Prediction:
     """Offset every tile's boxes into frame coordinates and suppress the duplicates.
 
     **Overlap is why a merge is needed and why it is cheap.** The grid overlaps so an object
@@ -238,9 +236,7 @@ def _suppress(
     if not boxes:
         return []
 
-    corners = torch.tensor(
-        [[x, y, x + w, y + h] for x, y, w, h in boxes], dtype=torch.float32
-    )
+    corners = torch.tensor([[x, y, x + w, y + h] for x, y, w, h in boxes], dtype=torch.float32)
     keep = batched_nms(
         corners,
         torch.tensor(scores, dtype=torch.float32),

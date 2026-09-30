@@ -78,6 +78,17 @@ class TestChecked:
         table.phrases["car"] = PhraseDef("car", "car", confusable=("van",))
         assert ("van", "confusable", ()) in kinds(plan(sample("/a", 0), table))
 
+    def test_no_look_alike_negative_where_an_outline_of_the_phrase_was_rejected(self) -> None:
+        """Jan's flames: a rejected 'flame' outline is likely the reflection itself, so
+        'flame reflection: none here' would be a lie on that picture. The positive
+        'flame' query with only the true outlines already teaches the difference."""
+        table = self.table(car="complete")
+        table.phrases["car"] = PhraseDef("car", "car", confusable=("van",))
+        table.rejected = {"/a": {"car"}}
+        planned = kinds(plan(sample("/a", 0), table))
+        assert ("car", "positive", (0,)) in planned
+        assert not [q for q in planned if q[1] == "confusable"]
+
     def test_a_linked_phrase_answers_with_its_outlines(self) -> None:
         table = self.table(car="complete")
         table.phrases["red car"] = PhraseDef("red car", "car")

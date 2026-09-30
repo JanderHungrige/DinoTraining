@@ -7,15 +7,16 @@
  * phrases the picture was checked for — need it at hand.
  */
 
-import { useCallback, useState, type FormEvent, type JSX } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
-import { addPhrase, type PhraseStatus } from '../../api/phrases';
+import type { PhraseStatus } from '../../api/phrases';
 import type { PicturePhrases } from '../../hooks/usePicturePhrases';
 import { usePhraseKeys } from '../../hooks/usePhraseKeys';
 import { phraseKey, withPhrase, withoutPhrase } from '../../lib/phraseEdit';
 import type { NumberedBox } from '../../lib/boxReview';
 import type { CanvasBox } from '../../types/annotation';
 import { useT } from '../../i18n';
+import { AddPhraseForm } from './AddPhraseForm';
 import { PhraseHelp } from './PhraseHelp';
 import { PhraseManager } from './PhraseManager';
 import { PictureChecks } from './PictureChecks';
@@ -38,8 +39,6 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
   const { phrases } = pictures;
   const { t } = useT();
   const [activeChoice, setActiveChoice] = useState('');
-  const [draft, setDraft] = useState('');
-  const [problem, setProblem] = useState('');
   const selected = items.find((item) => item.box.id === selectedId) ?? null;
   const active = phrases.find((p) => p.text === activeChoice) ?? phrases[0] ?? null;
 
@@ -55,20 +54,6 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
     props.onBoxesChange(items.map((item) => (item.box.id === selected.box.id ? change(item.box) : item.box)));
   };
 
-  const add = async (event: FormEvent): Promise<void> => {
-    event.preventDefault();
-    if (!draft.trim()) return;
-    const className = selected?.box.mask ? selected.box.text : undefined;
-    try {
-      const created = await addPhrase(datasetId, draft, className);
-      setDraft('');
-      setProblem('');
-      setActiveChoice(created.text);
-      pictures.reload();
-    } catch (cause) {
-      setProblem(cause instanceof Error ? cause.message : String(cause));
-    }
-  };
 
   return (
     <details className="phrasebar" open={props.open}>
@@ -88,25 +73,15 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
           </button>
         ))}
       </div>
-      <form className="phrasebar__add" onSubmit={(event) => void add(event)}>
-        <label>
-          {t('phrases.bar.addLabel')}
-          <input
-            value={draft}
-            placeholder={t('phrases.bar.addPlaceholder')}
-            aria-describedby="phrasebar-add-hint"
-            onChange={(event) => setDraft(event.target.value)}
-          />
-        </label>
-        <button type="submit" className="btn btn--small" disabled={!draft.trim()}>
-          {t('phrases.bar.addButton')}
-        </button>
-        <span id="phrasebar-add-hint" className="phrasebar__note">
-          {t('phrases.bar.addHint')}
-          {selected?.box.mask ? t('phrases.bar.joinsClass', { name: phraseKey(selected.box.text ?? '') }) : ''}
-        </span>
-      </form>
-      {problem && <p className="run__warn" role="alert">{problem}</p>}
+      <AddPhraseForm
+        datasetId={datasetId}
+        phrases={phrases}
+        selectedClass={selected?.box.mask ? phraseKey(selected.box.text ?? '') : ''}
+        onAdded={(text) => {
+          setActiveChoice(text);
+          pictures.reload();
+        }}
+      />
       {pictures.error && <p className="run__warn" role="alert">{pictures.error}</p>}
       {selected && (
         <SelectedPhrases

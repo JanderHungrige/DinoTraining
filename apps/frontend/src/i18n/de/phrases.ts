@@ -9,10 +9,13 @@ export const phrasesDe: Catalogue<typeof phrasesEn> = {
   'phrases.bar.also': 'Auch: {variants}',
   'phrases.bar.noVariations': 'Noch keine Varianten',
   'phrases.bar.addLabel': '+ Phrase',
-  'phrases.bar.addPlaceholder': 'Signal, Eisenbahnsignal, Lichtsignal',
+  'phrases.bar.addPlaceholder': 'signal, railway signal, light signal',
   'phrases.bar.addButton': 'Hinzufügen',
-  'phrases.bar.addHint': 'Kommas trennen die Varianten einer Phrase.',
-  'phrases.bar.joinsClass': ' Sie kommt zur Klasse {name}.',
+  'phrases.bar.addHint': 'Kommas trennen die Varianten einer Phrase. Schreib Phrasen auf Englisch — SAM 3 liest Englisch.',
+  'phrases.bar.classLabel': 'gehört zu',
+  'phrases.bar.ownClass': 'eigene Klasse (neu)',
+  'phrases.bar.ownClassHint': ' Sie wird eine neue Klasse: Umrisse, die du mit ihr verknüpfst, trainieren als „{name}“.',
+  'phrases.bar.joinsClass': ' Sie kommt zur Klasse {name}: eine genauere Art, SAM 3 nach einigen ihrer Umrisse zu fragen. Damit verknüpfte Umrisse trainieren für Boxen und Heads weiter als {name}.',
   'phrases.bar.keys': 'Tasten: 1–9 wählen eine Phrase · A alles markiert · N nicht in diesem Bild.',
 
   // Die Phrasen des gewählten Umrisses
@@ -38,10 +41,16 @@ export const phrasesDe: Catalogue<typeof phrasesEn> = {
   // Phrasen verwalten
   'phrases.manage.title': 'Phrasen verwalten',
   'phrases.manage.variations': 'Varianten',
-  'phrases.manage.variationsPlaceholder': 'Eisenbahnsignal, Lichtsignal',
+  'phrases.manage.variationsPlaceholder': 'railway signal, light signal',
   'phrases.manage.confusable': 'Nicht zu verwechseln mit',
-  'phrases.manage.confusablePlaceholder': 'Straßenlaterne, Verkehrsschild',
+  'phrases.manage.confusablePlaceholder': 'street lamp, traffic sign',
   'phrases.manage.save': 'Speichern',
+  'phrases.manage.confusableHint':
+    'Nur Namen, und nur für Dinge, die selten mit ihr im selben Bild sind. SAM 3 wird auf Bildern mit „alles markiert“ danach gefragt und lernt, nichts zu finden. Etwas, das im selben Bild ist (eine Spiegelung, ein Schatten): Lehn stattdessen seinen Umriss ab — siehe „So funktionieren Phrasen“.',
+  'phrases.manage.delete': 'Löschen',
+  'phrases.manage.deleteConfirm': '„{phrase}“ wirklich löschen?',
+  'phrases.manage.deleteHint': 'Entfernt die Phrase, ihre Verknüpfungen mit Umrissen und ihre Bildprüfungen. Die Umrisse selbst bleiben, mit ihrer Klasse.',
+  'phrases.manage.implicit': 'Die eigene Phrase einer Klasse: Sie besteht, solange es Umrisse der Klasse {name} gibt.',
   'phrases.manage.markRest': 'Den Rest markieren',
   'phrases.manage.markRestHint':
     'Nur wenn jedes Bild für diese Phrase vollständig annotiert ist: Jedes ungeprüfte Bild wird „alles markiert“, wo es einen Umriss davon hat, und „nicht in diesem Bild“, wo es keinen hat.',
@@ -55,9 +64,15 @@ export const phrasesDe: Catalogue<typeof phrasesEn> = {
   'phrases.help.checksTerm': 'Alles markiert · Nicht in diesem Bild',
   'phrases.help.checksText':
     'SAM 3 lernt aus jedem Bild, das du geprüft hast. *Alles markiert* heißt: Jedes Vorkommen dieser Phrase hier hat einen Umriss. *Nicht in diesem Bild* heißt: Es gibt hier keins – und bringt dem Modell bei, es hier *nicht* zu finden. Sobald eine Phrase auf irgendeinem Bild geprüft ist, wird ein Bild, das du nicht geprüft hast, für sie weggelassen, nie geraten. Eine nie geprüfte Phrase behält die automatische Regel – kein Umriss heißt: keins hier –, und die stimmt nur, wenn du jedes Vorkommen annotiert hast. Falls ja, prüft *Den Rest markieren* unter „Phrasen verwalten“ alle übrigen Bilder in einem Schritt.',
+  'phrases.help.classesTerm': 'Phrasen und Klassen',
+  'phrases.help.classesText':
+    'Eine *Klasse* ist das, was Boxen und Heads lernen, und jeder Klassenname ist auch eine Phrase. „+ Phrase“ fragt, wozu die neue Phrase *gehört*: *eigene Klasse* macht ein neues Ding, das gefunden werden soll (es bekommt eigene Umrisse); eine bestehende Klasse macht eine genauere Formulierung für einige Umrisse dieser Klasse, z. B. „red car“ in der Klasse car — wähl einen Umriss und füg ihm die Phrase hinzu. Kommas geben einer Phrase mehrere Formulierungen, nicht mehrere Phrasen.',
+  'phrases.help.lookalikesTerm': 'Verwechslungen und falsche Vorschläge',
+  'phrases.help.lookalikesText':
+    '*Zwei Dinge, die beide gefunden werden sollen* (Signal und Straßenlaterne): Gib jedem eine eigene Klasse und umreiß beide. Dann ist jedes automatisch ein Negativbeispiel für das andere; unter „nicht zu verwechseln mit“ gehört nichts. *Ein falscher Vorschlag* (eine Spiegelung, als Flamme vorgeschlagen): Lehn ihn ab (✗) und markier das Bild für Flamme als *Alles markiert*. Die Flammen-Umrisse sind dann die ganze Antwort auf diesem Bild, also lernt das Modell, dass die Spiegelung keine ist — keine neue Klasse nötig. Leg eine Klasse „flame reflection“ nur an, wenn auch Spiegelungen gefunden werden sollen. *Nicht zu verwechseln mit* ist für Namen von Dingen, die selten mit der Phrase im selben Bild sind; auf einem Bild, auf dem du einen Umriss der Phrase abgelehnt hast, wird nie danach gefragt.',
   'phrases.help.negativesTerm': 'Harte Negativbeispiele',
   'phrases.help.negativesText':
-    'Bilder, die als *nicht in diesem Bild* markiert sind, sind die stärksten Lektionen – besonders, wenn etwas Ähnliches *doch* da ist. Trag Verwechslungen unter „Phrasen verwalten“ als „nicht zu verwechseln mit“ ein. Das Training fügt außerdem allgemeine, unverwandte Phrasen hinzu (allgemeine Negativbeispiele, `num_negatives`) und andere Phrasen deines Datensatzes (Kreuz-Negativbeispiele, `num_cross_negatives`) – siehe die Trainingseinstellungen von SAM 3.',
+    'Bilder, die als *nicht in diesem Bild* markiert sind, sind die stärksten Lektionen – besonders, wenn etwas Ähnliches *doch* da ist. Das Training fügt außerdem allgemeine, unverwandte Phrasen hinzu (allgemeine Negativbeispiele, `num_negatives`) und andere Phrasen deines Datensatzes (Kreuz-Negativbeispiele, `num_cross_negatives`) – siehe die Trainingseinstellungen von SAM 3.',
 
   // Die Annotationsrichtlinie
   'phrases.guideline.loading': 'Richtlinie wird geladen …',

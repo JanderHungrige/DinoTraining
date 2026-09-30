@@ -281,9 +281,7 @@ def trainable_head_types() -> tuple[HeadTypeSpec, ...]:
     return tuple(spec for spec in _SPECS if spec.trainable)
 
 
-def check_compatibility(
-    spec: HeadTypeSpec, capabilities: BackboneCapabilities
-) -> Compatibility:
+def check_compatibility(spec: HeadTypeSpec, capabilities: BackboneCapabilities) -> Compatibility:
     """Can this head type be used with this backbone, and if not, why not?
 
     A reason is mandatory on failure: the wave requires explaining incompatibility

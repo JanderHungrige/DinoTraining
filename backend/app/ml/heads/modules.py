@@ -133,9 +133,7 @@ def upsample_logits(logits: Tensor, size: tuple[int, int]) -> Tensor:
     return resized
 
 
-def decode_ltrb_to_boxes(
-    box_ltrb: Tensor, grid: tuple[int, int], patch_size: float
-) -> Tensor:
+def decode_ltrb_to_boxes(box_ltrb: Tensor, grid: tuple[int, int], patch_size: float) -> Tensor:
     """Turn per-cell ltrb distances into ``(B, Gh*Gw, 4)`` boxes in xywh pixels.
 
     ``patch_size`` is really the **stride** — pixels per cell — and is a float because the

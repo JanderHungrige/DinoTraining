@@ -19,10 +19,14 @@ export function PhraseHelp(): JSX.Element {
     <details className="phrasebar__help">
       <summary>{t('phrases.help.title')}</summary>
       <dl>
+        <dt>{t('phrases.help.classesTerm')}</dt>
+        <dd>{rich(t('phrases.help.classesText'))}</dd>
         <dt>{t('phrases.help.variationsTerm')}</dt>
         <dd>{rich(t('phrases.help.variationsText'))}</dd>
         <dt>{t('phrases.help.checksTerm')}</dt>
         <dd>{rich(t('phrases.help.checksText'))}</dd>
+        <dt>{t('phrases.help.lookalikesTerm')}</dt>
+        <dd>{rich(t('phrases.help.lookalikesText'))}</dd>
         <dt>{t('phrases.help.negativesTerm')}</dt>
         <dd>{rich(t('phrases.help.negativesText'))}</dd>
       </dl>

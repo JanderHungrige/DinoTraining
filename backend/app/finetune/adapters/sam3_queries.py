@@ -101,8 +101,17 @@ def _pairs(
         state = status.get(text)
         if state == "complete" and found:
             taught.append(Query(text, found, "positive"))
+            # A rejected outline of this phrase here means a look-alike may well be in
+            # the picture (a flame's reflection): "none here" for it would be a lie.
             phrase = table.phrases.get(text)
-            for look in phrase.confusable if phrase else ():
+            looks = (
+                ()
+                if text in table.rejected.get(sample.path, ())
+                else phrase.confusable
+                if phrase
+                else ()
+            )
+            for look in looks:
                 if look not in answers:
                     taught.append(Query(look, (), "confusable"))
         elif text in doubtful:

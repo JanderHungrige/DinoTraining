@@ -78,9 +78,9 @@ def _round_to_patch(size: int, patch_size: int) -> int:
     return multiple * patch_size
 
 
-def _read_normalisation(model_id: str) -> tuple[
-    tuple[float, float, float], tuple[float, float, float]
-]:
+def _read_normalisation(
+    model_id: str,
+) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
     """Mean/std from the model's own preprocessor_config.json, ImageNet as fallback."""
     path = resolve_model_dir(model_id) / "preprocessor_config.json"
     if not path.is_file():
@@ -100,9 +100,7 @@ def _read_normalisation(model_id: str) -> tuple[
     return (mean[0], mean[1], mean[2]), (std[0], std[1], std[2])
 
 
-def plan_preprocessing(
-    capabilities: BackboneCapabilities, spec: HeadTypeSpec
-) -> PreprocessPlan:
+def plan_preprocessing(capabilities: BackboneCapabilities, spec: HeadTypeSpec) -> PreprocessPlan:
     """Derive the plan from the backbone and the head. The only sanctioned entry point."""
     target = CLASSIFICATION_SIZE if spec.geometry == "center-crop" else DENSE_SIZE
     mean, std = _read_normalisation(capabilities.model_id)
@@ -168,9 +166,7 @@ def apply_geometry(
     return _center_crop(plan, image)
 
 
-def transform_boxes(
-    transform: GeometryTransform, boxes: list[Box]
-) -> tuple[list[Box], list[int]]:
+def transform_boxes(transform: GeometryTransform, boxes: list[Box]) -> tuple[list[Box], list[int]]:
     """Move xywh boxes into the transformed frame, clipping to the canvas.
 
     The inverse — predictions in the frame back onto the source image — is

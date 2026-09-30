@@ -93,9 +93,7 @@ class PrescanRunner:
         return True
 
     def submit(self, config: PrescanConfig) -> PrescanJob:
-        job = PrescanJob(
-            job_id=uuid.uuid4().hex, config=config, total=len(config.image_paths)
-        )
+        job = PrescanJob(job_id=uuid.uuid4().hex, config=config, total=len(config.image_paths))
         self._jobs[job.job_id] = job
         self._pool.submit(self._run, job)
         return job

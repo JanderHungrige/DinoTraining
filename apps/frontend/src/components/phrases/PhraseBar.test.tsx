@@ -9,7 +9,7 @@ import { PhraseBar } from './PhraseBar';
 
 vi.mock('../../api/phrases', async () => {
   const actual = await vi.importActual<typeof import('../../api/phrases')>('../../api/phrases');
-  return { ...actual, addPhrase: vi.fn(), changePhrase: vi.fn(), markTheRest: vi.fn() };
+  return { ...actual, addPhrase: vi.fn(), changePhrase: vi.fn(), markTheRest: vi.fn(), deletePhrase: vi.fn() };
 });
 const api = await import('../../api/phrases');
 
@@ -96,5 +96,62 @@ describe('Mark the rest (doc 108, amended)', () => {
     expect(api.markTheRest).toHaveBeenCalledWith('d1', 'car');
     expect(await screen.findByText('Marked 40 all marked, 30 not in this picture.')).toBeInTheDocument();
     expect(state.reload).toHaveBeenCalled();
+  });
+});
+
+describe('Which class a new phrase belongs to (Jan, 2026-09-30)', () => {
+  it('says it out loud, defaulting to the selected outline\'s class', () => {
+    renderBar([P('car'), P('signal')]);
+    expect(screen.getByLabelText('belongs to')).toHaveValue('car');
+    expect(screen.getByText(/It joins class car/)).toBeInTheDocument();
+  });
+
+  it('with nothing selected, a new phrase is a class of its own', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.addPhrase).mockResolvedValue(P('flame reflection'));
+    renderBar([P('flame')], null);
+    expect(screen.getByLabelText('belongs to')).toHaveValue('');
+    await user.type(screen.getByLabelText('+ phrase'), 'flame reflection');
+    expect(screen.getByText(/outlines you link to it train as “flame reflection”/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+    expect(api.addPhrase).toHaveBeenCalledWith('d1', 'flame reflection', undefined);
+  });
+
+  it('can be put into another class than the selected outline\'s', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.addPhrase).mockResolvedValue(P('red light', 'signal'));
+    renderBar([P('car'), P('signal')]);
+    await user.selectOptions(screen.getByLabelText('belongs to'), 'signal');
+    await user.type(screen.getByLabelText('+ phrase'), 'red light{Enter}');
+    expect(api.addPhrase).toHaveBeenCalledWith('d1', 'red light', 'signal');
+  });
+
+  it('explains look-alikes: two classes, or reject the wrong proposal', () => {
+    renderBar([P('car')]);
+    expect(screen.getByText('Look-alikes and wrong proposals')).toBeInTheDocument();
+    expect(screen.getByText(/no new class needed/)).toBeInTheDocument();
+  });
+});
+
+describe('Deleting a phrase', () => {
+  it('asks once, then deletes and reloads', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.deletePhrase).mockResolvedValue({ removed: true });
+    const { state } = renderBar([{ ...P('red car', 'car'), id: 7 }]);
+    await user.click(screen.getByText('Manage phrases'));
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(api.deletePhrase).not.toHaveBeenCalled();
+    expect(screen.getByText('Really delete “red car”?')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(api.deletePhrase).toHaveBeenCalledWith('d1', 7);
+    expect(state.reload).toHaveBeenCalled();
+  });
+
+  it('a class\'s own phrase without a row cannot be deleted, and says why', async () => {
+    const user = userEvent.setup();
+    renderBar([{ ...P('car'), id: null }]);
+    await user.click(screen.getByText('Manage phrases'));
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+    expect(screen.getByText(/as long as outlines of class car exist/)).toBeInTheDocument();
   });
 });

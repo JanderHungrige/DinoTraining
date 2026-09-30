@@ -132,6 +132,37 @@ does this work best?"*
     The row turned green, and the check was saved at once.
   - **clear** returned both rows to "not checked", so the dataset was left as it was.
 
+## Amended 2026-09-30 (Jan's test): which class, look-alikes, delete
+
+Jan found three things unclear while annotating flames and their reflections.
+
+- **Which class does "+ phrase" belong to?**
+  - It used to be implied by the selected outline, or else the phrase became a class of
+    its own. With several classes, nobody could tell.
+  - `AddPhraseForm` now has a **belongs to** select: *a class of its own (new)* or an
+    existing class. It defaults to the selected outline's class, storing only the user's
+    override.
+  - The hint says what follows: a new class, or a more specific wording for some of that
+    class's outlines, which still train as that class for boxes and heads.
+- **"Not to be confused with" read as "make the look-alike a class too".**
+  - "How phrases work" has two new entries.
+  - *Phrases and classes.*
+  - *Look-alikes and wrong proposals:*
+    - Two things you both want found (signal and street light) are two classes.
+    - A wrong proposal in the same picture (a reflection proposed as a flame) is
+      **rejected**, and the picture is marked **All marked**. The flame outlines are then
+      the whole answer, so no class is needed.
+  - The look-alike field has its own hint: names only, for things that rarely share a
+    picture with the phrase.
+  - Training changed to match (doc 108, amended).
+- **Delete a phrase:**
+  - Each stored phrase in Manage phrases has Delete, confirmed once. It removes the phrase,
+    its outline links and its checks; the outlines keep their class.
+  - A class's own phrase with no row has no Delete, and says it lasts as long as that
+    class's outlines.
+- **German placeholders were German:** "Straßenlaterne", although SAM 3 reads English.
+  They are English again, and the add hint says to write phrases in English.
+
 ## Bugs
 
 (none yet)

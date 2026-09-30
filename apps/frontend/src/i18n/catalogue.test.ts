@@ -10,6 +10,10 @@ import { de, en } from './catalogue';
 /** Values that are the same in both languages on purpose: names, units, symbols. */
 export const SAME_IN_BOTH = new Set<string>([
   'English',
+  // Model input stays English in German too: SAM 3 and Grounding DINO read English.
+  'signal, railway signal, light signal',
+  'railway signal, light signal',
+  'street lamp, traffic sign',
   'Deutsch',
   'DinoTraining',
   'OK',

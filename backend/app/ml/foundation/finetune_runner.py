@@ -93,9 +93,7 @@ class FinetuneRunner:
         return True
 
     def submit(self, config: FinetuneConfig) -> FinetuneJob:
-        job = FinetuneJob(
-            job_id=uuid.uuid4().hex, config=config, total_epochs=config.epochs
-        )
+        job = FinetuneJob(job_id=uuid.uuid4().hex, config=config, total_epochs=config.epochs)
         self._jobs[job.job_id] = job
         self._pool.submit(self._run, job)
         return job
@@ -113,9 +111,7 @@ class FinetuneRunner:
         train, validation, class_names = load_samples(DatasetStore(self._settings), config)
         job.class_names = class_names
 
-        model = prepared_model(
-            config.foundation_id, len(class_names), class_names, self._settings
-        )
+        model = prepared_model(config.foundation_id, len(class_names), class_names, self._settings)
         module = model.model
         job.frozen_parameters, job.trainable_parameters = freeze_backbone(
             module, config.unfreeze_blocks
@@ -131,9 +127,7 @@ class FinetuneRunner:
         # backbone nudged. One shared rate is the setting that makes unfreezing look like a
         # bad idea — at the decoder's rate a pretrained ViT is destroyed in one epoch.
         backbone_params = [
-            p
-            for p in module.get_submodule("model.backbone").parameters()
-            if bool(p.requires_grad)
+            p for p in module.get_submodule("model.backbone").parameters() if bool(p.requires_grad)
         ]
         backbone_ids = {id(p) for p in backbone_params}
         rest = [

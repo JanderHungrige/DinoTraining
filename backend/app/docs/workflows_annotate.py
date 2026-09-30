@@ -23,7 +23,10 @@ object, when to mark unclear. Follow it; if it is empty, offer to write one with
    `{"text": "signal, railway signal, light signal", "class_name": "signal"}` is one phrase
    with two variations. **Two to four variations are enough**; the model generalises from
    there. Look-alikes go in `confusable` (`PATCH .../phrases/{id}`), e.g. "street lamp" for
-   "signal".
+   "signal" — only names of things that rarely share a picture with the phrase. Two things
+   that should both be found are two classes, each outlined. A wrong proposal in the same
+   picture (a flame's reflection) is rejected, and the picture marked `complete`: the true
+   outlines are then the whole answer, and no class is needed for the reflection.
 3. **A check per picture and phrase.** `PUT /datasets/{id}/images/phrase-status`
    `{"path": ..., "phrase": "signal", "status": "complete" | "absent" | null}` (MCP
    `set_phrase_status`). `complete`: every instance here is outlined. `absent`: none here —
@@ -33,7 +36,8 @@ object, when to mark unclear. Follow it; if it is empty, offer to write one with
 
 **Hard negatives** are what makes SAM 3 precise:
 - pictures marked `absent` — best where something similar is present;
-- look-alikes (`confusable`), asked on pictures marked `complete`;
+- look-alikes (`confusable`), asked on pictures marked `complete` that have no rejected
+  outline of the phrase;
 - rejected outlines: a picture where the model's outline for a phrase was rejected and
   none accepted teaches "not here";
 - generic unrelated phrases (`num_negatives`, default 3) and your other phrases
