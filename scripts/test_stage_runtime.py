@@ -43,7 +43,9 @@ def test_only_the_package_and_uvs_two_files_ship(
     monkeypatch.setattr(stage_runtime, "BACKEND", _fake_backend(tmp_path))
     out = tmp_path / "out"
     count = stage_runtime.copy_backend(out)
-    shipped = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file())
+    shipped = sorted(
+        p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()
+    )
     assert shipped == ["app/main.py", "app/ml/head.py", "pyproject.toml", "uv.lock"]
     assert count == 4
 
@@ -61,7 +63,8 @@ def test_stage_writes_uv_and_the_lock_hash(
     version = stage_runtime.stage("aarch64-apple-darwin", out)
 
     assert (out / "uv").read_bytes() == b"uv-binary"
-    assert (out / "uv").stat().st_mode & 0o111, "uv must be executable"
+    if sys.platform != "win32":  # Windows has no execute bit; uv.exe runs by its name
+        assert (out / "uv").stat().st_mode & 0o111, "uv must be executable"
     assert not (out / "stale").exists()
     assert version["lock_sha256"] == hashlib.sha256(b"version = 1\n").hexdigest()
     assert json.loads((out / "VERSION.json").read_text()) == version
