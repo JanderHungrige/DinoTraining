@@ -9,7 +9,9 @@ import pytest
 import torch
 
 from app.finetune.adapters import get_adapter
-from app.finetune.adapters.sam2 import JITTER, Sam2Adapter, _box, _jittered, _loss, _scaled
+from app.finetune.adapters.sam2 import Sam2Adapter, _box, _jittered, _loss, _scaled
+
+JITTER = 0.1  # the catalogue's default box looseness (doc 99)
 
 
 def test_the_prompt_box_is_the_mask_s_own_extent() -> None:
@@ -22,7 +24,7 @@ def test_the_prompt_box_is_the_mask_s_own_extent() -> None:
 def test_jitter_stays_within_a_tenth_of_the_box() -> None:
     rng = random.Random(0)
     for _ in range(50):
-        x0, y0, x1, y1 = _jittered((100.0, 50.0, 200.0, 150.0), rng)
+        x0, y0, x1, y1 = _jittered((100.0, 50.0, 200.0, 150.0), rng, JITTER)
         assert abs(x0 - 100) <= JITTER * 100 and abs(y1 - 150) <= JITTER * 100
 
 

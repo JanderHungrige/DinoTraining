@@ -3,7 +3,7 @@ id: dinotraining
 title: DinoTraining
 status: active
 version: 12
-hash: 120c5dcb
+hash: 1426028f
 created: 2026-08-14
 ---
 

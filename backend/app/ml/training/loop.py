@@ -204,17 +204,25 @@ def run_epoch(
     compute_loss: LossFn,
     cache: list[CachedSample],
     indices: tuple[int, ...],
+    batch_size: int = 1,
 ) -> float:
-    """One training pass. Returns mean loss."""
+    """One training pass. Returns mean loss.
+
+    `batch_size` pictures are looked at before each correction (doc 99): their losses are
+    averaged by accumulating gradients, because pictures differ in size and cannot be
+    stacked into one tensor. 1 is how every head so far was trained.
+    """
     head.train()
     total = 0.0
-    for index in indices:
+    optimiser.zero_grad()
+    for position, index in enumerate(indices, start=1):
         features, targets = cache[index]
         loss = compute_loss(head(features), batched(targets))
-        optimiser.zero_grad()
         # torch ships Tensor.backward untyped; this is the library boundary.
-        loss.backward()  # type: ignore[no-untyped-call]
-        optimiser.step()
+        (loss / batch_size).backward()  # type: ignore[no-untyped-call]
+        if position % batch_size == 0 or position == len(indices):
+            optimiser.step()
+            optimiser.zero_grad()
         # detach before float(): the loss still carries a grad_fn here, and torch warns
         # that converting it to a scalar can behave unexpectedly.
         total += float(loss.detach())

@@ -45,8 +45,26 @@ class FinetuneSettings:
     epochs: int = 10
     learning_rate: float = 1e-4
     seed: int = 42
-    #: Adapter-specific options, e.g. DINOv3's unfrozen blocks (doc 95).
+    #: Adapter-specific options, e.g. DINOv3's unfrozen blocks (doc 95). The API fills
+    #: every catalogue parameter here (doc 99); adapters read them with `param`.
     options: dict[str, float] = field(default_factory=dict)
+
+    def as_parameters(self) -> dict[str, float | int | bool | str]:
+        """Everything this run used, for the saved model's provenance (doc 99)."""
+        return {
+            **self.options,
+            "epochs": self.epochs,
+            "learning_rate": self.learning_rate,
+            "seed": self.seed,
+        }
+
+
+def param(settings: FinetuneSettings, family: str, key: str) -> float:
+    """An adapter's option, or the catalogue's default for it (doc 99) — one source, so an
+    adapter can never train with a value the ? popover does not show."""
+    from app.params import family_for
+
+    return float(family_for(family).value(settings.options, key))
 
 
 def memory_budget(fraction: float, ceiling: int = 3 * 1024**3) -> int:
@@ -99,4 +117,11 @@ class FinetuneAdapter(Protocol):
         ...
 
 
-__all__ = ["FinetuneAdapter", "FinetuneData", "FinetuneSettings", "TrainingState"]
+__all__ = [
+    "FinetuneAdapter",
+    "FinetuneData",
+    "FinetuneSettings",
+    "TrainingState",
+    "memory_budget",
+    "param",
+]

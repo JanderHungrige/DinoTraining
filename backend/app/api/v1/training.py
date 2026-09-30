@@ -38,14 +38,17 @@ class TrainingRequest(BaseModel):
     backbone_id: str
     dataset_ids: list[str] = Field(min_length=1)
     epochs: int = Field(default=20, ge=1, le=1000)
-    batch_size: int = Field(default=16, ge=1, le=512)
+    #: Pictures per correction (doc 99); the catalogue explains every field here.
+    batch_size: int = Field(default=1, ge=1, le=64)
     learning_rate: float = Field(default=1e-3, gt=0, le=1.0)
     weight_decay: float = Field(default=0.01, ge=0)
     val_fraction: float = Field(default=0.2, ge=0, lt=1)
     test_fraction: float = Field(default=0.1, ge=0, lt=1)
     split_seed: int = 42
     save_best_only: bool = True
-    early_stopping_patience: int = Field(default=5, ge=1)
+    early_stopping_patience: int = Field(default=5, ge=1, le=100)
+    lr_schedule: Literal["constant", "cosine"] = "constant"
+    warmup_epochs: int = Field(default=0, ge=0, le=50)
     augment: bool = False
     #: Doc 86. "none" trains exactly as before; the Prepare flow recommends one.
     imbalance: Literal["none", "weighted-loss", "balanced-sampling"] = "none"
@@ -70,6 +73,8 @@ class TrainingRequest(BaseModel):
             split_seed=self.split_seed,
             save_best_only=self.save_best_only,
             early_stopping_patience=self.early_stopping_patience,
+            lr_schedule=self.lr_schedule,
+            warmup_epochs=self.warmup_epochs,
             augment=self.augment,
             imbalance=self.imbalance,
             augmentation=self.augmentation,

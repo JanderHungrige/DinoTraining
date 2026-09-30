@@ -21,7 +21,10 @@ class TrainingConfig:
     dataset_ids: tuple[str, ...]
 
     epochs: int = 20
-    batch_size: int = 16
+    #: Pictures per correction, by gradient accumulation (doc 99). It was 16 and never
+    #: read — every run made one step per picture — so 1 is the honest default and moves
+    #: no result.
+    batch_size: int = 1
     # A linear head on frozen features tolerates a far higher lr than end-to-end
     # fine-tuning would; 1e-3 converges in a handful of epochs on small datasets.
     learning_rate: float = 1e-3
@@ -31,8 +34,13 @@ class TrainingConfig:
     test_fraction: float = 0.1
     split_seed: int = 42
 
+    #: Accepted for compatibility, never honoured: the best round is always kept (doc 99).
     save_best_only: bool = True
     early_stopping_patience: int = 5
+    #: Doc 99: "constant" (as every run before it) or "cosine", set once per round.
+    lr_schedule: str = "constant"
+    #: Rounds that ramp the learning rate up from a fraction; 0 = none, as before.
+    warmup_epochs: int = 0
     augment: bool = False
     #: How many of the backbone's **last** transformer blocks to train alongside the head
     #: (doc 55). 0 keeps the founding rule and the feature cache; -1 means the whole
@@ -64,6 +72,10 @@ class TrainingConfig:
     def __post_init__(self) -> None:
         if not self.dataset_ids:
             raise ValueError("At least one dataset is required")
+        if self.lr_schedule not in ("constant", "cosine"):
+            raise ValueError(f"Unknown learning-rate schedule: {self.lr_schedule}")
+        if self.warmup_epochs < 0:
+            raise ValueError(f"warmup_epochs must be >= 0, got {self.warmup_epochs}")
         if self.imbalance not in ("none", "weighted-loss", "balanced-sampling"):
             raise ValueError(f"Unknown imbalance strategy: {self.imbalance}")
         if not 0 <= self.augment_copies <= 8:

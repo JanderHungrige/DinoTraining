@@ -41,6 +41,7 @@ from app.api.v1 import (
     settings,
     system,
     training,
+    training_parameters,
     video,
     video_extract,
 )
@@ -59,6 +60,7 @@ api_router.include_router(inference.router, tags=["inference"])
 api_router.include_router(foundation.router, tags=["foundation"])
 api_router.include_router(foundation_finetune.router, tags=["foundation"])
 api_router.include_router(training.router, tags=["training"])
+api_router.include_router(training_parameters.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(settings.router, tags=["settings"])
 api_router.include_router(datasets.router, tags=["datasets"])

@@ -225,6 +225,7 @@ class FoundationFinetuneRunner:
             recipe_id=request.recipe_id,
             baseline_metrics=job.baseline_metrics,
             weights_kind=adapter.weights_kind,
+            parameters=request.settings.as_parameters(),
         )
         job.instance_id = instance.id
 

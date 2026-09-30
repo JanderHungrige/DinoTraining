@@ -1,7 +1,7 @@
 """Fine-tuning SAM 2's mask decoder on the user's own outlines (doc 94).
 
 * **Only the mask decoder trains.** The image encoder is frozen, so each picture's
-  embeddings are computed once and cached (fp16, on the CPU, within `CACHE_BUDGET_BYTES`;
+  embeddings are computed once and cached (fp16, on the CPU, within the `cache_share` budget;
   the rest are recomputed each epoch). The result is the decoder's weights alone: a few
   megabytes instead of the whole model.
 * **Prompts come from the masks.** Each object is prompted with its own box, jittered
@@ -31,19 +31,47 @@ from torch.nn import functional as F
 from app.core.config import Settings
 from app.core.paths import resolve_model_dir
 from app.datasets.rle import rle_decode
-from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState, memory_budget
+from app.finetune.adapter import (
+    FinetuneData,
+    FinetuneSettings,
+    TrainingState,
+    memory_budget,
+    param,
+)
 from app.ml.training.samples import TrainingSample
 
 logger = logging.getLogger(__name__)
 
 INPUT = 1024
 LOW_RES = 256
-#: A share of the machine's memory for cached embeddings (doc 96's lesson).
-CACHE_BUDGET_BYTES = memory_budget(0.15)
-#: Objects per picture per step, at most: a crowded picture is sampled, not all at once.
-MAX_OBJECTS = 16
-JITTER = 0.1
 DECODER_FILE = "mask_decoder.pt"
+#: The catalogue family (doc 99). Jitter, objects per step, loss weights and the cache's
+#: share of memory (doc 96's lesson) are its parameters, no longer constants here.
+FAMILY = "sam2"
+
+
+@dataclass(frozen=True)
+class Sam2Knobs:
+    focal: float = 20.0
+    dice: float = 1.0
+    iou: float = 1.0
+    jitter: float = 0.1
+    max_objects: int = 16
+    cache_bytes: int = 0
+
+    @classmethod
+    def from_settings(cls, settings: FinetuneSettings) -> Sam2Knobs:
+        def get(key: str) -> float:
+            return param(settings, FAMILY, key)
+
+        return cls(
+            focal=get("focal_weight"),
+            dice=get("dice_weight"),
+            iou=get("iou_weight"),
+            jitter=get("box_jitter"),
+            max_objects=int(get("max_objects")),
+            cache_bytes=memory_budget(get("cache_share")),
+        )
 
 
 @dataclass
@@ -54,6 +82,7 @@ class Sam2State:
     optimiser: torch.optim.Optimizer
     rng: random.Random
     stop: threading.Event | None = None
+    knobs: Sam2Knobs = field(default_factory=Sam2Knobs)
     cache: dict[str, list[torch.Tensor]] = field(default_factory=dict)
     cached_bytes: int = 0
 
@@ -69,14 +98,16 @@ def _box(mask: np.ndarray) -> tuple[float, float, float, float] | None:
     return float(xs.min()), float(ys.min()), float(xs.max() + 1), float(ys.max() + 1)
 
 
-def _jittered(box: tuple[float, float, float, float], rng: random.Random) -> list[float]:
+def _jittered(
+    box: tuple[float, float, float, float], rng: random.Random, jitter: float
+) -> list[float]:
     x0, y0, x1, y1 = box
     w, h = x1 - x0, y1 - y0
     return [
-        x0 + rng.uniform(-JITTER, JITTER) * w,
-        y0 + rng.uniform(-JITTER, JITTER) * h,
-        x1 + rng.uniform(-JITTER, JITTER) * w,
-        y1 + rng.uniform(-JITTER, JITTER) * h,
+        x0 + rng.uniform(-jitter, jitter) * w,
+        y0 + rng.uniform(-jitter, jitter) * h,
+        x1 + rng.uniform(-jitter, jitter) * w,
+        y1 + rng.uniform(-jitter, jitter) * h,
     ]
 
 
@@ -95,7 +126,7 @@ def _embeddings(
         embeds = state.model.get_image_embeddings(pixels)
     stored = [t.detach().to("cpu", torch.float16) for t in embeds]
     nbytes = sum(t.element_size() * t.nelement() for t in stored)
-    if state.cached_bytes + nbytes <= CACHE_BUDGET_BYTES:
+    if state.cached_bytes + nbytes <= state.knobs.cache_bytes:
         state.cache[sample.path] = stored
         state.cached_bytes += nbytes
     return embeds, size
@@ -113,7 +144,12 @@ def _low_res(masks: list[np.ndarray]) -> torch.Tensor:
     return F.interpolate(stacked, size=(LOW_RES, LOW_RES), mode="nearest")[:, 0]
 
 
-def _loss(logits: torch.Tensor, iou_pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def _loss(
+    logits: torch.Tensor,
+    iou_pred: torch.Tensor,
+    target: torch.Tensor,
+    knobs: Sam2Knobs = Sam2Knobs(),  # noqa: B008 - frozen, so a shared default is safe
+) -> torch.Tensor:
     """Focal + dice on the masks (SAM's 20:1), MSE of the IoU head against the IoU achieved."""
     prob = logits.sigmoid()
     bce = F.binary_cross_entropy_with_logits(logits, target, reduction="none")
@@ -125,7 +161,11 @@ def _loss(logits: torch.Tensor, iou_pred: torch.Tensor, target: torch.Tensor) ->
     achieved = (hard * target).flatten(1).sum(1) / (
         (hard + target).clamp(max=1).flatten(1).sum(1) + 1e-6
     )
-    return 20 * focal_loss + dice.mean() + F.mse_loss(iou_pred, achieved.detach())
+    return (
+        knobs.focal * focal_loss
+        + knobs.dice * dice.mean()
+        + knobs.iou * F.mse_loss(iou_pred, achieved.detach())
+    )
 
 
 class Sam2Adapter:
@@ -149,10 +189,20 @@ class Sam2Adapter:
         for name, parameter in model.named_parameters():
             parameter.requires_grad = name.startswith("mask_decoder.")
         trainable = [p for p in model.parameters() if p.requires_grad]
-        optimiser = torch.optim.AdamW(trainable, lr=settings.learning_rate, weight_decay=1e-4)
+        optimiser = torch.optim.AdamW(
+            trainable,
+            lr=settings.learning_rate,
+            weight_decay=param(settings, FAMILY, "weight_decay"),
+        )
         model.eval()
         return Sam2State(
-            model, processor, device, optimiser, random.Random(settings.seed), stop=data.stop
+            model,
+            processor,
+            device,
+            optimiser,
+            random.Random(settings.seed),
+            stop=data.stop,
+            knobs=Sam2Knobs.from_settings(settings),
         )
 
     def _step(self, state: Sam2State, sample: TrainingSample) -> float | None:
@@ -161,13 +211,16 @@ class Sam2Adapter:
         if not pairs:
             return None
         state.rng.shuffle(pairs)
-        pairs = pairs[:MAX_OBJECTS]
+        pairs = pairs[: state.knobs.max_objects]
         embeds, size = _embeddings(state, sample)
-        boxes = _scaled([_jittered(b, state.rng) for _, b in pairs], size).to(state.device)
+        jitter = state.knobs.jitter
+        boxes = _scaled([_jittered(b, state.rng, jitter) for _, b in pairs], size).to(
+            state.device
+        )
         out = state.model(image_embeddings=embeds, input_boxes=boxes[None], multimask_output=False)
         logits = out.pred_masks[0, :, 0]
         target = _low_res([m for m, _ in pairs]).to(state.device)
-        loss = _loss(logits, out.iou_scores[0, :, 0], target)
+        loss = _loss(logits, out.iou_scores[0, :, 0], target, state.knobs)
         state.optimiser.zero_grad(set_to_none=True)
         loss.backward()  # type: ignore[no-untyped-call]
         state.optimiser.step()
