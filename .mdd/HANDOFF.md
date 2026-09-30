@@ -7,8 +7,8 @@ do not read it for current state.
 **Last updated:** 2026-09-30, at the end of the **Wave 15 build**.
 - **Waves 1–12:** in `dev` and `main`.
 - **Waves 13 and 14** (docs 99–110): in `dev` (`a41e2c8`), waiting for Jan's test.
-- **Wave 15** (docs 111–114): built and pushed on `feat/dinotraining-wave-15`, not merged.
-  Its status stays `in_progress` until Jan confirms the demo-state.
+- **Wave 15** (docs 111–114): in `dev` (`b5cbc70`, 2026-09-30), with the fixes from Jan's
+  test. Its status stays `in_progress` until Jan confirms the demo-state.
 
 **Next:** Wave 16, the website and cloud compute.
 
