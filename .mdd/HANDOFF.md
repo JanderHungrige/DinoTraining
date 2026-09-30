@@ -6,11 +6,11 @@ do not read it for current state.
 
 **Last updated:** 2026-09-30, at the end of the **Wave 15.6 build**.
 - **Waves 1–12:** in `dev` and `main`.
-- **Waves 13, 14, 15 and 15.5** (docs 99–119): in `dev`, waiting for Jan's test.
-- **Wave 15.6** (docs 120–124): built and pushed on `feat/dinotraining-wave-15-6`, not
-  merged. Its status stays `in_progress` until Jan confirms the demo-state.
+- **Waves 13, 14, 15, 15.5 and 15.6** (docs 99–124): in `dev` (15.6 as `d74a1a1`),
+  waiting for Jan's test. Each status stays `in_progress` until Jan confirms its
+  demo-state.
 
-**Next:** Jan's test of 15.6 and the merge to `dev`. Then Wave 16, the website.
+**Next:** Wave 16, the website.
 
 ---
 
