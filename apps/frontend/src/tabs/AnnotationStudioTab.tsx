@@ -24,12 +24,19 @@ import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotation
 import { MaskEditBar } from '../components/MaskEditBar';
 import { MaskEditOverlay } from '../components/MaskEditOverlay';
 import { StudioActions } from '../components/StudioActions';
+import { StudioBack } from '../components/StudioBack';
 import { StudioViewBar } from '../components/StudioViewBar';
 import { useMaskEditing } from '../hooks/useMaskEditing';
 import { useT } from '../i18n';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 
-export function AnnotationStudioTab(): JSX.Element {
+export interface AnnotationStudioTabProps {
+  /** False while another tab is shown: App keeps the Studio mounted so the session
+   *  survives, and its document-wide keys must not act on a hidden picture. */
+  readonly active?: boolean;
+}
+
+export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps): JSX.Element {
   const { t } = useT();
   const [config, setConfig] = useState<SessionConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -134,9 +141,7 @@ export function AnnotationStudioTab(): JSX.Element {
     <section className="studio">
       <div className="studio__head">
         <h2 className="studio__title">Annotation Studio</h2>
-        <button type="button" className="btn" onClick={() => setConfig(null)}>
-          {t('studio.tab.changeFolder')}
-        </button>
+        <StudioBack dirty={session.dirty} busy={session.busy} onSave={session.save} onBack={() => setConfig(null)} />
       </div>
 
       <CounterBar
@@ -209,7 +214,7 @@ export function AnnotationStudioTab(): JSX.Element {
             pictures={pictures}
             onBoxesChange={setBoxes}
             open={['sam3', 'open', undefined].includes(config.target)}
-            disabled={session.busy}
+            disabled={session.busy || !active}
           />
 
           {imageSize ? (

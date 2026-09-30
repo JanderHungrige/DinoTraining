@@ -84,7 +84,8 @@ export interface AnnotationSession {
    *  boxes without ever running the prompt can still save. */
   readonly reportImageSize: (width: number, height: number) => void;
   readonly propose: () => Promise<void>;
-  readonly save: () => Promise<void>;
+  /** False when the save failed (the error is on the session). */
+  readonly save: () => Promise<boolean>;
   readonly next: () => Promise<void>;
   readonly previous: () => Promise<void>;
   readonly canGoNext: boolean;
@@ -241,8 +242,8 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     [config, tr],
   );
 
-  const save = useCallback(async (): Promise<void> => {
-    if (currentImage) await saveAt(currentImage);
+  const save = useCallback(async (): Promise<boolean> => {
+    return currentImage ? saveAt(currentImage) : true;
   }, [currentImage, saveAt]);
 
   const go = useCallback(

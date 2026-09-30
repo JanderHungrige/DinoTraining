@@ -139,4 +139,12 @@ export const studio2En = {
   'studio.reveal.title': "Show this dataset's images in the file manager",
   'studio.reveal.opening': 'Opening…',
   'studio.reveal.open': 'Open folder',
+
+  // Back to the overview (the session survives switching tabs until then)
+  'studio.back.button': '← Back to overview',
+  'studio.back.hint': 'Your place here is kept while you visit other tabs. Back ends this session.',
+  'studio.back.unsaved': 'This picture has unsaved changes. They are lost if you go back without saving.',
+  'studio.back.saveAndGo': 'Save and go back',
+  'studio.back.discard': 'Go back without saving',
+  'studio.back.stay': 'Stay',
 } as const;

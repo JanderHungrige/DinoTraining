@@ -142,4 +142,12 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.reveal.title': 'Die Bilder dieses Datensatzes im Dateimanager zeigen',
   'studio.reveal.opening': 'Öffnet …',
   'studio.reveal.open': 'Ordner öffnen',
+
+  // Back to the overview (the session survives switching tabs until then)
+  'studio.back.button': '← Zurück zur Übersicht',
+  'studio.back.hint': 'Deine Stelle hier bleibt erhalten, während du andere Tabs besuchst. „Zurück“ beendet diese Sitzung.',
+  'studio.back.unsaved': 'Dieses Bild hat ungespeicherte Änderungen. Sie gehen verloren, wenn du ohne Speichern zurückgehst.',
+  'studio.back.saveAndGo': 'Speichern und zurück',
+  'studio.back.discard': 'Ohne Speichern zurück',
+  'studio.back.stay': 'Bleiben',
 };

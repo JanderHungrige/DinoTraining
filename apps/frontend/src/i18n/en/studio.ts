@@ -10,7 +10,6 @@ export const studioEn = {
   // The tab
   'studio.tab.lead':
     'Point at a folder of images and choose what proposes the boxes — describe what you are looking for, or run a head you already trained. Either way you accept, reject or correct what comes back.',
-  'studio.tab.changeFolder': 'Change folder',
   'studio.tab.runPrompt': 'Run prompt',
   'studio.tab.runModel': 'Run model',
   'studio.tab.loadingImages': 'Loading images…',

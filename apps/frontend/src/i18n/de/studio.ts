@@ -7,7 +7,6 @@ export const studioDe: Catalogue<typeof studioEn> = {
   // The tab
   'studio.tab.lead':
     'Wähle einen Ordner mit Bildern und entscheide, was die Boxen vorschlägt — beschreib, was du suchst, oder lass einen Head laufen, den du schon trainiert hast. So oder so nimmst du an, lehnst ab oder korrigierst, was zurückkommt.',
-  'studio.tab.changeFolder': 'Ordner wechseln',
   'studio.tab.runPrompt': 'Prompt ausführen',
   'studio.tab.runModel': 'Modell ausführen',
   'studio.tab.loadingImages': 'Bilder werden geladen …',
