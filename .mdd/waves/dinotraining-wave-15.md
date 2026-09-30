@@ -52,7 +52,7 @@ hash: a30e6737
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | i18n-framework | docs/111-i18n-framework.md | planned | — |
+| 1 | i18n-framework | docs/111-i18n-framework.md | complete | — |
 | 2 | frontend-strings | docs/112-frontend-strings.md | planned | i18n-framework |
 | 3 | backend-texts | docs/113-backend-texts.md | planned | i18n-framework |
 | 4 | german-translation | docs/114-german-translation.md | planned | frontend-strings, backend-texts |

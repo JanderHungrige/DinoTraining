@@ -75,6 +75,13 @@ async function readErrorBody(response: Response): Promise<ApiErrorBody['error']>
  *               here, at the boundary, rather than leak `undefined` into the UI.
  * @throws {ApiError} on transport failure, non-2xx status, or a shape mismatch.
  */
+/** Doc 111: the UI's language, sent so the backend can answer in it (doc 113). */
+let apiLanguage = 'en';
+
+export function setApiLanguage(language: string): void {
+  apiLanguage = language;
+}
+
 export async function apiFetch<T>(
   path: string,
   narrow: (value: unknown) => value is T,
@@ -84,7 +91,7 @@ export async function apiFetch<T>(
   try {
     response = await fetch(buildUrl(path), {
       ...init,
-      headers: { Accept: 'application/json', ...init?.headers },
+      headers: { Accept: 'application/json', 'Accept-Language': apiLanguage, ...init?.headers },
     });
   } catch (cause) {
     throw new ApiError(

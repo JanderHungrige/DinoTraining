@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { BackendStatus } from './components/BackendStatus';
+import { LanguageSwitch } from './components/LanguageSwitch';
+import { LanguageProvider } from './i18n';
 import { BackgroundVideo } from './components/BackgroundVideo';
 import { LookProvider } from './lib/look';
 import { TabBar } from './components/TabBar';
@@ -71,11 +73,13 @@ export function App(): JSX.Element {
   }, []);
 
   return (
+    <LanguageProvider>
     <LookProvider>
       <BackgroundVideo />
       <div className="app">
         <header className="app__header">
           <h1 className="app__title">DinoTraining</h1>
+          <LanguageSwitch />
           <BackendStatus />
         </header>
 
@@ -92,5 +96,6 @@ export function App(): JSX.Element {
         </main>
       </div>
     </LookProvider>
+    </LanguageProvider>
   );
 }
