@@ -34,7 +34,7 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
     case 'studio':
       return <AnnotationStudioTab />;
     case 'trainer':
-      return <HeadTrainerTab request={nav.trainRequest} />;
+      return <HeadTrainerTab request={nav.trainRequest} onOpenPrepare={() => nav.onNavigate('prepare')} />;
     case 'prepare':
       return <PrepareTab onTrain={nav.onTrain} />;
     case 'inference':

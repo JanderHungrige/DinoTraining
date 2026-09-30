@@ -77,6 +77,18 @@ def test_a_kept_source_split_is_reported_as_it_is(client: TestClient) -> None:
     assert report["sides"]["train"]["images"] == 6
 
 
+def test_a_kept_source_split_is_recorded_for_a_recipe(client: TestClient) -> None:
+    """Doc 101: keeping the source split stored no settings, so a recipe then refused the
+    dataset as 'not split yet'."""
+    from app.prep.split_service import load_split_settings
+
+    dataset_id = _dataset(client, 6, split="train")
+    client.post(f"/api/v1/datasets/{dataset_id}/split", json={"mode": "keep-source"})
+    made = load_split_settings(dataset_id)
+    assert made is not None and made.mode == "keep-source"
+    assert made.val_fraction == 0.0
+
+
 def test_impossible_shares_are_refused(client: TestClient) -> None:
     dataset_id = _dataset(client, 5)
     body = {"val_fraction": 0.6, "test_fraction": 0.5}

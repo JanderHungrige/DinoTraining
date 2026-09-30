@@ -17,6 +17,7 @@ import { useRecipeChoice } from '../../hooks/useRecipeChoice';
 import { finetuneFields, useParameters } from '../../hooks/useParameters';
 import { isString, stillListed } from '../../lib/persisted';
 import { blockingParameter, ParameterForm } from '../params/ParameterForm';
+import { RecipeExplainer } from '../RecipeExplainer';
 import { RecipePicker } from '../RecipePicker';
 import { FinetuneResult, ReadinessList, RequirementsCard } from './FinetuneParts';
 import '../../finetune.css';
@@ -108,7 +109,14 @@ function RunControls(props: {
   );
 }
 
-export function FoundationFinetunePanel({ datasets }: { readonly datasets: readonly DatasetInfo[] }): JSX.Element {
+export function FoundationFinetunePanel({
+  datasets,
+  onOpenPrepare,
+}: {
+  readonly datasets: readonly DatasetInfo[];
+  /** Doc 101: "Open Prepare data" from the recipe explainer. */
+  readonly onOpenPrepare?: (() => void) | undefined;
+}): JSX.Element {
   const { specs, error: listError } = useRequirements();
   const [modelChoice, setModelChoice] = usePersistentState('finetune.model', '', isString);
   const [datasetChoice, setDatasetChoice] = usePersistentState('finetune.dataset', '', isString);
@@ -155,7 +163,23 @@ export function FoundationFinetunePanel({ datasets }: { readonly datasets: reado
         </p>
       ))}
       {spec && <RequirementsCard spec={spec} />}
-      <RecipePicker datasetIds={datasetId ? [datasetId] : []} {...recipes} onChoice={setRecipeChoice} />
+      <RecipePicker
+        datasetIds={datasetId ? [datasetId] : []}
+        {...recipes}
+        onChoice={setRecipeChoice}
+        explainer={
+          <RecipeExplainer
+            datasetId={datasetId}
+            model={modelId ? { model_id: modelId } : null}
+            required={spec?.recipe_required ?? false}
+            onSaved={(saved) => {
+              setRecipeChoice(saved.id);
+              recipes.reload();
+            }}
+            onOpenPrepare={onOpenPrepare}
+          />
+        }
+      />
       {readiness && <ReadinessList readiness={readiness} />}
       <ParameterForm params={params} disabled={run.running} />
       <label className="genpanel__field">

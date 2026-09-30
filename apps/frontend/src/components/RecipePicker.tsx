@@ -3,7 +3,7 @@
  * a recipe describes one.
  */
 
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 import type { RecipeInfo } from '../api/prepPlan';
 import { NO_RECIPE } from '../hooks/useRecipeChoice';
@@ -14,9 +14,18 @@ export interface RecipePickerProps {
   readonly chosen: RecipeInfo | null;
   readonly error: string;
   readonly onChoice: (choice: string) => void;
+  /** Doc 101: shown instead of the one-line warning when no recipe is chosen. */
+  readonly explainer?: ReactNode;
 }
 
-export function RecipePicker({ datasetIds, recipes, chosen, error, onChoice }: RecipePickerProps): JSX.Element | null {
+export function RecipePicker({
+  datasetIds,
+  recipes,
+  chosen,
+  error,
+  onChoice,
+  explainer,
+}: RecipePickerProps): JSX.Element | null {
   if (datasetIds.length !== 1) return null;
   return (
     <div className="recipepicker">
@@ -38,6 +47,8 @@ export function RecipePicker({ datasetIds, recipes, chosen, error, onChoice }: R
           Uses the recipe&apos;s split, class changes, tiles, unequal-class handling (
           {chosen.recipe.imbalance}) and changed copies ({chosen.recipe.augmentation}).
         </p>
+      ) : explainer ? (
+        explainer
       ) : (
         <p className="run__warn">
           No recipe: the pictures are split at random, so near-identical ones may sit on both

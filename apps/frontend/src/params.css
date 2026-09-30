@@ -119,3 +119,32 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Doc 101: "What is a recipe?" where none is chosen. */
+.recipe-explainer {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.recipe-explainer p {
+  margin: 0;
+}
+
+.recipe-explainer__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.recipe-explainer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}

@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
 import { FoundationFinetunePanel } from '../components/finetune/FoundationFinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
+import { RecipeExplainer } from '../components/RecipeExplainer';
 import { RecipePicker } from '../components/RecipePicker';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
 import { blockingParameter, ParameterForm } from '../components/params/ParameterForm';
@@ -58,7 +59,14 @@ type TrainingMode = 'head' | 'finetune';
 
 const isTrainingMode = isOneOf<TrainingMode>(['head', 'finetune']);
 
-export function HeadTrainerTab({ request = null }: { readonly request?: TrainRequest | null }): JSX.Element {
+export function HeadTrainerTab({
+  request = null,
+  onOpenPrepare,
+}: {
+  readonly request?: TrainRequest | null;
+  /** Doc 101: "Open Prepare data" from the recipe explainer. */
+  readonly onOpenPrepare?: () => void;
+}): JSX.Element {
   // Defaults to the head path: it is the cheaper one, the one the rest of the app is
   // built around, and the one a first-time user has the data for.
   // Doc 69: the mode and the whole selection are remembered across tab switches.
@@ -168,7 +176,7 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
             stronger: on Blood cells with a leak-free split, RF-DETR reached 0.62 test mAP
             against 0.41 for a DINO head. Every run is compared with the model it started from.
           </p>
-          <FoundationFinetunePanel datasets={datasets} />
+          <FoundationFinetunePanel datasets={datasets} onOpenPrepare={onOpenPrepare} />
         </>
       ) : (
         <>
@@ -182,7 +190,27 @@ export function HeadTrainerTab({ request = null }: { readonly request?: TrainReq
               and wants to know whether it will load. */}
           <DatasetFormatPanel />
 
-          <RecipePicker datasetIds={live.datasetIds} {...recipes} onChoice={setRecipeChoice} />
+          <RecipePicker
+            datasetIds={live.datasetIds}
+            {...recipes}
+            onChoice={setRecipeChoice}
+            explainer={
+              <RecipeExplainer
+                datasetId={live.datasetIds[0] ?? ''}
+                model={
+                  live.headTypeId && live.backboneId
+                    ? { model_id: 'head', head_type_id: live.headTypeId, backbone_id: live.backboneId }
+                    : null
+                }
+                modelMissing="Choose a backbone and a head type first."
+                onSaved={(saved) => {
+                  setRecipeChoice(saved.id);
+                  recipes.reload();
+                }}
+                onOpenPrepare={onOpenPrepare}
+              />
+            }
+          />
 
           <TrainerForm
             datasets={datasets}

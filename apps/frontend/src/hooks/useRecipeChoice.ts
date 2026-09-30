@@ -3,7 +3,7 @@
  * Loaded, never seeded: `choice` is only what the user picked.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { listRecipes, type RecipeInfo } from '../api/prepPlan';
 
@@ -19,10 +19,18 @@ export function effectiveRecipe(recipes: readonly RecipeInfo[], choice: string):
 export function useRecipeChoice(
   datasetIds: readonly string[],
   choice: string,
-): { recipes: readonly RecipeInfo[]; chosen: RecipeInfo | null; error: string } {
+): {
+  recipes: readonly RecipeInfo[];
+  chosen: RecipeInfo | null;
+  error: string;
+  /** Load the list again, e.g. after doc 101's default recipe was saved. */
+  reload: () => void;
+} {
   const single = datasetIds.length === 1 ? datasetIds[0]! : '';
   const [recipes, setRecipes] = useState<readonly RecipeInfo[]>([]);
   const [error, setError] = useState('');
+  const [generation, setGeneration] = useState(0);
+  const reload = useCallback(() => setGeneration((current) => current + 1), []);
   useEffect(() => {
     setRecipes([]);
     setError('');
@@ -34,6 +42,6 @@ export function useRecipeChoice(
     return () => {
       live = false;
     };
-  }, [single]);
-  return { recipes, chosen: single ? effectiveRecipe(recipes, choice) : null, error };
+  }, [single, generation]);
+  return { recipes, chosen: single ? effectiveRecipe(recipes, choice) : null, error, reload };
 }

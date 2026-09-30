@@ -32,6 +32,7 @@ from app.api.v1 import (
     prep_audit,
     prep_augment,
     prep_balance,
+    prep_default_recipe,
     prep_fixes,
     prep_input,
     prep_intake,
@@ -79,6 +80,7 @@ api_router.include_router(prep_split.router, tags=["prepare-data"])
 api_router.include_router(prep_input.router, tags=["prepare-data"])
 api_router.include_router(prep_balance.router, tags=["prepare-data"])
 api_router.include_router(prep_augment.router, tags=["prepare-data"])
+api_router.include_router(prep_default_recipe.router, tags=["prepare-data"])
 api_router.include_router(prep_recipes.router, tags=["prepare-data"])
 api_router.include_router(finetune_requirements.router, tags=["fine-tuning"])
 api_router.include_router(finetune_jobs.router, tags=["fine-tuning"])
