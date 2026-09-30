@@ -16,6 +16,9 @@
 
 import { useState, type JSX } from 'react';
 
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isNumber, isString } from '../lib/persisted';
+
 import type { PrescanJob } from '../api/prescan';
 
 export interface PrescanPanelProps {
@@ -31,6 +34,9 @@ export interface PrescanPanelProps {
   readonly onScan: (labels: readonly string[], threshold: number) => void;
   readonly onCancel: () => void;
   readonly onApply: (apply: boolean) => void;
+  /** Where the labels and threshold are remembered (doc 69). Per surface: the Studio and
+   *  the Generator scan for different things, and one list must not leak into the other. */
+  readonly storageKey: string;
 }
 
 export function PrescanPanel({
@@ -44,10 +50,11 @@ export function PrescanPanel({
   onScan,
   onCancel,
   onApply,
+  storageKey,
 }: PrescanPanelProps): JSX.Element {
   const [open, setOpen] = useState(false);
-  const [labels, setLabels] = useState('');
-  const [threshold, setThreshold] = useState(0.3);
+  const [labels, setLabels] = usePersistentState(`${storageKey}.labels`, '', isString);
+  const [threshold, setThreshold] = usePersistentState(`${storageKey}.threshold`, 0.3, isNumber);
 
   const parsed = labels
     .split(',')
@@ -61,7 +68,7 @@ export function PrescanPanel({
     return (
       <div className="prescan">
         <button type="button" className="btn btn--small" onClick={() => setOpen(true)}>
-          <span aria-hidden="true">⚡</span> Skip the empty images…
+          Skip the empty images…
         </button>
       </div>
     );

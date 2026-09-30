@@ -16,22 +16,24 @@ by unfreezing, and the UI says so before they start.
 from __future__ import annotations
 
 import logging
+import random
 from dataclasses import dataclass
 
 import torch
 from torch import nn
 
+# `load_image` from `loop`, not a second copy: one definition of "an unreadable
+# image is skipped, not fatal" is what keeps the two loops behaving alike.
+from app.ml.augment import Preset
 from app.ml.backbone import Backbone, extract_trainable
 from app.ml.heads.registry import HeadTypeSpec
 from app.ml.preprocess import PreprocessPlan, apply_geometry, to_pixel_values
-
-# `load_image` from `loop`, not a second copy: one definition of "an unreadable
-# image is skipped, not fatal" is what keeps the two loops behaving alike.
+from app.ml.training.augmented import augment_sample
 from app.ml.training.loop import (
     LossFn,
     batched,
     build_targets,
-    load_image,
+    load_sample_image,
     to_device,
 )
 from app.ml.training.samples import TrainingSample
@@ -53,10 +55,15 @@ class LivePass:
     spec: HeadTypeSpec
     samples: list[TrainingSample]
     num_classes: int
+    #: Doc 87: each training image is changed as it loads. Never set for evaluation.
+    augmentation: Preset | None = None
 
 
 def forward_one(
-    live: LivePass, head: nn.Module, sample: TrainingSample
+    live: LivePass,
+    head: nn.Module,
+    sample: TrainingSample,
+    rng: random.Random | None = None,
 ) -> tuple[dict[str, torch.Tensor], dict[str, torch.Tensor]] | None:
     """One image through backbone and head. None when the image will not open.
 
@@ -64,9 +71,11 @@ def forward_one(
     deriving the grid separately is how the two loops would drift into disagreeing about
     where a box belongs.
     """
-    image = load_image(sample.path)
+    image = load_sample_image(sample)
     if image is None:
         return None
+    if rng is not None and live.augmentation is not None:
+        image, sample = augment_sample(image, sample, live.augmentation, rng)
     resized, transform = apply_geometry(live.plan, image)
     features = extract_trainable(live.backbone, to_pixel_values(live.plan, [resized]))
     targets = build_targets(
@@ -81,6 +90,7 @@ def run_live_epoch(
     optimiser: torch.optim.Optimizer,
     compute_loss: LossFn,
     indices: tuple[int, ...],
+    rng: random.Random | None = None,
 ) -> float:
     """One training pass with the backbone training too. Returns mean loss."""
     head.train()
@@ -89,7 +99,7 @@ def run_live_epoch(
     counted = 0
 
     for index in indices:
-        pair = forward_one(live, head, live.samples[index])
+        pair = forward_one(live, head, live.samples[index], rng)
         if pair is None:
             continue
         output, targets = pair

@@ -46,6 +46,18 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
       'than a blank canvas is the difference between an afternoon and a week.',
   },
   {
+    tab: 'prepare',
+    title: 'Prepare',
+    what:
+      'Check a dataset before training on it: what is wrong with it, what can be fixed ' +
+      'safely, a split that keeps near-identical pictures together, and your pictures ' +
+      'exactly as the model will see them. Each step recommends a setting and says why.',
+    why:
+      'Most failed training runs fail here, not in training. A model cannot learn an ' +
+      'object shrunk to two pixels, and a test score is worthless if the test pictures ' +
+      'are near-copies of the training ones.',
+  },
+  {
     tab: 'trainer',
     title: 'Train',
     what:
@@ -74,6 +86,17 @@ export const INTRO_STAGES: readonly IntroStage[] = Object.freeze([
     why:
       'This is the step that makes the loop a loop. The model you just trained does the ' +
       'first pass on the next batch, and you correct it instead of starting from nothing.',
+  },
+  {
+    tab: 'inspect',
+    title: 'Watch what you annotated',
+    what:
+      'Open a dataset and play its videos and image folders back with every stored box ' +
+      'and mask drawn on, with a coloured bar per class showing where each one appears.',
+    why:
+      'A dataset is easier to trust once you have watched it. Gaps, drift and a class that ' +
+      'only ever appears in one stretch of a ride show up in seconds on a timeline and ' +
+      'take an afternoon to find image by image.',
   },
   {
     tab: 'library',
@@ -233,7 +256,8 @@ export const MODEL_GUIDE: readonly ModelGuideEntry[] = Object.freeze([
     ],
     measured:
       'mAP 0.61 on chess pieces, 0.55 on blood cells, 0.50-0.58 on OSDaR23 rail — against ' +
-      '0.96 for a fine-tuned RF-DETR on that same rail data.',
+      '0.96 for a fine-tuned RF-DETR on that same rail data. Those splits were random; on a ' +
+      'leak-free split (Prepare data) blood cells scored 0.41 on test pictures.',
   },
   {
     name: 'RF-DETR (fine-tuned)',
@@ -250,7 +274,9 @@ export const MODEL_GUIDE: readonly ModelGuideEntry[] = Object.freeze([
     ],
     measured:
       'mAP 0.96 on OSDaR23 rail, against 0.50-0.58 for a DINO detector head on the same ' +
-      'data. Unfreezing 4 blocks moved the holdout from 0.78 to 0.84.',
+      'data (random splits). On blood cells with a leak-free split: 0.62 test mAP after 2 ' +
+      'rounds, against 0.41 for a DINO head. Unfreezing 4 blocks moved the holdout from ' +
+      '0.78 to 0.84.',
   },
   {
     name: 'Grounded SAM / SAM 3 (no training)',

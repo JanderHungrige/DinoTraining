@@ -1,6 +1,6 @@
 """Job state and the runner interface.
 
-Separated from any concrete runner so that Wave 9's hyperscaler backend and today's
+Separated from any concrete runner so that Wave 13's hyperscaler backend and today's
 local one share one vocabulary, and callers can depend on the protocol alone.
 """
 
@@ -51,6 +51,11 @@ class TrainingJob:
     frozen_parameters: int = 0
     trainable_parameters: int = 0
     message: str = ""
+    #: What preparation did on this run that the user should know (doc 87): flips turned
+    #: off for a class, fewer augmented copies than asked for.
+    notes: list[str] = field(default_factory=list)
+    #: The best weights scored once on the test side (doc 90). Empty without a test side.
+    test_metrics: dict[str, float] = field(default_factory=dict)
     #: Set once the run is saved as a head instance, so the UI can link straight to it.
     head_instance_id: str | None = None
     cancel_requested: threading.Event = field(default_factory=threading.Event, repr=False)
@@ -73,7 +78,7 @@ class TrainingJob:
 
 
 class JobRunner(Protocol):
-    """What every runner provides. Wave 9's remote runner implements the same three."""
+    """What every runner provides. Wave 13's remote runner implements the same three."""
 
     def submit(self, config: TrainingConfig) -> TrainingJob: ...
 

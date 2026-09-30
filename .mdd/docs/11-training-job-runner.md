@@ -36,7 +36,7 @@ path: Training/Runner
 integration_contracts:
   - function: JobRunner protocol
     when: any code that starts, polls or cancels training
-    why: Wave 9 swaps in a hyperscaler runner; callers must never touch LocalJobRunner directly
+    why: Wave 13 swaps in a hyperscaler runner; callers must never touch LocalJobRunner directly
   - function: loss_for(spec) / metrics_for(spec) / decode_for(spec)
     when: computing loss, metrics, or decoding raw head output
     why: all three are keyed by head type, so the loop never branches on task
@@ -69,7 +69,7 @@ sister_projects: []
 
 Trains a head against a frozen backbone: reads Wave 1 datasets, derives targets,
 runs the loop, tracks metrics, applies early stopping and keeps the best weights.
-Execution is behind a **pluggable runner interface** so Wave 9 can add a hyperscaler
+Execution is behind a **pluggable runner interface** so Wave 13 can add a hyperscaler
 runner without touching any caller.
 
 ## Architecture
@@ -189,4 +189,19 @@ registry. Image paths come from the store's own rows, written by Wave 1's confin
 
 ## Bugs
 
-(none yet — populated by /mdd bug when issues are reported)
+**2026-09-30: mAP counted classes absent from the evaluation side as AP 0** (found by
+doc 90 on OSDaR).
+- **The rule before:** `average_precision` averaged over every class that was either
+  annotated *or predicted*. A class with no ground truth on the validation or test side,
+  but with some false positives, scored 0 and pulled the mean down by 1/n.
+- **Why it now mattered:** doc 84's leak-free split makes a class missing from a side
+  common, and says so. With two of three classes absent, a perfect detector of the third
+  scored at most 0.33.
+- **The fix:** COCO's rule, classes with ground truth only. A test pins a perfect detection
+  plus a stray class at 1.0.
+- **Effect on old numbers:** results recorded before this change understate mAP wherever a
+  class was predicted but absent. Random splits rarely lacked a class, so earlier
+  comparisons are largely unaffected.
+
+**2026-09-30: `split.test` was computed and never used.** Doc 90 scores the best weights
+on it once, after the loop (`test_metrics`).

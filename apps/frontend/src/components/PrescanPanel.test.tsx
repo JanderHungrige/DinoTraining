@@ -32,7 +32,7 @@ function job(over: Partial<PrescanJob> = {}): PrescanJob {
 function renderPanel(over: Partial<Parameters<typeof PrescanPanel>[0]> = {}) {
   const handlers = { onScan: vi.fn(), onCancel: vi.fn(), onApply: vi.fn() };
   render(
-    <PrescanPanel
+    <PrescanPanel storageKey="test.prescan"
       total={400}
       job={null}
       starting={false}

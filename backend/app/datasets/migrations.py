@@ -40,13 +40,14 @@ logger = logging.getLogger(__name__)
 
 #: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam;
 #: v5 added the producer column; v6 added the imported provenance; v7 added
-#: foundation-model.
+#: foundation-model; v8 added images.sequence and images.frame_index (doc 73); v9 added
+#: images.split and images.excluded (docs 83, 84).
 #:
 #: Bumping this is **not** bookkeeping. `run_migrations` returns early once the stored
 #: version reaches it, so widening PROVENANCE_VALUES without moving this number rebuilds
 #: the CHECK on fresh databases only — every test passes and the real install raises
 #: IntegrityError on first write. The rebuild itself needs no new code; the gate does.
-LATEST_VERSION = 7
+LATEST_VERSION = 9
 
 # Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
 # silently transpose two same-typed columns if a schema is ever reordered.
@@ -68,7 +69,10 @@ def run_migrations(connection: sqlite3.Connection) -> int:
     Idempotent: a database already at the latest shape is left untouched, including its
     rowids — a re-run must not churn a table.
     """
-    if _current_version(connection) >= LATEST_VERSION:
+    # The added-column check is cheap (PRAGMA table_info) and never hides behind the gate.
+    # Doc 73 added two columns without moving the version and every test still passed on
+    # fresh databases, while a real install stamped at the latest version never got them.
+    if _current_version(connection) >= LATEST_VERSION and not _columns_are_missing(connection):
         return LATEST_VERSION
 
     missing = [t for t in PROVENANCE_TABLES if _stored_ddl(connection, t) is None]

@@ -8,110 +8,65 @@
  * is stored; the effective value is derived.
  */
 
-import { useEffect, useState, type JSX } from 'react';
-
-import { listDatasets, type DatasetInfo } from '../api/datasets';
+import { useState, type JSX } from 'react';
 
 import type { BackboneInfo } from '../api/backbones';
-import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
+import { proposesBoxes } from '../api/foundation';
+import { GROUNDED_SAM } from '../api/annotators';
+import { useGeneratorCatalogue } from '../hooks/useGeneratorCatalogue';
+import { useGeneratorEntries } from '../hooks/useGeneratorEntries';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
+import { sourceReady } from '../lib/imageSource';
+import { stillListed } from '../lib/persisted';
 import { ExpertHeadPicker } from './ExpertHeadPicker';
-import { ImageSourceField, type ImageSource } from './ImageSourceField';
+import { ImageSourceField } from './ImageSourceField';
 import { FoundationPicker } from './FoundationPicker';
-import { GeneratorModePicker, type GeneratorMode } from './GeneratorModePicker';
+import { GeneratorModePicker } from './GeneratorModePicker';
 import { MaskSourceFields } from './MaskSourceFields';
-import { listFoundations, proposesBoxes, type FoundationInfo } from '../api/foundation';
 import {
   GeneratorDestination,
   destinationReady,
   resolveDataset,
 } from './GeneratorDestination';
-import { GROUNDED_SAM, listAnnotators, type AnnotatorInfo } from '../api/annotators';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
 
 export interface GeneratorSetupProps {
   readonly onStart: (config: GeneratorConfig) => void;
 }
 
-const DEFAULT_THRESHOLD = 0.3;
-
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
-  const [source, setSource] = useState<ImageSource>({ kind: 'folder', folder: '' });
-  // Loaded here as well as in `GeneratorDestination`: the source picker offers datasets
-  // to *read* and the destination offers them to *write*, and the two lists answer
-  // different questions — one filters to datasets that have images.
-  const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
-  useEffect(() => {
-    const controller = new AbortController();
-    void listDatasets(controller.signal)
-      .then(setDatasets)
-      .catch(() => setDatasets([]));
-    return () => controller.abort();
-  }, []);
-  // The default is unchanged. A general detector leads the *list*, which is where
-  // discoverability lives, but selecting it by default would drop someone who has trained
-  // heads and no detector installed onto an empty state telling them to visit Admin.
-  // Deriving the default from what is installed would mean seeding state from an async
-  // fetch, which is this project's most-repeated bug. See doc 42's known issues.
-  const [mode, setMode] = useState<GeneratorMode>('expert');
-  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
-  const [detectorOverride, setDetectorOverride] = useState('');
-  const [concept, setConcept] = useState('');
-  const [datasetOverride, setDatasetOverride] = useState('');
-  const [newName, setNewName] = useState('');
+  // Doc 69: every entry is remembered across tab switches and restarts.
+  const {
+    source,
+    setSource,
+    mode,
+    setMode,
+    concept,
+    setConcept,
+    newName,
+    setNewName,
+    threshold,
+    setThreshold,
+    datasetOverride,
+    setDatasetOverride,
+    detectorOverride,
+    setDetectorOverride,
+    annotatorOverride,
+    setAnnotatorOverride,
+    backboneOverride,
+    setBackboneOverride,
+    headOverride,
+    setHeadOverride,
+  } = useGeneratorEntries();
+  const { datasets, annotators, foundations, heads, loadingHeads } = useGeneratorCatalogue();
   const [starting, setStarting] = useState(false);
-  const [annotators, setAnnotators] = useState<readonly AnnotatorInfo[]>([]);
-  const [annotatorOverride, setAnnotatorOverride] = useState('');
-  const [backboneOverride, setBackboneOverride] = useState('');
-  const [headOverride, setHeadOverride] = useState('');
-  const [threshold, setThreshold] = useState(DEFAULT_THRESHOLD);
-
-  const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
-  const [loadingHeads, setLoadingHeads] = useState(true);
 
   const { backbones, loading: loadingBackbones, error } = useTrainerOptions(null);
   const installed: readonly BackboneInfo[] = installedOnly(backbones);
 
   // Derived, never seeded: the first installed backbone until the user picks another.
-  const backboneId = backboneOverride || installed[0]?.id || '';
-
-  useEffect(() => {
-    const controller = new AbortController();
-    listAnnotators(controller.signal)
-      .then((found) => {
-        if (!controller.signal.aborted) setAnnotators(found);
-      })
-      .catch(() => {
-        /* the mask mode falls back to the ungated default */
-      });
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // Non-fatal: the other two modes still work if the catalogue is unhappy.
-    listFoundations(controller.signal)
-      .then((found) => {
-        if (!controller.signal.aborted) setFoundations(found);
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    listHeadInstances({}, controller.signal)
-      .then((found) => {
-        if (!controller.signal.aborted) setHeads(found);
-      })
-      .catch(() => {
-        /* the picker renders its own empty state */
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoadingHeads(false);
-      });
-    return () => controller.abort();
-  }, []);
+  const backboneId =
+    stillListed(backboneOverride, installed.map((entry) => entry.id)) || installed[0]?.id || '';
 
   // Derived, never seeded from an async fetch — the rule this project keeps relearning.
   //
@@ -122,7 +77,10 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const usableDetectors = foundations.filter(
     (entry) => proposesBoxes(entry) && entry.installed,
   );
-  const selectedDetector = detectorOverride || usableDetectors[0]?.id || '';
+  const selectedDetector =
+    stillListed(detectorOverride, usableDetectors.map((entry) => entry.id)) ||
+    usableDetectors[0]?.id ||
+    '';
   // Whether the chosen detector needs a prompt. Read off the catalogue entry, never from
   // its id (doc 66) — Grounding DINO, Grounded SAM and SAM 3 are all prompted and share no
   // id pattern at all.
@@ -134,7 +92,9 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   // the catalogue in the admin tab is where a user goes to get it.
   const readyAnnotators = annotators.filter((annotator) => annotator.ready);
   const annotatorId =
-    annotatorOverride || readyAnnotators[0]?.id || GROUNDED_SAM;
+    stillListed(annotatorOverride, readyAnnotators.map((entry) => entry.id)) ||
+    readyAnnotators[0]?.id ||
+    GROUNDED_SAM;
 
   // From the catalogue row, not from the id. Grounded SAM is three rows now (doc 27) and
   // an id comparison would have given the two new ones SAM 3's single-concept wording
@@ -146,13 +106,19 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
   const eligible = heads.filter(
     (head) => head.render_hint === 'boxes' && head.backbone_id === backboneId,
   );
-  const instanceId = headOverride || eligible[0]?.id || '';
+  const instanceId =
+    stillListed(headOverride, eligible.map((head) => head.id)) || eligible[0]?.id || '';
 
-  const datasetId = datasetOverride;
+  // '' means "a new dataset". A remembered id for a dataset deleted since must not
+  // survive as a write target, so it falls back to that rather than to the first one.
+  const datasetId = stillListed(
+    datasetOverride,
+    datasets.map((entry) => entry.id),
+  );
 
   const ready =
     destinationReady(datasetId, newName) &&
-    (source.kind === 'dataset' ? source.datasetId !== '' : source.folder.trim() !== '') &&
+    sourceReady(source) &&
     (mode === 'foundation'
       ? selectedDetector !== '' && (!detectorNeedsConcept || concept.trim().length > 0)
       : mode === 'expert'
@@ -167,7 +133,11 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         if (!ready || starting) return;
         setStarting(true);
         void resolveDataset(datasetId, newName)
-          .then((resolvedId) =>
+          .then((resolvedId) => {
+            // Remember the dataset itself, not the name that created it: a remembered
+            // name would create a second dataset of that name on the next start.
+            setDatasetOverride(resolvedId);
+            setNewName('');
             onStart(
               mode === 'foundation'
                 ? {
@@ -195,8 +165,8 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
                     concept: concept.trim(),
                     scoreThreshold: threshold,
                   },
-            ),
-          )
+            );
+          })
           .finally(() => setStarting(false));
       }}
     >
@@ -216,6 +186,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         datasets={datasets}
         placeholder="/Users/you/new-photos"
         variant="genpanel"
+        allowVideo
         datasetHint="Its images are re-annotated into whichever dataset you choose below — the source is only where the pictures come from."
       />
 

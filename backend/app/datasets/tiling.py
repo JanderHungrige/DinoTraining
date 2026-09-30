@@ -58,6 +58,12 @@ class TilingSummary:
     dropped_boxes: int = 0
 
 
+def grid_for(width: int, height: int, long_edge_tiles: int) -> tuple[int, int]:
+    """(columns, rows): `long_edge_tiles` along the long edge, square-ish tiles."""
+    short = max(1, round(long_edge_tiles * min(width, height) / max(1, max(width, height))))
+    return (long_edge_tiles, short) if width >= height else (short, long_edge_tiles)
+
+
 def plan_tiles(
     width: int, height: int, columns: int, rows: int, overlap: float = DEFAULT_OVERLAP
 ) -> list[Tile]:
@@ -258,6 +264,7 @@ def _clip(bbox: list[float], tile: Tile) -> tuple[float, float, float, float] | 
 
 
 __all__ = [
+    "grid_for",
     "DEFAULT_BACKGROUND_RATIO",
     "DEFAULT_OVERLAP",
     "Tile",

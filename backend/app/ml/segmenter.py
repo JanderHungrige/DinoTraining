@@ -19,6 +19,7 @@ from __future__ import annotations
 import logging
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -84,8 +85,37 @@ def _require_spec(model_id: str) -> ModelSpec:
     return spec
 
 
+def _fine_tuned(model_id: str) -> tuple[str, Path] | None:
+    """(base model id, decoder file) when `model_id` is a fine-tuned SAM (doc 94)."""
+    from app.core.paths import PathConfinementError
+    from app.finetune.adapters.sam2 import DECODER_FILE
+    from app.ml.foundation.instances import FoundationInstanceStore
+
+    store = FoundationInstanceStore()
+    try:
+        instance = store.get(model_id)
+    except PathConfinementError:
+        return None
+    if instance is None:
+        return None
+    if instance.weights_kind == "sam-mask-decoder":
+        return instance.base_model_id, store.directory(model_id) / DECODER_FILE
+    if instance.weights_kind == "sam3-decoders":
+        from app.finetune.adapters.sam3 import DECODERS_FILE
+
+        return instance.base_model_id, store.directory(model_id) / DECODERS_FILE
+    return None
+
+
 def load_segmenter(model_id: str = DEFAULT_SEGMENTER) -> Segmenter:
-    """Load (or reuse) a segmenter. Never downloads."""
+    """Load (or reuse) a segmenter. Never downloads.
+
+    A fine-tuned SAM (doc 94) is its base checkpoint with the saved mask decoder loaded
+    over it, cached under its own id so the base model stays the base model.
+    """
+    tuned = None if get_model(model_id) else _fine_tuned(model_id)
+    if tuned is not None:
+        return _load_tuned(model_id, *tuned)
     spec = _require_spec(model_id)
     device = get_settings().resolved_device
     key = (spec.id, device)
@@ -112,12 +142,36 @@ def load_segmenter(model_id: str = DEFAULT_SEGMENTER) -> Segmenter:
         model = model_cls.from_pretrained(str(directory)).to(device)
         model.eval()
 
-        segmenter = Segmenter(
-            model_id=spec.id, device=device, processor=processor, model=model
-        )
+        segmenter = Segmenter(model_id=spec.id, device=device, processor=processor, model=model)
         _cache[key] = segmenter
         logger.info("Loaded %s", spec.id)
         return segmenter
+
+
+def _load_tuned(model_id: str, base_id: str, decoder: Path) -> Segmenter:
+    import torch
+
+    device = get_settings().resolved_device
+    with _lock:
+        cached = _cache.get((model_id, device))
+    if cached is not None:
+        return cached
+    base = load_segmenter(base_id)
+    processor_cls, model_cls = _classes_for(_require_spec(base_id).family)
+    directory = resolve_model_dir(base_id)
+    model = model_cls.from_pretrained(str(directory)).to(device)
+    weights = torch.load(decoder, map_location=device)
+    if decoder.name.startswith("sam3"):
+        # SAM 3's trained parts are saved with their full names (doc 96).
+        model.load_state_dict(weights, strict=False)
+    else:
+        model.mask_decoder.load_state_dict(weights)
+    model.eval()
+    segmenter = Segmenter(model_id=model_id, device=device, processor=base.processor, model=model)
+    with _lock:
+        _cache[(model_id, device)] = segmenter
+    logger.info("Loaded fine-tuned SAM %s over %s", model_id, base_id)
+    return segmenter
 
 
 def segment_boxes(
@@ -135,17 +189,15 @@ def segment_boxes(
 
     # One inner list per image; every box for that image goes inside it.
     prompt = [[list(box) for box in boxes]]
-    inputs = segmenter.processor(
-        images=image, input_boxes=prompt, return_tensors="pt"
-    ).to(segmenter.device)
+    inputs = segmenter.processor(images=image, input_boxes=prompt, return_tensors="pt").to(
+        segmenter.device
+    )
 
     with torch.no_grad():
         outputs = segmenter.model(**inputs, multimask_output=False)
 
     # (N, 1, H, W) at the original size, one entry per prompt box.
-    post = segmenter.processor.post_process_masks(
-        outputs.pred_masks, inputs["original_sizes"]
-    )[0]
+    post = segmenter.processor.post_process_masks(outputs.pred_masks, inputs["original_sizes"])[0]
 
     masks = _to_numpy(post)
     if masks.ndim == 4:

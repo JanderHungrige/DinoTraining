@@ -61,7 +61,7 @@ describe('finding the two things this tab does', () => {
     await renderTab();
 
     expect(screen.getByText(/Frozen backbone, trains in minutes/)).toBeInTheDocument();
-    expect(screen.getByText(/much stronger at boxes/)).toBeInTheDocument();
+    expect(screen.getByText(/a detector, SAM or a DINO backbone/)).toBeInTheDocument();
   });
 });
 
@@ -81,17 +81,18 @@ describe('which one is showing', () => {
     await user.click(screen.getByRole('radio', { name: /Fine-tune a model/ }));
 
     expect(screen.queryByText(/The backbone stays frozen/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Trains the whole model on your classes/)).toBeInTheDocument();
+    expect(screen.getByText(/Adapts a whole foundation model to your data/)).toBeInTheDocument();
   });
 
   it('says why fine-tuning is worth the wait, with the number', async () => {
-    // "Slower" on its own reads as a drawback. Slower *and* 0.96 against 0.5-0.6 is a
-    // trade, and it is the trade this tab exists to put in front of someone.
+    // "Slower" on its own reads as a drawback. Slower *and* 0.62 against 0.41 is a trade,
+    // and it is the trade this tab exists to put in front of someone. Measured on a
+    // leak-free split (Wave 12), not the random one the old 0.96 came from.
     const user = await renderTab();
 
     await user.click(screen.getByRole('radio', { name: /Fine-tune a model/ }));
 
-    expect(screen.getByText(/0\.96 on rail/)).toBeInTheDocument();
+    expect(screen.getByText(/0\.62 test mAP against 0\.41/)).toBeInTheDocument();
   });
 
   it('goes back', async () => {

@@ -1,6 +1,6 @@
 """Local execution backend for training jobs.
 
-Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 9
+Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 13
 adds a hyperscaler runner by implementing the same three methods and swapping the
 construction in :func:`get_job_runner` — no call site changes.
 """
@@ -18,18 +18,17 @@ from app.ml.heads.builders import build_head
 from app.ml.heads.decode import decode_for
 from app.ml.heads.registry import HeadTypeSpec, get_head_type
 from app.ml.preprocess import plan_preprocessing
-from app.ml.training.config import TrainingConfig, split_indices
+from app.ml.training.config import TrainingConfig
 from app.ml.training.job import EpochRecord, JobState, TrainingJob
-from app.ml.training.live_loop import LivePass, evaluate_live, run_live_epoch
+from app.ml.training.live_loop import LivePass, run_live_epoch
 from app.ml.training.loop import (
     CachedSample,
-    evaluate,
     is_better,
     precompute_cache,
     run_epoch,
 )
-from app.ml.training.losses import loss_for
 from app.ml.training.metrics import metrics_for
+from app.ml.training.preparation import choose_split, evaluator, prepare, score_test, tiled
 from app.ml.training.samples import (
     build_samples,
     classes_for_task,
@@ -164,6 +163,7 @@ class LocalJobRunner:
                 else "No usable training samples for this head type"
             )
 
+        usable = tiled(job, spec, usable)
         head = build_head(config.head_type_id, capabilities, num_classes)
         head.to(backbone.device)
 
@@ -180,7 +180,6 @@ class LocalJobRunner:
             config.weight_decay,
             config.backbone_lr_scale,
         )
-        compute_loss = loss_for(spec)
         compute_metrics = metrics_for(spec)
         decode = decode_for(spec)
 
@@ -192,7 +191,9 @@ class LocalJobRunner:
         live: LivePass | None = None
         cache: list[CachedSample] = []
         if caching_is_valid(config.unfreeze_blocks):
-            cache = precompute_cache(backbone, plan, spec, usable, num_classes)
+            kept: list[int] = []
+            cache = precompute_cache(backbone, plan, spec, usable, num_classes, kept)
+            usable = [usable[position] for position in kept]
             if not cache:
                 raise ValueError("None of the selected images could be read")
             total = len(cache)
@@ -206,9 +207,14 @@ class LocalJobRunner:
             )
             total = len(usable)
 
-        split = split_indices(
-            total, config.val_fraction, config.test_fraction, config.split_seed
-        )
+        split = choose_split(job, usable, total)
+        # `usable` lines up with the cache here (see `kept` above) and with the live pass.
+        prepared = prepare(
+            job, spec, backbone, plan, usable, cache, live, split, num_classes
+        )  # fmt: skip
+        live = prepared.live
+        compute_loss = prepared.balance.loss
+        evaluate_on = evaluator(live, head, compute_loss, cache)
         assert spec.primary_metric is not None  # 08 guarantees this for trainable heads
         mode = spec.primary_metric_mode or "max"
         patience = 0
@@ -218,14 +224,14 @@ class LocalJobRunner:
                 job.finish("cancelled", f"Cancelled at epoch {epoch}")
                 return
 
+            order = prepared.order(split.train, epoch)
             if live is None:
-                train_loss = run_epoch(head, optimiser, compute_loss, cache, split.train)
-                val_loss, outputs, targets = evaluate(head, compute_loss, cache, split.val)
+                train_loss = run_epoch(head, optimiser, compute_loss, cache, order)
             else:
-                train_loss = run_live_epoch(live, head, optimiser, compute_loss, split.train)
-                val_loss, outputs, targets = evaluate_live(
-                    live, head, compute_loss, split.val
+                train_loss = run_live_epoch(
+                    live, head, optimiser, compute_loss, order, prepared.rng(epoch)
                 )
+            val_loss, outputs, targets = evaluate_on(split.val)
             # Decode before metrics: detection metrics need boxes, not per-cell logits.
             decoded = [decode(out, plan.patch_size) for out in outputs]
             metrics = compute_metrics(decoded, targets) if decoded else {}
@@ -249,10 +255,17 @@ class LocalJobRunner:
             else:
                 patience += 1
                 if patience >= config.early_stopping_patience:
-                    job.finish("complete", f"Early stop at epoch {epoch}")
-                    return
+                    finished = f"Early stop at epoch {epoch}"
+                    break
+        else:
+            finished = f"Finished {config.epochs} epochs"
 
-        job.finish("complete", f"Finished {config.epochs} epochs")
+        if split.test:
+            score_test(
+                job, head, lambda: evaluate_on(split.test), decode, compute_metrics,
+                plan.patch_size,
+            )  # fmt: skip
+        job.finish("complete", finished)
 
 
 _runner: LocalJobRunner | None = None
@@ -272,7 +285,7 @@ def _save_completed_head(
 
 
 def get_job_runner() -> LocalJobRunner:
-    """Process-wide runner. Wave 9 swaps the construction here, not at call sites."""
+    """Process-wide runner. Wave 13 swaps the construction here, not at call sites."""
     global _runner
     with _runner_lock:
         if _runner is None:

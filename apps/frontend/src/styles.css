@@ -1123,6 +1123,251 @@ body {
   flex: 1;
 }
 
+/* Doc 70: Propose and Save beside Previous/Next; the automation boxes in a row below. */
+.genbar__wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.genbar__options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1.25rem;
+}
+
+.genbar__pair {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Doc 71: autoplay. Stop is loud on purpose — it is the control that must be found fast. */
+.genbar__autoplay {
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border);
+}
+
+.genbar__stop {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.genbar__count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.autoplay {
+  display: grid;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.autoplay__head,
+.autoplay__tally {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.autoplay__tally,
+.autoplay__summary {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.autoplay__bar {
+  width: 100%;
+  height: 0.75rem;
+}
+
+/* Doc 75: one coloured bar per class under the player. */
+.timeline {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.timeline__rows {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.timeline__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 12rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.2rem 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timeline__row:hover {
+  border-color: var(--border);
+}
+
+.timeline__row--selected {
+  border-color: var(--accent);
+}
+
+.timeline__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.timeline__swatch {
+  flex: none;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
+.timeline__track {
+  position: relative;
+  height: 0.9rem;
+  border-radius: 3px;
+  background: var(--surface-sunken, rgb(127 127 127 / 0.15));
+  overflow: hidden;
+}
+
+.timeline__segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 2px;
+}
+
+.timeline__playhead {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text, #fff);
+}
+
+.timeline__jumps {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.timeline__hint,
+.timeline__empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* Doc 74: Inspect datasets. */
+.inspect__pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.studio__headactions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.player__fps input {
+  width: 4.5rem;
+  margin-right: 0.3rem;
+}
+
+/* Doc 73: a video as the Generator's source. */
+.videosrc__range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.videosrc__range input {
+  width: 6rem;
+  margin: 0 0.3rem;
+}
+
+/* Doc 72: ask when unclear. */
+.unclearband {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  border: 0;
+  font-size: 0.9rem;
+}
+
+.unclearband__legend {
+  float: left;
+  margin-right: 0.5rem;
+  color: var(--text-dim);
+}
+
+.unclearband__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.unclearband__bound {
+  width: 4.5rem;
+}
+
+.unclearband__hint {
+  flex-basis: 100%;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.unclearq {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.unclearq__text {
+  margin: 0 0 0.6rem;
+}
+
+.unclearq__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.genbar__auto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
 .btn--primary {
   border-color: var(--accent);
   color: var(--accent);

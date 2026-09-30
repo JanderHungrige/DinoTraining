@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.ml.foundation.finetune import FinetuneConfig
 from app.ml.foundation.finetune_runner import get_finetune_runner
 from app.ml.foundation.registry import get_foundation
+from app.prep.recipe_use import RecipeOutOfDateError, resolve_recipe
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,8 @@ class FinetuneRequest(BaseModel):
             "frozen; -1 trains all of it. Safe here because the whole model is saved."
         ),
     )
+    #: Doc 90: a recipe from the Prepare data tab; its stored split is used.
+    recipe_id: str | None = None
 
 
 class FinetuneEpochInfo(BaseModel):
@@ -80,6 +83,18 @@ def _describe_job(job: object) -> FinetuneJobInfo:
     )
 
 
+def _checked_recipe(request: FinetuneRequest) -> str | None:
+    """The recipe id, once it is known to exist and still describe the data."""
+    if request.recipe_id is None:
+        return None
+    try:
+        return resolve_recipe(request.dataset_ids, request.recipe_id, "detection").id
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from None
+    except RecipeOutOfDateError as exc:  # before ValueError: it is one
+        raise HTTPException(status_code=409, detail=str(exc)) from None
+
+
 @router.post(
     "/foundation/finetune",
     response_model=FinetuneJobInfo,
@@ -102,6 +117,7 @@ async def start_finetune(request: FinetuneRequest) -> FinetuneJobInfo:
             learning_rate=request.learning_rate,
             val_fraction=request.val_fraction,
             unfreeze_blocks=request.unfreeze_blocks,
+            recipe_id=_checked_recipe(request),
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from None

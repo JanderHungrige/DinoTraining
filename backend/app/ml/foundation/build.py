@@ -19,12 +19,13 @@ from app.ml.foundation.depth import DepthAnythingModel
 from app.ml.foundation.detect import RfDetrModel
 from app.ml.foundation.prompt_detect import PromptedDetector
 from app.ml.foundation.registry import FoundationSpec, get_foundation
+from app.ml.foundation.variant import BackboneVariantModel
 
 #: Every foundation implementation. A union rather than a Protocol: they share `predict`
 #: but not its signature — the detector takes a score threshold and the depth model has
 #: nothing to threshold — and a Protocol wide enough to cover both would describe neither.
 FoundationImplementation = (
-    ConceptSegmenter | DepthAnythingModel | PromptedDetector | RfDetrModel
+    ConceptSegmenter | DepthAnythingModel | PromptedDetector | RfDetrModel | BackboneVariantModel
 )
 
 logger = logging.getLogger(__name__)
@@ -78,9 +79,7 @@ def forget_foundation(foundation_id: str) -> bool:
     return _CACHE.pop(foundation_id, None) is not None
 
 
-def _trained_spec(
-    foundation_id: str, settings: Settings | None
-) -> FoundationSpec | None:
+def _trained_spec(foundation_id: str, settings: Settings | None) -> FoundationSpec | None:
     """A fine-tuned model as a spec, or None if no instance has that id."""
     from app.ml.foundation.instances import FoundationInstanceStore
 
@@ -94,6 +93,47 @@ def _trained_spec(
         return None
     if instance is None:
         return None
+    if instance.weights_kind == "backbone-variant":
+        head_type = (
+            "linear-segmenter"
+            if instance.finetune_id.endswith("segmentation")
+            else "linear-classifier"
+        )
+        return FoundationSpec(
+            id=instance.id,
+            model_id=instance.base_model_id,
+            title=instance.name,
+            description=instance.summary,
+            task="segmentation" if head_type == "linear-segmenter" else "classification",
+            render_hint="masks" if head_type == "linear-segmenter" else "labels",
+            weights_dir=store.directory(instance.id),
+            class_names=instance.class_names,
+            variant_head_type=head_type,
+        )
+    if instance.weights_kind == "sam3-decoders":
+        return FoundationSpec(
+            id=instance.id,
+            model_id="sam3",
+            annotator_id="sam3",
+            segmenter_id=instance.id,
+            title=f"SAM 3 · {instance.name}",
+            description=instance.summary,
+            task="segmentation",
+            render_hint="masks",
+        )
+    if instance.weights_kind == "sam-mask-decoder":
+        # A fine-tuned SAM segments nothing on its own: it runs as Grounded SAM's second
+        # half, Grounding DINO finding the objects and the user's SAM outlining them.
+        return FoundationSpec(
+            id=instance.id,
+            model_id="grounding-dino-tiny",
+            annotator_id="grounded-sam",
+            segmenter_id=instance.id,
+            title=f"Grounded SAM · {instance.name}",
+            description=instance.summary,
+            task="segmentation",
+            render_hint="masks",
+        )
     return FoundationSpec(
         id=instance.id,
         model_id=instance.base_model_id,
@@ -106,13 +146,13 @@ def _trained_spec(
     )
 
 
-def _implementation(
-    spec: FoundationSpec, settings: Settings | None
-) -> FoundationImplementation:
+def _implementation(spec: FoundationSpec, settings: Settings | None) -> FoundationImplementation:
     # Checked before `task`, because a concept-prompted pipeline is not one checkpoint
     # and its id would otherwise fall through to "no implementation".
     if spec.annotator_id is not None:
         return ConceptSegmenter(spec, settings)
+    if spec.variant_head_type is not None:
+        return BackboneVariantModel(spec, settings)
     if spec.task == "depth":
         return DepthAnythingModel(spec, settings)
     # Before the plain-detection case, and the ordering is the point: a prompted detector

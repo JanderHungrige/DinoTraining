@@ -26,11 +26,27 @@ fail() { printf '\033[0;31m[dev]\033[0m %s\n' "$*" >&2; exit 1; }
 # routinely run as `./dev.sh` from inside `scripts/`, and a message answering that with
 # `npm install --prefix apps/desktop` sends the reader to `scripts/apps/desktop` and an
 # ENOENT. A fix instruction that only works from one directory is half an instruction.
+# `node_modules` existing is not the same as `node_modules` being current. After a pull
+# that adds a package (Wave 10's `@fontsource/lato`), the old tree is still there, the
+# check above passes, and Vite fails on the first import with "Failed to resolve import" —
+# found on a second machine. npm stamps every install with `node_modules/.package-lock.json`;
+# a `package-lock.json` newer than that stamp means the dependencies changed since, so the
+# committed lockfile is installed before starting.
+sync_deps() {
+  local dir="$1"; shift
+  local stamp="$dir/node_modules/.package-lock.json"
+  if [ ! -f "$stamp" ] || [ "$dir/package-lock.json" -nt "$stamp" ]; then
+    log "Dependencies in $dir changed since the last install — installing."
+    npm install --prefix "$dir" "$@" || fail "npm install failed in $dir."
+  fi
+}
+
 preflight() {
   [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run:
        python3.12 -m venv '$BACKEND_DIR/.venv' && source '$BACKEND_DIR/.venv/bin/activate' && pip install -e '$BACKEND_DIR'[dev]"
   [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run:
        npm install --prefix '$FRONTEND_DIR' --legacy-peer-deps"
+  sync_deps "$FRONTEND_DIR" --legacy-peer-deps
   [ -f "$REPO_ROOT/.env" ] || log "WARNING: no .env at the repo root — copy .env.example and fill it in."
 }
 
@@ -44,6 +60,7 @@ preflight() {
 desktop_preflight() {
   [ -d "$DESKTOP_DIR/node_modules" ] || fail "Tauri CLI missing. Run:
        npm install --prefix '$DESKTOP_DIR'"
+  sync_deps "$DESKTOP_DIR"
   command -v cargo >/dev/null || fail "cargo not found — install Rust 1.85+ (brew install rust)."
   command -v rustc >/dev/null || fail "rustc not found — install Rust 1.85+ (brew install rust)."
 

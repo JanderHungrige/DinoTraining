@@ -59,6 +59,10 @@ class DatasetStore:
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings
 
+    @property
+    def settings(self) -> Settings | None:
+        return self._settings
+
     # --- creation and listing -------------------------------------------------
 
     def create(self, name: str, prompt: str | None, copy_images: bool) -> DatasetInfo:
@@ -165,7 +169,13 @@ class DatasetStore:
                 dataset_dir(dataset_id, self._settings), connection, dataset_id, annotation.path
             )
             image_id = upsert_image(
-                connection, dataset_id, stored_path, annotation.width, annotation.height
+                connection,
+                dataset_id,
+                stored_path,
+                annotation.width,
+                annotation.height,
+                annotation.frame,
+                annotation.split,
             )
 
             connection.execute("DELETE FROM boxes WHERE image_id = ?", (image_id,))

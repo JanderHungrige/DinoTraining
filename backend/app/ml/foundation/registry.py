@@ -52,6 +52,11 @@ class FoundationSpec:
     #: broke on the first one that produces boxes — the same defect as reading a head's
     #: capability off its `task` label.
     prompted: bool = False
+    #: Doc 94: a Grounded SAM pipeline whose SAM half is a fine-tuned decoder (a
+    #: `FoundationInstance` id) rather than the catalogue checkpoint.
+    segmenter_id: str | None = None
+    #: Doc 95: a fine-tuned backbone variant, run with the head type trained with it.
+    variant_head_type: str | None = None
 
     @property
     def takes_concept(self) -> bool:

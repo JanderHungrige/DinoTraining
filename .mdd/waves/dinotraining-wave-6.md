@@ -7,7 +7,7 @@ status: complete
 depends_on: dinotraining-wave-5
 demo_state: "The user downloads Depth Anything 3 from the admin panel and runs it in the Inference Viewer beside the DINOv2 heads, comparing a foundation depth model against a trained one on the same image — with every catalogue entry stating its licence."
 created: 2026-08-19
-hash: e87a2c2c
+hash: 6696d295
 ---
 
 # Wave 6: Foundation Model Breadth (Depth Anything 3)
@@ -171,5 +171,5 @@ model it guards arrives in the very next feature.
   a Grounding DINO alternative.
 - **Gemini Flash Vision** — dropped 2026-08-19. API-only, no local weights, and it would
   send the user's own image folders off their machine, contradicting the premise the app is
-  built on. If a cloud VLM is ever wanted it belongs in Wave 9, where the user has already
+  built on. If a cloud VLM is ever wanted it belongs in Wave 13, where the user has already
   accepted cloud compute, clearly labelled and never a default.

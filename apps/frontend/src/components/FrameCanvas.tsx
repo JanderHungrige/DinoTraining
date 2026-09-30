@@ -48,6 +48,9 @@ export interface FrameCanvasProps {
   readonly label: string;
   /** Draws over the picture, in the geometry this component measured. */
   readonly renderOverlay: (rendered: RenderedImage) => JSX.Element | null;
+  /** Where frame N's pixels are (doc 74: a dataset's stored files). Defaults to decoding
+   *  `source` through the video route, which is what playback of a run needs. */
+  readonly urlFor?: (frame: number) => string;
 }
 
 export function FrameCanvas({
@@ -60,6 +63,7 @@ export function FrameCanvas({
   generation,
   label,
   renderOverlay,
+  urlFor,
 }: FrameCanvasProps): JSX.Element {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
@@ -128,9 +132,9 @@ export function FrameCanvas({
       // same URLs had returned 200 moments earlier, and the canvas stayed blank.
       cache.current.set(frame, image);
       image.onload = () => setDecoded((count) => count + 1);
-      image.src = frameUrl(source, runStart + frame);
+      image.src = urlFor ? urlFor(frame) : frameUrl(source, runStart + frame);
     }
-  }, [index, frames, runStart, source]);
+  }, [index, frames, runStart, source, urlFor]);
 
   // Paint the current frame, whenever it or its pixels arrive.
   useEffect(() => {

@@ -68,6 +68,9 @@ class FinetuneConfig:
     unfreeze_blocks: int = 0
     #: Backbone rate as a fraction of the decoder's. A pretrained ViT nudged, not fitted.
     backbone_lr_scale: float = 0.1
+    #: A preparation recipe (doc 90): its stored split replaces the random one. Exclusions
+    #: and the class map apply with or without it (`build_samples`).
+    recipe_id: str | None = None
 
     def __post_init__(self) -> None:
         if not self.dataset_ids:
@@ -86,9 +89,7 @@ class FinetuneConfig:
                 f"got {self.unfreeze_blocks}"
             )
         if not 0.0 < self.backbone_lr_scale <= 1.0:
-            raise ValueError(
-                f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}"
-            )
+            raise ValueError(f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,16 +123,12 @@ def freeze_backbone(model: torch.nn.Module, unfreeze_blocks: int = 0) -> tuple[i
         opened = unfreeze_last_blocks(backbone.get_submodule("backbone"), unfreeze_blocks)
         logger.info("Unfroze %d backbone block(s) for fine-tuning", opened)
 
-    frozen = sum(
-        int(p.numel()) for p in backbone.parameters() if not bool(p.requires_grad)
-    )
+    frozen = sum(int(p.numel()) for p in backbone.parameters() if not bool(p.requires_grad))
     trainable = sum(int(p.numel()) for p in model.parameters() if bool(p.requires_grad))
     return frozen, trainable
 
 
-def to_detr_labels(
-    sample: TrainingSample, device: str | torch.device
-) -> dict[str, torch.Tensor]:
+def to_detr_labels(sample: TrainingSample, device: str | torch.device) -> dict[str, torch.Tensor]:
     """One image's boxes in DETR's convention: **normalised cxcywh**.
 
     The dataset store speaks absolute xywh from the top-left, and DETR wants centre-relative
@@ -173,6 +170,13 @@ def load_samples(
     if not usable:
         raise ValueError("No positive boxes found in the selected datasets — nothing to learn")
 
+    if config.recipe_id is not None:
+        # The recipe's split (doc 84): scenes and video stretches stay on one side.
+        train = [s for s in usable if s.split == "train"]
+        validation = [s for s in usable if s.split == "val"]
+        if not train:
+            raise ValueError("The recipe's split has no training pictures. Split again.")
+        return train, validation, sample_set.class_names
     split = split_indices(len(usable), config.val_fraction, 0.0, config.split_seed)
     train = [usable[i] for i in split.train]
     validation = [usable[i] for i in split.val]
@@ -200,9 +204,9 @@ def evaluate(model: RfDetrModel, samples: list[TrainingSample]) -> dict[str, flo
                 "boxes": torch.tensor(
                     [[x, y, w, h] for _, x, y, w, h in sample.targets], dtype=torch.float32
                 ).reshape(-1, 4),
-                "classes": torch.tensor(
-                    [c for c, *_ in sample.targets], dtype=torch.long
-                ).reshape(-1),
+                "classes": torch.tensor([c for c, *_ in sample.targets], dtype=torch.long).reshape(
+                    -1
+                ),
             }
         )
 

@@ -1,5 +1,5 @@
 /**
- * The seven top-level areas of the app.
+ * The top-level areas of the app.
  *
  * `intro` leads deliberately (doc 38): it is the only tab that assumes you know nothing,
  * and a first-time user reads left to right. It is *not* the default tab — see
@@ -9,9 +9,11 @@
 export const TAB_IDS = [
   'intro',
   'studio',
+  'prepare',
   'trainer',
   'inference',
   'generator',
+  'inspect',
   'library',
   'admin',
   'api',
@@ -43,6 +45,13 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
     wave: 1,
   },
   {
+    // Between annotating and training, because that is where it happens (doc 89).
+    id: 'prepare',
+    label: 'Prepare data',
+    hint: 'Check a dataset, fix it, split it and see it as the model will, then save a recipe.',
+    wave: 11,
+  },
+  {
     id: 'trainer',
     // "Head Trainer" named only half of what the tab does. Fine-tuning a whole model
     // lived at the bottom of it under an <h3> and was, predictably, never found.
@@ -62,6 +71,13 @@ export const TABS: readonly TabDefinition[] = Object.freeze([
     label: 'Dataset Generator',
     hint: 'Auto-annotate new images with a trained head or a concept prompt, then review.',
     wave: 4,
+  },
+  {
+    // Beside the Generator, because that is where you come from: annotate, then watch it.
+    id: 'inspect',
+    label: 'Inspect datasets',
+    hint: 'Play back a dataset — its videos and images — with the annotations it holds.',
+    wave: 9,
   },
   {
     id: 'library',

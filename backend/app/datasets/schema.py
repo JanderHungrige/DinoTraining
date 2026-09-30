@@ -42,6 +42,18 @@ PROVENANCE_TABLES = ("boxes", "masks")
 ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "boxes": {"producer": "TEXT"},
     "masks": {"producer": "TEXT"},
+    # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a
+    # photo, which is not part of any sequence.
+    "images": {
+        "sequence": "TEXT",
+        "frame_index": "INTEGER",
+        # Doc 84: "train", "val" or "test", assigned once and kept, so evaluation never
+        # reshuffles. NULL until a split is made (or an import brings its own, doc 82).
+        "split": "TEXT",
+        # Doc 83: 1 when a safe fix has taken the image out of training. Never deleted:
+        # excluding is reversible, deleting is not.
+        "excluded": "INTEGER",
+    },
 }
 
 _PROVENANCE_CHECK = ", ".join(f"'{value}'" for value in PROVENANCE_VALUES)
@@ -118,6 +130,10 @@ CREATE TABLE IF NOT EXISTS images (
     width        INTEGER NOT NULL,
     height       INTEGER NOT NULL,
     annotated_at TEXT NOT NULL,
+    sequence     TEXT,
+    frame_index  INTEGER,
+    split        TEXT,
+    excluded     INTEGER,
     UNIQUE (dataset_id, path)
 );
 

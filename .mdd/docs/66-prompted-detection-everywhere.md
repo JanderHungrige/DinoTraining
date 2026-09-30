@@ -126,3 +126,16 @@ looks like a working detector having a bad day.
 ## Bugs
 
 (none yet — populated by /mdd bug when issues are reported)
+
+- **2026-09-29 — the Generator and the Studio offered Grounding DINO, then refused to
+  propose with it.** Found while verifying doc 71. `propose_foundation_boxes` dispatched on
+  `ConceptSegmenter` and `RfDetrModel` only, so `PromptedDetector` fell through to "does not
+  predict boxes, so it cannot be reviewed as annotations". It is the one model in the
+  catalogue that predicts nothing *but* boxes. This doc's own verification checked that the
+  prompt field appeared in the Generator, but nobody pressed Propose.
+  - **Fix:** a `_from_prompted` branch. Each box is named by its matched phrase, and the
+    producer records the model and the prompt. An empty prompt is refused rather than
+    returning the model's by-design empty prediction, which autoplay would record as "nothing
+    in this image".
+  - **Tests:** `tests/test_prompted_detector_annotates.py`.
+  - **Verified live:** "a chess piece." over the chess folder proposed two boxes on image 1.

@@ -4,12 +4,209 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-29. It catches up on two rounds of work that were not waves:
-the **Studio round** (2026-08-25, docs 60–62) and the **agent, first-run and video round**
-(2026-08-26/27, docs 63–68). Everything below is merged to `dev` and `main`, and `main`
-is at `d47ed26`. Nothing has been pushed since 2026-08-27. Waves 1–8 are merged.
-**Only Wave 9 (Website & hyperscaler compute) remains** as planned work, plus the three
-features deferred out of Wave 8.
+**Last updated:** 2026-09-30, at the end of the **Wave 12 build**. Waves 1–8 and docs
+60–68 are in `dev` and `main`. **Wave 9** (docs 69–75) is in `dev` (`076f56a`) and waits
+for Jan's test before `main`. Three waves are built and pushed, each on its own branch, and
+none is merged:
+- **Wave 10** (Look & Feel, docs 76–80) on `feat/dinotraining-wave-10`;
+- **Wave 11** (Guided Data Preparation, docs 81–91) on `feat/dinotraining-wave-11`;
+- **Wave 12** (Fine-Tuning, docs 92–98) on `feat/dinotraining-wave-12`, which branches from
+  Wave 11.
+
+The website is Wave 13.
+
+---
+
+## Wave 12 — Fine-tuning SAM 2, SAM 3 and DINO backbones (2026-09-30)
+
+| | |
+|---|---|
+| 92 | **Data-requirements contract.** One source per model for what the data must look like (RF-DETR, SAM 2.1, SAM 3, DINOv2/v3 × task), plus a preflight that names the rule, the numbers and the fix. |
+| 93 | **One runner, per-model adapters.** Preflight, the recipe's split, base vs fine-tuned on the same held-out pictures, and **the base model competing as round 0**: a fine-tune that is not better is not saved. |
+| 94 | **SAM 2.1.** Trains the mask decoder only (a few MB). Offered as "Grounded SAM · <name>". |
+| 95 | **DINO backbones.** The last blocks train with a task head and are saved as a variant with its own id. The baseline is a head on the frozen backbone. |
+| 96 | **SAM 3.** Hungarian matching and DETR losses on 15 M of 840 M parameters. Offered as "SAM 3 · <name>". |
+| 97 | **UI.** "Fine-tune a model": requirements card, readiness check, before/after. Doc 44's panel is removed. |
+| 98 | **Agents.** `get_finetune_requirements`, `check_dataset_for`, `start_finetune`; guide section 4 rewritten. |
+
+**Measured:**
+
+| Model | Data | Base → fine-tuned (held-out) |
+|---|---|---|
+| RF-DETR nano, 2 rounds | Blood cells, recipe | mAP 0.000 → **0.616** (a DINO head: 0.412) |
+| SAM 2.1 small | synthetic shapes it already outlines | mIoU 0.957 → 0.936 (worse; the runner now saves nothing) |
+| SAM 2.1 small | filled-ring convention | mIoU 0.804 → **0.957** |
+| DINOv2-small, 4 blocks | filled-ring convention | head on frozen 0.849 → variant **0.869** |
+| SAM 3 | filled-ring convention | base **0.434**; a full run was cancelled (memory shared with NinaNatur's 19 GB process) — see doc 96 |
+
+**Carry forward:**
+- **Fine-tuning teaches your outlines, not what a model already does.** It made SAM 2
+  worse on easy shapes. That is why the base model competes and why both numbers are
+  always reported.
+- **Memory is a budget, not a constant** (doc 96). A fixed 3 GB feature cache next to
+  SAM 3 swapped this 16 GB Mac (24.5 GB of swap), and an epoch could not even be
+  cancelled. Caches are now a share of physical memory, and cancelling is checked between
+  pictures.
+- **The old headline numbers were random-split numbers:** RF-DETR 0.96 against a head's
+  0.5–0.6 on rail. On a leak-free split, Blood cells give 0.62 against 0.41. The rail
+  comparison deserves a re-run with a recipe.
+- **DINOv3 was not run here.** It is gated, and downloading needs Jan's go-ahead. The code
+  path was verified with DINOv2-small.
+- **Synthetic data only for SAM.** The app holds no real instance-mask set of useful size.
+
+## Waiting on Jan — Wave 12
+
+- **See the demo-state:** Training → Fine-tune a model → SAM 2.1 on a dataset with masks
+  and a recipe. Read the card, fix what the check says, train, and compare before/after.
+- **Run SAM 3 once on a free machine** (doc 96): Training → Fine-tune a model → SAM 3 on
+  "Wave 12 filled-ring convention" with its recipe, 2 rounds. It is the one fine-tune not
+  yet seen to completion.
+- **Allow the DINOv3 download** if DINOv3 fine-tuning should be verified on real weights
+  (327 MB; gated, so the token must be set).
+- **Test data from this wave:** datasets "Wave 12 synthetic outlines" and "Wave 12
+  filled-ring convention", and fine-tuned instances (RF-DETR "blood rf-detr (wave 12
+  runner)", "outlines SAM" (the worse one, saved before the round-0 rule), "filled-ring
+  SAM", "rings DINOv2 variant", and SAM 3's), to delete in Library.
+
+## Wave 10 — Look & Feel (2026-09-29), on its own branch
+
+The Pixabay "octagon" particles clip, mirror-stitched into a seamless 58 s loop (4.0 MB,
+H.264, provenance and licence recorded), as the app's background. It pauses when hidden and
+shows the poster for reduced motion or when switched off (Admin → Appearance). Also:
+- NinaNatur's Draft Sketch outline on every button;
+- Lato, bundled rather than fetched;
+- contrast measured against the loop's brightest frame, with tokens fixed where they
+  failed AA.
+
+Docs 76–80 are on `feat/dinotraining-wave-10`. Its status stays `in_progress` until the
+packaged app has been seen: `tauri dev` does not apply the packaged CSP (`media-src 'self'`
+was added), and WebKit plays video differently.
+
+## Wave 11 — Guided Data Preparation (2026-09-29/30)
+
+Jan's "most important and most complex wave": preprocessing done for people who have
+never trained a model, most of all for external data. It is all in a new tab, **Prepare
+data**, between Annotation Studio and Training, and in the API and MCP for agents.
+
+| | |
+|---|---|
+| 81 | **Audit.** Plain-language findings (what / why / what to do, example thumbnails), judged at the target model's input. |
+| 82 | **Import check.** Detects xywh / xyxy / normalised boxes. An unchecked xyxy export had lost 162 of 273 boxes silently. |
+| 83 | **Safe fixes.** Exclude and include, never delete; a class map that renames, merges or leaves out. Undoable. |
+| 84 | **Leak-free split.** Scenes and video stretches never straddle sides; buffers at contiguous boundaries; stored and seeded. |
+| 85 | **What the model sees.** Fit, object sizes at the input, the tiling decision, and the real pictures at the model's resolution. Found: RF-DETR and SAM 2 *stretch* to a square, they do not letterbox. |
+| 86 | **Unequal classes.** Weighted loss or repeat-factor sampling, recommended from the numbers. |
+| 87 | **Augmentation presets.** Geometry-safe (property-tested), with a whole-word meaning guard (no mirroring for signs, text or sides). |
+| 88 | **Recipe.** A versioned, never-edited snapshot. It says when the data no longer matches it. |
+| 89 | **The Prepare data tab.** Seven steps, each with a recommended default and why. |
+| 90 | **Training uses the recipe.** Stored split, tiles, strategy, augmentation. Fixes apply to every run. A **test score** is reported and saved with the head. |
+| 91 | **For agents.** Eight MCP tools and guide section 2c, "prepare before you train". |
+
+**Found live, and worth carrying forward:**
+- **The shared SQLite connection was used by several threads at once** (doc 03, Bugs).
+  Symptoms: "API misuse" 500s, a false "Dataset not found", and one thread's commit
+  persisting another's half-done work. Latent since Wave 1. `transaction()` now holds a
+  lock.
+- **Every MCP tool's error explanation was lost** (doc 91). `ApiError` was not a
+  `ToolError`, so the model saw only "Error executing tool".
+- **mAP counted classes absent from the evaluation side as 0** (doc 11, Bugs). With a
+  leak-free split that is common, and it cut scores by a third per missing class.
+- **The first honest numbers are lower.** Blood cells: validation mAP 0.498, **test 0.412**.
+  On OSDaR the leak-free split leaves only 58 groups, and a DINOv2-small head learns little
+  in 6 epochs, tiled or not (doc 90). RF-DETR's 0.96 from Wave 7 was measured on a random
+  split, so treat it with the same caution until it is re-run with a recipe.
+- **Balance strategies could not be told apart** on Blood cells with one seed and 8
+  epochs (doc 86). The recommendation rule is reasoned, not yet measured.
+
+## Waiting on Jan — Waves 10 and 11
+
+**A. Merge order.** Both branches start from `dev` at `24f5230`. Wave 11's new tab uses
+only colour tokens both branches define, so either order works. Wave 10 first gives Wave 11
+its look; check the Prepare data tab once both are in.
+
+**B. See Wave 11's demo-state yourself** (`./scripts/dev.sh web`):
+1. Prepare data → a dataset and a model.
+2. Run the audit and read the findings.
+3. Split, then "What the model sees", then save a recipe.
+4. "Train with …" opens Training with the recipe chosen; the finished run shows a test
+   score.
+
+**C. Not seen in WebKit.** The Prepare tab draws `<img>` data URLs and a
+`image-rendering: pixelated` preview, with no canvas data. That is low risk, but it is not
+evidence.
+
+**D. Tasks offered out of scope**, still open: blocking file IO on the event loop
+(macOS's ~/Downloads prompt stalled a preview for 6,711 s), doc 68's path-confinement
+claim, and unhandled `setPointerCapture` errors in the viewer tests.
+
+**E. Test data left behind:** recipes on Blood cells ("blood v1") and OSDaR ("osdar
+tiled", "osdar whole"), and new heads from the comparison runs, for deleting in Library.
+
+---
+
+## Wave 9 — what was built (2026-09-29)
+
+Inserted ahead of the website wave at Jan's request, **by renumbering** (9 → 10, 40
+references). Every feature was verified in the running app: web mode, with real Grounding
+DINO and RF-DETR weights.
+
+| | |
+|---|---|
+| 69 | **Remembered entries.** Every path, name, prompt and model choice survives a tab switch and a restart (`localStorage`, guarded reads, `stillListed` for ids that may be gone). The HF token draft is deliberately excluded. |
+| 70 | **Generator action bar.** *auto* boxes beside Propose and Save (on by default), with everything beside Previous/Next. Auto-save fires on *leaving* an image. The session remembers what it saved, so going back shows it. |
+| 71 | **Autoplay.** Propose → hold 0.5 s → save → next, from the current image, stoppable at any point without saving the image it stops on. *Hidden* mode shows only a percentage. |
+| 72 | **Ask when unclear.** A user-set score band pauses autoplay and marks those proposals *unclear*. Continue saves the user's verdict. |
+| 73 | **A video as the Generator's source.** The chosen range is decoded to JPEGs inside the dataset (a polled job), and every save records `sequence` + `frame_index` (schema **v8**). |
+| 74 | **Inspect datasets tab.** Plays a dataset's videos, folders and loose images with the stored annotations, coloured by class. The Generator jumps there with the dataset open. Frames never saved (nothing found) are merged back from disk, so playback keeps real time. |
+| 75 | **Annotation timeline.** One coloured bar per class under the player. Click a bar to select its class, then ⇤ First / ◀ Previous / Next ▶. |
+
+**Pre-existing bugs found and fixed on the way:**
+- **Grounding DINO could not propose in the Generator or the Studio.** Doc 66 offered it,
+  and `propose_foundation_boxes` refused it with "does not predict boxes". It is fixed in
+  its own commit.
+- **A hand-drawn box in the Generator could never be saved.** Only a proposal with results
+  set `dirty`.
+
+**The results worth carrying forward:**
+- **The migration version gate struck a fourth time** (doc 22's bug). New `ADDED_COLUMNS`
+  never reached a real install, because `run_migrations` returned early at
+  `LATEST_VERSION`, and every test builds a fresh DB. The gate now also checks for missing
+  added columns, so this cannot recur for columns. It still can for CHECK widening, which
+  keeps needing the version bump.
+- **React drops a queued updater for a component that unmounts in the same event.** The
+  first cut of `usePersistentState` wrote to `localStorage` inside the updater. Start
+  (remember the dataset, clear the name, unmount) lost the second write, and the next Start
+  created a duplicate dataset. A single-setter test passes against the bug because of
+  React's eager path; it takes two setters to reproduce it.
+- **An autoplay loop must live outside React.** After every `await`, state is stale. A loop
+  reading `session.save()` would write the previous image's boxes under the next image's
+  path. The runner owns its position and passes reviews explicitly.
+
+## Waiting on Jan — Wave 9
+
+**A. See the demo-state yourself**, then say whether Wave 9 is done. PE4 flips it to
+`complete` only on your word. The whole demo runs in `./scripts/dev.sh web`:
+1. Generator → *A video file* → Play.
+2. Stop during a hold, correct the frame, then Next.
+3. Tick *Ask me when a score is between* and Play again.
+4. *Inspect what I just annotated*, then click a bar and press ⇤ First.
+
+**B. macOS privacy prompt.** A Python process started from the desktop app asked for
+**~/Downloads** (the OSDaR23 data) and blocked the backend until it was answered. A
+separate task is offered for moving that file IO off the event loop.
+
+**C. Test data this build left behind**, for you to delete in Library if unwanted:
+- Datasets: "Wave 9 action bar check" ×2, "Wave 9 dup check", "Wave 9 autoplay check" (50
+  images) and "Wave 9 video check" (30 decoded frames).
+- The test clip itself is in the session scratchpad, not the repo.
+
+**D. Packaged-app checks.** Web mode is Chromium. Inspect paints through doc 68's
+`FrameCanvas`, from `annotate/image` URLs that the packaged CSP already allows (doc 68's
+`img-src` fix). That has not been seen in WebKit.
+
+**E. Two tasks were offered out of scope:**
+- Blocking file IO on the backend's event loop.
+- Doc 68's claim of a `resolve_user_path` that does not exist.
 
 ---
 
@@ -205,8 +402,11 @@ new=$(grep -v '^hash:' "$f" | shasum -a 256 | cut -c1-8)
 perl -pi -e "s/^hash: .*/hash: $new/" "$f"
 ```
 
-**Gates**, as last reported by the commit that closed doc 68 (2026-08-27): `1431` backend
-tests, `842` frontend, and no source file over 300 lines. They were not re-run when this
-handoff was rewritten on 2026-09-29. `apps/desktop` **has** changed since the last
-`cargo check` (2026-08-21): the CSP in `tauri.conf.json` changed on 2026-08-27. That is config,
-not Rust, but `cargo check` / a packaged build is the next check worth running.
+**Gates**, all green on `feat/dinotraining-wave-9` as of 2026-09-29: `1471` backend tests,
+`970` frontend, `ruff` + `mypy` + `tsc` clean. Files over 300 lines predate Wave 9
+(`app/ml/registry.py`, `app/ml/heads/registry.py`, four test files). `cargo check` was not
+run: nothing in Wave 9 touched `apps/desktop`.
+
+**Worktree note:** this session worked in a git worktree with `node_modules`, `backend/.venv`
+and `.env` **symlinked** from the main checkout (all gitignored, all excluded from git
+status). A fresh worktree needs the same, or `npm ci --legacy-peer-deps` plus a venv.

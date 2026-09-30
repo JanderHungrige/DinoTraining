@@ -15,7 +15,10 @@ from app.api.v1 import (
     backbones,
     dataset_classes,
     dataset_image_masks,
+    dataset_images,
     datasets,
+    finetune_jobs,
+    finetune_requirements,
     foundation,
     foundation_finetune,
     generate,
@@ -26,11 +29,20 @@ from app.api.v1 import (
     health,
     inference,
     models,
+    prep_audit,
+    prep_augment,
+    prep_balance,
+    prep_fixes,
+    prep_input,
+    prep_intake,
+    prep_recipes,
+    prep_split,
     prescan,
     settings,
     system,
     training,
     video,
+    video_extract,
 )
 
 api_router = APIRouter()
@@ -52,7 +64,19 @@ api_router.include_router(settings.router, tags=["settings"])
 api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])
+api_router.include_router(dataset_images.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])
 api_router.include_router(prescan.router, tags=["generate"])
 api_router.include_router(video.router, tags=["video"])
+api_router.include_router(video_extract.router, tags=["video"])
+api_router.include_router(prep_audit.router, tags=["prepare-data"])
+api_router.include_router(prep_intake.router, tags=["prepare-data"])
+api_router.include_router(prep_fixes.router, tags=["prepare-data"])
+api_router.include_router(prep_split.router, tags=["prepare-data"])
+api_router.include_router(prep_input.router, tags=["prepare-data"])
+api_router.include_router(prep_balance.router, tags=["prepare-data"])
+api_router.include_router(prep_augment.router, tags=["prepare-data"])
+api_router.include_router(prep_recipes.router, tags=["prepare-data"])
+api_router.include_router(finetune_requirements.router, tags=["fine-tuning"])
+api_router.include_router(finetune_jobs.router, tags=["fine-tuning"])

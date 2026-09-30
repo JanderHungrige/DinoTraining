@@ -15,6 +15,9 @@ numbered steps, real calls, and the trap named beside the step that springs it.
 
 from __future__ import annotations
 
+from app.docs.workflows_finetune import FINETUNE
+from app.docs.workflows_prepare import PREPARE
+
 BASE_URL = "http://127.0.0.1:8756/api/v1"
 
 INTRO = f"""# DinoTraining API — a guide for an AI assistant
@@ -119,36 +122,6 @@ a message saying exactly that.
 The finished run reports `head_instance_id`. That is what you run for inference.
 """
 
-FINETUNE = """## 4. Fine-tune a detector — the strong option for boxes
-
-This adapts a whole detector to your classes rather than fitting a head on frozen features.
-Slower, and much better: measured in this app at **mAP 0.96** on rail data against
-**0.5–0.6** for a DINO detector head on the same images.
-
-```
-POST /foundation/finetune
-{
-  "foundation_id": "rf-detr-nano",
-  "dataset_ids": ["<id from step 2>"],
-  "name": "Rail detector",
-  "epochs": 20,
-  "learning_rate": 0.0001,
-  "unfreeze_blocks": 0
-}
-GET  /foundation/finetune/{job_id}    # poll until state != "running"
-```
-
-**Preconditions:** `rf-detr-nano` installed (step 1), and a dataset with **boxes**.
-
-**`unfreeze_blocks`** opens the last N backbone blocks to training. Measured here: 4 blocks
-cost 19% more time and moved holdout mAP 0.78 → 0.84. Almost all of that is tighter boxes,
-not more detections — mAP@50 barely moved while mAP@75 rose 20%. Use it when localisation
-matters; skip it otherwise.
-
-The result is a **fine-tuned instance**, listed by `GET /foundation` alongside the base
-models, and runnable exactly like one.
-"""
-
 GENERATE = """## 5. Generate a dataset with what you have
 
 The flywheel: run a model over unannotated images, keep what is right, and the result is
@@ -223,6 +196,7 @@ WORKFLOWS: tuple[str, ...] = (
     INTRO,
     INSTALL,
     DATASET_IN,
+    PREPARE,
     TRAIN_HEAD,
     FINETUNE,
     GENERATE,
@@ -239,12 +213,15 @@ annotate my own images."*
 2. `POST /models/rf-detr-nano/download`, then poll `GET /models/jobs/{job_id}`.
 3. `POST /datasets/import/coco` with the unpacked directory. Keep `dataset_id`. Check
    `skipped_boxes` is 0, or say so.
-4. `POST /foundation/finetune` with that `dataset_id`. Poll `GET /foundation/finetune/{id}`
-   until `state` is `complete`, reporting `best_metric` as it moves.
-5. `GET /annotate/folder?path=...` over the user's own images, then
-   `POST /generate/foundation` per image with the fine-tuned `foundation_id` from step 4,
+4. Prepare it (section 2c): audit for `rf-detr-nano`, split, save a recipe. Report the
+   audit's problems before going on.
+5. `POST /foundation/finetune` with that `dataset_id` and the `recipe_id`. Poll
+   `GET /foundation/finetune/{id}` until `state` is `complete`, reporting `best_metric` as it
+   moves.
+6. `GET /annotate/folder?path=...` over the user's own images, then
+   `POST /generate/foundation` per image with the fine-tuned `foundation_id` from step 5,
    and `PUT /datasets/{new_id}/images` for each result.
-6. `POST /datasets/{new_id}/export/coco` and tell the user the path.
+7. `POST /datasets/{new_id}/export/coco` and tell the user the path.
 
 **Report the numbers, not just success.** `best_metric` after a fine-tune, and how many
 boxes were proposed and kept. A run that finished and learned nothing looks exactly like a

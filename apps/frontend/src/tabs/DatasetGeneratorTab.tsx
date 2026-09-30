@@ -16,18 +16,57 @@ import { MaskReviewCanvas } from '../components/MaskReviewCanvas';
 import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { GeneratorSetup } from '../components/GeneratorSetup';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isAnnotationView, isBoolean, isShapeOf } from '../lib/persisted';
+import { useAutoPropose } from '../hooks/useAutoPropose';
+import { useAutoplay } from '../hooks/useAutoplay';
+import { AutoplayControls, AutoplayHiddenOption } from '../components/AutoplayControls';
+import { AutoplayBar, AutoplaySummary } from '../components/AutoplayProgress';
+import { UnclearBandField } from '../components/UnclearBandField';
+import { UnclearQuestion } from '../components/UnclearQuestion';
+import { DEFAULT_BAND, normaliseBand } from '../lib/unclearBand';
+import { GeneratorActionBar } from '../components/GeneratorActionBar';
 import {
   useGeneratorSession,
   type GeneratorConfig,
 } from '../hooks/useGeneratorSession';
 
-export function DatasetGeneratorTab(): JSX.Element {
+const isBand = isShapeOf(DEFAULT_BAND);
+
+export interface DatasetGeneratorTabProps {
+  /** Doc 74: jump to Inspect at this run's dataset, and at its video or folder. */
+  readonly onInspect?: (datasetId: string, sequence: string | null) => void;
+}
+
+/** The sequence a run's frames were recorded under (doc 73), for Inspect to open at. */
+function sequenceOf(config: GeneratorConfig): string | null {
+  if (config.images.kind === 'video') return config.images.path;
+  if (config.images.kind === 'folder') return config.images.folder;
+  return null;
+}
+
+export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}): JSX.Element {
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A preference across the whole folder, not per-image state.
-  const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
+  const [view, setView] = usePersistentState<AnnotationView>(
+    'generator.view',
+    DEFAULT_VIEW,
+    isAnnotationView,
+  );
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useGeneratorSession(config);
+  // Doc 70: both on by default, and remembered.
+  const [autoPropose, setAutoPropose] = usePersistentState('generator.autoPropose', true, isBoolean);
+  const [autoSave, setAutoSave] = usePersistentState('generator.autoSave', true, isBoolean);
+  // Doc 72: off by default; the band is the user's, because every model scores differently.
+  const [askUnclear, setAskUnclear] = usePersistentState('generator.askUnclear', false, isBoolean);
+  const [band, setBand] = usePersistentState('generator.unclearBand', DEFAULT_BAND, isBand);
+  const autoplay = useAutoplay(config, session, askUnclear ? normaliseBand(band) : null);
+  // Autoplay proposes for itself; a second proposer racing it would be a second opinion.
+  useAutoPropose(session, config !== null && autoPropose && !autoplay.running);
+  // While autoplay waits on a question, the canvas is the user's again; nothing else is.
+  const locked = autoplay.running && autoplay.question === null;
   const prescan = usePrescan();
 
   const startScan = useCallback(
@@ -59,9 +98,21 @@ export function DatasetGeneratorTab(): JSX.Element {
     <section className="studio">
       <div className="studio__head">
         <h2 className="studio__title">Dataset Generator</h2>
-        <button type="button" className="btn" onClick={() => setConfig(null)}>
-          Change setup
-        </button>
+        <span className="studio__headactions">
+          {onInspect && (
+            <button
+              type="button"
+              className="btn"
+              disabled={autoplay.running}
+              onClick={() => onInspect(config.datasetId, sequenceOf(config))}
+            >
+              Inspect what I just annotated
+            </button>
+          )}
+          <button type="button" className="btn" onClick={() => setConfig(null)}>
+            Change setup
+          </button>
+        </span>
       </div>
 
       <CounterBar
@@ -84,13 +135,24 @@ export function DatasetGeneratorTab(): JSX.Element {
         </p>
       )}
 
-      {session.loading && <p role="status">Listing images…</p>}
+      {session.loading &&
+        (session.decoding ? (
+          // Doc 73: a video is decoded into the dataset before the first image can show.
+          <p role="status">
+            Decoding frames into the dataset — {session.decoding.done} of{' '}
+            {session.decoding.total}…{' '}
+            <progress max={Math.max(1, session.decoding.total)} value={session.decoding.done} />
+          </p>
+        ) : (
+          <p role="status">Listing images…</p>
+        ))}
 
       {/* Unattended runs benefit at least as much as the Studio: the Generator proposes on
           every image whether or not there is anything in it, and reviewing 400 crops of
           ballast is the same wasted afternoon. */}
       {!session.loading && session.allImages.length > 0 && (
         <PrescanPanel
+          storageKey="generator.prescan"
           total={session.allImages.length}
           job={prescan.job}
           starting={prescan.starting}
@@ -135,7 +197,9 @@ export function DatasetGeneratorTab(): JSX.Element {
           {/* Which review surface is a property of the config, not of what happens to
               be in state: an empty mask list must still show the mask canvas, or "found
               nothing" would silently render the box canvas instead. */}
-          {imageSize ? (
+          {locked && autoplay.hidden ? (
+            <AutoplayBar progress={autoplay.progress} />
+          ) : imageSize ? (
             config.kind === 'masks' ? (
               <MaskReviewCanvas
                 imageUrl={imageUrl(currentImage)}
@@ -146,7 +210,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 onMasksChange={session.setMasks}
                 onSelect={setSelectedId}
                 view={view}
-                disabled={session.proposing}
+                disabled={session.proposing || locked}
               />
             ) : (
               <AnnotationCanvas
@@ -157,7 +221,7 @@ export function DatasetGeneratorTab(): JSX.Element {
                 selectedId={selectedId}
                 onBoxesChange={session.setBoxes}
                 onSelect={setSelectedId}
-                disabled={session.proposing}
+                disabled={session.proposing || locked}
               />
             )
           ) : (
@@ -177,45 +241,50 @@ export function DatasetGeneratorTab(): JSX.Element {
             />
           </div>
 
-          <div className="studio__actions">
-            <button
-              type="button"
-              className="btn btn--primary"
-              disabled={session.proposing}
-              onClick={() => void session.propose()}
-            >
-              {session.proposing
-                ? 'Proposing…'
-                : config.kind === 'masks'
-                  ? 'Propose masks'
-                  : 'Propose boxes'}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={session.saving || session.proposing || !session.dirty}
-              onClick={() => void session.save()}
-            >
-              {session.saving ? 'Saving…' : 'Save to dataset'}
-            </button>
-            <span className="studio__spacer" />
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoPrevious || session.proposing}
-              onClick={session.previous}
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoNext || session.proposing}
-              onClick={session.next}
-            >
-              Next →
-            </button>
-          </div>
+          <GeneratorActionBar
+            proposeLabel={config.kind === 'masks' ? 'Propose masks' : 'Propose boxes'}
+            proposing={session.proposing}
+            saving={session.saving}
+            dirty={session.dirty}
+            canGoPrevious={session.canGoPrevious}
+            canGoNext={session.canGoNext}
+            autoPropose={autoPropose}
+            autoSave={autoSave}
+            onAutoProposeChange={setAutoPropose}
+            onAutoSaveChange={setAutoSave}
+            onPropose={() => void session.propose()}
+            onSave={() => void session.save()}
+            onPrevious={() => void session.previous({ autoSave })}
+            onNext={() => void session.next({ autoSave })}
+            locked={autoplay.running}
+            options={<AutoplayHiddenOption autoplay={autoplay} />}
+          >
+            <AutoplayControls
+              autoplay={autoplay}
+              canPlay={!session.proposing && !session.saving && session.images.length > 0}
+            />
+          </GeneratorActionBar>
+
+          {autoplay.question && (
+            <UnclearQuestion
+              imageNumber={autoplay.question.index + 1}
+              imageTotal={session.images.length}
+              count={autoplay.question.count}
+              band={normaliseBand(band)}
+              onContinue={autoplay.answer}
+              onStop={autoplay.stop}
+            />
+          )}
+
+          <UnclearBandField
+            enabled={askUnclear}
+            band={band}
+            disabled={autoplay.running}
+            onEnabledChange={setAskUnclear}
+            onBandChange={setBand}
+          />
+
+          {!autoplay.running && autoplay.report && <AutoplaySummary report={autoplay.report} />}
 
         </>
       )}

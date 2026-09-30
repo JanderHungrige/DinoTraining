@@ -143,11 +143,16 @@ export function TokenPanel(): JSX.Element {
       </p>
 
       <div className="tokenpanel__actions">
-        <button type="button" disabled={busy || draft.trim().length === 0} onClick={onSave}>
+        <button
+          type="button"
+          className="btn btn--primary"
+          disabled={busy || draft.trim().length === 0}
+          onClick={onSave}
+        >
           {busy ? 'Saving…' : 'Save token'}
         </button>
         {status?.configured ? (
-          <button type="button" disabled={busy} onClick={() => void run(clearToken)}>
+          <button type="button" className="btn" disabled={busy} onClick={() => void run(clearToken)}>
             Remove
           </button>
         ) : null}

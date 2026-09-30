@@ -4,7 +4,7 @@
  * **Two modes, switched by a control rather than by scrolling.** Fine-tuning used to sit
  * at the bottom of this tab under an `<h3>`, below the head form, the progress panel and
  * the list of trained heads — which meant that the model that actually wins at detection
- * (RF-DETR, 0.96 mAP on rail against 0.5-0.6 for a DINO head) was the one nobody found.
+ * (RF-DETR: 0.62 test mAP against 0.41 for a DINO head, leak-free split) was the one nobody found.
  * A tab called "Head Trainer" naming only half of what it did did not help.
  *
  * The two are genuinely different things, not two forms of one: a head trains against a
@@ -16,13 +16,16 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { listHeadInstances, deleteHeadInstance, type HeadInstanceInfo } from '../api/headInstances';
-import { FinetunePanel } from '../components/FinetunePanel';
+import { FoundationFinetunePanel } from '../components/finetune/FoundationFinetunePanel';
 import { HeadInstanceList } from '../components/HeadInstanceList';
+import { RecipePicker } from '../components/RecipePicker';
 import { TrainerForm, type TrainerSelection } from '../components/TrainerForm';
+import { useRecipeChoice } from '../hooks/useRecipeChoice';
+import type { TrainRequest } from '../types/navigation';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { isOneOf, isShapeOf, stillListed } from '../lib/persisted';
 import { TrainingProgress } from '../components/TrainingProgress';
 import { DatasetFormatPanel } from '../components/DatasetFormatPanel';
-import { listFoundations, type FoundationInfo } from '../api/foundation';
-import { useFinetune } from '../hooks/useFinetune';
 import { installedOnly, useTrainerOptions } from '../hooks/useTrainerOptions';
 import { useTrainingRun } from '../hooks/useTrainingRun';
 
@@ -36,7 +39,7 @@ const MODES: readonly { id: TrainingMode; name: string; hint: string }[] = Objec
   {
     id: 'finetune',
     name: 'Fine-tune a model',
-    hint: 'Adapts a whole detector. Slower, and much stronger at boxes.',
+    hint: 'Adapts a whole model — a detector, SAM or a DINO backbone. Slower, often much stronger.',
   },
 ]);
 
@@ -54,22 +57,28 @@ const DEFAULTS: TrainerSelection = {
 /** Which of the two things this tab does. */
 type TrainingMode = 'head' | 'finetune';
 
-export function HeadTrainerTab(): JSX.Element {
+const isTrainingMode = isOneOf<TrainingMode>(['head', 'finetune']);
+
+export function HeadTrainerTab({ request = null }: { readonly request?: TrainRequest | null }): JSX.Element {
   // Defaults to the head path: it is the cheaper one, the one the rest of the app is
   // built around, and the one a first-time user has the data for.
-  const [mode, setMode] = useState<TrainingMode>('head');
-  const [selection, setSelection] = useState<TrainerSelection>(DEFAULTS);
-  const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
-  const finetune = useFinetune();
-
+  // Doc 69: the mode and the whole selection are remembered across tab switches.
+  const [mode, setMode] = usePersistentState<TrainingMode>('trainer.mode', 'head', isTrainingMode);
+  const [selection, setSelection] = usePersistentState<TrainerSelection>(
+    'trainer.selection',
+    DEFAULTS,
+    isShapeOf(DEFAULTS),
+  );
+  // Doc 90: '' follows the latest up-to-date recipe, 'none' is none, else a recipe id.
+  const [recipeChoice, setRecipeChoice] = useState('');
+  // "Train with this recipe" from Prepare data is an instruction, not a default: it wins
+  // over what was remembered, and pressing it again applies again (the nonce).
   useEffect(() => {
-    const controller = new AbortController();
-    // Non-fatal: head training still works if the catalogue is unhappy.
-    void listFoundations(controller.signal)
-      .then(setFoundations)
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, [finetune.job?.instance_id]);
+    if (!request) return;
+    setMode('head');
+    setSelection((current) => ({ ...current, datasetIds: [request.datasetId] }));
+    setRecipeChoice(request.recipeId);
+  }, [request, setMode, setSelection]);
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [busy, setBusy] = useState<Record<string, boolean>>({});
 
@@ -91,14 +100,26 @@ export function HeadTrainerTab(): JSX.Element {
   }, [refreshHeads]);
 
   const installed = installedOnly(backbones);
+  const recipes = useRecipeChoice(selection.datasetIds, recipeChoice);
+  const recipeId = recipes.chosen?.recipe.id ?? '';
+
+  // What the remembered selection still refers to. A dataset, backbone or head type may be
+  // gone since it was remembered; the form and the run see only what still exists, while
+  // the stored selection keeps the rest in case a list merely failed to load.
+  const live: TrainerSelection = {
+    ...selection,
+    datasetIds: selection.datasetIds.filter((id) => datasets.some((entry) => entry.id === id)),
+    backboneId: stillListed(selection.backboneId, installed.map((entry) => entry.id)),
+    headTypeId: stillListed(selection.headTypeId, headTypes.map((entry) => entry.id)),
+  };
 
   // Preselect the only installed backbone: making the user pick from a list of one is
   // friction with no decision in it.
   useEffect(() => {
-    if (!selection.backboneId && installed.length === 1) {
+    if (!live.backboneId && installed.length === 1) {
       setSelection((current) => ({ ...current, backboneId: installed[0]!.id }));
     }
-  }, [installed, selection.backboneId]);
+  }, [installed, live.backboneId, setSelection]);
 
   const remove = async (id: string): Promise<void> => {
     setBusy((current) => ({ ...current, [id]: true }));
@@ -142,20 +163,12 @@ export function HeadTrainerTab(): JSX.Element {
       {mode === 'finetune' ? (
         <>
           <p className="trainer__hint">
-            Trains the whole model on your classes, weights and all — not a head on top of
-            a frozen one. Slower, and much stronger at detection: measured here at mAP 0.96
-            on rail against 0.5–0.6 for a DINO head on the same data.
+            Adapts a whole foundation model to your data — a detector, SAM, or a DINO backbone
+            — rather than training a small head on a frozen one. Slower, and often much
+            stronger: on Blood cells with a leak-free split, RF-DETR reached 0.62 test mAP
+            against 0.41 for a DINO head. Every run is compared with the model it started from.
           </p>
-          <FinetunePanel
-            datasets={datasets}
-            foundations={foundations}
-            job={finetune.job}
-            starting={finetune.starting}
-            running={finetune.running}
-            error={finetune.error}
-            onStart={(options) => void finetune.start(options)}
-            onCancel={() => void finetune.cancel()}
-          />
+          <FoundationFinetunePanel datasets={datasets} />
         </>
       ) : (
         <>
@@ -169,22 +182,25 @@ export function HeadTrainerTab(): JSX.Element {
               and wants to know whether it will load. */}
           <DatasetFormatPanel />
 
+          <RecipePicker datasetIds={live.datasetIds} {...recipes} onChoice={setRecipeChoice} />
+
           <TrainerForm
         datasets={datasets}
         backbones={installed}
         headTypes={headTypes}
-        value={selection}
+        value={live}
         disabled={run.running}
         starting={run.starting}
         onChange={setSelection}
             onSubmit={() =>
               void run.start({
-                head_type_id: selection.headTypeId,
-                backbone_id: selection.backboneId,
-                dataset_ids: selection.datasetIds,
-                epochs: selection.epochs,
-                learning_rate: selection.learningRate,
-                early_stopping_patience: selection.earlyStoppingPatience,
+                head_type_id: live.headTypeId,
+                backbone_id: live.backboneId,
+                dataset_ids: live.datasetIds,
+                epochs: live.epochs,
+                learning_rate: live.learningRate,
+                early_stopping_patience: live.earlyStoppingPatience,
+                ...(recipeId ? { recipe_id: recipeId } : {}),
               })
             }
           />

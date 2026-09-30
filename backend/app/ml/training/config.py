@@ -8,7 +8,7 @@ backbone features — see :mod:`app.ml.training.runner`.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,10 +43,31 @@ class TrainingConfig:
     #: being nudged; at the head's own rate a few hundred images destroy it in one epoch and
     #: the run reports a worse number than the frozen one it was meant to beat.
     backbone_lr_scale: float = 0.1
+    #: How unequal classes are handled (doc 86): "none", "weighted-loss" or
+    #: "balanced-sampling". "none" trains exactly as before the option existed.
+    imbalance: str = "none"
+    #: Augmentation preset (doc 87, `app.ml.augment.PRESETS`). "none" trains on the
+    #: pictures as they are. `augment=True` without a preset means "general".
+    augmentation: str = "none"
+    #: Changed copies cached per training image when the feature cache is used.
+    augment_copies: int = 2
+    #: The preparation recipe this run follows (doc 90). With one, the stored split is used
+    #: instead of `split_indices`, and its id is part of the saved provenance.
+    recipe_id: str | None = None
+    #: Tiles along the long edge (doc 85's plan); 0 or 1 trains on whole pictures.
+    tile_long_edge: int = 0
+
+    def with_recipe(self, fields: dict[str, object]) -> TrainingConfig:
+        """This config with a recipe's fields applied (doc 90); validated like any other."""
+        return replace(self, **fields) if fields else self  # type: ignore[arg-type]
 
     def __post_init__(self) -> None:
         if not self.dataset_ids:
             raise ValueError("At least one dataset is required")
+        if self.imbalance not in ("none", "weighted-loss", "balanced-sampling"):
+            raise ValueError(f"Unknown imbalance strategy: {self.imbalance}")
+        if not 0 <= self.augment_copies <= 8:
+            raise ValueError(f"augment_copies must be in [0, 8], got {self.augment_copies}")
         if self.epochs < 1:
             raise ValueError(f"epochs must be >= 1, got {self.epochs}")
         if self.batch_size < 1:
@@ -90,9 +111,7 @@ class TrainingConfig:
                 f"got {self.unfreeze_blocks}"
             )
         if not 0.0 < self.backbone_lr_scale <= 1.0:
-            raise ValueError(
-                f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}"
-            )
+            raise ValueError(f"backbone_lr_scale must be in (0, 1], got {self.backbone_lr_scale}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,9 +123,7 @@ class Split:
     test: tuple[int, ...] = field(default=())
 
 
-def split_indices(
-    count: int, val_fraction: float, test_fraction: float, seed: int
-) -> Split:
+def split_indices(count: int, val_fraction: float, test_fraction: float, seed: int) -> Split:
     """Deterministically split ``count`` **images** into train/val/test.
 
     Splitting by image rather than by box is not a detail: boxes from one image landing

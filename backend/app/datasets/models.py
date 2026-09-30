@@ -66,6 +66,14 @@ class Box(BaseModel):
         return self.x + self.w <= width and self.y + self.h <= height
 
 
+class FramePosition(BaseModel):
+    """Where an image sits in a sequence (doc 73): the video or folder it is a frame of,
+    and its frame number in that source. What lets a dataset be played back in order."""
+
+    sequence: str = Field(min_length=1)
+    frame_index: int = Field(ge=0)
+
+
 class ImageAnnotation(BaseModel):
     """Every box for one image, as submitted by the annotation UI."""
 
@@ -74,6 +82,11 @@ class ImageAnnotation(BaseModel):
     height: int = Field(gt=0)
     boxes: list[Box] = Field(default_factory=list)
     prompt: str | None = None
+    #: Doc 73. Omitted for a photo; omitting it never clears a position already stored.
+    frame: FramePosition | None = None
+    #: Doc 82: the split a published dataset assigned (its train/valid/test folders).
+    #: Omitted means "none given", and never clears one already stored.
+    split: Literal["train", "val", "test"] | None = None
 
     @model_validator(mode="after")
     def _boxes_fit_the_image(self) -> ImageAnnotation:
@@ -137,6 +150,7 @@ class ImageMaskAnnotation(BaseModel):
     height: int = Field(gt=0)
     masks: list[Mask] = Field(default_factory=list)
     prompt: str | None = None
+    frame: FramePosition | None = None
 
     @model_validator(mode="after")
     def _masks_match_the_image(self) -> ImageMaskAnnotation:
