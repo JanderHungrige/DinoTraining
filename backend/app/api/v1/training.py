@@ -228,6 +228,22 @@ async def cancel_job(job_id: str) -> CancelResponse:
     return CancelResponse(job_id=job_id, cancelled=get_job_runner().cancel(job_id))
 
 
+def _new_epochs(job: TrainingJob, sent: int) -> list[str]:
+    """An `epoch` frame for each history entry after the first `sent`."""
+    return [
+        _frame(
+            "epoch",
+            {
+                "epoch": entry.epoch,
+                "train_loss": entry.train_loss,
+                "val_loss": entry.val_loss,
+                "metrics": entry.metrics,
+            },
+        )
+        for entry in list(job.history)[sent:]
+    ]
+
+
 async def _stream(job: TrainingJob, request: Request) -> AsyncIterator[str]:
     """Emit a snapshot, then each new epoch, then a terminal frame."""
     yield _frame("status", _describe(job).model_dump())
@@ -242,20 +258,11 @@ async def _stream(job: TrainingJob, request: Request) -> AsyncIterator[str]:
             logger.debug("Client disconnected from job %s stream", job.job_id)
             return
 
-        emitted = False
-        while sent_epochs < len(job.history):
-            entry = job.history[sent_epochs]
-            yield _frame(
-                "epoch",
-                {
-                    "epoch": entry.epoch,
-                    "train_loss": entry.train_loss,
-                    "val_loss": entry.val_loss,
-                    "metrics": entry.metrics,
-                },
-            )
-            sent_epochs += 1
-            emitted = True
+        frames = _new_epochs(job, sent_epochs)
+        for frame in frames:
+            yield frame
+        sent_epochs += len(frames)
+        emitted = bool(frames)
 
         if job.state != last_state:
             last_state = job.state
@@ -270,6 +277,10 @@ async def _stream(job: TrainingJob, request: Request) -> AsyncIterator[str]:
                 if job.head_instance_id is not None or job.best_state is None:
                     break
                 await asyncio.sleep(_POLL_SECONDS)
+            # The last epochs and the finish can both land after the drain above: send
+            # them before "done", or the curve ends early (found by CI on Linux).
+            for frame in _new_epochs(job, sent_epochs):
+                yield frame
             yield _frame("done", _describe(job).model_dump())
             return
 
