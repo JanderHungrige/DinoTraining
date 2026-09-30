@@ -1,13 +1,13 @@
 ---
 id: dinotraining-wave-15-7
-title: "Wave 15.7: Installer — bundled Python, PyTorch from the source, GPU chosen at setup"
+title: "Wave 15.7: Installer — bundled Python, PyTorch from the source, GPU chosen at setup, Mac via Homebrew"
 initiative: dinotraining
 initiative_version: 15
 status: planned
 depends_on: dinotraining-wave-15-6
 demo_state: "On a clean Windows PC with an NVIDIA card, a ~70 MB installer installs the app; its first start detects the GPU, downloads PyTorch with CUDA from pytorch.org with progress (resumable), and the backend reports CUDA; the same installer on a PC without NVIDIA sets up CPU, a Mac with Apple Silicon sets up MPS, an Intel Mac is told plainly it is not supported. Switching CPU ⇄ GPU later works from the GPU panel, and an app update only fetches what changed. CI installs and starts the app on all three platforms."
 created: 2026-09-30
-hash: 0b8967f0
+hash: 27035511
 ---
 
 # Wave 15.7: Installer — bundled Python, PyTorch from the source, GPU chosen at setup
@@ -17,6 +17,9 @@ hash: 0b8967f0
 - **GPU support should be loaded by the installer, from the official sources.** It is not
   hosted by us: "PyTorch und CUDA können doch so gezogen werden."
 - **Installer only.** The website is decided later (Wave 16 stays as it is for now).
+- **No paid signing** ("I will not give Apple 100 € for an open-source project"). The Mac
+  keeps its Tauri window, because the browser cannot open folders. It is installed by
+  **Homebrew formula** or a **one-line script**, never by a browser download.
 
 ## Why the build changes
 
@@ -81,7 +84,8 @@ and Apple has not shipped NVIDIA drivers since 2018.
 | 3 | first-run-setup | docs/127-first-run-setup.md | planned | bundled-python |
 | 4 | accelerator-switch | docs/128-accelerator-switch.md | planned | first-run-setup |
 | 5 | update-sync | docs/129-update-sync.md | planned | first-run-setup |
-| 6 | installer-smoke-ci | docs/130-installer-smoke-ci.md | planned | bundled-python, first-run-setup |
+| 6 | mac-distribution | docs/130-mac-distribution.md | planned | bundled-python, first-run-setup |
+| 7 | installer-smoke-ci | docs/131-installer-smoke-ci.md | planned | bundled-python, first-run-setup, mac-distribution |
 
 ### Feature notes
 
@@ -121,7 +125,29 @@ and Apple has not shipped NVIDIA drivers since 2018.
      `uv sync` runs, showing only what changed, into a fresh environment folder.
    - The old one is kept until the new one works, and removed after.
    - Tauri's own updater (the app shell) is **not** part of this wave: it needs signing.
-6. **installer-smoke-ci (130).**
+6. **mac-distribution (130).** Verified before planning (2026-09-30):
+   - **The quarantine test:** Wave 8's unsigned `.dmg`, fetched with the command line (no
+     quarantine attribute) and copied out, **started without any warning**. Its binary is
+     ad-hoc, linker-signed; `spctl` rejects it formally, but Gatekeeper only enforces on
+     quarantined files. Only a **browser** download is blocked.
+   - **Homebrew 7.0:** casks quarantine what they download (`cask/download.rb`); formulae
+     do not (`formula_installer.rb` never mentions it). So:
+     - **Release asset:** the CI builds the Tauri app for Apple Silicon and publishes it as
+       `DinoTraining_<v>_aarch64.app.tar.gz` (no `.dmg`, which invites the browser).
+     - **Homebrew:** a formula in a tap `JanderHungrige/homebrew-tap`:
+       `brew install janderhungrige/tap/dinotraining`. It installs the app into the
+       prefix and a `dinotraining` command.
+     - **Script:** `scripts/install-mac.sh` for users without Homebrew, run with a
+       one-line curl command. It refuses an Intel Mac, downloads and unpacks into
+       `~/Applications`, and needs no admin rights.
+     - **"Add to Applications":** a formula may not write outside its prefix, so on the
+       first start from the prefix the app offers to link itself into `~/Applications`.
+     - **Updates:** `brew upgrade`, or the script again.
+     - **The README** says why not to download in the browser, and the one-time "Open
+       anyway" (Privacy & Security) for anyone who did.
+   - **Creating the public tap repository** is publishing: Jan creates it, or approves
+     it, when the formula is ready.
+7. **installer-smoke-ci (131).**
    - The release workflow gains a smoke job per platform:
      - install silently (NSIS `/S`, mount the dmg, `dpkg -i`);
      - run setup headless (CPU; the runners have no GPU);
@@ -131,11 +157,10 @@ and Apple has not shipped NVIDIA drivers since 2018.
 
 ## Open questions (for Jan, before or during the build)
 
-- [ ] **Code signing** (Windows SmartScreen, macOS Gatekeeper and notarisation):
-  - it needs certificates and money (Azure Trusted Signing ~10 €/month, Apple Developer
-    99 €/year);
-  - without it, users see warnings, and the release stays a draft (doc 58);
-  - not in this wave unless Jan decides so.
+- [x] **Code signing:** none paid (Jan, 2026-09-30).
+  - macOS: installed without quarantine, see feature 6.
+  - Windows: unsigned, so SmartScreen shows "Run anyway". The free SignPath Foundation
+    signing for open-source projects may come later.
 - [ ] **A real Windows PC with an NVIDIA card** for demo steps 1–2; CI cannot test the GPU.
 - [ ] **CUDA version:** cu126 (older drivers) or cu128 (newest cards, e.g. RTX 50xx need
   it)? Proposal: choose by the driver version detected, and lock both.
