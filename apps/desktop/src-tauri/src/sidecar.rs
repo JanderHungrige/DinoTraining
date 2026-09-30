@@ -161,6 +161,7 @@ pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
     log::info!("Spawning backend: {} -m app", python.display());
     let mut command = Command::new(python);
     command.arg("-m").arg("app").current_dir(backend_dir);
+    crate::runtime::hide_console(&mut command);
     // An operation MPS lacks runs on the CPU instead of failing (doc 126). A value the
     // user set themselves is left alone.
     if cfg!(target_os = "macos") && std::env::var_os("PYTORCH_ENABLE_MPS_FALLBACK").is_none() {

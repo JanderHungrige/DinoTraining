@@ -3,11 +3,15 @@
 //! Responsibilities stop at the window and the sidecar process. No ML, no business
 //! logic — that all lives behind `/api/v1` in the Python backend.
 
+pub mod progress;
 pub mod runtime;
+pub mod setup;
+pub mod setup_flow;
 pub mod sidecar;
 
 use tauri::{Emitter, Manager, RunEvent};
 
+use crate::setup_flow::SetupState;
 use crate::sidecar::{BackendState, SidecarConfig, SidecarHandle};
 
 /// Emitted to the webview whenever the backend's state changes.
@@ -35,12 +39,19 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(SidecarHandle::default())
-        .invoke_handler(tauri::generate_handler![backend_url])
+        .manage(SetupState::default())
+        .invoke_handler(tauri::generate_handler![
+            backend_url,
+            setup_flow::setup_status,
+            setup_flow::setup_install,
+            setup_flow::setup_report
+        ])
         .setup(|app| {
             let handle = app.handle().clone();
             install_signal_handlers(handle.clone());
             tauri::async_runtime::spawn(async move {
-                start_backend(handle).await;
+                // Its failure is already logged and emitted to the UI.
+                let _ = start_backend(handle).await;
             });
             Ok(())
         })
@@ -99,26 +110,30 @@ fn resource_dir(app: &tauri::AppHandle) -> Option<std::path::PathBuf> {
     app.path().resource_dir().ok()
 }
 
-/// Spawn the sidecar and report the outcome to the UI.
-async fn start_backend(app: tauri::AppHandle) {
-    let _ = app.emit(BACKEND_EVENT, BackendState::Starting);
-
-    if let Err(message) = ensure_runtime(resource_dir(&app)).await {
-        return report_failure(&app, message);
+/// Spawn the sidecar and report the outcome to the UI; returns the failure too, for the
+/// setup screen, which waits on this rather than polling from the webview (doc 127).
+///
+/// A packaged app without its environment waits: the setup screen installs it and calls
+/// this again.
+pub(crate) async fn start_backend(app: tauri::AppHandle) -> Result<(), String> {
+    if setup_flow::needs_setup(&app) {
+        log::info!("The Python environment is not installed yet; waiting for the setup screen");
+        return Ok(());
     }
+    let _ = app.emit(BACKEND_EVENT, BackendState::Starting);
 
     let config = match SidecarConfig::resolve(resource_dir(&app).as_deref()) {
         Ok(config) => config,
-        Err(error) => return report_failure(&app, error.to_string()),
+        Err(error) => return Err(report_failure(&app, error.to_string())),
     };
 
     if let Err(error) = sidecar::ensure_port_free(&config) {
-        return report_failure(&app, error.to_string());
+        return Err(report_failure(&app, error.to_string()));
     }
 
     let mut child = match sidecar::spawn(&config) {
         Ok(child) => child,
-        Err(error) => return report_failure(&app, error.to_string()),
+        Err(error) => return Err(report_failure(&app, error.to_string())),
     };
 
     let result = sidecar::wait_until_healthy(&config, &mut child).await;
@@ -131,33 +146,15 @@ async fn start_backend(app: tauri::AppHandle) {
         Ok(()) => {
             let url = format!("http://{}:{}", config.host, config.port);
             let _ = app.emit(BACKEND_EVENT, BackendState::Ready { url });
+            Ok(())
         }
-        Err(error) => report_failure(&app, error.to_string()),
+        Err(error) => Err(report_failure(&app, error.to_string())),
     }
 }
 
-/// Install the bundled runtime's environment when it is missing or from an older lock.
-///
-/// A packaged app only; a checkout has no bundled runtime and returns at once. Doc 127
-/// puts this behind a setup screen with the hardware choice; until then it installs the
-/// `cpu` variant, which every supported machine can run.
-async fn ensure_runtime(resource_dir: Option<std::path::PathBuf>) -> Result<(), String> {
-    let Some(runtime) = runtime::Runtime::find(resource_dir.as_deref()) else {
-        return Ok(());
-    };
-    if runtime.is_ready() {
-        return Ok(());
-    }
-    log::info!("Installing the Python environment into {}", runtime.root.display());
-    tauri::async_runtime::spawn_blocking(move || {
-        runtime.sync("cpu", |line| log::info!("uv: {line}"))
-    })
-    .await
-    .map_err(|error| format!("The installer task failed: {error}"))?
-    .map_err(|error| error.to_string())
-}
-
-fn report_failure(app: &tauri::AppHandle, message: String) {
+/// Log and emit a startup failure; returns the message for callers that pass it on.
+fn report_failure(app: &tauri::AppHandle, message: String) -> String {
     log::error!("Backend failed to start: {message}");
-    let _ = app.emit(BACKEND_EVENT, BackendState::Failed { message });
+    let _ = app.emit(BACKEND_EVENT, BackendState::Failed { message: message.clone() });
+    message
 }

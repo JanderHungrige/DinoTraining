@@ -16,6 +16,7 @@ import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
 import { LibraryTab } from './tabs/LibraryTab';
 import { PrepareTab } from './tabs/PrepareTab';
+import { SetupGate } from './setup/SetupGate';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 import type { InspectRequest, TrainRequest } from './types/navigation';
 
@@ -81,6 +82,7 @@ export function App(): JSX.Element {
     <LanguageProvider>
     <LookProvider>
       <BackgroundVideo />
+      <SetupGate>
       <div className="app">
         <header className="app__header">
           <h1 className="app__title">DinoTraining</h1>
@@ -105,6 +107,7 @@ export function App(): JSX.Element {
           {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest, onTrain, trainRequest })}
         </main>
       </div>
+      </SetupGate>
     </LookProvider>
     </LanguageProvider>
   );

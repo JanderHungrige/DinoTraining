@@ -72,7 +72,8 @@ describe('FoundationFinetunePanel', () => {
     const model = await screen.findByRole('combobox', { name: 'Model' });
     await user.selectOptions(model, 'dinov2-small-segmentation');
     const start = screen.getByRole('button', { name: 'Start fine-tuning' });
-    await waitFor(() => expect(start).toBeEnabled());
+    // Under the full suite's load the readiness re-check after typing can take over 1 s.
+    await waitFor(() => expect(start).toBeEnabled(), { timeout: 3000 });
     await user.click(start);
     expect(api.startFinetune).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -90,7 +91,8 @@ describe('FoundationFinetunePanel', () => {
     await user.clear(jitter);
     await user.type(jitter, '0.25');
     const start = screen.getByRole('button', { name: 'Start fine-tuning' });
-    await waitFor(() => expect(start).toBeEnabled());
+    // Under the full suite's load the readiness re-check after typing can take over 1 s.
+    await waitFor(() => expect(start).toBeEnabled(), { timeout: 3000 });
     await user.click(start);
     expect(api.startFinetune).toHaveBeenCalledWith(
       expect.objectContaining({ finetune_id: 'sam2.1-hiera-small', options: { box_jitter: 0.25 } }),

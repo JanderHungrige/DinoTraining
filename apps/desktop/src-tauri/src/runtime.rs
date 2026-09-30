@@ -40,6 +40,20 @@ pub struct Runtime {
     pub root: PathBuf,
 }
 
+/// No console window on Windows for a helper process. `uv`, `nvidia-smi` and the venv's
+/// `python.exe` are console programs; started from a GUI app each would flash (or, for
+/// the backend, keep open) a black window.
+pub fn hide_console(command: &mut Command) {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    #[cfg(not(windows))]
+    let _ = command;
+}
+
 /// Where the app keeps its own files when nothing overrides it. Mirrors the Python side's
 /// data folder choice (`data/` lives beside `runtime/`).
 pub fn app_support_root() -> Option<PathBuf> {
@@ -120,6 +134,7 @@ impl Runtime {
             .env("UV_NO_CONFIG", "1")
             .env_remove("VIRTUAL_ENV")
             .env_remove("PYTHONPATH");
+        hide_console(&mut command);
         command
     }
 
