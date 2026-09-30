@@ -9,6 +9,7 @@ import { BoxReviewList } from '../components/BoxReviewList';
 import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
 import { TargetGuide } from '../components/TargetGuide';
+import { PhraseBar } from '../components/phrases/PhraseBar';
 import { useAnnotationTargetList } from '../hooks/useAnnotationTargetList';
 import { usePicturePhrases } from '../hooks/usePicturePhrases';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
@@ -175,8 +176,7 @@ export function AnnotationStudioTab(): JSX.Element {
             {currentImage}
           </p>
 
-          {/* Hidden probe: gives the session the natural size before any proposal,
-              so boxes drawn by hand on a fresh image are still saveable. */}
+          {/* Hidden probe: the natural size before any proposal, so hand-drawn boxes save. */}
           <img
             ref={imageRef}
             src={imageUrl(currentImage)}
@@ -188,6 +188,16 @@ export function AnnotationStudioTab(): JSX.Element {
                 event.currentTarget.naturalHeight,
               )
             }
+          />
+
+          <PhraseBar
+            datasetId={config.datasetId}
+            items={items}
+            selectedId={selectedId}
+            pictures={pictures}
+            onBoxesChange={setBoxes}
+            open={['sam3', 'open', undefined].includes(config.target)}
+            disabled={session.busy}
           />
 
           {imageSize ? (

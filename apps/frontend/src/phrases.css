@@ -1,0 +1,154 @@
+/* Doc 105: the phrase bar. */
+
+.phrasebar {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  background: var(--bg-raised);
+}
+
+.phrasebar > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.phrasebar[open] > summary {
+  margin-bottom: 0.5rem;
+}
+
+.phrasebar__chips,
+.phrasebar__selected,
+.phrasebar__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.phrasebar__add label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.phrasebar__add input {
+  min-width: 16rem;
+}
+
+.phrasebar__note,
+.phrasebar__label {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.phrasechip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.phrasechip--active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+  font-weight: 700;
+}
+
+.phrasechip--fixed {
+  cursor: default;
+  color: var(--text-dim);
+}
+
+.phrasechip__key,
+.phrasechip__count {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.phrasechip__remove {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.phrasechecks {
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.phrasechecks caption {
+  text-align: left;
+  font-weight: 600;
+  padding-bottom: 0.25rem;
+}
+
+.phrasechecks th,
+.phrasechecks td {
+  padding: 0.2rem 0.5rem 0.2rem 0;
+  text-align: left;
+}
+
+.phrasechecks__active th {
+  color: var(--accent);
+}
+
+.phrasechecks__state--unchecked {
+  color: var(--text-dim);
+}
+
+.phrasechecks__state--complete {
+  color: var(--accent);
+}
+
+.phrasechecks__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.phrasebar__help dl {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.phrasebar__help dt {
+  font-weight: 600;
+  margin-top: 0.4rem;
+}
+
+.phrasebar__help dd {
+  margin: 0.1rem 0 0;
+}
+
+.phrasemanage ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phrasemanage__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.phrasemanage__row label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}

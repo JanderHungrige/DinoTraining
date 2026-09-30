@@ -1,0 +1,137 @@
+---
+id: 105-phrase-annotation-ux
+title: Phrase Annotation UX — A Phrase Bar, Comma Variations, Picture Checks, and the Concepts Explained
+edition: DinoTraining
+depends_on: [103-phrase-data-model, 104-annotation-target]
+relates: [106-mask-editing, 108-prompts-and-hard-negatives]
+source_files:
+  - apps/frontend/src/components/phrases/PhraseBar.tsx
+  - apps/frontend/src/components/phrases/SelectedPhrases.tsx
+  - apps/frontend/src/components/phrases/PictureChecks.tsx
+  - apps/frontend/src/components/phrases/PhraseManager.tsx
+  - apps/frontend/src/components/phrases/PhraseHelp.tsx
+  - apps/frontend/src/lib/phraseEdit.ts
+  - apps/frontend/src/hooks/usePhraseKeys.ts
+  - apps/frontend/src/phrases.css
+  - apps/frontend/src/tabs/AnnotationStudioTab.tsx
+  - apps/frontend/src/hooks/usePicturePhrases.ts
+  - apps/frontend/src/api/phrases.ts
+routes: []
+models: []
+test_files:
+  - apps/frontend/src/lib/phraseEdit.test.ts
+  - apps/frontend/src/components/phrases/PhraseBar.test.tsx
+  - apps/frontend/src/components/phrases/PictureChecks.test.tsx
+data_flow: writes-existing
+last_synced: 2026-09-30
+status: complete
+phase: all
+mdd_version: 11
+tags: [annotation-studio, phrases, sam3, variants, hard-negatives, keyboard, non-experts]
+path: Annotation Studio/Phrases
+initiative: dinotraining
+wave: dinotraining-wave-14
+wave_status: complete
+integration_contracts: []
+satisfies_contracts: []
+known_issues:
+  - "Phrases link to outlines only. A selected box without an outline says so and points at 'Masks from my boxes' (doc 106)."
+security_read_sites: []
+sister_projects: []
+---
+
+# 105 — Phrase Annotation UX
+
+## Purpose
+
+Jan (2026-09-30): *"During annotation the user needs to add new phrases, and possibly has
+several different phrase masks per task. A dropdown with an option to add new ones? How
+does this work best?"*
+
+**Answer: a phrase bar, not a dropdown.**
+- **A dropdown hides the vocabulary** behind a click, and for SAM 3 the vocabulary *is* the
+  task. Chips keep every phrase in view, with its count.
+- **Switching is one key (1–9).**
+- **Two jobs happen per picture,** and both need the phrases in view:
+  - saying *which* phrases a mask answers to;
+  - saying *which* phrases the whole picture was checked for.
+
+## The bar (above the canvas)
+
+1. **Phrase chips:** one per dataset phrase, classes included (doc 103's implicit phrases).
+   - Each chip shows the text and its outline count, and its variations on hover.
+   - The **active** chip is highlighted.
+   - **Keys 1–9** pick the active phrase while focus is not in a text field. The chip shows
+     its number.
+2. **"+ phrase":**
+   - A text field that takes **comma-separated variations**: `signal, railway signal, light
+     signal` is one phrase with two variations.
+   - A class picker beside it defaults to the selected outline's class, else to the new
+     phrase itself.
+   - Enter adds it and makes it active.
+3. **The selected outline:** its phrases as removable chips (its class name is fixed), and
+   **Add "<active phrase>"**.
+   - A phrase of another class is not offered; its chip says so on hover.
+   - A selected *box* without an outline says: "Phrases go on outlines — make one from this
+     box first."
+4. **This picture:** one row per phrase, with **All marked** · **Not in this picture** ·
+   **clear**.
+   - The state shows on the row, and **A** / **N** mark the active phrase.
+   - A status is saved at once, on its own request; it is not part of Save.
+
+## Explained where it is used (`PhraseHelp`, a folding card in the bar)
+
+- **Phrase variations:** "Type the phrase the way you would ask for it, plus 2–4 other
+  wordings, separated by commas. The model learns them as one concept. You do not need
+  every synonym: a few teach it that the wording can vary, and it generalises from there."
+- **All marked / Not in this picture:** "SAM 3 learns from every picture you checked. 'All
+  marked' says every instance of this phrase here has an outline. 'Not in this picture'
+  says there is none, and teaches the model *not* to find it here. A picture you did not
+  check is left out for that phrase, never guessed."
+- **Hard negatives:** "Pictures marked 'not in this picture' are the strongest lessons,
+  especially when something similar *is* there. Add the look-alikes as 'not to be confused
+  with' under Manage phrases. Training also adds generic unrelated phrases (`num_negatives`)
+  and other phrases of your dataset (`num_cross_negatives`) as negatives — see the SAM 3
+  training settings."
+
+## Manage phrases (a folding list in the bar)
+
+- For every phrase:
+  - **variations,** as a comma-separated field;
+  - **not to be confused with,** also comma-separated;
+  - Save for each row.
+- Doc 103's rules come back as messages at the row, for example "'crimson car' is already a
+  phrase of its own…".
+
+## Business Rules
+
+1. **Phrase edits on outlines are canvas edits.** They mark the picture unsaved and are
+   written by Save, like a class change.
+2. **Picture checks and phrase definitions are saved at once,** because they are not part
+   of the picture's annotations.
+3. **Keys never fire while typing.**
+4. **For targets that do not need phrases** (classifier, detector, SAM 2), the bar starts
+   folded as "Phrases (optional)". It is open for SAM 3 and "keep all options open".
+
+## Found while building: the canvas already owns 1, 2, 3 and N
+
+- **The clash:** a focused box on the canvas uses 1/2/3 (and P/N/U) for its verdict
+  (doc 47). The phrase keys would have fired as well.
+- **The fix:** the canvas marks those keys handled (`preventDefault`), and the phrase keys
+  skip a handled event. With a box focused, the box wins; with nothing focused, the phrase
+  bar has them.
+- **Implicit class phrases:** under Manage phrases they have no row yet. Saving their
+  variations adds them (POST) rather than failing.
+
+## Verified (2026-09-30)
+
+- **Tests:** frontend 1014 green (11 new), tsc clean. The Studio file is back at 300 lines.
+- **Running app, "Wave 12 filled-ring convention" as SAM 3:**
+  - The bar showed `1 blob 61` and `2 ring 139`.
+  - Key **2** made *ring* active, and key **A** marked this picture "all marked" for ring.
+    The row turned green, and the check was saved at once.
+  - **clear** returned both rows to "not checked", so the dataset was left as it was.
+
+## Bugs
+
+(none yet)
