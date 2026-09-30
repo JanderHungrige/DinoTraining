@@ -3,7 +3,7 @@ id: dinotraining-wave-15
 title: "Wave 15: English and German"
 initiative: dinotraining
 initiative_version: 12
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-14
 demo_state: "The user switches the language in the header; every text of the app — tabs, forms, the ? explanations, the intro, and the backend's audit findings, requirements and preflight refusals — appears in German, and switches back to English. A missing German text fails the build, not the user."
 created: 2026-09-30

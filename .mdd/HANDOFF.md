@@ -4,13 +4,33 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 14 build**.
+**Last updated:** 2026-09-30, at the end of the **Wave 15 build**.
 - **Waves 1–12:** in `dev` and `main`.
-- **Wave 13** (docs 99–102): in `dev` (`0ad317f`), waiting for Jan's test.
-- **Wave 14** (docs 103–110): built and pushed on `feat/dinotraining-wave-14`, not merged.
+- **Waves 13 and 14** (docs 99–110): in `dev` (`a41e2c8`), waiting for Jan's test.
+- **Wave 15** (docs 111–114): built and pushed on `feat/dinotraining-wave-15`, not merged.
   Its status stays `in_progress` until Jan confirms the demo-state.
 
-**Next:** Wave 15, English/German (docs 111–114). The website is Wave 16.
+**Next:** Wave 16, the website and cloud compute.
+
+---
+
+## Wave 15 — English and German (2026-09-30)
+
+| | |
+|---|---|
+| 111 | **Framework:** typed catalogues (`src/i18n/en|de/<ns>.ts`); a missing German key is a compile error. `useT()` with `t`/`tp` (plurals via Intl.PluralRules). A language switch in the header, stored as `language`. The API client sends `Accept-Language`. |
+| 112 | **Frontend:** about 1 070 keys in 9 namespaces, with a German smoke test per namespace. Hand-written plurals became real ones. |
+| 113 | **Backend:** the English stays in the code. An ASGI middleware translates the text fields of `/api/v1` JSON answers for `Accept-Language: de`, using 475 templates. Tests check all 20 audit rules and the four static endpoints; MCP stays English. |
+| 114 | **German:** `GLOSSARY.md`, informal "du", one word per concept. |
+
+**Known gaps (doc 113):**
+- An audit stored before a rule's wording changed keeps those sentences in English until it
+  is re-run.
+- Still English: training and video job messages, model and head descriptions, rarer 422
+  details, unhandled 500s.
+- The model-input examples and the copied AI guide stay English on purpose.
+
+**For Jan:** review the glossary choices listed in doc 114.
 
 ---
 
