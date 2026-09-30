@@ -4,13 +4,35 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 15 build**.
+**Last updated:** 2026-09-30, at the end of the **Wave 15.5 build**.
 - **Waves 1–12:** in `dev` and `main`.
-- **Waves 13 and 14** (docs 99–110): in `dev` (`a41e2c8`), waiting for Jan's test.
-- **Wave 15** (docs 111–114): in `dev` (`b5cbc70`, 2026-09-30), with the fixes from Jan's
-  test. Its status stays `in_progress` until Jan confirms the demo-state.
+- **Waves 13, 14 and 15** (docs 99–114): in `dev`, waiting for Jan's test.
+- **Wave 15.5** (docs 115–119): built and pushed on `feat/dinotraining-wave-15-5`, not
+  merged. Its status stays `in_progress` until Jan confirms the demo-state.
 
-**Next:** Wave 15.5, annotating the normal way (docs 115–119, planned 2026-09-30 from Jan's test: saved = complete, umbrella terms, new-class question, add-only review). Then Wave 16, the website.
+**Next:** Jan's test of 15.5 and the merge to `dev`. Then Wave 16, the website.
+
+---
+
+## Wave 15.5 — Annotating the normal way (2026-09-30)
+
+From Jan's test of the phrase bar: "when annotating, all objects are marked"; classes
+m8 and m9 with "screw" over both.
+
+| | |
+|---|---|
+| 115 | **Umbrella terms:** a phrase over several classes (`phrase_classes`). SAM 3 asks "screw" with all m8 and m9 outlines, never a negative where a member is present, and skips it where a member is unknown. The API, MCP and recipe carry it; the job note names it. |
+| 116 | **Slim phrase bar:** chips, "+ Umbrella term", Manage phrases (variations and look-alikes per class, umbrellas, older sub-phrases), and the help rewritten. The checks are folded for imports, and their keys work only while open. No class is created there. |
+| 117 | **Saved means complete:** a picture is known for a class when it was saved after the class existed (`annotated_at >= since`), or when it was checked by hand. This replaces doc 108's checked mode. `/completeness`; the audit finding `saved-before-class`; the Studio stores its prompt's terms as classes. |
+| 118 | **New-class question:** a banner for each class with pictures saved before it. "It does not occur there" marks them absent; "Review them later" keeps a reminder. MCP: `get_completeness`, `mark_absent_in_older_pictures`. |
+| 119 | **Add-only review:** `CanvasBox.saved`; a re-run keeps saved and hand-drawn annotations and adds no duplicates. "Review for X" filters to the unknown pictures and proposes only X. "No X here →" marks the picture absent. |
+
+- **Demo run** (SAM 3, 1 epoch): mIoU 0.217 → 0.450. The notes name the umbrella and the
+  70 pictures left out for the class added later.
+- **Found:** a filter that started on the picture already shown hung on "Loading image…".
+  The prescan filter had it too. It is fixed, with a regression test.
+- **Test data:** "Wave 12 filled-ring convention" is unchanged. The test umbrella, the
+  class, the checks and the run's model were all deleted.
 
 ---
 

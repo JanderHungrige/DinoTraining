@@ -3,7 +3,7 @@ id: dinotraining
 title: DinoTraining
 status: active
 version: 13
-hash: 5e49e2fd
+hash: 70013aa3
 created: 2026-08-14
 ---
 
@@ -160,5 +160,5 @@ became **three waves** — 13 training knobs and default recipes, 14 annotating 
 | Wave 13 | waves/dinotraining-wave-13.md | Every model's training parameters are shown as 'Plain name (technical term)' with a ? explanation and default, Basic/Advanced with reset; a user without a recipe learns what it is and creates the default one in one click — the same over MCP. | in_progress |
 | Wave 14 | waves/dinotraining-wave-14.md | The user annotates for a chosen model: phrases with comma-separated variations, per-picture phrase status, click-refined masks; Prepare data checks it per task and the recipe carries prompts and hard negatives that SAM 3 trains on. | in_progress |
 | Wave 15 | waves/dinotraining-wave-15.md | The whole app, including the backend's plain-language texts, switches between English and German; a missing German text fails the build. | in_progress |
-| Wave 15.5 | waves/dinotraining-wave-15-5.md | Annotating the normal way: saved means complete, umbrella terms over several classes (screw for m8 and m9), a question when a class is added later, and an add-only review of earlier pictures. | planned |
+| Wave 15.5 | waves/dinotraining-wave-15-5.md | Annotating the normal way: saved means complete, umbrella terms over several classes (screw for m8 and m9), a question when a class is added later, and an add-only review of earlier pictures. | in_progress |
 | Wave 16 | waves/dinotraining-wave-16.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
