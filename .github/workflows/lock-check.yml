@@ -9,6 +9,8 @@ on:
   push:
     paths:
       - "backend/**"
+      - "scripts/stage_runtime.py"
+      - "scripts/test_stage_runtime.py"
       - ".github/workflows/lock-check.yml"
   pull_request:
     paths:
@@ -44,5 +46,11 @@ jobs:
       - name: Install from the lock (CPU)
         run: uv sync --frozen --extra cpu --extra dev --extra export --python 3.12
 
+      # No -x: a runner is a machine none of us develops on, and the first run there
+      # should report every test that assumed otherwise, not only the first.
       - name: Backend tests
-        run: uv run --frozen --no-sync pytest -q -x
+        run: uv run --frozen --no-sync pytest -q
+
+      # Doc 126: the release build stages its runtime with this script on each OS.
+      - name: Runtime staging tests
+        run: uv run --frozen --no-sync pytest -q -p no:cacheprovider ../scripts/test_stage_runtime.py

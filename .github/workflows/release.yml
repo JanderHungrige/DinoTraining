@@ -1,8 +1,9 @@
 # Build installers for macOS, Windows and Linux (doc 58).
 #
-# A **matrix, not a runner**: PyInstaller does not cross-compile and the torch wheel differs
-# per platform, so each installer is built on its own OS. That is a consequence of doc 56's
-# spike rather than a preference.
+# A **matrix, not a runner**: each installer carries its platform's uv and Tauri binary,
+# so each is built on its own OS. Python and PyTorch are *not* in the installer: the app
+# installs them on first start from the official sources, exactly as uv.lock pins them
+# (doc 126).
 #
 # Every step here was run by hand on macOS first (doc 58). The order and the arguments are
 # the ones that worked, not a guess at what should.
@@ -32,29 +33,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
-          # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
-          # against. They all run in parallel, but this is the one to read first.
-          # **Formats chosen by measurement, not preference** — see doc 58 for the runs.
-          #
-          # macOS/dmg and Linux/deb both build this payload. **AppImage does not**: run #2
-          # failed with `appimage,deb` and run #3 succeeded with `deb` alone, which isolates
-          # it. AppImage repacks the whole tree through linuxdeploy, and the tree is 636 MB
-          # of PyInstaller `_internal` with thousands of files.
-          #
-          # **Windows failed for a different reason**, now fixed in `build_sidecar.py`:
-          # `makensis` hit MAX_PATH on a torch-vendored licence file 265 characters deep.
-          # Registry `LongPathsEnabled` does not help — makensis is a legacy Win32 binary
-          # without the manifest that opts in — so the payload was shortened instead.
+          # **Formats chosen by measurement** — see doc 58 for the runs. AppImage failed
+          # against the 636 MB PyInstaller tree; with the small runtime of doc 126 it may
+          # work now, and doc 131's smoke test is where to find out.
           - os: windows-latest
             label: Windows
             bundles: nsis
+            target: x86_64-pc-windows-msvc
           - os: ubuntu-22.04
             label: Linux
             bundles: deb
+            target: x86_64-unknown-linux-gnu
           - os: macos-14
             label: macOS (Apple silicon)
             bundles: dmg
+            target: aarch64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
@@ -76,27 +69,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      # --- the sidecar -------------------------------------------------------------------
+      # --- the runtime ------------------------------------------------------------------
       #
-      # A **production** venv, not the dev one: `pip install .[dev]` would freeze mypy, ruff
-      # and pytest into the shipped binary for no reason. `--index-url` pins the CPU wheel —
-      # without it, Windows and Linux pull the CUDA build and the installer goes from
-      # ~300 MB to over 2.5 GB (doc 56). GPU support is a separate download (doc 57).
-      - name: Build the sidecar
-        working-directory: backend
+      # uv (checksum-verified) and the backend source with its lock, nothing else. Replaced
+      # the 636 MB PyInstaller sidecar (doc 126).
+      - name: Stage the runtime
         shell: bash
-        run: |
-          python -m venv .build
-          BIN=".build/bin"; [ -d ".build/Scripts" ] && BIN=".build/Scripts"
-          "$BIN/python" -m pip install --upgrade pip
-          "$BIN/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          # `[export]`: onnx + onnxruntime for the model export's ONNX file (doc 122).
-          "$BIN/pip" install ".[export]" pyinstaller
-          "$BIN/python" bundling/build_sidecar.py
-
-      - name: Stage the sidecar for the bundler
-        shell: bash
-        run: cp -R backend/dist/dinotraining-sidecar apps/desktop/src-tauri/binaries/
+        run: python scripts/stage_runtime.py ${{ matrix.target }}
 
       # --- the installer -----------------------------------------------------------------
       #
@@ -131,6 +110,16 @@ jobs:
             exit 1
           fi
           echo "No model weights in the bundle."
+
+      # Doc 126 promised small installers; the job summary shows whether they are.
+      - name: Record the installer sizes
+        shell: bash
+        run: |
+          {
+            echo "### ${{ matrix.label }}"
+            find apps/desktop/src-tauri/target/release/bundle \( -name '*.dmg' -o -name '*.exe' -o -name '*.deb' \) \
+              -exec du -h {} \;
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4
         with:

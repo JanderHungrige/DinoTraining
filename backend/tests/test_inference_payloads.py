@@ -28,6 +28,17 @@ from app.ml.inference.payloads import (
 from app.ml.preprocess import GeometryTransform
 
 
+def _mps_usable() -> bool:
+    """MPS present *and* allocatable: GitHub's macOS runners report it but have no memory."""
+    if not torch.backends.mps.is_available():
+        return False
+    try:
+        torch.zeros(1, device="mps")
+    except RuntimeError:
+        return False
+    return True
+
+
 def identity_transform(size: int) -> GeometryTransform:
     """No letterbox, no scaling — the map comes back exactly as it went in."""
     return GeometryTransform(
@@ -75,9 +86,7 @@ class TestToNumpy:
 
         assert decode(payload["depth_png"]).shape == (16, 16)
 
-    @pytest.mark.skipif(
-        not torch.backends.mps.is_available(), reason="MPS only exists on Apple silicon"
-    )
+    @pytest.mark.skipif(not _mps_usable(), reason="needs a usable Apple silicon GPU")
     def test_an_mps_tensor_converts(self) -> None:
         """The actual bug, on the machine where it actually happened."""
         assert to_numpy(torch.zeros(4, 4, device="mps")).shape == (4, 4)
