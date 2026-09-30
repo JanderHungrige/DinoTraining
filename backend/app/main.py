@@ -16,6 +16,7 @@ from app.api.v1.router import api_router
 from app.core.config import Settings, get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
+from app.i18n.middleware import GermanTextMiddleware
 from app.mcp.server import mount_mcp
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
         allow_headers=["Content-Type"],
     )
+
+    # German text fields for a German reader (doc 113). Added after CORS, so it wraps it,
+    # and outside the HTTP exception handlers, so the error envelope's message is translated
+    # too. Only an unhandled 500 (written by Starlette's outermost layer) stays English.
+    app.add_middleware(GermanTextMiddleware, prefix=settings.api_prefix)
 
     register_exception_handlers(app)
     app.include_router(api_router, prefix=settings.api_prefix)

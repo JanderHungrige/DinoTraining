@@ -14,19 +14,24 @@ routes: []
 models: []
 test_files:
   - backend/tests/test_i18n.py
+  - backend/tests/test_i18n_coverage.py
+  - backend/tests/test_dataset_format_guide.py
 data_flow: reads-existing
 last_synced: 2026-09-30
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [i18n, german, backend, audit, requirements, parameters, accept-language]
 path: App/Language/Backend
 initiative: dinotraining
 wave: dinotraining-wave-15
-wave_status: active
+wave_status: complete
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "A stored text is translated only if its English still matches a catalogue template. An audit saved before a rule's wording changed (e.g. 'unchecked-pictures' before the per-phrase amendment) keeps those sentences in English until it is run again."
+  - "An unhandled 500 is written by Starlette's outermost layer after the middleware, so it stays English."
+  - "Texts outside the covered areas pass through in English: training/video job messages, model/head/annotator descriptions, rarer 422 details."
 security_read_sites: []
 sister_projects: []
 ---
@@ -82,6 +87,47 @@ tools' answers (their reader is a language model, doc 110) and the stored audits
      translated. A test compares the English and German responses field by field.
    - The audit test builds contexts that fire every rule and asserts each finding's
      title, what, why and action are German.
+
+## Built (2026-09-30)
+
+- **`translate.py`:**
+  - Exact texts first. Varying texts are anchored templates, bucketed by their first
+    characters, with the longest literal tried first.
+  - **Placeholder kinds:**
+    - `{x}`: a value kept as is;
+    - `{#x}`: a number;
+    - `{+x}`: English prose, translated too (e.g. a model label);
+    - `{*x}`: prose that may span sentences.
+  - **Assembled messages** (the preflight refusal) are translated sentence by sentence,
+    then by "title: detail".
+- **`middleware.py`:**
+  - Pure ASGI. Only `/api/v1`, only JSON, only `Accept-Language: de*`; SSE is never
+    buffered.
+  - Adds `Vary: Accept-Language` and fixes `Content-Length`. A body it cannot parse is sent
+    in English, with a warning.
+- **Catalogue:** 9 modules, 475 entries (audit, audit per task, requirements, parameters,
+  SAM parameters, targets, prep, jobs, errors). The wording is the glossary's, with the
+  frontend's step names.
+- **Coverage tests:**
+  - The four static endpoints compared field by field, German vs English. Non-text fields
+    must be identical.
+  - Contexts that fire all 20 audit rules; the test compares with `len(RULES)`, so a new
+    rule fails it until it has German.
+  - All 6 intake findings.
+- **MCP stays English:** a test runs the real MCP client call and gets the English 404.
+- **The dataset-format guide test** (doc 48) now reads the prose from the English catalogue,
+  and checks that the German keeps the category-0 warning and the box convention.
+
+## Verified (2026-09-30)
+
+- **Tests:** backend 1813 green; ruff and mypy (226 files) are clean.
+- **Running app, German:**
+  - The Studio's target matrix read "Alle Möglichkeiten offenhalten — … Empfohlen.",
+    "Begriffs-Umrisse (SAM 3) — Jedes Vorkommen jeder Phrase umrissen und jedes Bild
+    geprüft."
+  - A fresh SAM 3 audit read German in every title/what/why/action.
+  - A 404 read *"Datensatz nicht gefunden: nope"*.
+  - The same audit without the header stayed English.
 
 ## Bugs
 
