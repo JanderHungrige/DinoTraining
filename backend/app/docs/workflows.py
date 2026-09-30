@@ -15,6 +15,7 @@ numbered steps, real calls, and the trap named beside the step that springs it.
 
 from __future__ import annotations
 
+from app.docs.workflows_annotate import ANNOTATE_FOR
 from app.docs.workflows_finetune import FINETUNE
 from app.docs.workflows_prepare import PREPARE
 
@@ -196,6 +197,7 @@ WORKFLOWS: tuple[str, ...] = (
     INTRO,
     INSTALL,
     DATASET_IN,
+    ANNOTATE_FOR,
     PREPARE,
     TRAIN_HEAD,
     FINETUNE,

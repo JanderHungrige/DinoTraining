@@ -16,6 +16,7 @@ failure rather than as a plausible-looking success.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -156,6 +157,13 @@ class TestTheToolContract:
             # Doc 102: the Training tab's settings and default recipes, for an assistant too.
             "get_training_parameters",
             "create_default_recipe",
+            # Doc 110: annotating for SAM 3, and keeping it consistent.
+            "get_annotation_targets",
+            "list_phrases",
+            "add_phrase",
+            "set_phrase_status",
+            "get_annotation_guideline",
+            "set_annotation_guideline",
         }
 
     async def test_every_tool_describes_itself(
@@ -424,6 +432,65 @@ class TestTrainingKnobTools:
                 },
             )
             described = await descriptions(app)
-        job = json.loads(started["result"]["content"][0]["text"])
-        assert job["job_id"] and job["state"] in ("pending", "running", "failed", "complete")
+            job = json.loads(started["result"]["content"][0]["text"])
+            # Waited out inside the app: a job thread still reading the database when the
+            # next test closes the connection segfaults the whole run (found 2026-09-30).
+            finished = await _finished(app, job["job_id"])
+        assert finished["state"] == "failed"  # an empty dataset has nothing to split
+        assert "no images" in finished["message"].lower()
         assert "default-recipe" in described["create_default_recipe"]
+
+
+async def _finished(app: FastAPI, job_id: str) -> dict[str, Any]:
+    for _ in range(200):
+        polled = await rpc(
+            app,
+            "tools/call",
+            {"name": "get_job", "arguments": {"job_id": job_id, "kind": "default-recipe"}},
+        )
+        body: dict[str, Any] = json.loads(polled["result"]["content"][0]["text"])
+        if body["state"] not in ("pending", "running"):
+            return body
+        await asyncio.sleep(0.05)
+    raise AssertionError("the default-recipe job did not finish")
+
+
+class TestAnnotationTools:
+    """Doc 110: phrases with variations, checks and the guideline, over MCP."""
+
+    async def test_a_phrase_with_variations_and_a_guideline(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Rails"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            added = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "add_phrase",
+                    "arguments": {"dataset_id": dataset_id, "text": "signal, light signal"},
+                },
+            )
+            await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "set_annotation_guideline",
+                    "arguments": {"dataset_id": dataset_id, "text": "Poles count."},
+                },
+            )
+            guideline = await rpc(
+                app,
+                "tools/call",
+                {"name": "get_annotation_guideline", "arguments": {"dataset_id": dataset_id}},
+            )
+            described = await descriptions(app)
+        phrase = json.loads(added["result"]["content"][0]["text"])
+        assert (phrase["text"], phrase["variants"]) == ("signal", ["light signal"])
+        assert json.loads(guideline["result"]["content"][0]["text"]) == {"text": "Poles count."}
+        # The rules an assistant would otherwise break, in the tool it reads.
+        assert "Only checked pictures teach" in described["set_phrase_status"]
+        assert "Two to four variations are enough" in described["add_phrase"]
