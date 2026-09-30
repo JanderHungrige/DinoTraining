@@ -86,7 +86,7 @@ export function MlflowPanel(): JSX.Element {
       <form className="mlflow__form" onSubmit={(event) => void save(event)}>
         <label>
           {t('admin.mlflow.uri')}
-          <input value={shownUri} placeholder="http://127.0.0.1:5000" onChange={(e) => setUri(e.target.value)} />
+          <input value={shownUri} placeholder="http://127.0.0.1:5001" onChange={(e) => setUri(e.target.value)} />
         </label>
         <label>
           {t('admin.mlflow.experiment')}

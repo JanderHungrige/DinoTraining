@@ -89,7 +89,7 @@ sister_projects: []
 
 | Key | Meaning |
 |---|---|
-| `MLFLOW_TRACKING_URI` | e.g. `http://127.0.0.1:5000`. Unset means tracking is off. |
+| `MLFLOW_TRACKING_URI` | e.g. `http://127.0.0.1:5001`. Unset means tracking is off. |
 | `DINO_MLFLOW_EXPERIMENT` | experiment name, default `DinoTraining` |
 | `DINO_MLFLOW_REGISTER` | register each saved model (default on) |
 | `MLFLOW_TRACKING_USERNAME` / `MLFLOW_TRACKING_PASSWORD` | HTTP Basic (MLflow's basic-auth app) |

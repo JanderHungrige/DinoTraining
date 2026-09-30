@@ -4,13 +4,44 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 15.5 build**.
+**Last updated:** 2026-09-30, at the end of the **Wave 15.6 build**.
 - **Waves 1–12:** in `dev` and `main`.
-- **Waves 13, 14 and 15** (docs 99–114): in `dev`, waiting for Jan's test.
-- **Wave 15.5** (docs 115–119): built and pushed on `feat/dinotraining-wave-15-5`, not
+- **Waves 13, 14, 15 and 15.5** (docs 99–119): in `dev`, waiting for Jan's test.
+- **Wave 15.6** (docs 120–124): built and pushed on `feat/dinotraining-wave-15-6`, not
   merged. Its status stays `in_progress` until Jan confirms the demo-state.
 
-**Next:** Jan's test of 15.5 and the merge to `dev`. Then Wave 16, the website.
+**Next:** Jan's test of 15.6 and the merge to `dev`. Then Wave 16, the website.
+
+---
+
+## Wave 15.6 — MLOps: model cards, export, ONNX, MLflow (2026-09-30)
+
+Jan: "Trained models should be exportable … and an interface for MLOps tools, e.g.
+MLflow" — before the website.
+
+| | |
+|---|---|
+| 120 | **Model card:** base, head and module, classes in order, the exact preprocessing, decode, metrics, datasets and recipe, per-epoch history (persisted from now on), weights with SHA-256. `GET /cards/{kind}/{id}`; MCP `get_model_card`. |
+| 121 | **Export zip:** card, weights, `dino_runtime.py` assembled from the app's own source (parity-tested per head type), `predict.py`, pinned requirements, README. Library: Export and Show where it is. |
+| 122 | **ONNX:** backbone and head as one graph, dynamic batch, parity checked at export (refused above 1e-3). An optional `[export]` extra. |
+| 123 | **MLflow tracking** over REST (checked against a real MLflow 3): a run per training with params, tags, per-epoch metrics, card and bundle, and a registry version. Never at training's cost. Admin → Connection → MLflow. |
+| 124 | **Backfill:** "Send existing models to MLflow", each model once. |
+
+- **Proof, live:**
+  - A real DINOv2 detector head was exported and run outside the app: the same 12 boxes
+    as `/inference`, 0.0 px apart.
+  - Its ONNX file matched PyTorch within 4.4e-5 px.
+  - A 3-epoch head appeared in MLflow with curves, artifacts and version 1.
+  - The real library was backfilled: 25 of 30 sent, a second press sent 0.
+- **Found live and fixed:**
+  - MLflow refuses ':' in model names.
+  - A failed registration left the run RUNNING.
+  - The MLflow docs give the wrong registry path.
+  - A SAM card claimed "backbone not installed".
+- **Clean-up:** the two test heads were deleted, MLflow was disconnected in `.env`, and the
+  scratch MLflow server was stopped.
+- **To try it:** `pip install mlflow`, then `mlflow server --port 5001` (on macOS the
+  system holds port 5000), then enter `http://127.0.0.1:5001` under Connection → MLflow.
 
 ---
 

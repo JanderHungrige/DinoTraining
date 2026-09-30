@@ -7,7 +7,7 @@ status: in_progress
 depends_on: dinotraining-wave-15-5
 demo_state: "A head trained here appears live in a local MLflow server (params, recipe, per-epoch metrics, the model card and export bundle as artifacts, a registered model version); in the Library, Export writes a zip whose predict.py reproduces the app's predictions on a picture, and whose ONNX file gives the same outputs in onnxruntime; models trained before are sent to MLflow in one step."
 created: 2026-09-30
-hash: 2204d9c3
+hash: 18551671
 ---
 
 # Wave 15.6: MLOps — model cards, export, ONNX and MLflow
