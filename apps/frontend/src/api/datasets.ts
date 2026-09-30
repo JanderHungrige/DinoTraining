@@ -214,6 +214,7 @@ let storedCounter = 0;
 export function storedToCanvasBoxes(boxes: readonly StoredBox[]): CanvasBox[] {
   return boxes.map((box) => ({
     id: `stored-${(storedCounter += 1)}`,
+    saved: true,
     label: box.label,
     provenance: box.provenance,
     x: box.x,

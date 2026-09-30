@@ -185,3 +185,16 @@ describe('the round trip', () => {
     expect(body.masks).toHaveLength(1);
   });
 });
+
+describe('a filter that starts on the picture already shown (doc 119)', () => {
+  it('keeps its stored masks and its size, so it neither vanishes nor hangs on "Loading image…"', async () => {
+    route();
+    const result = await startedSession();
+    await waitFor(() => expect(result.current.boxes).toHaveLength(1));
+    const first = result.current.currentImage ?? '';
+    act(() => result.current.setFilter([first, IMAGES[2] ?? '']));
+    expect(result.current.currentImage).toBe(first);
+    expect(result.current.boxes).toHaveLength(1);
+    expect(result.current.imageSize).toEqual({ width: 200, height: 100 });
+  });
+});

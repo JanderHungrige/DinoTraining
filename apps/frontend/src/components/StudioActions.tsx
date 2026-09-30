@@ -16,24 +16,32 @@ import { useT } from '../i18n';
 import { isBoolean } from '../lib/persisted';
 import { GeneratorActionBar } from './GeneratorActionBar';
 
-/** Propose once per picture that arrives with nothing on it; never over existing boxes. */
-function useStudioAutoPropose(session: AnnotationSession, enabled: boolean): void {
+/** Propose once per picture that arrives with nothing on it. In a review for one class
+ *  (doc 119) also over existing annotations: the result is added, never replacing them. */
+function useStudioAutoPropose(session: AnnotationSession, enabled: boolean, only?: string): void {
   const askedFor = useRef<string | null>(null);
   const { currentImage, proposing, busy, boxes, propose } = session;
   useEffect(() => {
     if (!enabled || currentImage === null || proposing || busy) return;
-    if (askedFor.current === currentImage || boxes.length > 0) return;
+    if (askedFor.current === currentImage || (boxes.length > 0 && only === undefined)) return;
     askedFor.current = currentImage;
-    void propose();
-  }, [enabled, currentImage, proposing, busy, boxes.length, propose]);
+    void propose(only);
+  }, [enabled, currentImage, proposing, busy, boxes.length, propose, only]);
 }
 
-export function StudioActions({ session, runLabel }: { readonly session: AnnotationSession; readonly runLabel: string }): JSX.Element {
+export interface StudioActionsProps {
+  readonly session: AnnotationSession;
+  readonly runLabel: string;
+  /** Doc 119: the class under review — proposals for it alone, added. */
+  readonly only?: string;
+}
+
+export function StudioActions({ session, runLabel, only }: StudioActionsProps): JSX.Element {
   const { t } = useT();
   const [autoPropose, setAutoPropose] = usePersistentState('studio.autoPropose', false, isBoolean);
   const [autoSave, setAutoSave] = usePersistentState('studio.autoSave', true, isBoolean);
   const [blocked, setBlocked] = useState(false);
-  useStudioAutoPropose(session, autoPropose);
+  useStudioAutoPropose(session, autoPropose, only);
   useEffect(() => setBlocked(false), [session.dirty, autoSave]);
 
   const move = (go: () => Promise<void>): void => {
@@ -57,7 +65,7 @@ export function StudioActions({ session, runLabel }: { readonly session: Annotat
         autoSave={autoSave}
         onAutoProposeChange={setAutoPropose}
         onAutoSaveChange={setAutoSave}
-        onPropose={() => void session.propose()}
+        onPropose={() => void session.propose(only)}
         onSave={() => void session.save()}
         onPrevious={() => move(session.previous)}
         onNext={() => move(session.next)}

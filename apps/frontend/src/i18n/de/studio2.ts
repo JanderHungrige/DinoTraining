@@ -158,6 +158,13 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.newClass.pending_other': '{name}: {count} Bilder noch nicht durchgesehen.',
   'studio.newClass.review': 'Durchsehen für {name}',
 
+  // Durchsehen für eine Klasse (Doc 119)
+  'studio.review.label': 'Durchsehen für {name}',
+  'studio.review.title': 'Durchsehen für {name} — Bild {position} von {total}.',
+  'studio.review.hint': 'Vorgeschlagen wird nur {name}; deine gespeicherten Annotationen bleiben. Speichere, wenn du fertig bist, oder sag, dass keins da ist.',
+  'studio.review.notHere': 'Kein {name} hier →',
+  'studio.review.end': 'Durchsehen beenden',
+
   // Back to the overview (the session survives switching tabs until then)
   'studio.back.button': '← Zurück zur Übersicht',
   'studio.back.hint': 'Deine Stelle hier bleibt erhalten, während du andere Tabs besuchst. „Zurück“ beendet diese Sitzung.',

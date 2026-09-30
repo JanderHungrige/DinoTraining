@@ -103,6 +103,11 @@ export interface CanvasBox {
    * returns it. Absent means "just its class". Re-sent on save, so a re-save keeps them.
    */
   readonly phrases?: readonly string[];
+  /**
+   * Doc 119: in the dataset — loaded from it, or its picture was saved since. A re-run of
+   * the proposer keeps it; only unsaved proposals are replaced.
+   */
+  readonly saved?: boolean;
 }
 
 /** Does this annotation carry a segmentation? The one test that decides how it is saved. */

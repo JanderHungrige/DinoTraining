@@ -58,4 +58,14 @@ describe('StudioActions (the Generator bar, Jan 2026-09-30)', () => {
     await user.click(screen.getByRole('button', { name: 'Next →' }));
     expect(dirty.next).toHaveBeenCalledOnce();
   });
+
+  it('in a review proposes only that class, even over existing annotations (doc 119)', async () => {
+    const user = userEvent.setup();
+    const reviewing = session({ boxes: [BOX] });
+    render(<StudioActions session={reviewing} runLabel="Run prompt" only="m10" />);
+    await user.click(screen.getByRole('button', { name: 'Run prompt' }));
+    expect(reviewing.propose).toHaveBeenCalledWith('m10');
+    await user.click(screen.getByRole('checkbox', { name: /Auto-propose/ }));
+    expect(reviewing.propose).toHaveBeenCalledTimes(2);
+  });
 });
