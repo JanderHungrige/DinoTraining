@@ -32,6 +32,17 @@ do not read it for current state.
 
 **For Jan:** review the glossary choices listed in doc 114.
 
+**From Jan's test (2026-09-30, same branch):**
+- **Technical terms in German are English now** (doc 114, amended).
+- **A comma separates search terms** for Grounding DINO and SAM 3, with one term per box
+  (doc 105).
+- **The Studio:** "← Back to overview", and the session survives other tabs (doc 105).
+- **Phrases:**
+  - a "belongs to" class choice;
+  - look-alikes explained;
+  - Delete;
+  - no look-alike negative beside a rejected outline (doc 108).
+
 ---
 
 ## Wave 14 — Annotate for the model (2026-09-30)
