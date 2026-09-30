@@ -15,6 +15,7 @@ from PIL import Image
 
 from app.core.config import get_settings
 from app.core.paths import is_installed, resolve_model_dir
+from app.ml.concepts import prompt_terms
 from app.ml.errors import ModelNotInstalledError
 from app.ml.registry import ModelSpec, get_model
 
@@ -56,15 +57,16 @@ _lock = threading.Lock()
 
 
 def normalise_prompt(prompt: str) -> str:
-    """Grounding DINO expects lowercase phrases ending in a period.
+    """Grounding DINO expects lowercase phrases, each ending in a period.
 
     Wording is left alone — silently rewriting a user's prompt makes it impossible to
-    tune. Only casing and the trailing separator are normalised.
+    tune. Only casing and the separators are normalised: a comma separates two terms as a
+    period does, or "flame, reflection" comes back as one label.
     """
-    text = prompt.strip().lower()
-    if not text:
+    terms = prompt_terms(prompt)
+    if not terms:
         raise ValueError("Prompt must not be empty")
-    return text if text.endswith(".") else f"{text}."
+    return " ".join(f"{term}." for term in terms)
 
 
 def _require_spec(model_id: str) -> ModelSpec:
