@@ -4,16 +4,56 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 13 build**. Waves 1–12 are in `dev`
-and `main` (`04045b3`). **Wave 13** (docs 99–102) is built and pushed on
-`feat/dinotraining-wave-13` (branched from `dev` `40b4b19`, which holds the plan for Waves
-13–15). It is **not merged**, and its status stays `in_progress` until Jan confirms the
-demo-state.
+**Last updated:** 2026-09-30, at the end of the **Wave 14 build**.
+- **Waves 1–12:** in `dev` and `main`.
+- **Wave 13** (docs 99–102): in `dev` (`0ad317f`), waiting for Jan's test.
+- **Wave 14** (docs 103–110): built and pushed on `feat/dinotraining-wave-14`, not merged.
+  Its status stays `in_progress` until Jan confirms the demo-state.
 
-**Next:** Wave 14, annotating for the model (phrases, picture status, hard negatives, mask
-editing; docs 103–110). Then Wave 15, English/German (docs 111–114). The website is Wave 16.
+**Next:** Wave 15, English/German (docs 111–114). The website is Wave 16.
 
 ---
+
+## Wave 14 — Annotate for the model (2026-09-30)
+
+| | |
+|---|---|
+| 103 | **Phrases:** text, class, variants (stored once, expanded at training), look-alikes; outlines linked to phrases; a check per picture and phrase (all marked / not in this picture). Class names are implicit phrases, so there is no migration. |
+| 104 | **"What will this dataset train?"** A matrix of targets × layers (required / recommended / optional, each with why) for the Studio and MCP, and a checklist per picture. |
+| 105 | **Phrase bar:** chips with counts, keys 1–9, comma variations, the selected outline's phrases, picture checks (A / N), Manage phrases, and "How phrases work". |
+| 106 | **Outline editing:** ⊕/⊖ SAM 2 clicks, a brush and an eraser (server-side, exact), undo, Outlines from my boxes. |
+| 107 | **Audit per task:** classifier pictures with two classes; outlines in pieces or twice; SAM 3 thin phrases, unchecked pictures, no variations, no negatives. Unused Prepare steps are marked. |
+| 108 | **SAM 3 training:** checked pairs only (legacy datasets unchanged), variations, and negatives (cross, generic `num_negatives`, look-alikes, rejected); the job notes its queries. SAM 2 learns clicks. |
+| 109 | **Quality:** a guideline per dataset, a second look with a change rate, frame consistency, and *unclear* is never a negative. |
+| 110 | **MCP:** six tools, and guide section 2d. |
+
+**Measured:**
+- **SAM 2 with click prompts:** 0.804 → **0.955** in one round (Wave 12's box-only
+  training took six).
+- **SAM 3 runs end to end** — the first completed run ever — but one round at 1e-4 fell
+  from 0.508 to 0.193 validation mIoU (0.160 without generic negatives). The base was kept
+  and nothing saved. A run at 1e-5 is in doc 108.
+
+**Found and fixed:**
+- **Outline editing:** `CompositedMasks` did not redraw an outline edited in place.
+- **Wave 11:** the keep-source split stored no settings, so its recipe was refused (fixed
+  in Wave 13).
+- **Wave 13:** an MCP test left a prep job reading SQLite, and the suite segfaulted
+  intermittently.
+- **Settings:** two catalogue keys were missing after a failed text replacement. A test
+  now guards against that.
+
+**Gates:** backend 1784 (three clean runs), frontend 1032, tsc, ruff and mypy app.
+
+## Waiting on Jan — Wave 14
+
+1. **Studio, "What will this dataset train?" → SAM 3:**
+   - Read the panel.
+   - Add a phrase with variations; mark pictures with A / N.
+   - Select an outline and try ⊕ / ⊖, brush and undo.
+2. **Annotation guideline and Second look.**
+3. **Prepare data → Fine-tune SAM 3:** read the audit's phrase findings.
+4. **Merge:** if it holds, merge `feat/dinotraining-wave-14` → `dev`.
 
 ## Wave 13 — Every training setting explained, default recipes (2026-09-30)
 

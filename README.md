@@ -155,6 +155,34 @@ Label a folder of pictures.
   with its box derived from it.
 - **Datasets:** saved with a live counter of what you have; exportable as standard COCO.
 
+**Annotating for a model.** At the start you say what the dataset will train:
+- keep all options open (recommended);
+- a picture classifier;
+- a detector;
+- SAM 2;
+- SAM 3.
+
+The Studio then marks each layer as required, recommended or optional, with the reason,
+and shows what the picture in view still lacks.
+
+**For SAM 3:**
+- A **phrase bar** above the picture holds the dataset's phrases as chips, and keys 1–9
+  switch between them.
+- Variations are typed comma-separated ("signal, railway signal, light signal"); two to
+  four are enough.
+- Each picture is marked **all marked** or **not in this picture** per phrase. Only checked
+  pictures teach.
+
+**Outline tools:**
+- ⊕/⊖ clicks that SAM redraws the outline from;
+- a brush and an eraser;
+- undo;
+- **Outlines from my boxes**.
+
+**Consistency:**
+- a written **annotation guideline** per dataset;
+- a **second look** at a random 5 % that reports how many needed a change.
+
 ### Prepare data
 
 A guided path from a dataset to a **recipe** that training follows. It is written for
@@ -395,7 +423,7 @@ state.
 | 11 | Guided data preparation |
 | 12 | Fine-tuning SAM 2, SAM 3 and DINO backbones |
 | 13 | Every training setting explained, default recipes |
-| 14 | Annotating for the model: phrases, hard negatives, mask editing (planned) |
+| 14 | Annotating for the model: phrases, hard negatives, mask editing |
 | 15 | English and German (planned) |
 | 16 | Website and cloud compute (planned) |
 

@@ -3,7 +3,7 @@ id: dinotraining-wave-14
 title: "Wave 14: Annotate for the Model — Phrases, Hard Negatives, Mask Editing"
 initiative: dinotraining
 initiative_version: 12
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-13
 demo_state: "A user picks SAM 3 as the target in the Annotation Studio, adds phrases with comma-separated variations from a phrase bar, marks each picture 'all marked' or 'not in this picture' per phrase, and refines a mask with two SAM clicks and a brush stroke. Prepare data checks the phrase masks and saves a recipe with a Prompts section (variants, hard negatives, confusable phrases); the SAM 3 fine-tune trains only on checked pairs and reports the negatives it used."
 created: 2026-09-30
