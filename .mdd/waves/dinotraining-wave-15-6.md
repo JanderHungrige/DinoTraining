@@ -87,7 +87,7 @@ hash: 2204d9c3
 |---|---------|-----|--------|------------|
 | 1 | model-card | docs/120-model-card.md | complete | — |
 | 2 | export-bundle | docs/121-export-bundle.md | complete | model-card |
-| 3 | onnx-export | docs/122-onnx-export.md | planned | export-bundle |
+| 3 | onnx-export | docs/122-onnx-export.md | complete | export-bundle |
 | 4 | mlflow-tracking | docs/123-mlflow-tracking.md | planned | model-card |
 | 5 | mlflow-backfill | docs/124-mlflow-backfill.md | planned | mlflow-tracking, export-bundle |
 

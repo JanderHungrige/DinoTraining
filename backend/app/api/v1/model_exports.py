@@ -20,6 +20,8 @@ class ExportRequest(BaseModel):
     instance_id: str = Field(min_length=1)
     #: A folder to write `<name>.zip` into (the desktop picker). Absent: the zip is returned.
     destination: str | None = None
+    #: Doc 122: add model.onnx for a trained head (~90 MB for DINOv2-small).
+    onnx: bool = True
 
 
 @router.post(
@@ -30,9 +32,10 @@ class ExportRequest(BaseModel):
 def post_export(request: ExportRequest) -> Response | dict[str, str]:
     try:
         if request.destination:
-            target = export_to(request.kind, request.instance_id, Path(request.destination))
+            destination = Path(request.destination)
+            target = export_to(request.kind, request.instance_id, destination, request.onnx)
             return {"path": str(target), "file": target.name}
-        name, data = export_payload(request.kind, request.instance_id)
+        name, data = export_payload(request.kind, request.instance_id, request.onnx)
     except LookupError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
     except ValueError as error:

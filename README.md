@@ -91,7 +91,7 @@ cp .env.example .env            # add HF_TOKEN only if you need the gated models
 # Backend
 python3.12 -m venv backend/.venv
 source backend/.venv/bin/activate
-pip install -e "backend[dev]"
+pip install -e "backend[dev,export]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps

@@ -90,7 +90,8 @@ jobs:
           BIN=".build/bin"; [ -d ".build/Scripts" ] && BIN=".build/Scripts"
           "$BIN/python" -m pip install --upgrade pip
           "$BIN/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          "$BIN/pip" install . pyinstaller
+          # `[export]`: onnx + onnxruntime for the model export's ONNX file (doc 122).
+          "$BIN/pip" install ".[export]" pyinstaller
           "$BIN/python" bundling/build_sidecar.py
 
       - name: Stage the sidecar for the bundler

@@ -66,6 +66,31 @@ def _licence(card: dict[str, Any]) -> str:
     return f"The weights build on {base.get('repo_id', base.get('id'))}, licensed {terms}.{note}"
 
 
+def _onnx_text(card: dict[str, Any]) -> str:
+    onnx = card.get("onnx") or {}
+    if "file" not in onnx:
+        return f"## ONNX\n\nNo `model.onnx`: {onnx.get('note', 'not requested')}.\n\n"
+    size = onnx["input"]["shape"][-1]
+    outputs = ", ".join(o["name"] for o in onnx["outputs"])
+    snippet = (
+        "import onnxruntime as ort\n"
+        "from PIL import Image\n"
+        "from dino_runtime import Model, apply_geometry, to_pixel_values\n\n"
+        'plan = Model.load(".").plan()  # the preprocessing from model.json\n'
+        'picture = Image.open("picture.jpg").convert("RGB")\n'
+        "resized, _ = apply_geometry(plan, picture)\n"
+        'session = ort.InferenceSession("model.onnx")\n'
+        "pixels = to_pixel_values(plan, [resized]).numpy()\n"
+        'outputs = session.run(None, {"pixel_values": pixels})\n'
+    )
+    return (
+        "## ONNX\n\n`model.onnx` is the base model and the head as one graph. Input "
+        f"`pixel_values` (batch, 3, {size}, {size}) float32, preprocessed as in `model.json`; "
+        f"outputs {outputs}. Checked against PyTorch at export: largest difference "
+        f"{onnx['max_abs_diff']:.1e}.\n\n```python\n{snippet}```\n\n"
+    )
+
+
 def head_readme(card: dict[str, Any], runnable: bool) -> str:
     classes = ", ".join(card["classes"]) or "(none: this head predicts depth)"
     run = (
@@ -96,6 +121,7 @@ def head_readme(card: dict[str, Any], runnable: bool) -> str:
         "- `model.onnx` — when present: backbone and head as one ONNX graph (see the card's "
         "`onnx` section).\n\n"
         f"## Outputs\n\n{card['outputs']['decode']}\n\n"
+        f"{_onnx_text(card)}"
         f"## Licence\n\n{_licence(card)}\n"
     )
 

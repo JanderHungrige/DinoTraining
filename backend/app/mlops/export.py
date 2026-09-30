@@ -18,6 +18,7 @@ from app.ml.foundation.instances import FoundationInstanceStore
 from app.ml.heads.store import HeadInstanceStore
 from app.mlops.card import card_for
 from app.mlops.export_texts import PREDICT_PY, finetuned_readme, head_readme, requirements
+from app.mlops.onnx_export import export_head_onnx, onnx_missing
 from app.mlops.runtime_source import SUPPORTED, runtime_source
 
 logger = logging.getLogger(__name__)
@@ -53,7 +54,21 @@ def _as_safetensors(path: Path) -> tuple[str, bytes]:
     return path.with_suffix(".safetensors").name, save(tensors)
 
 
-def bundle_files(kind: str, instance_id: str) -> tuple[str, dict[str, bytes]]:
+def _onnx(instance: object, card: dict[str, object], files: dict[str, bytes]) -> None:
+    """Add model.onnx and the card's `onnx` section, or say in the card why not."""
+    missing = onnx_missing()
+    if missing:
+        card["onnx"] = {"note": missing}
+        return
+    size = int(card["preprocessing"]["size"])  # type: ignore[index]
+    try:
+        files["model.onnx"], card["onnx"] = export_head_onnx(instance, size)
+    except (ValueError, RuntimeError) as error:
+        logger.warning("ONNX export failed: %s", error)
+        card["onnx"] = {"note": f"not exported: {error}"}
+
+
+def bundle_files(kind: str, instance_id: str, onnx: bool = True) -> tuple[str, dict[str, bytes]]:
     """(zip name, file name → bytes) for one model."""
     card = card_for(kind, instance_id)
     name = _safe_name(str(card["model"]["name"]))
@@ -63,12 +78,15 @@ def bundle_files(kind: str, instance_id: str) -> tuple[str, dict[str, bytes]]:
         files["head.safetensors"] = weights.read_bytes()
         card["weights"][0]["file"] = "head.safetensors"
         runnable = card["head"]["type_id"] in SUPPORTED and "size" in card["preprocessing"]
+        if runnable and onnx:
+            _onnx(HeadInstanceStore().get(instance_id), card, files)
         if runnable:
             files["dino_runtime.py"] = runtime_source().encode()
             files["predict.py"] = PREDICT_PY.encode()
             files["requirements.txt"] = requirements().encode()
         files["README.md"] = head_readme(card, runnable).encode()
     else:
+        card["onnx"] = {"note": "fine-tuned models are exported as weights; see doc 122"}
         directory = model_folder(kind, instance_id)
         for entry in card["weights"]:
             file_name, data = _as_safetensors(directory / entry["file"])
@@ -87,19 +105,19 @@ def zip_bytes(files: dict[str, bytes]) -> bytes:
     return buffer.getvalue()
 
 
-def export_to(kind: str, instance_id: str, destination: Path) -> Path:
+def export_to(kind: str, instance_id: str, destination: Path, onnx: bool = True) -> Path:
     """Write the bundle into an existing folder; returns the zip's path."""
     if not destination.is_absolute() or not destination.is_dir():
         raise ValueError(f"Not a folder to export into: {destination}")
-    zip_name, files = bundle_files(kind, instance_id)
+    zip_name, files = bundle_files(kind, instance_id, onnx)
     target = destination / zip_name
     target.write_bytes(zip_bytes(files))
     logger.info("Exported %s %s to %s", kind, instance_id, target)
     return target
 
 
-def export_payload(kind: str, instance_id: str) -> tuple[str, bytes]:
-    zip_name, files = bundle_files(kind, instance_id)
+def export_payload(kind: str, instance_id: str, onnx: bool = True) -> tuple[str, bytes]:
+    zip_name, files = bundle_files(kind, instance_id, onnx)
     return zip_name, zip_bytes(files)
 
 
