@@ -1,0 +1,48 @@
+# Doc 125: the lock users install from is current, and the backend's tests pass on each
+# platform from exactly that lock — the versions users get are the versions tested.
+#
+# CPU only: GitHub's runners have no GPU. The CUDA variants are resolved in the lock (and
+# checked there for hashes) but not installed here; that is doc 131's import check.
+name: Lock check
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - ".github/workflows/lock-check.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+jobs:
+  lock:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            label: macOS (Apple Silicon)
+          - os: windows-latest
+            label: Windows (x86_64)
+          - os: ubuntu-22.04
+            label: Linux (x86_64)
+    defaults:
+      run:
+        working-directory: backend
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: The lock matches pyproject.toml
+        run: uv lock --check
+
+      - name: Install from the lock (CPU)
+        run: uv sync --frozen --extra cpu --extra dev --extra export --python 3.12
+
+      - name: Backend tests
+        run: uv run --frozen --no-sync pytest -q -x

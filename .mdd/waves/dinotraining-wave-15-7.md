@@ -3,7 +3,7 @@ id: dinotraining-wave-15-7
 title: "Wave 15.7: Installer — bundled Python, PyTorch from the source, GPU chosen at setup, Mac via Homebrew"
 initiative: dinotraining
 initiative_version: 15
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-15-6
 demo_state: "On a clean Windows PC with an NVIDIA card, a ~70 MB installer installs the app; its first start detects the GPU, downloads PyTorch with CUDA from pytorch.org with progress (resumable), and the backend reports CUDA; the same installer on a PC without NVIDIA sets up CPU, a Mac with Apple Silicon sets up MPS, an Intel Mac is told plainly it is not supported. Switching CPU ⇄ GPU later works from the GPU panel, and an app update only fetches what changed. CI installs and starts the app on all three platforms."
 created: 2026-09-30
@@ -79,7 +79,7 @@ and Apple has not shipped NVIDIA drivers since 2018.
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | dependency-lock | docs/125-dependency-lock.md | planned | — |
+| 1 | dependency-lock | docs/125-dependency-lock.md | complete | — |
 | 2 | bundled-python | docs/126-bundled-python.md | planned | dependency-lock |
 | 3 | first-run-setup | docs/127-first-run-setup.md | planned | bundled-python |
 | 4 | accelerator-switch | docs/128-accelerator-switch.md | planned | first-run-setup |

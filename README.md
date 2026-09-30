@@ -88,10 +88,12 @@ git clone https://github.com/JanderHungrige/DinoTraining
 cd DinoTraining
 cp .env.example .env            # add HF_TOKEN only if you need the gated models
 
-# Backend
-python3.12 -m venv backend/.venv
-source backend/.venv/bin/activate
-pip install -e "backend[dev,export]"
+# Backend: from the lock file users install from (uv: https://docs.astral.sh/uv/).
+# `cpu` is the Mac's variant too (Apple GPU via MPS); with an NVIDIA card use `cu130`
+# (driver >= 580) or `cu126` (driver >= 560).
+cd backend && uv sync --extra cpu --extra dev --extra export && cd ..
+# without uv: python3.12 -m venv backend/.venv && source backend/.venv/bin/activate
+#             pip install -e "backend[cpu,dev,export]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps
