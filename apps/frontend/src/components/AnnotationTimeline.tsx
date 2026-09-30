@@ -12,6 +12,7 @@
 
 import type { JSX } from 'react';
 
+import { useT } from '../i18n';
 import { classColour, toCssColour } from '../lib/overlayPalette';
 import {
   classesIn,
@@ -45,6 +46,7 @@ export function AnnotationTimeline({
   onSelect,
   onSeek,
 }: AnnotationTimelineProps): JSX.Element {
+  const { t } = useT();
   const present = classesIn(frames, classNames);
   const active = selected !== null && present.includes(selected) ? selected : null;
   const jump = (target: number | null): void => {
@@ -52,7 +54,7 @@ export function AnnotationTimeline({
   };
 
   if (present.length === 0) {
-    return <p className="timeline__empty">Nothing is annotated in this sequence yet.</p>;
+    return <p className="timeline__empty">{t('generator.timeline.empty')}</p>;
   }
 
   return (
@@ -67,7 +69,7 @@ export function AnnotationTimeline({
               type="button"
               className={`timeline__row${active === name ? ' timeline__row--selected' : ''}`}
               aria-pressed={active === name}
-              aria-label={`${name}: on ${count} of ${frames.length} frames`}
+              aria-label={t('generator.timeline.barAria', { name, count, total: frames.length })}
               onClick={() => onSelect(active === name ? null : name)}
             >
               <span className="timeline__name">
@@ -97,9 +99,9 @@ export function AnnotationTimeline({
         })}
       </div>
 
-      <div className="timeline__jumps" role="group" aria-label="Jump between annotations">
+      <div className="timeline__jumps" role="group" aria-label={t('generator.timeline.jumps')}>
         <span className="timeline__hint">
-          {active ? `${active}:` : 'Click a bar to choose a class.'}
+          {active ? `${active}:` : t('generator.timeline.hint')}
         </span>
         <button
           type="button"
@@ -107,7 +109,7 @@ export function AnnotationTimeline({
           disabled={active === null}
           onClick={() => active && jump(firstOccurrence(frames, active))}
         >
-          ⇤ First
+          {t('generator.timeline.first')}
         </button>
         <button
           type="button"
@@ -115,7 +117,7 @@ export function AnnotationTimeline({
           disabled={active === null || previousOccurrence(frames, active, index) === null}
           onClick={() => active && jump(previousOccurrence(frames, active, index))}
         >
-          ◀ Previous
+          {t('generator.timeline.previous')}
         </button>
         <button
           type="button"
@@ -123,7 +125,7 @@ export function AnnotationTimeline({
           disabled={active === null || nextOccurrence(frames, active, index) === null}
           onClick={() => active && jump(nextOccurrence(frames, active, index))}
         >
-          Next ▶
+          {t('generator.timeline.next')}
         </button>
       </div>
     </div>

@@ -19,7 +19,7 @@ describe('the Grounding DINO hint', () => {
   it('shows the several-labels form, which is the part nobody guesses', () => {
     // Full stops as separators is the whole trick, and an empty field with a placeholder
     // is not enough to convey it.
-    expect(GROUNDING_DINO_HINT).toContain('a bolt. a nut. a washer.');
+    expect(GROUNDING_DINO_HINT).toContain('a bolt, a nut, a washer');
   });
 
   it('warns that it finds things you did not ask for', () => {

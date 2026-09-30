@@ -14,6 +14,7 @@
 import type { JSX } from 'react';
 
 import type { AcceleratorInfo } from '../api/models';
+import { useT } from '../i18n';
 
 export interface GpuPanelProps {
   readonly accelerator: AcceleratorInfo | null;
@@ -33,7 +34,9 @@ export function GpuPanel({
   onDownload,
   busy = false,
 }: GpuPanelProps): JSX.Element | null {
+  const { t } = useT();
   if (accelerator === null) return null;
+  const size = (downloadMb / 1024).toFixed(1);
 
   // A driver that is installed and not answering is a different problem from having no
   // GPU, and it needs a different fix — so it gets said rather than folded into silence.
@@ -41,13 +44,10 @@ export function GpuPanel({
     return (
       <section className="gpupanel gpupanel--warn" aria-labelledby="gpu-title">
         <h3 className="gpupanel__title" id="gpu-title">
-          NVIDIA driver not responding
+          {t('admin.gpu.driverTitle')}
         </h3>
         <p className="gpupanel__lead">{accelerator.summary}</p>
-        <p className="gpupanel__foot">
-          Reinstalling or updating the driver usually fixes this. Until it answers, this
-          app cannot tell whether a GPU is present.
-        </p>
+        <p className="gpupanel__foot">{t('admin.gpu.driverFoot')}</p>
       </section>
     );
   }
@@ -57,23 +57,20 @@ export function GpuPanel({
   return (
     <section className="gpupanel" aria-labelledby="gpu-title">
       <h3 className="gpupanel__title" id="gpu-title">
-        <span aria-hidden="true">⚡</span> Your GPU is not being used
+        <span aria-hidden="true">⚡</span> {t('admin.gpu.title')}
       </h3>
       <p className="gpupanel__lead">{accelerator.summary}</p>
 
       <ul className="gpupanel__list">
         {accelerator.nvidia.map((gpu) => (
           <li key={`${gpu.name}-${gpu.driver_version}`}>
-            <strong>{gpu.name}</strong> · {gib(gpu.memory_mb)} · driver {gpu.driver_version}
+            <strong>{gpu.name}</strong> · {gib(gpu.memory_mb)} · {t('admin.gpu.driver', { version: gpu.driver_version })}
           </li>
         ))}
       </ul>
 
       <p className="gpupanel__foot">
-        The installer ships a CPU build so it stays small. GPU support is a separate
-        download of about <strong>{(downloadMb / 1024).toFixed(1)} GB</strong> — it is
-        large because it carries NVIDIA's CUDA runtime, not because the app is. Training
-        and inference typically run several times faster on it.
+        {t('admin.gpu.footBefore')} <strong>{size} GB</strong> {t('admin.gpu.footAfter')}
       </p>
 
       {onDownload && (
@@ -83,7 +80,7 @@ export function GpuPanel({
           disabled={busy}
           onClick={onDownload}
         >
-          {busy ? 'Downloading…' : `Download GPU support (${(downloadMb / 1024).toFixed(1)} GB)`}
+          {busy ? t('admin.gpu.downloading') : t('admin.gpu.download', { size })}
         </button>
       )}
     </section>

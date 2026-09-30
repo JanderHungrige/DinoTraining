@@ -3,6 +3,7 @@
  * backend/app/api/v1/training_parameters.py.
  */
 
+import type { Translator } from '../i18n/translate';
 import { apiFetch } from './client';
 import { arrayOf, hasFields } from './prepGuards';
 
@@ -61,13 +62,14 @@ export function getParameters(modelId: string): Promise<ParameterSetInfo> {
 }
 
 /** Why a value cannot be sent, or '' when it can. The backend says the same (422). */
-export function problemWith(parameter: ParameterInfo, value: ParameterValue): string {
+export function problemWith(parameter: ParameterInfo, value: ParameterValue, { t }: Translator): string {
   if (parameter.kind === 'bool' || parameter.kind === 'choice') return '';
-  if (typeof value !== 'number' || Number.isNaN(value)) return 'Enter a number.';
-  if (parameter.kind === 'int' && !Number.isInteger(value)) return 'Enter a whole number.';
+  if (typeof value !== 'number' || Number.isNaN(value)) return t('training.params.enterNumber');
+  if (parameter.kind === 'int' && !Number.isInteger(value)) return t('training.params.enterWhole');
   const { minimum: low, maximum: high } = parameter;
   if ((low !== null && value < low) || (high !== null && value > high)) {
-    return `Between ${low ?? 'any'} and ${high ?? 'any'}.`;
+    const any = t('training.params.any');
+    return t('training.params.between', { low: low ?? any, high: high ?? any });
   }
   return '';
 }

@@ -16,6 +16,7 @@ import {
 } from '../api/generate';
 import { foundationCanvasBoxes, proposeWithFoundation } from '../api/foundation';
 import type { ProposalSource } from '../hooks/useAnnotationSession';
+import type { Translator } from '../i18n';
 import type { CanvasBox } from '../types/annotation';
 
 export interface Proposed {
@@ -62,8 +63,8 @@ export async function proposeFor(
 }
 
 /** What to say when a proposer fails, named by which one it was. */
-export function proposalFailure(source: ProposalSource): string {
-  if (source.kind === 'head') return 'Could not run that head.';
-  if (source.kind === 'foundation') return 'Could not run that detector.';
-  return 'Could not run the detector.';
+export function proposalFailure(source: ProposalSource, { t }: Translator): string {
+  if (source.kind === 'head') return t('studio.session.headFailed');
+  if (source.kind === 'foundation') return t('studio.session.detectorFailed');
+  return t('studio.session.promptFailed');
 }

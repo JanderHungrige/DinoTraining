@@ -54,6 +54,15 @@ export function changePhrase(
   });
 }
 
+/** Deletes a stored phrase with its links and checks; the outlines keep their class. */
+export function deletePhrase(datasetId: string, phraseId: number): Promise<{ removed: boolean }> {
+  return apiFetch(
+    `${base(datasetId)}/phrases/${phraseId}`,
+    (v: unknown): v is { removed: boolean } => hasFields(v, { removed: 'boolean' }),
+    { method: 'DELETE' },
+  );
+}
+
 export function pictureStatuses(datasetId: string, path: string): Promise<PictureStatus[]> {
   return apiFetch(`${base(datasetId)}/images/phrase-status?path=${encodeURIComponent(path)}`, arrayOf(isStatus));
 }

@@ -14,8 +14,9 @@
 
 import type { JSX } from 'react';
 
+import { useT } from '../i18n';
 import {
-  VIEW_LABELS,
+  viewLabel,
   viewsFor,
   type AnnotationView,
 } from '../types/annotationView';
@@ -38,12 +39,13 @@ export function AnnotationViewToggle({
   disabled = false,
   groupName = 'annotation-view',
 }: AnnotationViewToggleProps): JSX.Element | null {
+  const { t } = useT();
   const available = viewsFor(hasMasks, hasBoxes);
   if (available.length < 2) return null;
 
   return (
     <fieldset className="viewtoggle">
-      <legend className="viewtoggle__legend">Show</legend>
+      <legend className="viewtoggle__legend">{t('studio.view.legend')}</legend>
       {available.map((option) => (
         <label key={option} className="viewtoggle__option">
           <input
@@ -54,7 +56,7 @@ export function AnnotationViewToggle({
             disabled={disabled}
             onChange={() => onChange(option)}
           />
-          <span>{VIEW_LABELS[option]}</span>
+          <span>{viewLabel(t, option)}</span>
         </label>
       ))}
     </fieldset>

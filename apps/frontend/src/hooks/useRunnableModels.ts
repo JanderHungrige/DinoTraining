@@ -19,6 +19,7 @@ import { ApiError } from '../api/client';
 import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { listFoundations, type FoundationInfo } from '../api/foundation';
 import { listHeadInstances, type HeadInstanceInfo } from '../api/headInstances';
+import { useT } from '../i18n';
 
 export interface RunnableModels {
   readonly heads: readonly HeadInstanceInfo[];
@@ -31,11 +32,14 @@ export interface RunnableModels {
   readonly error: string | null;
 }
 
-function describe(cause: unknown, fallback: string): string {
-  return cause instanceof ApiError ? cause.message : fallback;
+/** The backend's reason, or '' for "use our own words" — translated at return, so the
+ *  message follows a language switch and the loading effect need not depend on it. */
+function describe(cause: unknown): string {
+  return cause instanceof ApiError ? cause.message : '';
 }
 
 export function useRunnableModels(): RunnableModels {
+  const { t } = useT();
   const [heads, setHeads] = useState<readonly HeadInstanceInfo[]>([]);
   const [foundations, setFoundations] = useState<readonly FoundationInfo[]>([]);
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
@@ -50,7 +54,7 @@ export function useRunnableModels(): RunnableModels {
         setHeads(found);
       })
       .catch((cause: unknown) => {
-        if (!controller.signal.aborted) setError(describe(cause, 'Could not load heads.'));
+        if (!controller.signal.aborted) setError(describe(cause));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoadingHeads(false);
@@ -94,5 +98,11 @@ export function useRunnableModels(): RunnableModels {
       .map((dataset) => ({ id: dataset.id, name: dataset.name }));
   }, [heads, datasets]);
 
-  return { heads, foundations, trainedOn, loadingHeads, error };
+  return {
+    heads,
+    foundations,
+    trainedOn,
+    loadingHeads,
+    error: error === null ? null : error || t('run.heads.loadFailed'),
+  };
 }

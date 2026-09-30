@@ -9,6 +9,7 @@
 import { type FormEvent, type JSX } from 'react';
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useT } from '../i18n';
 import { isString, stillListed } from '../lib/persisted';
 
 import type { ImportRequest } from '../api/headCatalog';
@@ -28,6 +29,7 @@ export function HeadImportForm({
   busy,
   onImport,
 }: HeadImportFormProps): JSX.Element {
+  const { t } = useT();
   // Doc 69: remembered across tab switches and restarts.
   const [repoId, setRepoId] = usePersistentState('headImport.repoId', '', isString);
   const [numClasses, setNumClasses] = usePersistentState('headImport.numClasses', '', isString);
@@ -72,25 +74,29 @@ export function HeadImportForm({
   return (
     <form className="headimport" onSubmit={(event) => void submit(event)}>
       <p className="headimport__note">
-        Community heads must be published as <strong>safetensors</strong>. Files in{' '}
-        <code>.pt</code> or <code>.pth</code> format are refused — loading one would run
-        arbitrary code from the repository.
+        {t('admin.import.noteBefore')}
+        <strong>safetensors</strong>
+        {t('admin.import.noteFiles')}
+        <code>.pt</code>
+        {t('admin.import.noteOr')}
+        <code>.pth</code>
+        {t('admin.import.noteAfter')}
       </p>
 
       <div className="headimport__row">
         <label className="field">
-          <span className="field__label">HuggingFace repo</span>
+          <span className="field__label">{t('admin.import.repo')}</span>
           <input
             className="field__input"
             type="text"
-            placeholder="owner/name"
+            placeholder={t('admin.import.repoPlaceholder')}
             value={repoId}
             onChange={(event) => setRepoId(event.target.value)}
           />
         </label>
 
         <label className="field">
-          <span className="field__label">Head type</span>
+          <span className="field__label">{t('admin.import.headType')}</span>
           <select
             className="field__input"
             value={headTypeId}
@@ -105,7 +111,7 @@ export function HeadImportForm({
         </label>
 
         <label className="field">
-          <span className="field__label">Backbone</span>
+          <span className="field__label">{t('admin.import.backbone')}</span>
           <select
             className="field__input"
             value={backboneId}
@@ -120,12 +126,12 @@ export function HeadImportForm({
         </label>
 
         <label className="field field--narrow">
-          <span className="field__label">Classes</span>
+          <span className="field__label">{t('admin.import.classes')}</span>
           <input
             className="field__input"
             type="number"
             min={1}
-            placeholder="auto"
+            placeholder={t('admin.import.classesPlaceholder')}
             value={numClasses}
             onChange={(event) => setNumClasses(event.target.value)}
           />
@@ -133,7 +139,7 @@ export function HeadImportForm({
       </div>
 
       <button type="submit" className="btn" disabled={!ready || busy}>
-        {busy ? 'Importing…' : 'Import head'}
+        {busy ? t('admin.import.importing') : t('admin.import.submit')}
       </button>
     </form>
   );

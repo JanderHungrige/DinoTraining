@@ -10,11 +10,13 @@
 
 import type { JSX } from 'react';
 
+import { useT, type Key } from '../i18n';
+
 export type ProposalMode = 'foundation' | 'prompt' | 'head';
 
 interface ModeOption {
   readonly mode: ProposalMode;
-  readonly label: string;
+  readonly label: Key;
 }
 
 /**
@@ -22,12 +24,9 @@ interface ModeOption {
  * first one, so it leads.
  */
 export const PROPOSAL_MODES: readonly ModeOption[] = Object.freeze([
-  {
-    mode: 'foundation',
-    label: 'A general detector — finds everyday objects, nothing to set up',
-  },
-  { mode: 'prompt', label: 'Grounding DINO — describe what you are looking for' },
-  { mode: 'head', label: 'A head you trained — proposes boxes for its own classes' },
+  { mode: 'foundation', label: 'studio.mode.foundation' },
+  { mode: 'prompt', label: 'studio.mode.prompt' },
+  { mode: 'head', label: 'studio.mode.head' },
 ]);
 
 export interface ProposalModePickerProps {
@@ -41,11 +40,12 @@ export function ProposalModePicker({
   mode,
   onChange,
   groupName = 'studio-mode',
-  legend = 'What proposes the boxes',
+  legend,
 }: ProposalModePickerProps): JSX.Element {
+  const { t } = useT();
   return (
     <fieldset className="setup__modes">
-      <legend>{legend}</legend>
+      <legend>{legend ?? t('studio.mode.legend')}</legend>
       {PROPOSAL_MODES.map((option) => (
         <label key={option.mode}>
           <input
@@ -55,7 +55,7 @@ export function ProposalModePicker({
             checked={mode === option.mode}
             onChange={() => onChange(option.mode)}
           />
-          <span>{option.label}</span>
+          <span>{t(option.label)}</span>
         </label>
       ))}
     </fieldset>

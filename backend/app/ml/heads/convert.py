@@ -85,9 +85,12 @@ def download_entry(entry: CatalogEntry, destination: Path) -> Path:
     logger.info("Downloading head %s (%d bytes)", entry.id, entry.size_bytes)
 
     try:
-        with urllib.request.urlopen(  # noqa: S310 - scheme and host asserted above
-            entry.url, timeout=_DOWNLOAD_TIMEOUT_SECONDS
-        ) as response, destination.open("wb") as handle:
+        with (
+            urllib.request.urlopen(  # noqa: S310 - scheme and host asserted above
+                entry.url, timeout=_DOWNLOAD_TIMEOUT_SECONDS
+            ) as response,
+            destination.open("wb") as handle,
+        ):
             shutil.copyfileobj(response, handle, _CHUNK)
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         destination.unlink(missing_ok=True)

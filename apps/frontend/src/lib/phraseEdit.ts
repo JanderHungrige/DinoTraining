@@ -7,6 +7,7 @@
  */
 
 import type { PhraseInfo } from '../api/phrases';
+import { ENGLISH, type Translator } from '../i18n';
 import type { CanvasBox } from '../types/annotation';
 
 /** As the backend stores a phrase: lower case, spaces collapsed, a trailing stop dropped. */
@@ -22,10 +23,11 @@ export function phrasesOf(box: CanvasBox): readonly string[] {
 }
 
 /** Why `phrase` cannot go on `box`, or '' when it can. */
-export function refusal(box: CanvasBox, phrase: PhraseInfo): string {
-  if (box.mask === undefined) return 'Phrases go on outlines — make one from this box first.';
+export function refusal(box: CanvasBox, phrase: PhraseInfo, { t }: Translator = ENGLISH): string {
+  if (box.mask === undefined) return t('studio.phrase.needsOutline');
   if (phraseKey(phrase.class_name) !== phraseKey(box.text ?? '')) {
-    return `"${phrase.text}" is a phrase of class ${phrase.class_name}; this outline is ${box.text ?? 'unnamed'}.`;
+    const name = box.text ?? t('studio.phrase.unnamed');
+    return t('studio.phrase.otherClass', { phrase: phrase.text, className: phrase.class_name, name });
   }
   return '';
 }

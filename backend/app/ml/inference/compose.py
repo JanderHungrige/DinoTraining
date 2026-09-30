@@ -85,9 +85,7 @@ def run_heads(
         tiled, tiled_passes, tiled_elapsed = run_tiled(
             image, backbone_id, instance_ids, grid, settings, score_threshold
         )
-        return ComposedResult(
-            predictions=tiled, passes=tiled_passes, elapsed_ms=tiled_elapsed
-        )
+        return ComposedResult(predictions=tiled, passes=tiled_passes, elapsed_ms=tiled_elapsed)
 
     # First occurrence wins: two identical predictions carry no information, and the
     # request is still coherent without them.

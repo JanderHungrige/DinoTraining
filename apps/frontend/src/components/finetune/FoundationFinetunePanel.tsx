@@ -15,6 +15,7 @@ import { useFoundationFinetune, useReadiness, type FoundationFinetune } from '..
 import { usePersistentState } from '../../hooks/usePersistentState';
 import { useRecipeChoice } from '../../hooks/useRecipeChoice';
 import { finetuneFields, useParameters } from '../../hooks/useParameters';
+import { useT } from '../../i18n';
 import { isString, stillListed } from '../../lib/persisted';
 import { blockingParameter, ParameterForm } from '../params/ParameterForm';
 import { RecipeExplainer } from '../RecipeExplainer';
@@ -45,25 +46,26 @@ function Pickers(props: {
   readonly onModel: (id: string) => void;
   readonly onDataset: (id: string) => void;
 }): JSX.Element {
+  const { t, tp } = useT();
   return (
     <div className="inspect__pickers">
       <label className="genpanel__field">
-        <span>Model</span>
+        <span>{t('training.finetune.model')}</span>
         <select value={props.modelId} onChange={(e) => props.onModel(e.target.value)}>
           {props.specs.map((s) => (
             <option key={s.id} value={s.id} disabled={!s.available}>
               {s.label}
-              {s.available ? '' : ' (not yet)'}
+              {s.available ? '' : ` ${t('training.finetune.notYet')}`}
             </option>
           ))}
         </select>
       </label>
       <label className="genpanel__field">
-        <span>Dataset</span>
+        <span>{t('training.finetune.dataset')}</span>
         <select value={props.datasetId} onChange={(e) => props.onDataset(e.target.value)}>
           {props.datasets.map((d) => (
             <option key={d.id} value={d.id}>
-              {d.name} ({d.counts.images} pictures)
+              {d.name} ({tp('common.pictures', d.counts.images)})
             </option>
           ))}
         </select>
@@ -78,6 +80,7 @@ function RunControls(props: {
   readonly run: FoundationFinetune;
   readonly onStart: () => void;
 }): JSX.Element {
+  const { t } = useT();
   const { run } = props;
   const job = run.job;
   return (
@@ -89,19 +92,22 @@ function RunControls(props: {
           disabled={!props.ready || Boolean(props.blocked) || run.starting || run.running}
           onClick={props.onStart}
         >
-          {run.starting ? 'Starting…' : 'Start fine-tuning'}
+          {run.starting ? t('training.finetune.starting') : t('training.finetune.start')}
         </button>
         {props.blocked && <span className="trainer__blocked">{props.blocked}</span>}
         {run.running && (
           <button type="button" className="btn" onClick={() => void run.cancel()}>
-            Cancel
+            {t('common.cancel')}
           </button>
         )}
       </div>
       {job && (
         <p role="status" className="prep-step__status">
           {job.state === 'running' || job.state === 'pending'
-            ? `Round ${job.epoch} of ${job.total_epochs}${job.epoch === 0 ? ' — measuring the base model first' : ''}`
+            ? t(job.epoch === 0 ? 'training.finetune.roundBase' : 'training.finetune.round', {
+                epoch: job.epoch,
+                total: job.total_epochs,
+              })
             : job.message}
         </p>
       )}
@@ -117,6 +123,7 @@ export function FoundationFinetunePanel({
   /** Doc 101: "Open Prepare data" from the recipe explainer. */
   readonly onOpenPrepare?: (() => void) | undefined;
 }): JSX.Element {
+  const { t } = useT();
   const { specs, error: listError } = useRequirements();
   const [modelChoice, setModelChoice] = usePersistentState('finetune.model', '', isString);
   const [datasetChoice, setDatasetChoice] = usePersistentState('finetune.dataset', '', isString);
@@ -135,7 +142,7 @@ export function FoundationFinetunePanel({
   // Doc 100: every setting comes from the model's catalogue (doc 99), defaults included —
   // no hand-written rounds, blocks or learning rate here any more.
   const params = useParameters(modelId);
-  const blocked = params.set ? blockingParameter(params) : 'Loading settings…';
+  const blocked = params.set ? blockingParameter(params) : t('training.params.loading');
 
   const start = (): void => {
     void run.start({
@@ -183,7 +190,7 @@ export function FoundationFinetunePanel({
       {readiness && <ReadinessList readiness={readiness} />}
       <ParameterForm params={params} disabled={run.running} />
       <label className="genpanel__field">
-        <span>Name</span>
+        <span>{t('training.finetune.name')}</span>
         <input value={name} onChange={(e) => setNameOverride(e.target.value)} />
       </label>
       <RunControls

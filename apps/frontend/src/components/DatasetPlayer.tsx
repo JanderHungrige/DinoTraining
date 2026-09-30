@@ -13,6 +13,7 @@ import type { DatasetImageInfo } from '../api/datasets';
 import type { SequenceFrame } from '../api/datasetSequences';
 import { useFrameMasks } from '../hooks/useFrameMasks';
 import type { Playback } from '../hooks/usePlayback';
+import { useT } from '../i18n';
 import type { AnnotationView } from '../types/annotationView';
 import { FrameCanvas } from './FrameCanvas';
 import { StoredOverlay } from './StoredOverlay';
@@ -53,6 +54,7 @@ export function DatasetPlayer({
   playback,
   children,
 }: DatasetPlayerProps): JSX.Element {
+  const { t } = useT();
   const { index, playing, fps } = playback;
   const frame = frames[index];
   const masks = useFrameMasks(datasetId, frames, index, hasMasks);
@@ -70,7 +72,7 @@ export function DatasetPlayer({
         naturalWidth={width}
         naturalHeight={height}
         generation={`${datasetId}:${trackKey}`}
-        label={frame ? `Frame ${frame.index}` : 'No frame'}
+        label={frame ? t('generator.player.frame', { index: frame.index }) : t('generator.player.noFrame')}
         urlFor={urlFor}
         renderOverlay={(rendered) => (
           <StoredOverlay
@@ -85,12 +87,12 @@ export function DatasetPlayer({
         )}
       />
 
-      <div className="player__transport" role="group" aria-label="Playback">
+      <div className="player__transport" role="group" aria-label={t('generator.player.transport')}>
         <button type="button" className="btn" onClick={() => playback.step(-1)} disabled={index === 0}>
-          ◀ Frame
+          {t('generator.player.back')}
         </button>
         <button type="button" className="btn btn--primary" onClick={playback.toggle}>
-          {playing ? '❚❚ Pause' : '▶ Play'}
+          {playing ? t('generator.player.pause') : t('generator.player.play')}
         </button>
         <button
           type="button"
@@ -98,7 +100,7 @@ export function DatasetPlayer({
           onClick={() => playback.step(1)}
           disabled={index >= frames.length - 1}
         >
-          Frame ▶
+          {t('generator.player.forward')}
         </button>
         <input
           type="range"
@@ -106,13 +108,13 @@ export function DatasetPlayer({
           min={0}
           max={Math.max(0, frames.length - 1)}
           value={index}
-          aria-label="Position in the sequence"
+          aria-label={t('generator.player.position')}
           onChange={(event) => playback.setIndex(Number(event.target.value))}
         />
         <span className="player__counter" role="status">
           {frames.length === 0 ? '—' : `${index + 1} / ${frames.length}`}
-          {frame ? ` · frame ${frame.index}` : ''}
-          {frame && !frame.annotated ? ' · not annotated' : ''}
+          {frame ? t('generator.player.atFrame', { index: frame.index }) : ''}
+          {frame && !frame.annotated ? t('generator.player.notAnnotated') : ''}
         </span>
         <label className="player__fps">
           <input

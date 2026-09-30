@@ -64,9 +64,7 @@ def validate_repo_id(repo_id: str) -> str:
     a *leading* dot only, so ``owner/..`` would otherwise satisfy the character class.
     """
     if not _REPO_ID.match(repo_id):
-        raise InvalidRepoIdError(
-            f"Not a HuggingFace repo id: {repo_id!r}. Expected owner/name."
-        )
+        raise InvalidRepoIdError(f"Not a HuggingFace repo id: {repo_id!r}. Expected owner/name.")
     if any(part in {".", ".."} for part in repo_id.split("/")):
         raise InvalidRepoIdError(f"Not a HuggingFace repo id: {repo_id!r}")
     return repo_id

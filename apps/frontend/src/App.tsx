@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { BackendStatus } from './components/BackendStatus';
+import { LanguageSwitch } from './components/LanguageSwitch';
+import { LanguageProvider } from './i18n';
 import { BackgroundVideo } from './components/BackgroundVideo';
 import { LookProvider } from './lib/look';
 import { TabBar } from './components/TabBar';
@@ -32,7 +34,8 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
     case 'intro':
       return <IntroTab onNavigate={nav.onNavigate} />;
     case 'studio':
-      return <AnnotationStudioTab />;
+      // Rendered by App itself, kept mounted: see `studioVisited`.
+      return <></>;
     case 'trainer':
       return <HeadTrainerTab request={nav.trainRequest} onOpenPrepare={() => nav.onNavigate('prepare')} />;
     case 'prepare':
@@ -58,6 +61,10 @@ export function App(): JSX.Element {
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
   const [inspectRequest, setInspectRequest] = useState<InspectRequest | null>(null);
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
+  // The Studio stays mounted once opened, so a session (picture, unsaved edits, prescan)
+  // survives a visit to another tab; its Back button is what ends it.
+  const [studioVisited, setStudioVisited] = useState(false);
+  if (activeTab === 'studio' && !studioVisited) setStudioVisited(true);
   const nonce = useRef(0);
   const onInspect = useCallback((datasetId: string, sequence: string | null) => {
     nonce.current += 1;
@@ -71,11 +78,13 @@ export function App(): JSX.Element {
   }, []);
 
   return (
+    <LanguageProvider>
     <LookProvider>
       <BackgroundVideo />
       <div className="app">
         <header className="app__header">
           <h1 className="app__title">DinoTraining</h1>
+          <LanguageSwitch />
           <BackendStatus />
         </header>
 
@@ -88,9 +97,15 @@ export function App(): JSX.Element {
           aria-labelledby={`tab-${activeTab}`}
           tabIndex={0}
         >
+          {studioVisited && (
+            <div hidden={activeTab !== 'studio'}>
+              <AnnotationStudioTab active={activeTab === 'studio'} />
+            </div>
+          )}
           {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest, onTrain, trainRequest })}
         </main>
       </div>
     </LookProvider>
+    </LanguageProvider>
   );
 }

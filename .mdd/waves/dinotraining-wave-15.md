@@ -3,7 +3,7 @@ id: dinotraining-wave-15
 title: "Wave 15: English and German"
 initiative: dinotraining
 initiative_version: 12
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-14
 demo_state: "The user switches the language in the header; every text of the app — tabs, forms, the ? explanations, the intro, and the backend's audit findings, requirements and preflight refusals — appears in German, and switches back to English. A missing German text fails the build, not the user."
 created: 2026-09-30
@@ -52,10 +52,10 @@ hash: a30e6737
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | i18n-framework | docs/111-i18n-framework.md | planned | — |
-| 2 | frontend-strings | docs/112-frontend-strings.md | planned | i18n-framework |
-| 3 | backend-texts | docs/113-backend-texts.md | planned | i18n-framework |
-| 4 | german-translation | docs/114-german-translation.md | planned | frontend-strings, backend-texts |
+| 1 | i18n-framework | docs/111-i18n-framework.md | complete | — |
+| 2 | frontend-strings | docs/112-frontend-strings.md | complete | i18n-framework |
+| 3 | backend-texts | docs/113-backend-texts.md | complete | i18n-framework |
+| 4 | german-translation | docs/114-german-translation.md | complete | frontend-strings, backend-texts |
 
 ### Feature notes
 

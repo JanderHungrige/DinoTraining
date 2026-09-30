@@ -135,6 +135,11 @@ Having Rust installed both ways is the usual cause: the two `rustc` binaries com
 
 The app is organised as tabs, in the order a project runs through them.
 
+**Language:** English or German, switched in the header (the first start follows your
+system language). The backend's explanations (audit findings, requirements, setting
+help) follow the same choice. Prompts for Grounding DINO and SAM 3 stay English, because
+those models read English.
+
 ### Start here
 
 A plain-language introduction:
@@ -424,7 +429,7 @@ state.
 | 12 | Fine-tuning SAM 2, SAM 3 and DINO backbones |
 | 13 | Every training setting explained, default recipes |
 | 14 | Annotating for the model: phrases, hard negatives, mask editing |
-| 15 | English and German (planned) |
+| 15 | English and German |
 | 16 | Website and cloud compute (planned) |
 
 **Branches:**

@@ -57,9 +57,7 @@ class GroundedSamAnnotator:
     def propose(
         self, image: Image.Image, concept: str, *, threshold: float = DEFAULT_BOX_THRESHOLD
     ) -> list[MaskProposal]:
-        detector = (
-            load_detector(self._detector_id) if self._detector_id else load_detector()
-        )
+        detector = load_detector(self._detector_id) if self._detector_id else load_detector()
         detections = detect(detector, image, concept, box_threshold=threshold)
         if not detections:
             # No boxes means no prompts, and SAM would otherwise be asked to segment the
@@ -67,9 +65,7 @@ class GroundedSamAnnotator:
             logger.info("Grounding DINO found nothing for %r", concept)
             return []
 
-        segmenter = (
-            load_segmenter(self._segmenter_id) if self._segmenter_id else load_segmenter()
-        )
+        segmenter = load_segmenter(self._segmenter_id) if self._segmenter_id else load_segmenter()
         masks, scores = segment_boxes(segmenter, image, [_to_xyxy(d) for d in detections])
 
         return _to_proposals(masks, scores, detections, concept)

@@ -6,6 +6,7 @@
 import type { JSX } from 'react';
 
 import type { DatasetInfo } from '../api/datasets';
+import { useT } from '../i18n';
 
 export interface DatasetChoiceRowProps {
   readonly datasets: readonly DatasetInfo[];
@@ -18,15 +19,16 @@ export interface DatasetChoiceRowProps {
 
 export function DatasetChoiceRow(props: DatasetChoiceRowProps): JSX.Element {
   const { datasets, datasetId, newName } = props;
+  const { t, tp } = useT();
   return (
     <div className="setup__row">
       <label className="setup__field" htmlFor="dataset">
-        Dataset
+        {t('studio.choice.dataset')}
         <select id="dataset" value={datasetId} onChange={(event) => props.onDataset(event.target.value)}>
-          <option value="">Create a new one…</option>
+          <option value="">{t('studio.choice.createNew')}</option>
           {datasets.map((dataset) => (
             <option key={dataset.id} value={dataset.id}>
-              {dataset.name} ({dataset.counts.images} images)
+              {tp('studio.choice.option', dataset.counts.images, { name: dataset.name })}
             </option>
           ))}
         </select>
@@ -34,12 +36,12 @@ export function DatasetChoiceRow(props: DatasetChoiceRowProps): JSX.Element {
 
       {!datasetId && (
         <label className="setup__field" htmlFor="newname">
-          New dataset name
+          {t('studio.choice.newName')}
           <input
             id="newname"
             type="text"
             value={newName}
-            placeholder="Cats"
+            placeholder={t('studio.choice.newNamePlaceholder')}
             onChange={(event) => props.onNewName(event.target.value)}
           />
         </label>

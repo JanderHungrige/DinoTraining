@@ -16,6 +16,7 @@ import { PrepareSteps, type Choices } from '../components/prepare/PrepareSteps';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { usePrepareData } from '../hooks/usePrepareData';
 import { usePreparePlans } from '../hooks/usePreparePlans';
+import { useT } from '../i18n';
 import { isString, stillListed } from '../lib/persisted';
 import '../prepare.css';
 
@@ -46,21 +47,22 @@ function Pickers(props: {
   readonly onTarget: (id: string) => void;
 }): JSX.Element {
   const { datasets, targets, datasetId, target, onDataset, onTarget } = props;
+  const { t, tp } = useT();
   return (
       <div className="inspect__pickers">
         <label className="genpanel__field">
-          <span>Dataset</span>
+          <span>{t('prepare.tab.dataset')}</span>
           <select value={datasetId} onChange={(event) => onDataset(event.target.value)}>
-            {datasets.length === 0 && <option value="">No datasets with pictures yet</option>}
+            {datasets.length === 0 && <option value="">{t('prepare.tab.noDatasets')}</option>}
             {datasets.map((entry) => (
               <option key={entry.id} value={entry.id}>
-                {entry.name} ({entry.counts.images} pictures)
+                {tp('prepare.tab.datasetOption', entry.counts.images, { name: entry.name })}
               </option>
             ))}
           </select>
         </label>
         <label className="genpanel__field">
-          <span>Model to train</span>
+          <span>{t('prepare.tab.model')}</span>
           <select value={target} onChange={(event) => onTarget(event.target.value)}>
             {targets.map((entry) => (
               <option key={entry.id} value={entry.id}>
@@ -78,6 +80,7 @@ export function PrepareTab({
 }: {
   readonly onTrain?: ((datasetId: string, recipeId: string) => void) | undefined;
 }): JSX.Element {
+  const { t } = useT();
   const lists = useLists();
   const [datasetChoice, setDatasetChoice] = usePersistentState('prepare.dataset', '', isString);
   const [targetChoice, setTargetChoice] = usePersistentState('prepare.target', '', isString);
@@ -94,11 +97,8 @@ export function PrepareTab({
 
   return (
     <section className="studio prep">
-      <h2 className="studio__title">Prepare data</h2>
-      <p className="studio__lead">
-        Get a dataset ready for training, step by step. Each step recommends a setting and says
-        why; you can change it, or skip ahead if you know what you need.
-      </p>
+      <h2 className="studio__title">{t('prepare.tab.title')}</h2>
+      <p className="studio__lead">{t('prepare.tab.lead')}</p>
       <Pickers
         datasets={withImages}
         targets={lists.targets}

@@ -19,6 +19,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { useFileDrop } from '../hooks/useFileDrop';
+import { useT } from '../i18n';
 import { hasNativeDialog, pickFolder, pickImageFile } from '../lib/dialog';
 import { folderOf } from '../lib/dragDrop';
 import { FieldHint } from './FieldHint';
@@ -45,6 +46,7 @@ export function FolderField({
   disabled = false,
   variant = 'setup',
 }: FolderFieldProps): JSX.Element {
+  const { t } = useT();
   // Read in an effect, not at module scope: `hasNativeDialog` asks whether Tauri injected
   // its globals, and under Vite's SSR-shaped first render it has not yet.
   const [hasPicker, setHasPicker] = useState(false);
@@ -75,7 +77,7 @@ export function FolderField({
         }
         htmlFor={id}
       >
-        {drop.dropping ? 'Drop to use that folder' : 'Image folder'}
+        {t(drop.dropping ? 'studio.folder.drop' : 'studio.folder.label')}
         <span className="setup__control">
           <input
             id={id}
@@ -97,7 +99,7 @@ export function FolderField({
                 disabled={disabled}
                 onClick={() => browse(pickImageFile)}
               >
-                Image…
+                {t('studio.picker.image')}
               </button>
               <button
                 type="button"
@@ -105,7 +107,7 @@ export function FolderField({
                 disabled={disabled}
                 onClick={() => browse(pickFolder)}
               >
-                Folder…
+                {t('studio.picker.folder')}
               </button>
             </>
           )}
@@ -113,8 +115,7 @@ export function FolderField({
       </label>
       {drop.available && (
         <FieldHint id={hintId}>
-          Pick an image and its folder is used. You can also drag a folder — or any image
-          inside it — onto this window.
+          {t('studio.folder.hint')}
         </FieldHint>
       )}
     </>

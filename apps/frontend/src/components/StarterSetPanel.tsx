@@ -19,6 +19,7 @@
 import { useCallback, useState, type JSX } from 'react';
 
 import type { DownloadJob, ModelInfo } from '../api/models';
+import { useT, type Translator } from '../i18n';
 
 export interface StarterSetPanelProps {
   readonly models: readonly ModelInfo[];
@@ -36,10 +37,10 @@ const IN_FLIGHT: ReadonlySet<string> = new Set(['pending', 'downloading']);
  * content length, and `0 / 0` renders as a confident `NaN%` or a bar stuck at zero, both
  * of which read as a stall rather than as a missing number.
  */
-function progressOf(job: DownloadJob | undefined): string {
+function progressOf(job: DownloadJob | undefined, { t }: Translator): string {
   if (!job) return '';
-  if (job.state === 'complete') return 'done';
-  if (job.state === 'failed') return 'failed';
+  if (job.state === 'complete') return t('admin.starter.done');
+  if (job.state === 'failed') return t('admin.starter.failed');
   if (job.total_bytes > 0) {
     return `${Math.round((job.downloaded_bytes / job.total_bytes) * 100)}%`;
   }
@@ -63,6 +64,8 @@ export function StarterSetPanel({
   onDownload,
 }: StarterSetPanelProps): JSX.Element | null {
   const [running, setRunning] = useState(false);
+  const translator = useT();
+  const { t } = translator;
   const { starter, missing, megabytes } = starterState(models);
 
   const start = useCallback(async (): Promise<void> => {
@@ -83,8 +86,7 @@ export function StarterSetPanel({
   if (missing.length === 0) {
     return (
       <div className="starter starter--done">
-        <strong>Ready to use.</strong> Every model a first run needs is installed —
-        annotate from a prompt, train a head, fine-tune a detector, or run depth.
+        <strong>{t('admin.starter.readyTitle')}</strong> {t('admin.starter.readyBody')}
       </div>
     );
   }
@@ -93,19 +95,15 @@ export function StarterSetPanel({
 
   return (
     <div className="starter">
-      <h3 className="starter__title">Set this up</h3>
-      <p className="starter__body">
-        Nothing is bundled with the app — weights download on demand and are cached, so
-        this is once per machine. These {missing.length} give you every feature: a backbone
-        for trained heads, a general detector, both halves of Grounded SAM, and depth.
-      </p>
+      <h3 className="starter__title">{t('admin.starter.title')}</h3>
+      <p className="starter__body">{t('admin.starter.body', { count: missing.length })}</p>
 
       <ul className="starter__list">
         {missing.map((model) => (
           <li key={model.id} className="starter__item">
             <code className="starter__id">{model.id}</code>
             <span className="starter__size">{model.approx_size_mb} MB</span>
-            <span className="starter__state">{progressOf(jobs[model.id])}</span>
+            <span className="starter__state">{progressOf(jobs[model.id], translator)}</span>
           </li>
         ))}
       </ul>
@@ -117,14 +115,15 @@ export function StarterSetPanel({
         onClick={() => void start()}
       >
         {running || active
-          ? 'Downloading…'
-          : `Download all ${missing.length} (${(megabytes / 1000).toFixed(1)} GB)`}
+          ? t('admin.starter.downloading')
+          : t('admin.starter.downloadAll', {
+              count: missing.length,
+              size: (megabytes / 1000).toFixed(1),
+            })}
       </button>
       {/* Said before the click, not after: a gigabyte is a real decision on a phone
           tether or a metered connection. */}
-      <span className="starter__note">
-        One at a time, so the progress figures mean something. You can keep using the app.
-      </span>
+      <span className="starter__note">{t('admin.starter.note')}</span>
     </div>
   );
 }

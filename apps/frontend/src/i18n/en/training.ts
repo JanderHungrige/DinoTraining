@@ -1,0 +1,155 @@
+/** `training` texts (doc 112). English is the source; the current UI text, exactly. */
+
+export const trainingEn = {
+  // The tab and its two modes
+  'training.tab.title': 'Training',
+  'training.mode.legend': 'What to train',
+  'training.mode.head.name': 'DINO head',
+  'training.mode.head.hint': 'Frozen backbone, trains in minutes. Best for classification and segmentation.',
+  'training.mode.finetune.name': 'Fine-tune a model',
+  'training.mode.finetune.hint':
+    'Adapts a whole model — a detector, SAM or a DINO backbone. Slower, often much stronger.',
+  'training.tab.loadingOptions': 'Loading options…',
+  'training.tab.finetuneIntro':
+    'Adapts a whole foundation model to your data — a detector, SAM, or a DINO backbone — rather than training a small head on a frozen one. Slower, and often much stronger: on Blood cells with a leak-free split, RF-DETR reached 0.62 test mAP against 0.41 for a DINO head. Every run is compared with the model it started from.',
+  'training.tab.headIntro':
+    'The backbone stays frozen — only the head trains. Preprocessing is chosen from the backbone and head type for you.',
+  'training.tab.modelMissing': 'Choose a backbone and a head type first.',
+  'training.tab.trainedHeads': 'Trained heads',
+
+  // The head form
+  'training.form.noBackbone': 'No backbone installed — download one in Admin / Models first.',
+  'training.form.chooseBackbone': 'Choose a backbone.',
+  'training.form.chooseDataset': 'Choose at least one dataset.',
+  'training.form.chooseHeadType': 'Choose a head type.',
+  'training.form.notTrainable': '{title} cannot be trained here — use its pretrained default for inference.',
+  'training.form.incompatible': 'That head type does not fit this backbone.',
+  'training.form.datasets': 'Datasets',
+  'training.form.noDatasets': 'No datasets yet — annotate some images in the Annotation Studio first.',
+  'training.form.images_one': '({count} image)',
+  'training.form.images_other': '({count} images)',
+  'training.form.backbone': 'Backbone',
+  'training.form.selectBackbone': 'Select a backbone…',
+  'training.form.headType': 'Head type',
+  'training.form.inferenceOnly': 'Usable for inference via its pretrained default — not trainable here.',
+  'training.form.starting': 'Starting…',
+  'training.form.start': 'Start training',
+
+  // Live progress
+  'training.progress.state.pending': 'Queued',
+  'training.progress.state.running': 'Training',
+  'training.progress.state.complete': 'Complete',
+  'training.progress.state.failed': 'Failed',
+  'training.progress.state.cancelled': 'Cancelled',
+  'training.progress.epoch': '· epoch {epoch}/{total}',
+  'training.progress.testLabel': 'On the test pictures:',
+  'training.progress.testNote':
+    '{scores} — the honest number: these pictures were not used to train or to pick the best round.',
+  'training.progress.skipped_one':
+    '{count} image skipped — its boxes name more than one class, which classification cannot use.',
+  'training.progress.skipped_other':
+    '{count} images skipped — their boxes name more than one class, which classification cannot use.',
+  'training.progress.classes': 'Classes:',
+  'training.progress.bestCriterion': '(best-model criterion)',
+  'training.progress.caption': 'Per-epoch loss and metrics',
+  'training.progress.epochHeader': 'Epoch',
+  'training.progress.trainLoss': 'Train loss',
+  'training.progress.valLoss': 'Val loss',
+  'training.progress.saved': 'Saved as a head you can now use in the Inference Viewer.',
+
+  // Recipes
+  'training.recipe.label': 'Preparation recipe',
+  'training.recipe.none': 'None — train on the data as it is',
+  'training.recipe.outOfDate': '(out of date)',
+  'training.recipe.uses':
+    "Uses the recipe's split, class changes, tiles, unequal-class handling ({imbalance}) and changed copies ({augmentation}).",
+  'training.recipe.missing':
+    'No recipe: the pictures are split at random, so near-identical ones may sit on both sides and the score may look better than the model is. The Prepare data tab makes a recipe.',
+  'training.explainer.title': 'What is a recipe?',
+  'training.explainer.required': 'This model needs one.',
+  'training.explainer.whatBefore': 'A recipe is the saved preparation of',
+  'training.explainer.whatStrong': 'one dataset for one model',
+  'training.explainer.whatAfter':
+    ': which pictures train, which pick the best round and which give the final score — split so that near-identical pictures stay together — plus class fixes, the input size and tiles, how unequal classes are handled, and changed copies.',
+  'training.explainer.whyBefore':
+    'Without one the pictures are split at random, so near-identical ones can sit on both sides and the score looks better than the model is. Recipes are made step by step in',
+  'training.explainer.whyStrong': 'Prepare data',
+  'training.explainer.whyAfter':
+    '; the default recipe takes every recommendation there for you, and can be refined later.',
+  'training.explainer.making': 'Making the default recipe…',
+  'training.explainer.create': 'Create the default recipe',
+  'training.explainer.openPrepare': 'Open Prepare data',
+  'training.explainer.starting': 'Starting…',
+  'training.explainer.failed': 'The default recipe could not be made.',
+
+  // Trained heads
+  'training.heads.empty': 'No trained heads yet. Start a run above.',
+  'training.heads.backbone': 'backbone {id}',
+  'training.heads.bestEpoch': 'best epoch {epoch}',
+  'training.heads.ofTotal': 'of {total}',
+  'training.heads.delete': 'Delete',
+  'training.heads.kind.default': 'Default',
+  'training.heads.kind.community': 'Community',
+  'training.heads.kind.trainedHere': 'Trained here',
+
+  // Parameters
+  'training.params.about': 'About {label}',
+  'training.params.default': 'Default: {value}',
+  'training.params.defaultSentence': 'Default: {value}.',
+  'training.params.on': 'on',
+  'training.params.off': 'off',
+  'training.params.resetOne': 'Reset {label} to {value}',
+  'training.params.backToDefault': 'Back to the default, {value}',
+  'training.params.changed': 'changed',
+  'training.params.setByRecipe': 'Set by the recipe',
+  'training.params.loadFailed': 'Settings could not be loaded: {error}',
+  'training.params.loading': 'Loading settings…',
+  'training.params.legend': 'Training settings · {title}',
+  'training.params.advanced': 'Advanced settings',
+  'training.params.advancedChanged': 'Advanced settings ({count} changed)',
+  'training.params.resetAll': 'Reset all to defaults',
+  'training.params.enterNumber': 'Enter a number.',
+  'training.params.enterWhole': 'Enter a whole number.',
+  'training.params.between': 'Between {low} and {high}.',
+  'training.params.any': 'any',
+
+  // Fine-tuning a foundation model
+  'training.finetune.kind.boxes': 'Boxes',
+  'training.finetune.kind.instanceMasks': 'Outlines (one mask per object)',
+  'training.finetune.kind.phraseMasks': 'Outlines named by a phrase',
+  'training.finetune.kind.imageLabels': 'One class per image',
+  'training.finetune.needs': 'What {model} needs',
+  'training.finetune.annotations': 'Annotations',
+  'training.finetune.atLeast': 'At least',
+  'training.finetune.minimums': '{images} images, {perClass} per class',
+  'training.finetune.pictures': 'Pictures',
+  'training.finetune.recipe': 'Recipe',
+  'training.finetune.recipeRequired': 'Required (Prepare data)',
+  'training.finetune.recipeRecommended': 'Recommended',
+  'training.finetune.whatTrains': 'What trains:',
+  'training.finetune.ready': 'Is the data ready?',
+  'training.finetune.beforeAfter': 'Before and after',
+  'training.finetune.onPictures': 'On the {heldOut} pictures',
+  'training.finetune.onTest': 'On the test pictures',
+  'training.finetune.onValidation': 'On the validation pictures',
+  'training.finetune.onHeldOut': 'On the held-out pictures',
+  'training.finetune.before': 'Before (base)',
+  'training.finetune.after': 'After fine-tuning',
+  'training.finetune.afterRound': 'After fine-tuning (round {round})',
+  'training.finetune.saved': 'Saved. It is now offered wherever its kind of model is: pick it by name.',
+  'training.finetune.model': 'Model',
+  'training.finetune.dataset': 'Dataset',
+  'training.finetune.notYet': '(not yet)',
+  'training.finetune.name': 'Name',
+  'training.finetune.starting': 'Starting…',
+  'training.finetune.start': 'Start fine-tuning',
+  'training.finetune.round': 'Round {epoch} of {total}',
+  'training.finetune.roundBase': 'Round {epoch} of {total} — measuring the base model first',
+
+  // Errors the frontend writes
+  'training.error.streamLost': 'Lost the training stream. The run may still be going.',
+  'training.error.start': 'Could not start training.',
+  'training.error.cancel': 'Could not cancel the run.',
+  'training.error.options': 'Could not load training options.',
+  'training.error.headTypes': 'Could not load head types.',
+} as const;

@@ -15,6 +15,7 @@ import type { JSX } from 'react';
 import { toDisplay, type RenderedImage } from '../../lib/geometry';
 import { classColour, toCssColour } from '../../lib/overlayPalette';
 import type { BoxTuple, Prediction } from '../../api/inference';
+import { useT } from '../../i18n';
 
 export interface BoxOverlayProps {
   readonly prediction: Prediction;
@@ -32,6 +33,7 @@ function numbersOf(prediction: Prediction, key: string): readonly number[] {
 }
 
 export function BoxOverlay({ prediction, rendered }: BoxOverlayProps): JSX.Element | null {
+  const { t } = useT();
   const boxes = boxesOf(prediction);
   if (boxes.length === 0) return null;
 
@@ -47,7 +49,7 @@ export function BoxOverlay({ prediction, rendered }: BoxOverlayProps): JSX.Eleme
         // so index N means the same detection in each.
         const classIndex = classes[index] ?? 0;
         const score = scores[index];
-        const name = prediction.class_names[classIndex] ?? `class ${classIndex}`;
+        const name = prediction.class_names[classIndex] ?? t('run.overlay.className', { index: classIndex });
         const colour = toCssColour(classColour(classIndex));
 
         return (

@@ -26,6 +26,7 @@ import { UnclearBandField } from '../components/UnclearBandField';
 import { UnclearQuestion } from '../components/UnclearQuestion';
 import { DEFAULT_BAND, normaliseBand } from '../lib/unclearBand';
 import { GeneratorActionBar } from '../components/GeneratorActionBar';
+import { useT } from '../i18n';
 import {
   useGeneratorSession,
   type GeneratorConfig,
@@ -46,6 +47,7 @@ function sequenceOf(config: GeneratorConfig): string | null {
 }
 
 export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}): JSX.Element {
+  const { t } = useT();
   const [config, setConfig] = useState<GeneratorConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // A preference across the whole folder, not per-image state.
@@ -82,11 +84,8 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
   if (!config) {
     return (
       <section className="studio">
-        <h2 className="studio__title">Dataset Generator</h2>
-        <p className="studio__lead">
-          Point a head you have already trained at new images. It proposes boxes, you accept
-          or reject them, and the result becomes the dataset for the next head.
-        </p>
+        <h2 className="studio__title">{t('generator.tab.title')}</h2>
+        <p className="studio__lead">{t('generator.tab.lead')}</p>
         <GeneratorSetup onStart={setConfig} />
       </section>
     );
@@ -97,7 +96,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
   return (
     <section className="studio">
       <div className="studio__head">
-        <h2 className="studio__title">Dataset Generator</h2>
+        <h2 className="studio__title">{t('generator.tab.title')}</h2>
         <span className="studio__headactions">
           {onInspect && (
             <button
@@ -106,11 +105,11 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
               disabled={autoplay.running}
               onClick={() => onInspect(config.datasetId, sequenceOf(config))}
             >
-              Inspect what I just annotated
+              {t('generator.tab.inspect')}
             </button>
           )}
           <button type="button" className="btn" onClick={() => setConfig(null)}>
-            Change setup
+            {t('generator.tab.changeSetup')}
           </button>
         </span>
       </div>
@@ -124,7 +123,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
 
       {session.producerName && (
         <p className="studio__lead">
-          Proposing with <strong>{session.producerName}</strong>
+          {t('generator.tab.proposingWith')} <strong>{session.producerName}</strong>
           {session.producerDetail ? ` — ${session.producerDetail}` : ''}
         </p>
       )}
@@ -139,12 +138,14 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
         (session.decoding ? (
           // Doc 73: a video is decoded into the dataset before the first image can show.
           <p role="status">
-            Decoding frames into the dataset — {session.decoding.done} of{' '}
-            {session.decoding.total}…{' '}
+            {t('generator.tab.decoding', {
+              done: session.decoding.done,
+              total: session.decoding.total,
+            })}{' '}
             <progress max={Math.max(1, session.decoding.total)} value={session.decoding.done} />
           </p>
         ) : (
-          <p role="status">Listing images…</p>
+          <p role="status">{t('generator.tab.listing')}</p>
         ))}
 
       {/* Unattended runs benefit at least as much as the Studio: the Generator proposes on
@@ -169,7 +170,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
       )}
 
       {!session.loading && session.images.length === 0 && (
-        <p role="status">No images in that folder.</p>
+        <p role="status">{t('generator.tab.noImages')}</p>
       )}
 
       {currentImage && (
@@ -225,7 +226,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
               />
             )
           ) : (
-            <p role="status">Loading image…</p>
+            <p role="status">{t('generator.tab.loadingImage')}</p>
           )}
 
           {/* Doc 67. Only a mask run has two halves to choose between; a box run gets no
@@ -242,7 +243,7 @@ export function DatasetGeneratorTab({ onInspect }: DatasetGeneratorTabProps = {}
           </div>
 
           <GeneratorActionBar
-            proposeLabel={config.kind === 'masks' ? 'Propose masks' : 'Propose boxes'}
+            proposeLabel={t(config.kind === 'masks' ? 'generator.tab.proposeMasks' : 'generator.tab.proposeBoxes')}
             proposing={session.proposing}
             saving={session.saving}
             dirty={session.dirty}

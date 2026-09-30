@@ -19,6 +19,7 @@ import {
   type MaskProposalResponse,
 } from '../api/generate';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
+import { ENGLISH, type Translator } from '../i18n';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 import type { ImageReview } from './generatorSave';
 
@@ -38,6 +39,7 @@ export interface GeneratorProposal {
 export async function proposeForGenerator(
   config: GeneratorConfig,
   imagePath: string,
+  { tp }: Translator = ENGLISH,
 ): Promise<GeneratorProposal> {
   if (config.kind === 'foundation') {
     const response = await proposeWithFoundation({
@@ -91,7 +93,7 @@ export async function proposeForGenerator(
     width: response.width,
     height: response.height,
     producerName: response.annotator_name,
-    producerDetail: `${response.masks.length} mask(s) for “${config.concept}”`,
+    producerDetail: tp('generator.session.masksFor', response.masks.length, { concept: config.concept }),
     found: response.masks.length > 0,
     maskResponse: response,
   };
@@ -112,6 +114,7 @@ export function toReview(path: string, proposed: GeneratorProposal): ImageReview
 export async function proposeReview(
   config: GeneratorConfig,
   imagePath: string,
+  tr: Translator = ENGLISH,
 ): Promise<ImageReview> {
-  return toReview(imagePath, await proposeForGenerator(config, imagePath));
+  return toReview(imagePath, await proposeForGenerator(config, imagePath, tr));
 }

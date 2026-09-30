@@ -13,11 +13,13 @@
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { fetchMcpInfo, type McpInfo } from '../api/mcpInfo';
+import { useT } from '../i18n';
 
 export function McpPanel(): JSX.Element {
   const [info, setInfo] = useState<McpInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const { t, tp } = useT();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,10 +29,10 @@ export function McpPanel(): JSX.Element {
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : 'Could not read the MCP details.');
+        setError(cause instanceof Error ? cause.message : t('admin.mcp.readFailed'));
       });
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   const copy = useCallback(async (): Promise<void> => {
     if (!info) return;
@@ -40,24 +42,19 @@ export function McpPanel(): JSX.Element {
       window.setTimeout(() => setCopied(false), 2500);
     } catch {
       // A webview can refuse the clipboard. The command is on screen either way.
-      setError('Could not reach the clipboard — copy the command above by hand.');
+      setError(t('admin.mcp.clipboardFailed'));
     }
-  }, [info]);
+  }, [info, t]);
 
   return (
     <div className="conn__mode">
       <p className="intro__note">
-        MCP gives your assistant <strong>typed tools</strong> rather than a document to
-        interpret. It reads what each one needs from the tool schema, so it cannot invent a
-        parameter or forget that a model has to be installed before it can be fine-tuned.
-        This is the better option if your assistant supports it.
+        {t('admin.mcp.introBefore')} <strong>{t('admin.mcp.introStrong')}</strong>{' '}
+        {t('admin.mcp.introAfter')}
       </p>
 
-      <h4 className="conn__heading">1. Connect it</h4>
-      <p className="conn__body">
-        The server runs inside this app — there is nothing to install or launch. Run this
-        once in a terminal, with the app running:
-      </p>
+      <h4 className="conn__heading">{t('admin.mcp.step1')}</h4>
+      <p className="conn__body">{t('admin.mcp.step1Body')}</p>
 
       {error && <p className="run__warn">{error}</p>}
 
@@ -65,25 +62,17 @@ export function McpPanel(): JSX.Element {
         <>
           <pre className="conn__command">{info.command}</pre>
           <button type="button" className="btn btn--primary" onClick={() => void copy()}>
-            {copied ? 'Copied' : 'Copy the command'}
+            {copied ? t('admin.mcp.copied') : t('admin.mcp.copy')}
           </button>
 
-          <h4 className="conn__heading">2. Ask for what you want</h4>
-          <p className="conn__body">
-            Then talk to your assistant normally. It will pick the tools itself:
-          </p>
-          <blockquote className="conn__quote">
-            “Here is a link to a rail dataset. Download it, import it, fine-tune RF-DETR on
-            it, then use the result to annotate the images in ~/photos.”
-          </blockquote>
+          <h4 className="conn__heading">{t('admin.mcp.step2')}</h4>
+          <p className="conn__body">{t('admin.mcp.step2Body')}</p>
+          <blockquote className="conn__quote">{t('admin.mcp.quote')}</blockquote>
 
           <h4 className="conn__heading">
-            The {info.tools.length} tools it gets
+            {tp('admin.mcp.toolsTitle', info.tools.length)}
           </h4>
-          <p className="conn__body">
-            Task-shaped rather than one per endpoint — the API has 61 operations, and
-            handing over all of them would leave your assistant doing the orchestration.
-          </p>
+          <p className="conn__body">{t('admin.mcp.toolsBody')}</p>
           <ul className="conn__tools">
             {info.tools.map((tool) => (
               <li key={tool.name} className="conn__tool">
@@ -94,15 +83,12 @@ export function McpPanel(): JSX.Element {
           </ul>
 
           <p className="conn__note">
-            <strong>It only works on this machine.</strong> The server is bound to
-            loopback, so an assistant running here can reach it and one running anywhere
-            else cannot. That is deliberate: there is no authentication, and the tools can
-            read any file path they are given.
+            <strong>{t('admin.mcp.noteStrong')}</strong> {t('admin.mcp.noteBody')}
           </p>
         </>
       )}
 
-      {!info && !error && <p role="status">Reading the connection details…</p>}
+      {!info && !error && <p role="status">{t('admin.mcp.reading')}</p>}
     </div>
   );
 }

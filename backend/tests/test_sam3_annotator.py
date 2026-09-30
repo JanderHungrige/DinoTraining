@@ -161,3 +161,26 @@ class TestRegistration:
         from app.ml.annotators.registry import ANNOTATORS
 
         assert implemented_annotator_ids() == set(ANNOTATORS)
+
+
+class TestSeveralConcepts:
+    def test_each_comma_term_is_its_own_pass_and_label(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """SAM 3 reads one concept per pass: "flame, reflection" must not be one concept."""
+        import app.ml.annotators.sam3 as module
+
+        asked: list[str] = []
+
+        def fake_segment(_s: object, _i: object, term: str, _t: float) -> dict[str, object]:
+            asked.append(term)
+            return {
+                "scores": torch.tensor([0.9]),
+                "masks": torch.tensor(np.stack([block(0, 0, 10, 10)])),
+            }
+
+        monkeypatch.setattr(module, "load_segmenter", lambda _id: object())
+        monkeypatch.setattr(module, "segment_concept", fake_segment)
+        proposals = Sam3Annotator().propose(_Image(), "Flame, flame reflection")  # type: ignore[arg-type]
+        assert asked == ["flame", "flame reflection"]
+        assert [p.concept for p in proposals] == ["flame", "flame reflection"]

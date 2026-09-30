@@ -6,6 +6,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { previewAugmentation, type AugmentationPlan, type AugmentationPreview } from '../../api/prepPlan';
+import { useT } from '../../i18n';
 import { OptionList } from './OptionList';
 
 export interface AugmentStepProps {
@@ -35,12 +36,13 @@ function usePreview(datasetId: string, target: string, preset: string) {
 }
 
 function Strip({ preview }: { readonly preview: AugmentationPreview }): JSX.Element {
+  const { t } = useT();
   return (
     <div className="prep-seen">
       {preview.images.map((image, index) => (
         <figure key={image.data_url.slice(-40) + index} className="prep-seen__item">
-          <img src={image.data_url} alt={index === 0 ? 'The original' : `Changed version ${index}`} />
-          <figcaption>{index === 0 ? 'Original' : `Version ${index}`}</figcaption>
+          <img src={image.data_url} alt={index === 0 ? t('prepare.augment.originalAlt') : t('prepare.augment.changedAlt', { n: index })} />
+          <figcaption>{index === 0 ? t('prepare.augment.original') : t('prepare.augment.version', { n: index })}</figcaption>
         </figure>
       ))}
     </div>
@@ -48,20 +50,19 @@ function Strip({ preview }: { readonly preview: AugmentationPreview }): JSX.Elem
 }
 
 export function AugmentStep({ datasetId, target, plan, preset, onPreset }: AugmentStepProps): JSX.Element {
+  const { t } = useT();
   const { preview, error } = usePreview(datasetId, target, preset);
-  if (!plan) return <p role="status">Looking at the classes…</p>;
+  if (!plan) return <p role="status">{t('prepare.augment.looking')}</p>;
   return (
     <div className="prep-step">
       <p className="prep-step__why">
-        Shown the same pictures every round, a model learns those pictures. Changing each one a
-        little — lighting, a crop, a mirror image — teaches it what stays the same: the object.
-        Boxes always move with the picture.
+        {t('prepare.augment.why')}
       </p>
       <p className="prep-step__summary">{plan.reason}</p>
       <OptionList
         name="prep-augment"
-        label="How to change the pictures"
-        options={plan.presets.map((option) => ({ ...option, badges: option.guarded ? ['no mirroring'] : [] }))}
+        label={t('prepare.augment.label')}
+        options={plan.presets.map((option) => ({ ...option, badges: option.guarded ? [t('prepare.augment.noMirroring')] : [] }))}
         recommended={plan.recommended}
         value={preset}
         onChange={onPreset}

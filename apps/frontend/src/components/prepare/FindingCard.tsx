@@ -11,12 +11,13 @@ import type { JSX } from 'react';
 
 import { imageUrl } from '../../api/annotate';
 import type { Finding } from '../../api/prep';
+import { useT, type Key } from '../../i18n';
 
-const SEVERITY_LABEL: Readonly<Record<string, string>> = {
-  problem: 'Problem',
-  warn: 'Worth fixing',
-  info: 'Good to know',
-  ok: 'Fine',
+const SEVERITY_LABEL: Readonly<Record<string, Key>> = {
+  problem: 'prepare.finding.problem',
+  warn: 'prepare.finding.warn',
+  info: 'prepare.finding.info',
+  ok: 'prepare.finding.ok',
 };
 
 function fileName(path: string): string {
@@ -24,23 +25,25 @@ function fileName(path: string): string {
 }
 
 export function FindingCard({ finding }: { readonly finding: Finding }): JSX.Element {
+  const { t } = useT();
+  const severity = SEVERITY_LABEL[finding.severity];
   return (
     <article className={`prep-finding prep-finding--${finding.severity}`}>
       <header className="prep-finding__head">
-        <span className="prep-finding__badge">{SEVERITY_LABEL[finding.severity] ?? finding.severity}</span>
+        <span className="prep-finding__badge">{severity ? t(severity) : finding.severity}</span>
         <h4 className="prep-finding__title">{finding.title}</h4>
       </header>
       <p className="prep-finding__what">{finding.what}</p>
       <p className="prep-finding__why">
-        <strong>Why it matters: </strong>
+        <strong>{t('prepare.finding.why')}</strong>
         {finding.why}
       </p>
       <p className="prep-finding__action">
-        <strong>What to do: </strong>
+        <strong>{t('prepare.finding.action')}</strong>
         {finding.action}
       </p>
       {finding.examples.length > 0 && (
-        <div className="prep-finding__examples" aria-label="Pictures to look at">
+        <div className="prep-finding__examples" aria-label={t('prepare.finding.examples')}>
           {finding.examples.slice(0, 6).map((path) => (
             <a key={path} href={imageUrl(path)} target="_blank" rel="noreferrer" title={path}>
               <img src={imageUrl(path)} alt={fileName(path)} loading="lazy" />

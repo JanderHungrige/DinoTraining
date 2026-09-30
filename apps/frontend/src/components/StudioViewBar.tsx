@@ -5,6 +5,7 @@
 
 import type { JSX } from 'react';
 
+import { useT } from '../i18n';
 import type { AnnotationView } from '../types/annotationView';
 import { AnnotationViewToggle } from './AnnotationViewToggle';
 
@@ -21,6 +22,7 @@ export interface StudioViewBarProps {
 
 export function StudioViewBar(props: StudioViewBarProps): JSX.Element {
   const { boxCount, concealed } = props;
+  const { tp } = useT();
   return (
     <div className="studio__viewbar">
       <AnnotationViewToggle
@@ -38,8 +40,8 @@ export function StudioViewBar(props: StudioViewBarProps): JSX.Element {
       {(boxCount > 0 || concealed !== null) && (
         <button type="button" className="btn btn--small" onClick={props.onToggleConceal}>
           {concealed === null
-            ? `Hide the ${boxCount} box${boxCount === 1 ? '' : 'es'} already here`
-            : `Show ${concealed} hidden box${concealed === 1 ? '' : 'es'}`}
+            ? tp('studio.view.hide', boxCount)
+            : tp('studio.view.show', concealed)}
         </button>
       )}
     </div>

@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { outlinesFromBoxes, refineOutline, strokeOutline, type ClickPoint, type EditedMask, type Rect } from '../api/segment';
+import { useT } from '../i18n';
 import type { CanvasBox } from '../types/annotation';
 
 export type MaskTool = 'none' | 'add' | 'remove' | 'brush' | 'erase';
@@ -43,6 +44,7 @@ export function useMaskEditing(
   setBoxes: (boxes: CanvasBox[]) => void,
   selectedId: string | null,
 ): MaskEditing {
+  const { t } = useT();
   const [tool, setTool] = useState<MaskTool>('none');
   const [radius, setRadius] = useState(8);
   const [busy, setBusy] = useState(false);
@@ -103,7 +105,7 @@ export function useMaskEditing(
     (path: readonly (readonly [number, number])[]) => {
       if (!selected || path.length === 0 || (tool !== 'brush' && tool !== 'erase')) return;
       if (!selected.mask) {
-        setError('Make an outline first: click ⊕ on the object.');
+        setError(t('studio.mask.outlineFirst'));
         return;
       }
       const rle = selected.mask.rle;
@@ -112,7 +114,7 @@ export function useMaskEditing(
         replace(selected.id, (box) => applyEdit(box, edited));
       });
     },
-    [selected, tool, radius, run, replace],
+    [selected, tool, radius, run, replace, t],
   );
 
   const undo = useCallback(() => {

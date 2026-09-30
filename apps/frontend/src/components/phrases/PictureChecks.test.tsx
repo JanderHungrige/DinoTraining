@@ -30,4 +30,9 @@ describe('PictureChecks (doc 105)', () => {
     await user.click(within(blob).getByRole('button', { name: 'Not in this picture' }));
     expect(onMark).toHaveBeenCalledWith('blob', 'absent');
   });
+
+  it('says a fully annotated phrase can be checked for the whole dataset at the end', () => {
+    render(<PictureChecks phrases={[P('ring')]} statuses={[]} active="ring" disabled={false} onMark={vi.fn()} />);
+    expect(screen.getByText(/“Mark the rest” under Manage phrases checks all remaining pictures/)).toBeInTheDocument();
+  });
 });

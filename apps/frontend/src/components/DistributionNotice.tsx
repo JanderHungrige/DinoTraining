@@ -18,6 +18,7 @@
 import type { JSX } from 'react';
 
 import type { ModelInfo } from '../api/models';
+import { useT } from '../i18n';
 
 export interface DistributionNoticeProps {
   readonly models: readonly ModelInfo[];
@@ -29,19 +30,16 @@ export function restrictedInstalled(models: readonly ModelInfo[]): ModelInfo[] {
 }
 
 export function DistributionNotice({ models }: DistributionNoticeProps): JSX.Element | null {
+  const { t, tp } = useT();
   const restricted = restrictedInstalled(models);
   if (restricted.length === 0) return null;
 
   return (
     <section className="distnotice" aria-labelledby="distnotice-title">
       <h3 className="distnotice__title" id="distnotice-title">
-        <span aria-hidden="true">⚠</span> Before you distribute this app
+        <span aria-hidden="true">⚠</span> {t('admin.dist.title')}
       </h3>
-      <p className="distnotice__lead">
-        {restricted.length} installed model{restricted.length === 1 ? '' : 's'} come
-        {restricted.length === 1 ? 's' : ''} with a licence obligation. Everything else you
-        have installed is permissively licensed and can ship as-is.
-      </p>
+      <p className="distnotice__lead">{tp('admin.dist.lead', restricted.length)}</p>
 
       <ul className="distnotice__list">
         {restricted.map((model) => (
@@ -53,10 +51,7 @@ export function DistributionNotice({ models }: DistributionNoticeProps): JSX.Ele
         ))}
       </ul>
 
-      <p className="distnotice__foot">
-        Removing a model here deletes its weights from the cache, which is what takes it out
-        of a build — nothing else has to change. You can download it again afterwards.
-      </p>
+      <p className="distnotice__foot">{t('admin.dist.foot')}</p>
     </section>
   );
 }

@@ -17,6 +17,7 @@
 import { useState, type JSX } from 'react';
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { useT } from '../i18n';
 import { isNumber, isString } from '../lib/persisted';
 
 import type { PrescanJob } from '../api/prescan';
@@ -52,6 +53,7 @@ export function PrescanPanel({
   onApply,
   storageKey,
 }: PrescanPanelProps): JSX.Element {
+  const { t, tp } = useT();
   const [open, setOpen] = useState(false);
   const [labels, setLabels] = usePersistentState(`${storageKey}.labels`, '', isString);
   const [threshold, setThreshold] = usePersistentState(`${storageKey}.threshold`, 0.3, isNumber);
@@ -68,22 +70,19 @@ export function PrescanPanel({
     return (
       <div className="prescan">
         <button type="button" className="btn btn--small" onClick={() => setOpen(true)}>
-          Skip the empty images…
+          {t('studio.prescan.open')}
         </button>
       </div>
     );
   }
 
   return (
-    <section className="prescan prescan--open" aria-label="Prescan">
-      <p className="prescan__lead">
-        Run the model over all {total} image{total === 1 ? '' : 's'} first, then show only
-        the ones it found something in. Nothing is saved — this only decides what you see.
-      </p>
+    <section className="prescan prescan--open" aria-label={t('studio.prescan.aria')}>
+      <p className="prescan__lead">{tp('studio.prescan.lead', total)}</p>
 
       <div className="prescan__controls">
         <label className="prescan__field" htmlFor="prescan-labels">
-          Looking for
+          {t('studio.prescan.lookingFor')}
           <input
             id="prescan-labels"
             type="text"
@@ -93,12 +92,12 @@ export function PrescanPanel({
             onChange={(event) => setLabels(event.target.value)}
           />
           <span className="prescan__hint">
-            Comma-separated. Leave empty to keep every image the model finds anything in.
+            {t('studio.prescan.hint')}
           </span>
         </label>
 
         <label className="prescan__field" htmlFor="prescan-threshold">
-          Confidence <span className="prescan__value">{threshold.toFixed(2)}</span>
+          {t('studio.prescan.confidence')} <span className="prescan__value">{threshold.toFixed(2)}</span>
           <input
             id="prescan-threshold"
             type="range"
@@ -122,11 +121,10 @@ export function PrescanPanel({
         <div className="prescan__progress">
           <progress value={percent} max={100} aria-valuenow={percent} />
           <span>
-            {job.scanned} of {job.total} · {job.hits.length} match
-            {job.hits.length === 1 ? '' : 'es'} so far
+            {tp('studio.prescan.progress', job.hits.length, { scanned: job.scanned, total: job.total })}
           </span>
           <button type="button" className="btn btn--small" onClick={onCancel}>
-            Stop, keep what it found
+            {t('studio.prescan.stop')}
           </button>
         </div>
       ) : (
@@ -137,10 +135,10 @@ export function PrescanPanel({
             disabled={starting || total === 0}
             onClick={() => onScan(parsed, threshold)}
           >
-            {starting ? 'Starting…' : `Scan ${total} image${total === 1 ? '' : 's'}`}
+            {starting ? t('studio.prescan.starting') : tp('studio.prescan.scan', total)}
           </button>
           <button type="button" className="btn btn--small" onClick={() => setOpen(false)}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       )}
@@ -148,18 +146,16 @@ export function PrescanPanel({
       {done && job && (
         <div className="prescan__result" role="status">
           <p>
-            <strong>
-              {job.hits.length} of {job.total}
-            </strong>{' '}
-            image{job.hits.length === 1 ? '' : 's'} matched
-            {job.state === 'cancelled' ? ' before you stopped it' : ''}
+            <strong>{t('studio.prescan.ofTotal', { hits: job.hits.length, total: job.total })}</strong>{' '}
+            {tp('studio.prescan.matched', job.hits.length)}
+            {job.state === 'cancelled' ? ` ${t('studio.prescan.cancelled')}` : ''}
             {job.unreadable > 0 && (
               <>
                 {' '}
-                · <strong>{job.unreadable}</strong> could not be read
+                · <strong>{job.unreadable}</strong> {tp('studio.prescan.unreadable', job.unreadable)}
               </>
             )}
-            {job.state === 'failed' && <> · the scan failed: {job.message}</>}
+            {job.state === 'failed' && <> · {t('studio.prescan.failed', { message: job.message ?? '' })}</>}
           </p>
 
           {/* The escape hatch the whole design rests on: the model may simply be wrong,
@@ -172,9 +168,8 @@ export function PrescanPanel({
               onChange={(event) => onApply(event.target.checked)}
             />
             <span>
-              Show only the {job.hits.length} match
-              {job.hits.length === 1 ? '' : 'es'}
-              {job.hits.length === 0 ? ' — nothing to show' : ''}
+              {tp('studio.prescan.showOnly', job.hits.length)}
+              {job.hits.length === 0 ? ` — ${t('studio.prescan.nothingToShow')}` : ''}
             </span>
           </label>
         </div>

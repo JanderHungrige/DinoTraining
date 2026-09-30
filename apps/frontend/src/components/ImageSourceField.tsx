@@ -14,6 +14,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import type { DatasetInfo } from '../api/datasets';
+import { useT } from '../i18n';
 import { stillListed } from '../lib/persisted';
 import { FolderField } from './FolderField';
 import { RevealDatasetButton } from './RevealDatasetButton';
@@ -60,6 +61,7 @@ export function ImageSourceField({
   datasetHint,
   allowVideo = false,
 }: ImageSourceFieldProps): JSX.Element {
+  const { t, tp } = useT();
   // Only the user's override is stored; the shown value is derived. Seeding state from
   // `datasets` would strand the select empty whenever the list arrives after first render.
   const [override, setOverride] = useState('');
@@ -88,7 +90,7 @@ export function ImageSourceField({
   return (
     <div className="srcfield">
       <fieldset className="srcfield__modes">
-        <legend className="srcfield__legend">Images from</legend>
+        <legend className="srcfield__legend">{t('studio.source.legend')}</legend>
         <label>
           <input
             type="radio"
@@ -97,7 +99,7 @@ export function ImageSourceField({
             disabled={disabled}
             onChange={() => onChange({ kind: 'folder', folder: '' })}
           />
-          <span>A folder</span>
+          <span>{t('studio.source.folder')}</span>
         </label>
         <label>
           <input
@@ -108,8 +110,8 @@ export function ImageSourceField({
             onChange={() => onChange({ kind: 'dataset', datasetId: selected })}
           />
           <span>
-            A dataset you already have
-            {usable.length === 0 ? ' — none with images yet' : ''}
+            {t('studio.source.dataset')}
+            {usable.length === 0 ? ` — ${t('studio.source.noneWithImages')}` : ''}
           </span>
         </label>
         {allowVideo && (
@@ -121,7 +123,7 @@ export function ImageSourceField({
               disabled={disabled}
               onChange={() => onChange({ kind: 'video', path: '', range: DEFAULT_VIDEO_RANGE })}
             />
-            <span>A video file</span>
+            <span>{t('studio.source.video')}</span>
           </label>
         )}
       </fieldset>
@@ -149,7 +151,7 @@ export function ImageSourceField({
             className={variant === 'setup' ? 'setup__field setup__field--grow' : 'genpanel__field'}
             htmlFor={`${id}-dataset`}
           >
-            Dataset
+            {t('studio.choice.dataset')}
             <select
               id={`${id}-dataset`}
               value={selected}
@@ -161,7 +163,7 @@ export function ImageSourceField({
             >
               {usable.map((entry) => (
                 <option key={entry.id} value={entry.id}>
-                  {entry.name} ({entry.counts?.images ?? 0} images)
+                  {tp('studio.choice.option', entry.counts?.images ?? 0, { name: entry.name })}
                 </option>
               ))}
             </select>

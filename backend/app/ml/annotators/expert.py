@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 #: and depth heads are *usable* but not *annotatable* — see the wave's open questions.
 ANNOTATABLE_HINT: RenderHint = "boxes"
 
+
 class HeadCannotAnnotateError(ValueError):
     """The head works, but what it produces cannot be reviewed as boxes."""
 
@@ -75,9 +76,7 @@ def propose_boxes(
         id=prediction.instance_id,
         label=f"{prediction.head_name} · {prediction.summary}",
     )
-    logger.info(
-        "%s proposed %d box(es) on %s", prediction.head_name, len(detections), backbone_id
-    )
+    logger.info("%s proposed %d box(es) on %s", prediction.head_name, len(detections), backbone_id)
 
     # Clamped to the frame: `decode_ltrb_to_boxes` regresses unbounded distances from a
     # cell centre, so a head can propose a box that leaves the image — and `Box` rejects

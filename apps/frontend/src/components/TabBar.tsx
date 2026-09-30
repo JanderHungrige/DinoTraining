@@ -8,7 +8,8 @@
 
 import { useRef, type JSX, type KeyboardEvent } from 'react';
 
-import { TABS, type TabId } from '../tabs/tabs';
+import { useT } from '../i18n';
+import { TABS, tabLabel, type TabId } from '../tabs/tabs';
 
 export interface TabBarProps {
   readonly activeTab: TabId;
@@ -16,6 +17,7 @@ export interface TabBarProps {
 }
 
 export function TabBar({ activeTab, onTabChange }: TabBarProps): JSX.Element {
+  const { t } = useT();
   const tabRefs = useRef<Map<TabId, HTMLButtonElement>>(new Map());
 
   const focusTab = (id: TabId): void => {
@@ -54,7 +56,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps): JSX.Element {
   };
 
   return (
-    <div className="tabbar" role="tablist" aria-label="DinoTraining sections">
+    <div className="tabbar" role="tablist" aria-label={t('app.tabs.sections')}>
       {TABS.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
@@ -74,7 +76,7 @@ export function TabBar({ activeTab, onTabChange }: TabBarProps): JSX.Element {
             onClick={() => onTabChange(tab.id)}
             onKeyDown={handleKeyDown}
           >
-            {tab.label}
+            {tabLabel(t, tab.id)}
           </button>
         );
       })}

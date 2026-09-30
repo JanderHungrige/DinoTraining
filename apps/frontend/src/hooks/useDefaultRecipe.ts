@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getDefaultRecipeJob, startDefaultRecipe, type ModelRef } from '../api/defaultRecipe';
 import type { Recipe } from '../api/prepPlan';
+import { useT } from '../i18n';
 
 const POLL_MS = 500;
 
@@ -29,6 +30,9 @@ export function useDefaultRecipe(
   const timer = useRef<number | undefined>(undefined);
   const saved = useRef(onSaved);
   saved.current = onSaved;
+  const { t } = useT();
+  const tr = useRef(t);
+  tr.current = t;
 
   useEffect(() => () => window.clearInterval(timer.current), []);
 
@@ -41,7 +45,7 @@ export function useDefaultRecipe(
           window.clearInterval(timer.current);
           setBusy(false);
           if (job.state === 'complete' && job.recipe) saved.current(job.recipe);
-          else setError(job.message || 'The default recipe could not be made.');
+          else setError(job.message || tr.current('training.explainer.failed'));
         })
         .catch((cause: unknown) => {
           window.clearInterval(timer.current);
@@ -55,7 +59,7 @@ export function useDefaultRecipe(
     if (!datasetId || !model) return;
     setBusy(true);
     setError('');
-    setMessage('Starting…');
+    setMessage(tr.current('training.explainer.starting'));
     startDefaultRecipe(datasetId, model)
       .then((job) => follow(job.job_id))
       .catch((cause: unknown) => {

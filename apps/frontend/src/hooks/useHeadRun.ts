@@ -29,6 +29,7 @@ import { runFoundation, type FoundationInfo } from '../api/foundation';
 import type { HeadInstanceInfo } from '../api/headInstances';
 import { NO_TILING, runHeads, type ComposedResult, type TileGrid } from '../api/inference';
 import { useRunnableModels } from './useRunnableModels';
+import { useT } from '../i18n';
 
 export interface HeadRunState {
   readonly heads: readonly HeadInstanceInfo[];
@@ -78,6 +79,7 @@ function describe(cause: unknown, fallback: string): string {
 }
 
 export function useHeadRun(currentPath: string | null): HeadRunState {
+  const { t } = useT();
   // What exists, versus what the user chose to do with it. See `useRunnableModels`.
   const catalogue = useRunnableModels();
   const { heads, foundations, trainedOn, loadingHeads } = catalogue;
@@ -241,7 +243,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
         });
       } catch (cause) {
         if (controller.signal.aborted) return;
-        setError(describe(cause, 'Could not run that selection.'));
+        setError(describe(cause, t('run.heads.runFailed')));
         setResult(null);
         setResultPath(null);
       } finally {
@@ -253,7 +255,7 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
     // a concept model is ticked, that was always the empty string. Every Grounded SAM and
     // SAM 3 run went out with no concept at all, came back as an all-background mask, and
     // looked identical however the phrase was changed.
-    [selected, backboneId, selectedFoundations, concept, tiles],
+    [selected, backboneId, selectedFoundations, concept, tiles, t],
   );
 
   // Derived, not stored: a result is shown only while the image it describes is the one

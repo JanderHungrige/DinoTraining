@@ -174,6 +174,19 @@ snapshot of the phrases with their variations and look-alikes when saved, as pro
 - **Tests:** a test pins the per-phrase switch, and an API test pins Mark the rest. That
   includes a class "Ring." matching the phrase "ring", and an existing check left alone.
 
+## Amended 2026-09-30: no look-alike negative beside a rejected outline
+
+- **The problem:** a confusable query says "none here". On a picture where the user
+  rejected an outline of the phrase, the look-alike is probably right there: Jan's
+  reflection, proposed as a flame. Asking "flame reflection" there taught a lie.
+- **The fix:** `sam3_queries._pairs` skips the phrase's look-alikes on a picture that has a
+  rejected outline of it.
+- **What still teaches the difference:** the positive query does. It asks "flame", and the
+  answer is exactly the accepted outlines, so predicting the reflection is penalised.
+- **Test:** `test_no_look_alike_negative_where_an_outline_of_the_phrase_was_rejected`.
+- The agent guide (`workflows_annotate.py`) says the same: two wanted things are two
+  classes, and a wrong proposal is rejected and its picture marked `complete`.
+
 ## Bugs
 
 (none yet)

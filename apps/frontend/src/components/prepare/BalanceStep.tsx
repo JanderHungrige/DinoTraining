@@ -6,7 +6,9 @@
 import type { JSX } from 'react';
 
 import type { BalancePlan, Strategy } from '../../api/prepPlan';
+import { useT } from '../../i18n';
 import { OptionList } from './OptionList';
+import { richText } from './richText';
 
 export interface BalanceStepProps {
   readonly plan: BalancePlan | null;
@@ -15,15 +17,16 @@ export interface BalanceStepProps {
 }
 
 function Classes({ plan, strategy }: { readonly plan: BalancePlan; readonly strategy: Strategy }): JSX.Element {
+  const { t } = useT();
   return (
     <table className="prep-table">
       <thead>
         <tr>
-          <th>Class</th>
-          <th>Examples</th>
-          <th>Pictures</th>
-          {strategy === 'weighted-loss' && <th>Counts as</th>}
-          {strategy === 'balanced-sampling' && <th>Shown per round</th>}
+          <th>{t('prepare.table.class')}</th>
+          <th>{t('prepare.table.examples')}</th>
+          <th>{t('prepare.table.pictures')}</th>
+          {strategy === 'weighted-loss' && <th>{t('prepare.balance.countsAs')}</th>}
+          {strategy === 'balanced-sampling' && <th>{t('prepare.balance.perRound')}</th>}
         </tr>
       </thead>
       <tbody>
@@ -42,19 +45,19 @@ function Classes({ plan, strategy }: { readonly plan: BalancePlan; readonly stra
 }
 
 export function BalanceStep({ plan, strategy, onStrategy }: BalanceStepProps): JSX.Element {
-  if (!plan) return <p role="status">Counting the classes…</p>;
+  const { t } = useT();
+  if (!plan) return <p role="status">{t('prepare.balance.counting')}</p>;
   return (
     <div className="prep-step">
       <p className="prep-step__why">
-        A model rewards itself for being right often. When one class is far more common, it can look
-        accurate while mostly ignoring the rare ones — often the ones that matter.
+        {t('prepare.balance.why')}
       </p>
       <p className="prep-step__summary">
-        The largest class has <strong>{plan.ratio}×</strong> the examples of the smallest. {plan.reason}
+        {richText(t('prepare.balance.ratio'), { ratio: <strong>{plan.ratio}×</strong> })} {plan.reason}
       </p>
       <OptionList
         name="prep-balance"
-        label="How to handle unequal classes"
+        label={t('prepare.balance.label')}
         options={plan.options}
         recommended={plan.recommended}
         value={strategy}
@@ -68,7 +71,7 @@ export function BalanceStep({ plan, strategy, onStrategy }: BalanceStepProps): J
       ))}
       {!plan.applies_to_training && (
         <p className="prep-step__note">
-          Fine-tuning this model does not apply the choice yet; it is saved in the recipe for when it does.
+          {t('prepare.balance.notApplied')}
         </p>
       )}
     </div>

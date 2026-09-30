@@ -7,14 +7,16 @@
  * phrases the picture was checked for — need it at hand.
  */
 
-import { useCallback, useState, type FormEvent, type JSX } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
-import { addPhrase, type PhraseStatus } from '../../api/phrases';
+import type { PhraseStatus } from '../../api/phrases';
 import type { PicturePhrases } from '../../hooks/usePicturePhrases';
 import { usePhraseKeys } from '../../hooks/usePhraseKeys';
 import { phraseKey, withPhrase, withoutPhrase } from '../../lib/phraseEdit';
 import type { NumberedBox } from '../../lib/boxReview';
 import type { CanvasBox } from '../../types/annotation';
+import { useT } from '../../i18n';
+import { AddPhraseForm } from './AddPhraseForm';
 import { PhraseHelp } from './PhraseHelp';
 import { PhraseManager } from './PhraseManager';
 import { PictureChecks } from './PictureChecks';
@@ -35,9 +37,8 @@ export interface PhraseBarProps {
 export function PhraseBar(props: PhraseBarProps): JSX.Element {
   const { datasetId, items, selectedId, pictures, disabled } = props;
   const { phrases } = pictures;
+  const { t } = useT();
   const [activeChoice, setActiveChoice] = useState('');
-  const [draft, setDraft] = useState('');
-  const [problem, setProblem] = useState('');
   const selected = items.find((item) => item.box.id === selectedId) ?? null;
   const active = phrases.find((p) => p.text === activeChoice) ?? phrases[0] ?? null;
 
@@ -53,32 +54,18 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
     props.onBoxesChange(items.map((item) => (item.box.id === selected.box.id ? change(item.box) : item.box)));
   };
 
-  const add = async (event: FormEvent): Promise<void> => {
-    event.preventDefault();
-    if (!draft.trim()) return;
-    const className = selected?.box.mask ? selected.box.text : undefined;
-    try {
-      const created = await addPhrase(datasetId, draft, className);
-      setDraft('');
-      setProblem('');
-      setActiveChoice(created.text);
-      pictures.reload();
-    } catch (cause) {
-      setProblem(cause instanceof Error ? cause.message : String(cause));
-    }
-  };
 
   return (
     <details className="phrasebar" open={props.open}>
-      <summary>{props.open ? 'Phrases' : 'Phrases (optional)'}</summary>
-      <div className="phrasebar__chips" role="group" aria-label="Phrases — keys 1–9 pick one">
+      <summary>{props.open ? t('phrases.bar.title') : t('phrases.bar.titleOptional')}</summary>
+      <div className="phrasebar__chips" role="group" aria-label={t('phrases.bar.chipsLabel')}>
         {phrases.map((phrase, index) => (
           <button
             key={phrase.text}
             type="button"
             className={`phrasechip${phrase.text === active?.text ? ' phrasechip--active' : ''}`}
             aria-pressed={phrase.text === active?.text}
-            title={phrase.variants.length ? `Also: ${phrase.variants.join(', ')}` : 'No variations yet'}
+            title={phrase.variants.length ? t('phrases.bar.also', { variants: phrase.variants.join(', ') }) : t('phrases.bar.noVariations')}
             onClick={() => setActiveChoice(phrase.text)}
           >
             {index < 9 && <span className="phrasechip__key">{index + 1}</span>}
@@ -86,25 +73,15 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
           </button>
         ))}
       </div>
-      <form className="phrasebar__add" onSubmit={(event) => void add(event)}>
-        <label>
-          + phrase
-          <input
-            value={draft}
-            placeholder="signal, railway signal, light signal"
-            aria-describedby="phrasebar-add-hint"
-            onChange={(event) => setDraft(event.target.value)}
-          />
-        </label>
-        <button type="submit" className="btn btn--small" disabled={!draft.trim()}>
-          Add
-        </button>
-        <span id="phrasebar-add-hint" className="phrasebar__note">
-          Commas separate variations of one phrase.
-          {selected?.box.mask ? ` It joins class ${phraseKey(selected.box.text ?? '')}.` : ''}
-        </span>
-      </form>
-      {problem && <p className="run__warn" role="alert">{problem}</p>}
+      <AddPhraseForm
+        datasetId={datasetId}
+        phrases={phrases}
+        selectedClass={selected?.box.mask ? phraseKey(selected.box.text ?? '') : ''}
+        onAdded={(text) => {
+          setActiveChoice(text);
+          pictures.reload();
+        }}
+      />
       {pictures.error && <p className="run__warn" role="alert">{pictures.error}</p>}
       {selected && (
         <SelectedPhrases
@@ -123,7 +100,7 @@ export function PhraseBar(props: PhraseBarProps): JSX.Element {
         disabled={disabled}
         onMark={(phrase, status) => void pictures.mark(phrase, status)}
       />
-      <p className="phrasebar__note">Keys: 1–9 pick a phrase · A all marked · N not in this picture.</p>
+      <p className="phrasebar__note">{t('phrases.bar.keys')}</p>
       <PhraseManager datasetId={datasetId} phrases={phrases} onSaved={pictures.reload} />
       <PhraseHelp />
     </details>

@@ -5,6 +5,7 @@ import type { JSX } from 'react';
 import type { PhraseInfo } from '../../api/phrases';
 import { phrasesOf, refusal } from '../../lib/phraseEdit';
 import type { CanvasBox } from '../../types/annotation';
+import { useT } from '../../i18n';
 
 export interface SelectedPhrasesProps {
   readonly box: CanvasBox;
@@ -16,29 +17,33 @@ export interface SelectedPhrasesProps {
 }
 
 export function SelectedPhrases({ box, number, active, disabled, onAdd, onRemove }: SelectedPhrasesProps): JSX.Element {
+  const { t } = useT();
   if (box.mask === undefined) {
-    return <p className="phrasebar__note">#{number}: phrases go on outlines — make one from this box first.</p>;
+    return <p className="phrasebar__note">{t('phrases.selected.needsOutline', { number })}</p>;
   }
   const [own, ...rest] = phrasesOf(box);
-  const why = active ? refusal(box, active) : '';
+  // refusal() decides; the reason is worded here, where the language is known.
+  const why = active && refusal(box, active)
+    ? t('phrases.selected.otherClass', { phrase: active.text, className: active.class_name, outline: box.text ?? t('phrases.selected.unnamed') })
+    : '';
   const has = active !== null && [own, ...rest].includes(active.text);
   return (
-    <div className="phrasebar__selected" aria-label={`Phrases of outline ${number}`} role="group">
-      <span className="phrasebar__label">#{number} answers to</span>
-      <span className="phrasechip phrasechip--fixed" title="Its class name is always one of its phrases">
+    <div className="phrasebar__selected" aria-label={t('phrases.selected.groupLabel', { number })} role="group">
+      <span className="phrasebar__label">{t('phrases.selected.answersTo', { number })}</span>
+      <span className="phrasechip phrasechip--fixed" title={t('phrases.selected.classAlways')}>
         {own}
       </span>
       {rest.map((phrase) => (
         <span key={phrase} className="phrasechip">
           {phrase}
-          <button type="button" className="phrasechip__remove" disabled={disabled} aria-label={`Remove ${phrase} from outline ${number}`} onClick={() => onRemove(phrase)}>
+          <button type="button" className="phrasechip__remove" disabled={disabled} aria-label={t('phrases.selected.remove', { phrase, number })} onClick={() => onRemove(phrase)}>
             ×
           </button>
         </span>
       ))}
       {active && !has && (
         <button type="button" className="btn btn--small" disabled={disabled || why !== ''} title={why || undefined} onClick={() => onAdd(active.text)}>
-          Add “{active.text}”
+          {t('phrases.selected.add', { phrase: active.text })}
         </button>
       )}
       {why && <span className="phrasebar__note">{why}</span>}

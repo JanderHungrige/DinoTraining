@@ -14,6 +14,7 @@
 import type { JSX } from 'react';
 
 import type { DownloadJob, ModelInfo } from '../api/models';
+import { useT } from '../i18n';
 
 export interface ModelCardProps {
   readonly model: ModelInfo;
@@ -29,8 +30,12 @@ function percent(job: DownloadJob): number | null {
 }
 
 function DownloadProgress({ job }: { readonly job: DownloadJob }): JSX.Element {
+  const { t } = useT();
   const value = percent(job);
-  const label = value === null ? 'Downloading…' : `Downloading — ${value}%`;
+  const label =
+    value === null
+      ? t('admin.model.downloading')
+      : t('admin.model.downloadingPercent', { percent: value });
 
   return (
     <div className="modelcard__progress">
@@ -59,22 +64,26 @@ export function ModelCard({
   onDownload,
   onRemove,
 }: ModelCardProps): JSX.Element {
+  const { t } = useT();
   const downloading = job?.state === 'pending' || job?.state === 'downloading';
   const sizeLabel = model.installed
-    ? `${model.size_on_disk_mb} MB on disk`
-    : `~${model.approx_size_mb} MB download`;
+    ? t('admin.model.onDisk', { size: model.size_on_disk_mb })
+    : t('admin.model.downloadSize', { size: model.approx_size_mb });
 
   return (
     <article className="modelcard">
       <div className="modelcard__head">
         <h4 className="modelcard__title">{model.id}</h4>
         {model.installed && (
-          <span className="badge badge--installed">Installed</span>
+          <span className="badge badge--installed">{t('admin.model.installed')}</span>
         )}
-        {model.gated && !model.installed && <span className="badge badge--gated">Gated</span>}
+        {model.gated && !model.installed && <span className="badge badge--gated">{t('admin.model.gated')}</span>}
         {model.non_commercial && (
-          <span className="badge badge--noncommercial" title={`Licensed ${model.licence}`}>
-            Non-commercial
+          <span
+            className="badge badge--noncommercial"
+            title={t('admin.model.licensed', { licence: model.licence })}
+          >
+            {t('admin.model.nonCommercial')}
           </span>
         )}
       </div>
@@ -98,7 +107,7 @@ export function ModelCard({
               disabled={busy}
               onClick={() => onRemove(model.id)}
             >
-              {busy ? 'Removing…' : 'Remove'}
+              {busy ? t('admin.model.removing') : t('admin.model.remove')}
             </button>
           ) : (
             <button
@@ -107,7 +116,7 @@ export function ModelCard({
               disabled={busy || !model.available}
               onClick={() => onDownload(model.id)}
             >
-              {busy ? 'Starting…' : 'Download'}
+              {busy ? t('admin.model.starting') : t('admin.model.download')}
             </button>
           )}
         </div>

@@ -10,12 +10,13 @@
  * sequence too, in its sorted order; a dataset source already carries its positions.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import type { FramePosition } from '../api/datasets';
 import { extractFrames, type ExtractProgress } from '../api/videoExtract';
-import { resolveImageSource, sourceNoun } from '../lib/imageSource';
+import { useT } from '../i18n';
+import { resolveImageSource } from '../lib/imageSource';
 import type { GeneratorConfig } from '../types/generatorConfig';
 
 export interface GeneratorImages {
@@ -68,6 +69,11 @@ export function useGeneratorImages(config: GeneratorConfig | null): GeneratorIma
   const [listError, setListError] = useState<string | null>(null);
   const [decoding, setDecoding] = useState<ExtractProgress | null>(null);
   const [frames, setFrames] = useState<ReadonlyMap<string, FramePosition>>(new Map());
+  // Read when a listing fails, not a reason to list again: a language switch must not
+  // decode a video a second time.
+  const tr = useT();
+  const translate = useRef(tr);
+  translate.current = tr;
 
   useEffect(() => {
     // Cleared before the new listing is asked for, not after it arrives (doc 50, bug 1).
@@ -93,7 +99,11 @@ export function useGeneratorImages(config: GeneratorConfig | null): GeneratorIma
         setListError(
           caught instanceof ApiError || config.images.kind === 'video'
             ? (caught as Error).message
-            : `Could not list that ${sourceNoun(config.images)}.`,
+            : translate.current.t(
+                config.images.kind === 'dataset'
+                  ? 'generator.session.listFailedDataset'
+                  : 'generator.session.listFailedFolder',
+              ),
         );
       })
       .finally(() => {

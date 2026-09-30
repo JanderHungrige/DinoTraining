@@ -26,6 +26,7 @@
 import { useMemo, type JSX } from 'react';
 
 import { describeHead, type HeadInstanceInfo } from '../api/headInstances';
+import { useT } from '../i18n';
 
 export interface ExpertHeadPickerProps {
   readonly heads: readonly HeadInstanceInfo[];
@@ -47,9 +48,11 @@ export function ExpertHeadPicker({
   onSelect,
   loading = false,
   disabled = false,
-  legend = 'Expert head',
+  legend,
   groupName = 'expert-head',
 }: ExpertHeadPickerProps): JSX.Element {
+  const translator = useT();
+  const { t, tp } = translator;
   const annotatable = useMemo(
     () => heads.filter((head) => head.render_hint === 'boxes'),
     [heads],
@@ -59,16 +62,14 @@ export function ExpertHeadPicker({
     [annotatable, backboneId],
   );
 
-  if (loading) return <p role="status">Loading heads…</p>;
+  if (loading) return <p role="status">{t('studio.expert.loading')}</p>;
 
   // Three distinct empty states, because the fix differs for each and a single "no heads
   // available" would send the user looking in the wrong place.
   if (annotatable.length === 0) {
     return (
       <p role="status" className="headpick__empty">
-        No installed head can propose boxes. Classification, segmentation and depth heads
-        run in the Inference Viewer; only a detection head proposes boxes — train one in
-        Training.
+        {t('studio.expert.none')}
       </p>
     );
   }
@@ -76,16 +77,15 @@ export function ExpertHeadPicker({
   if (compatible.length === 0) {
     return (
       <p role="status" className="headpick__empty">
-        {annotatable.length} detection head{annotatable.length === 1 ? '' : 's'} installed,
-        but none was trained on <strong>{backboneId}</strong>. Switch backbone, or train a
-        head on this one.
+        {tp('studio.expert.incompatible', annotatable.length)} <strong>{backboneId}</strong>
+        {t('studio.expert.switch')}
       </p>
     );
   }
 
   return (
     <fieldset className="headpick">
-      <legend>{legend}</legend>
+      <legend>{legend ?? t('studio.expert.legend')}</legend>
       {compatible.map((head) => (
         <label key={head.id} className="headpick__option">
           <input
@@ -97,7 +97,7 @@ export function ExpertHeadPicker({
             onChange={() => onSelect(head.id)}
           />
           <span className="headpick__name">{head.name}</span>
-          <span className="headpick__meta">{describeHead(head)}</span>
+          <span className="headpick__meta">{describeHead(head, translator)}</span>
         </label>
       ))}
     </fieldset>

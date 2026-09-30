@@ -196,9 +196,7 @@ def _read(manifest: Path) -> FoundationInstance:
         created_at=str(raw.get("created_at", "")),
         finetune_id=str(raw.get("finetune_id", "")),
         recipe_id=raw.get("recipe_id"),
-        baseline_metrics={
-            str(k): float(v) for k, v in (raw.get("baseline_metrics") or {}).items()
-        },
+        baseline_metrics={str(k): float(v) for k, v in (raw.get("baseline_metrics") or {}).items()},
         weights_kind=str(raw.get("weights_kind", "full")),
         parameters=dict(raw.get("parameters") or {}),
     )

@@ -19,6 +19,7 @@ import {
   type JobInfo,
   type TrainingRequest,
 } from '../api/training';
+import { useT } from '../i18n';
 
 export interface UseTrainingRunResult {
   readonly job: JobInfo | null;
@@ -47,6 +48,10 @@ export function useTrainingRun(options: UseTrainingRunOptions = {}): UseTraining
   const [error, setError] = useState<string | null>(null);
 
   const unsubscribe = useRef<(() => void) | null>(null);
+  // Through a ref: a language switch must not re-subscribe the stream.
+  const { t } = useT();
+  const tr = useRef(t);
+  tr.current = t;
   const onComplete = useRef(options.onComplete);
   onComplete.current = options.onComplete;
 
@@ -71,7 +76,7 @@ export function useTrainingRun(options: UseTrainingRunOptions = {}): UseTraining
         if (next.history.length) setHistory(next.history);
         onComplete.current?.(next);
       },
-      onError: () => setError('Lost the training stream. The run may still be going.'),
+      onError: () => setError(tr.current('training.error.streamLost')),
     });
   }, []);
 
@@ -109,7 +114,7 @@ export function useTrainingRun(options: UseTrainingRunOptions = {}): UseTraining
         setJob(next);
         attach(next.job_id);
       } catch (cause) {
-        setError(describeError(cause, 'Could not start training.'));
+        setError(describeError(cause, tr.current('training.error.start')));
       } finally {
         setStarting(false);
       }
@@ -122,7 +127,7 @@ export function useTrainingRun(options: UseTrainingRunOptions = {}): UseTraining
     try {
       await cancelTrainingJob(job.job_id);
     } catch (cause) {
-      setError(describeError(cause, 'Could not cancel the run.'));
+      setError(describeError(cause, tr.current('training.error.cancel')));
     }
   }, [job]);
 

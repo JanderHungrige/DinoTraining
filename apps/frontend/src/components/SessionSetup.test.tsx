@@ -163,7 +163,7 @@ describe('the head selection is derived, not seeded', () => {
 describe('telling you which prompt you are looking at (doc 39)', () => {
   it('explains Grounding DINO syntax in prompt mode', async () => {
     await setup();
-    expect(screen.getByText(/a bolt\. a nut\. a washer\./)).toBeInTheDocument();
+    expect(screen.getByText(/a bolt, a nut, a washer/)).toBeInTheDocument();
   });
 
   it('associates the hint with the field rather than burying it in the label', () => {
@@ -178,7 +178,7 @@ describe('telling you which prompt you are looking at (doc 39)', () => {
 
     await user.click(screen.getByRole('radio', { name: /head you trained/ }));
 
-    expect(screen.queryByText(/a bolt\. a nut\. a washer\./)).not.toBeInTheDocument();
+    expect(screen.queryByText(/a bolt, a nut, a washer/)).not.toBeInTheDocument();
     expect(await screen.findByText(/No prompt here/)).toBeInTheDocument();
   });
 

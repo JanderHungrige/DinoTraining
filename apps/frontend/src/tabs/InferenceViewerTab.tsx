@@ -20,6 +20,7 @@ import { SequencePanel } from '../components/SequencePanel';
 import { renderOverlayFor } from '../components/overlays/registry';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
+import { useT } from '../i18n';
 import { useImageSource } from '../hooks/useImageSource';
 import { usePersistentState } from '../hooks/usePersistentState';
 import {
@@ -34,21 +35,22 @@ import {
 const MODES = [
   {
     id: 'image' as const,
-    name: 'A single image',
-    hint: 'One picture, every selected model, side by side.',
+    name: 'run.viewer.modeImageName',
+    hint: 'run.viewer.modeImageHint',
   },
   {
     id: 'video' as const,
-    name: 'A video or a folder',
-    hint: 'Analyse a range of frames once, then play it back with the annotations.',
+    name: 'run.viewer.modeVideoName',
+    hint: 'run.viewer.modeVideoHint',
   },
-];
+] as const;
 
 type ViewerMode = (typeof MODES)[number]['id'];
 
 const isViewerMode = isOneOf<ViewerMode>(MODES.map((entry) => entry.id));
 
 export function InferenceViewerTab(): JSX.Element {
+  const { t, tp } = useT();
   // Explicit rather than inferred from what the path turns out to be. The player used to
   // appear on its own whenever a folder probed as playable, which meant a folder could not
   // be stepped through image by image without the player also being there — two surfaces
@@ -100,14 +102,11 @@ export function InferenceViewerTab(): JSX.Element {
 
   return (
     <section className="studio">
-      <h2 className="studio__title">Inference Viewer</h2>
-      <p className="studio__lead">
-        Point at a single image or a folder, pick one or more heads, and compare the
-        original against what they predicted.
-      </p>
+      <h2 className="studio__title">{t('run.viewer.title')}</h2>
+      <p className="studio__lead">{t('run.viewer.lead')}</p>
 
       <fieldset className="modeswitch">
-        <legend className="modeswitch__legend">What to look at</legend>
+        <legend className="modeswitch__legend">{t('run.viewer.modeLegend')}</legend>
         {MODES.map((entry) => (
           <label
             key={entry.id}
@@ -120,8 +119,8 @@ export function InferenceViewerTab(): JSX.Element {
               checked={mode === entry.id}
               onChange={() => setMode(entry.id)}
             />
-            <span className="modeswitch__name">{entry.name}</span>
-            <span className="modeswitch__hint">{entry.hint}</span>
+            <span className="modeswitch__name">{t(entry.name)}</span>
+            <span className="modeswitch__hint">{t(entry.hint)}</span>
           </label>
         ))}
       </fieldset>
@@ -160,10 +159,10 @@ export function InferenceViewerTab(): JSX.Element {
         </p>
       )}
 
-      {source.empty && <p role="status">No images in that folder.</p>}
+      {source.empty && <p role="status">{t('run.viewer.emptyFolder')}</p>}
 
       {source.truncated && (
-        <p role="status">Showing the first {source.items.length} images in that folder.</p>
+        <p role="status">{tp('run.viewer.truncated', source.items.length)}</p>
       )}
 
       {/* Outside the `current &&` guard on purpose (doc 34). Heads used to be pickable
@@ -181,7 +180,7 @@ export function InferenceViewerTab(): JSX.Element {
 
       {mode === 'image' && !current && !source.loading && (
         <p role="status" className="studio__hint">
-          Pick an image or a folder above to run the selected head{run.selected.length === 1 ? '' : 's'}.
+          {tp('run.viewer.pickSource', run.selected.length)}
         </p>
       )}
 
@@ -190,7 +189,11 @@ export function InferenceViewerTab(): JSX.Element {
       {mode === 'image' && current && (
         <>
           <p className="studio__path" title={current.path}>
-            {current.name} — {source.index + 1} of {source.items.length}
+            {t('run.viewer.position', {
+              name: current.name,
+              index: source.index + 1,
+              total: source.items.length,
+            })}
           </p>
 
           {/* Doc 67. One control for every pane rather than one each: comparing two
@@ -240,12 +243,10 @@ export function InferenceViewerTab(): JSX.Element {
                 : [
                     {
                       key: 'result',
-                      label: 'Result',
+                      label: t('run.compare.result'),
                       placeholder: (
                         <p className="viewer__placeholder">
-                          {run.running
-                            ? 'Running…'
-                            : 'Select one or more heads and press Run.'}
+                          {run.running ? t('run.viewer.running') : t('run.viewer.selectAndRun')}
                         </p>
                       ),
                     },
@@ -260,7 +261,7 @@ export function InferenceViewerTab(): JSX.Element {
               disabled={!source.canGoPrevious}
               onClick={source.previous}
             >
-              ← Previous
+              {t('run.viewer.previous')}
             </button>
             <button
               type="button"
@@ -268,7 +269,7 @@ export function InferenceViewerTab(): JSX.Element {
               disabled={!source.canGoNext}
               onClick={source.next}
             >
-              Next →
+              {t('run.viewer.next')}
             </button>
           </div>
         </>

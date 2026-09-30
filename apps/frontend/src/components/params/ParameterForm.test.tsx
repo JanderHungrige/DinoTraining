@@ -58,6 +58,13 @@ describe('ParameterForm (doc 100)', () => {
     expect(screen.getByLabelText('Learning speed (learning rate)')).toHaveValue('0.001');
   });
 
+  it('does not repeat the term when the label already is it (German, Jan 2026-09-30)', async () => {
+    vi.mocked(api.getParameters).mockResolvedValue({ ...SET, parameters: [parameter({ label: 'Epochs' })] });
+    render(<Harness />);
+    expect(await screen.findByLabelText('Epochs')).toHaveValue('20');
+    expect(screen.queryByText('(epochs)')).not.toBeInTheDocument();
+  });
+
   it('opens the ? with the explanation, the default and why; Esc closes it and returns focus', async () => {
     const user = userEvent.setup();
     render(<Harness />);

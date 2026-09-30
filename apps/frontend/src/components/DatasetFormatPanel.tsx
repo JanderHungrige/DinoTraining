@@ -11,9 +11,12 @@
 
 import { useId, useState, type JSX } from 'react';
 
-import { DATASET_FORMAT } from '../tabs/datasetFormat';
+import { useT } from '../i18n';
+import { datasetFormat } from '../tabs/datasetFormat';
 
 export function DatasetFormatPanel(): JSX.Element {
+  const translator = useT();
+  const { t } = translator;
   const [open, setOpen] = useState(false);
   const panelId = useId();
 
@@ -26,17 +29,17 @@ export function DatasetFormatPanel(): JSX.Element {
         aria-controls={panelId}
         onClick={() => setOpen((current) => !current)}
       >
-        <span aria-hidden="true">ⓘ</span> What must a dataset look like?
+        <span aria-hidden="true">ⓘ</span> {t('intro.format.toggle')}
       </button>
 
       {open && (
         <div id={panelId} className="formatinfo__panel">
           <p className="formatinfo__lead">
-            Anything in this shape can be imported from <strong>Datasets → Import</strong>.
-            Most Roboflow and HuggingFace detection exports already are.
+            {t('intro.format.leadBefore')} <strong>{t('intro.format.leadPlace')}</strong>
+            {t('intro.format.leadAfter')}
           </p>
 
-          {DATASET_FORMAT.map((section) => (
+          {datasetFormat(translator).map((section) => (
             <section key={section.heading} className="formatinfo__section">
               <h4 className="formatinfo__heading">{section.heading}</h4>
               {section.body.map((paragraph) => (

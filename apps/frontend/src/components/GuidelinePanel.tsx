@@ -6,9 +6,11 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { getGuideline, saveGuideline } from '../api/quality';
+import { useT } from '../i18n';
 import '../quality.css';
 
 export function GuidelinePanel({ datasetId }: { readonly datasetId: string }): JSX.Element {
+  const { t } = useT();
   const [stored, setStored] = useState<string | null>(null);
   const [draft, setDraft] = useState<string | null>(null);
   const [message, setMessage] = useState('');
@@ -30,25 +32,25 @@ export function GuidelinePanel({ datasetId }: { readonly datasetId: string }): J
     try {
       setStored(await saveGuideline(datasetId, text));
       setDraft(null);
-      setMessage('Saved.');
+      setMessage(t('phrases.guideline.saved'));
     } catch (cause) {
       setMessage(cause instanceof Error ? cause.message : String(cause));
     }
   };
 
-  if (stored === null) return <p className="trainer__dim">{message || 'Loading the guideline…'}</p>;
+  if (stored === null) return <p className="trainer__dim">{message || t('phrases.guideline.loading')}</p>;
   return (
     <details className="guideline" open={stored.trim() !== ''}>
-      <summary>Annotation guideline{stored.trim() === '' ? ' (none yet)' : ''}</summary>
-      <p className="guideline__hint">
-        Write down the conventions, so every picture is annotated the same way: what counts as
-        part of an object, when to mark it unclear, which name is right.
-      </p>
+      <summary>
+        {t('phrases.guideline.title')}
+        {stored.trim() === '' ? t('phrases.guideline.noneYet') : ''}
+      </summary>
+      <p className="guideline__hint">{t('phrases.guideline.hint')}</p>
       <textarea
-        aria-label="Annotation guideline"
+        aria-label={t('phrases.guideline.title')}
         rows={5}
         value={text}
-        placeholder={'Rings: outline with the hole filled.\nMore than half hidden: unclear.'}
+        placeholder={t('phrases.guideline.placeholder')}
         onChange={(event) => {
           setDraft(event.target.value);
           setMessage('');
@@ -56,7 +58,7 @@ export function GuidelinePanel({ datasetId }: { readonly datasetId: string }): J
       />
       <div className="guideline__actions">
         <button type="button" className="btn btn--small" disabled={draft === null} onClick={() => void save()}>
-          Save guideline
+          {t('phrases.guideline.save')}
         </button>
         {message && <span className="trainer__dim" role="status">{message}</span>}
       </div>

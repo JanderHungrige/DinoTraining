@@ -41,10 +41,11 @@ import {
 
 import { fitContain, toDisplay, type Rect, type RenderedImage } from '../lib/geometry';
 import { useBoxDraw } from '../hooks/useBoxDraw';
+import { useT } from '../i18n';
 import { inPaintOrder, type NumberedBox } from '../lib/boxReview';
 import { MaskLayer } from './MaskLayer';
 import { showsBoxes, showsMasks, type AnnotationView } from '../types/annotationView';
-import { LABEL_TITLES, nextLabel, type CanvasBox, type Label } from '../types/annotation';
+import { labelTitle, nextLabel, type CanvasBox, type Label } from '../types/annotation';
 
 export interface AnnotationCanvasProps {
   readonly imageUrl: string;
@@ -112,6 +113,7 @@ export function AnnotationCanvas({
   disabled = false,
   overlay,
 }: AnnotationCanvasProps): JSX.Element {
+  const { t } = useT();
   const plain = boxes.map((entry) => entry.box);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [rendered, setRendered] = useState<RenderedImage>(EMPTY_RENDER);
@@ -229,7 +231,7 @@ export function AnnotationCanvas({
             // take the verdict keys and the accessibility tree with it.
             const bare = box.mask !== undefined && !showsBoxes(view);
             const score =
-              box.score === undefined ? '' : `, score ${(box.score * 100).toFixed(0)}%`;
+              box.score === undefined ? '' : t('studio.canvas.score', { percent: (box.score * 100).toFixed(0) });
             return (
               <button
                 key={box.id}
@@ -237,7 +239,12 @@ export function AnnotationCanvas({
                 className={`canvas__box canvas__box--${box.label}${selected ? ' canvas__box--selected' : ''}${bare ? ' canvas__box--bare' : ''}`}
                 style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
                 aria-pressed={selected}
-                aria-label={`Box ${number}${box.text ? `, ${box.text}` : ''}, ${LABEL_TITLES[box.label].toLowerCase()}${score}. Press 1, 2 or 3 to relabel, Delete to remove.`}
+                aria-label={t('studio.canvas.boxAria', {
+                  number,
+                  text: box.text ? `, ${box.text}` : '',
+                  verdict: labelTitle(t, box.label).toLowerCase(),
+                  score,
+                })}
                 disabled={disabled}
                 onClick={() => {
                   onSelect(box.id);
@@ -248,7 +255,7 @@ export function AnnotationCanvas({
               >
                 <span className="canvas__boxtag">
                   <span className="canvas__boxnum">{number}</span>
-                  {box.text ?? LABEL_TITLES[box.label]}
+                  {box.text ?? labelTitle(t, box.label)}
                 </span>
               </button>
             );
@@ -271,9 +278,9 @@ export function AnnotationCanvas({
       </div>
 
       <p className="canvas__hint">
-        Drag on the image to draw a box. Click a box to cycle its label, or use the list
-        beside it. With a box focused: <kbd>1</kbd> positive, <kbd>2</kbd> negative,{' '}
-        <kbd>3</kbd> unclear, <kbd>Delete</kbd> to remove.
+        {t('studio.canvas.hint')} <kbd>1</kbd> {t('studio.canvas.keyPositive')}, <kbd>2</kbd>{' '}
+        {t('studio.canvas.keyNegative')}, <kbd>3</kbd> {t('studio.canvas.keyUnclear')},{' '}
+        <kbd>{t('studio.canvas.keyDelete')}</kbd> {t('studio.canvas.keyRemove')}
       </p>
     </div>
   );
