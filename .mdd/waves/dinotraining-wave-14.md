@@ -88,7 +88,7 @@ hash: bb94ea67
 | 4 | mask-editing | docs/106-mask-editing.md | complete | annotation-target |
 | 5 | task-aware-preparation | docs/107-task-aware-preparation.md | complete | phrase-data-model |
 | 6 | prompts-and-hard-negatives | docs/108-prompts-and-hard-negatives.md | planned | phrase-data-model, task-aware-preparation |
-| 7 | annotation-quality-aids | docs/109-annotation-quality-aids.md | planned | annotation-target |
+| 7 | annotation-quality-aids | docs/109-annotation-quality-aids.md | complete | annotation-target |
 | 8 | annotation-for-agents | docs/110-annotation-for-agents.md | planned | phrase-data-model, prompts-and-hard-negatives |
 
 ### Feature notes

@@ -18,6 +18,7 @@ from app.api.v1 import (
     dataset_image_masks,
     dataset_images,
     dataset_phrases,
+    dataset_quality,
     datasets,
     finetune_jobs,
     finetune_requirements,
@@ -73,6 +74,7 @@ api_router.include_router(dataset_image_masks.router, tags=["datasets"])
 api_router.include_router(dataset_phrases.router, tags=["datasets"])
 api_router.include_router(annotation_targets.router, tags=["datasets"])
 api_router.include_router(segment.router, tags=["annotation"])
+api_router.include_router(dataset_quality.router, tags=["datasets"])
 api_router.include_router(dataset_images.router, tags=["datasets"])
 api_router.include_router(generate.router, tags=["generate"])
 api_router.include_router(generate_foundation.router, tags=["generate"])

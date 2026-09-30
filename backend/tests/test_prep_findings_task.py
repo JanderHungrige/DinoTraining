@@ -136,3 +136,17 @@ class TestCollection:
             1,
             1,
         )
+
+
+class TestFrames:
+    def test_one_object_named_two_ways_in_neighbouring_frames(self) -> None:
+        from app.prep.stats import AnnotationFacts, DatasetFacts, ImageFacts
+
+        images = [ImageFacts(i, f"/v/{i}.png", 100, 100, "ride.mp4", i) for i in range(3)]
+        notes = [
+            AnnotationFacts(0, "box", "positive", "signal", "signal", 10, 10, 20, 20),
+            AnnotationFacts(1, "box", "positive", "light", "light", 10, 10, 21, 20),
+            AnnotationFacts(2, "box", "positive", "light", "light", 10, 10, 21, 20),
+        ]
+        result = found(AuditContext(DatasetFacts("d", images, notes), None))
+        assert result["inconsistent-frames"].examples == ["/v/1.png"]  # type: ignore[attr-defined]

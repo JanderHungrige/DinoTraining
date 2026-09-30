@@ -156,7 +156,66 @@ def no_negatives(ctx: AuditContext) -> Finding | None:
     )
 
 
+FRAME_IOU = 0.7
+
+
+def _iou(a: tuple[float, float, float, float], b: tuple[float, float, float, float]) -> float:
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    w = min(ax + aw, bx + bw) - max(ax, bx)
+    h = min(ay + ah, by + bh) - max(ay, by)
+    inter = max(0.0, w) * max(0.0, h)
+    union = aw * ah + bw * bh - inter
+    return inter / union if union else 0.0
+
+
+def _frame_clashes(ctx: AuditContext) -> list[str]:
+    frames = {
+        (image.sequence, image.frame_index): image.id
+        for image in ctx.facts.images
+        if image.sequence is not None and image.frame_index is not None
+    }
+    boxes: dict[int, list[tuple[str, tuple[float, float, float, float]]]] = defaultdict(list)
+    for a in ctx.facts.positives():
+        boxes[a.image_id].append((a.cls, (a.x, a.y, a.width, a.height)))
+    flagged: list[str] = []
+    for (sequence, index), image_id in sorted(frames.items()):
+        after = frames.get((sequence, index + 1))
+        if after is None:
+            continue
+        clash = any(
+            ca != cb and _iou(ra, rb) >= FRAME_IOU
+            for ca, ra in boxes.get(image_id, [])
+            for cb, rb in boxes.get(after, [])
+        )
+        image = ctx.facts.image(after)
+        if clash and image is not None:
+            flagged.append(image.path)
+    return flagged
+
+
+def inconsistent_frames(ctx: AuditContext) -> Finding | None:
+    """Doc 109: one object named two ways in neighbouring video frames."""
+    flagged = _frame_clashes(ctx)
+    if not flagged:
+        return None
+    return Finding(
+        id="inconsistent-frames",
+        severity="warn",
+        title=f"{len(flagged)} frame(s) name an object differently from the frame before",
+        what=f"In {len(flagged)} places an object keeps its place from one frame to the next "
+        "but changes its class.",
+        why="The model is shown the same thing under two names, and learns neither well; "
+        "every model suffers from it.",
+        action="Open the frames in Inspect datasets, decide which name is right, and write it "
+        "into the dataset's annotation guideline so it stays decided.",
+        examples=_examples(flagged),
+        metrics={"frames": len(flagged)},
+    )
+
+
 TASK_RULES = (
+    inconsistent_frames,
     mixed_classes,
     fragmented,
     duplicated,

@@ -10,6 +10,9 @@ import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
 import { TargetGuide } from '../components/TargetGuide';
 import { PhraseBar } from '../components/phrases/PhraseBar';
+import { GuidelinePanel } from '../components/GuidelinePanel';
+import { SecondLook } from '../components/SecondLook';
+import { useSecondLook } from '../hooks/useSecondLook';
 import { useAnnotationTargetList } from '../hooks/useAnnotationTargetList';
 import { usePicturePhrases } from '../hooks/usePicturePhrases';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
@@ -55,6 +58,8 @@ export function AnnotationStudioTab(): JSX.Element {
   const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
   const maskEditing = useMaskEditing(session.currentImage, session.boxes, session.setBoxes, selectedId);
   const selectedBox = session.boxes.find((box) => box.id === selectedId) ?? null;
+  // Doc 109: a second look reuses the prescan's picture filter.
+  const look = useSecondLook(config?.datasetId ?? '', session.setFilter);
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
@@ -151,6 +156,9 @@ export function AnnotationStudioTab(): JSX.Element {
           statuses={pictures.statuses}
         />
       )}
+
+      <GuidelinePanel datasetId={config.datasetId} />
+      <SecondLook look={look} currentImage={session.currentImage} disabled={session.busy} />
 
       {session.error && (
         <p className="admin__error" role="alert">
