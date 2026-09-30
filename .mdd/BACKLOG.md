@@ -40,9 +40,9 @@ user visits read images off their disk and enumerate folders through `/annotate/
 filesystem reach."* A hosted GUI wants a strict single-origin allowlist **and** a per-session
 token the local binary prints and the user pastes in.
 
-**Relationship to Wave 14**: adjacent, not the same. Wave 14 assumes hyperscaler compute and
+**Relationship to Wave 16**: adjacent, not the same. Wave 16 assumes hyperscaler compute and
 shared storage; this assumes neither and shares nothing but the GUI. Worth deciding which
-of the two "a server" is meant to mean before Wave 14 is planned.
+of the two "a server" is meant to mean before Wave 16 is planned.
 
 ### Code signing and notarization
 
@@ -144,8 +144,8 @@ single image and a folder as *the same shape*, with items keyed by an opaque `it
 rather than a path, precisely so a frame source can satisfy it without the viewer changing.
 
 **Candidate homes**, when someone wants it: Wave 6 (it is another input source for the
-Inference Viewer) or after Wave 14 (a webcam in a browser is a different capture path from a
-webcam in Tauri, and Wave 14 already forces that split).
+Inference Viewer) or after Wave 16 (a webcam in a browser is a different capture path from a
+webcam in Tauri, and Wave 16 already forces that split).
 
 ### Active-learning hints for review prioritisation
 
@@ -340,7 +340,7 @@ Recorded so it is not re-proposed from scratch.
 - **Gemini Flash Vision** is API-only; there are no local weights. It would send the user's
   own image folders off their machine, contradicting the premise the app is built on, and
   adds key handling, per-call cost, rate limits and offline failure. If a cloud VLM is ever
-  wanted, Wave 14 is where the user has already accepted cloud compute — labelled, and never
+  wanted, Wave 16 is where the user has already accepted cloud compute — labelled, and never
   a default.
 - For "better semantics than Grounding DINO while staying local", **SAM 3** is the stronger
   bet and is already in Wave 4.

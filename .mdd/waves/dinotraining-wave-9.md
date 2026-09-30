@@ -12,7 +12,7 @@ hash: 51ef0f72
 
 # Wave 9: Generator Autopilot & Dataset Inspection
 
-**Inserted 2026-09-29 at Jan's request, ahead of the website wave, which is now Wave 14.**
+**Inserted 2026-09-29 at Jan's request, ahead of the website wave, which is now Wave 16.**
 Wave 7.5 was inserted as a fractional wave so that nothing had to be renumbered. This time
 Jan asked for the shift explicitly. All 40 references to the old Wave 9 in docs and source
 comments were retargeted, and a grep for `wave[ -]9` came back empty before this file was

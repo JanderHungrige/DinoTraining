@@ -171,5 +171,5 @@ model it guards arrives in the very next feature.
   a Grounding DINO alternative.
 - **Gemini Flash Vision** — dropped 2026-08-19. API-only, no local weights, and it would
   send the user's own image folders off their machine, contradicting the premise the app is
-  built on. If a cloud VLM is ever wanted it belongs in Wave 14, where the user has already
+  built on. If a cloud VLM is ever wanted it belongs in Wave 16, where the user has already
   accepted cloud compute, clearly labelled and never a default.

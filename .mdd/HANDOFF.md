@@ -9,12 +9,14 @@ the rewritten README, the generator controls Jan asked for (Start analysis, name
 automation boxes below the buttons) and `dev.sh` reinstalling npm dependencies when the
 lockfile changed.
 
-**Next: Wave 13** (planned on `feat/plan-wave-13`, docs 99–110): annotate for the model
-(phrases with variations, per-picture phrase status, hard negatives, mask editing), every
-training parameter explained with a ?, default recipes, and an English/German switch. Read
-`waves/dinotraining-wave-13.md` — its "Decisions taken in planning" await Jan's answer.
+**Next: Waves 13–15**, planned 2026-09-30 and confirmed by Jan (variants stored once and
+expanded at training; English base + German; three waves, language last):
+- **13** every training parameter explained with a ?, default recipes (docs 99–102);
+- **14** annotate for the model — phrases, picture status, hard negatives, mask editing
+  (docs 103–110);
+- **15** English/German (docs 111–114).
 
-The website is Wave 14.
+The website is Wave 16.
 
 ---
 

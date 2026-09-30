@@ -2,7 +2,7 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 11
+version: 12
 hash: 120c5dcb
 created: 2026-08-14
 ---
@@ -121,7 +121,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
       — Wave 4 is dataset-generator only. Video is unassigned and tracked in
       `.mdd/BACKLOG.md` until a wave claims it.
 - [ ] Code-signing / notarization for macOS + Windows installers (Wave 8).
-- [ ] Which hyperscaler(s) to support first for the website (Wave 14).
+- [ ] Which hyperscaler(s) to support first for the website (Wave 16).
 
 ## Waves
 
@@ -137,8 +137,9 @@ comments, retargeted mechanically and checked with a grep that came back empty.
 
 **Wave 13 was inserted on 2026-09-30 by renumbering**, again at Jan's request: annotating
 for fine-tuning (phrases, hard negatives, mask editing), every training parameter explained,
-default recipes and a language switch come before the website, which moved 13 → 14
-(29 files, grep clean).
+default recipes and a language switch come before the website. At Jan's request that plan
+became **three waves** — 13 training knobs and default recipes, 14 annotating for the model,
+15 English/German last — and the website moved 13 → 16 (29 files, grep clean).
 
 
 | Wave | File | Demo-state | Status |
@@ -156,5 +157,7 @@ default recipes and a language switch come before the website, which moved 13 �
 | Wave 10 | waves/dinotraining-wave-10.md | The app opens over a seamlessly looping particle background, every button has NinaNatur's hand-drawn outline, all text is Lato, and it stays legible and calm under reduced motion — in the packaged app. | complete |
 | Wave 11 | waves/dinotraining-wave-11.md | A user without data-science background imports external data; the app audits it in plain language, fixes what is safe, splits it without leakage, shows what the model will see, handles class imbalance, and saves a reproducible recipe that training consumes — the same over MCP. | complete |
 | Wave 12 | waves/dinotraining-wave-12.md | SAM 2, SAM 3 and DINOv3 fine-tune on the user's own data, each with a requirements card (UI and MCP) and a preflight that says exactly what the data must look like; held-out metrics show the gain over the base model. | complete |
-| Wave 13 | waves/dinotraining-wave-13.md | The user annotates for a chosen model (phrases with variations, per-picture phrase status, hard negatives, click-refined masks), Prepare data checks it per task, Training explains every parameter with a ? and creates a default recipe in one click, and the whole app switches between English and German. | planned |
-| Wave 14 | waves/dinotraining-wave-14.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
+| Wave 13 | waves/dinotraining-wave-13.md | Every model's training parameters are shown as 'Plain name (technical term)' with a ? explanation and default, Basic/Advanced with reset; a user without a recipe learns what it is and creates the default one in one click — the same over MCP. | planned |
+| Wave 14 | waves/dinotraining-wave-14.md | The user annotates for a chosen model: phrases with comma-separated variations, per-picture phrase status, click-refined masks; Prepare data checks it per task and the recipe carries prompts and hard negatives that SAM 3 trains on. | planned |
+| Wave 15 | waves/dinotraining-wave-15.md | The whole app, including the backend's plain-language texts, switches between English and German; a missing German text fails the build. | planned |
+| Wave 16 | waves/dinotraining-wave-16.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

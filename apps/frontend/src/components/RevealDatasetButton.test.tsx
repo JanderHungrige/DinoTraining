@@ -38,7 +38,7 @@ describe('when it is offered at all', () => {
   });
 
   it('is absent in a browser', async () => {
-    // Wave 14's web build has no file manager to open. A button that cannot work is worse
+    // Wave 16's web build has no file manager to open. A button that cannot work is worse
     // than no button.
     dialog.hasNativeDialog.mockReturnValue(false);
     const { container } = render(<RevealDatasetButton datasetId="d1" />);

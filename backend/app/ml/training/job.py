@@ -1,6 +1,6 @@
 """Job state and the runner interface.
 
-Separated from any concrete runner so that Wave 14's hyperscaler backend and today's
+Separated from any concrete runner so that Wave 16's hyperscaler backend and today's
 local one share one vocabulary, and callers can depend on the protocol alone.
 """
 
@@ -78,7 +78,7 @@ class TrainingJob:
 
 
 class JobRunner(Protocol):
-    """What every runner provides. Wave 14's remote runner implements the same three."""
+    """What every runner provides. Wave 16's remote runner implements the same three."""
 
     def submit(self, config: TrainingConfig) -> TrainingJob: ...
 

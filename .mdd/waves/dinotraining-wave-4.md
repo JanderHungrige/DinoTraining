@@ -84,7 +84,7 @@ The initiative carries two unchecked open product questions. Both are **delibera
 here, not answered** — exactly as Wave 3 did:
 
 - `[ ] Code-signing / notarization for macOS + Windows installers` — **Wave 8**
-- `[ ] Which hyperscaler(s) to support first for the website` — **Wave 14**
+- `[ ] Which hyperscaler(s) to support first for the website` — **Wave 16**
 
 Neither can influence a dataset generator. Answering "which hyperscaler" merely to clear the
 gate would turn a guess into an architectural commitment nobody has made.

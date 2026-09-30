@@ -26,7 +26,7 @@ integration_contracts: []
 satisfies_contracts: []
 security_read_sites: []
 known_issues:
-  - "**The buttons exist only under Tauri.** `hasNativeDialog()` is false in the browser dev mode and in Wave 14's website build, where the field stays a typable text box. Both branches are pinned by tests, but the buttons themselves were verified only by test — the live check ran in web mode, where they correctly do not render."
+  - "**The buttons exist only under Tauri.** `hasNativeDialog()` is false in the browser dev mode and in Wave 16's website build, where the field stays a typable text box. Both branches are pinned by tests, but the buttons themselves were verified only by test — the live check ran in web mode, where they correctly do not render."
   - "`ImageSourcePicker` deliberately does **not** use `FolderField`. Doc 17's viewer accepts a single image *or* a folder and means different things by each; collapsing one into the other would break it. So there are still two implementations of 'a path field with pickers', and they are two on purpose."
   - "The Studio's button was labelled **Browse…** and is now **Image… / Folder…**. Nothing referenced the old label, but a user who knew where it was has to look once."
 sister_projects: []
@@ -75,7 +75,7 @@ single image *or* a folder and means different things by each.
 
 1. **`hasNativeDialog()` is read in an effect, not at module scope.** It asks whether Tauri
    injected its globals, and on the first render it has not.
-2. **No dialog means a typable field, never a disabled one.** Wave 14's website build has no
+2. **No dialog means a typable field, never a disabled one.** Wave 16's website build has no
    native picker; disabling the field there would leave no way in at all.
 3. **A dismissed dialog reports nothing.** Cancelling leaves the field as it was rather than
    blanking it.

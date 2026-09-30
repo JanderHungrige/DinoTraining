@@ -38,7 +38,7 @@ integration_contracts: []
 satisfies_contracts: []
 known_issues:
   - "No full SAM 3 run has completed on real weights yet, and a saved SAM 3 fine-tune has not been loaded (see What is verified). The code path mirrors SAM 2's, which is verified end to end."
-  - "Slow on a 16 GB M1: the frozen encoder costs ~6 s per picture and only ~24 pictures' features fit the memory budget, so later rounds recompute the rest. A GPU machine (Wave 14's remote runner) is the comfortable place for it."
+  - "Slow on a 16 GB M1: the frozen encoder costs ~6 s per picture and only ~24 pictures' features fit the memory budget, so later rounds recompute the rest. A GPU machine (Wave 16's remote runner) is the comfortable place for it."
   - "Licence terms for fine-tuned SAM 3 derivatives are still to be read (wave research item)."
   - "Only one learning-rate and loss weighting (DETR's) was tried."
 security_read_sites: []

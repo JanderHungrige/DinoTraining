@@ -36,7 +36,7 @@ note below.
 - **`video-stream-source` is replaced by `image-input-source`**, not simply removed. The
   wave still needs an input-source feature; it just loads files rather than frames.
 - **Open Product Questions gate waived.** Two questions remain unchecked in the initiative
-  — code-signing/notarization (Wave 8) and first hyperscaler (Wave 14). Both are explicitly
+  — code-signing/notarization (Wave 8) and first hyperscaler (Wave 16). Both are explicitly
   scoped to later waves and cannot influence an inference viewer's architecture. Waived
   deliberately on 2026-08-18 rather than skipped; recorded here so the next `plan-wave`
   does not rediscover it as an open question.
