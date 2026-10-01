@@ -19,7 +19,7 @@ test_files:
   - .github/workflows/release.yml (the Windows smoke step checks the uninstall)
 data_flow: writes-existing
 last_synced: 2026-10-01
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [installer, uninstall, windows, nsis, appdata, linux, macos]
@@ -29,7 +29,8 @@ wave: dinotraining-wave-15-7
 wave_status: active
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "The checkbox path (delete the user's data) is not CI-tested: a silent uninstall cannot tick it. The hook's branch for it uses the same long-path-safe removal."
 security_read_sites: []
 sister_projects: []
 ---
@@ -94,3 +95,25 @@ script runs as root and must not touch home folders. The README says what to del
   - the smoke test uses the default runtime location, not an override;
   - after the silent uninstall, the runtime folder and the installed `.exe` are gone,
     the data folder is kept, and the entry under *Apps* is gone.
+
+## Verified (2026-10-01)
+
+- **Rust (3 new tests):**
+  - Windows → `%LOCALAPPDATA%\DinoTraining`, never the roaming `%APPDATA%`;
+  - Linux honours `XDG_DATA_HOME`, an empty value falls back to `~/.local/share`;
+  - macOS → `~/Library/Application Support/DinoTraining`.
+- **CI, three runs on the Windows runner** (install `/S`, unattended setup at the default
+  location, silent uninstall):
+  1. The runtime was left, with no detail: the check had waited only 120 s, and RMDir
+     had no help. Added: clear read-only first, wait for NSIS's handed-off uninstaller
+     (up to 10 min), print what is left.
+  2. **5 files left in `cache\` and `envs\`, none read-only, the uninstaller
+     finished:** paths beyond MAX_PATH (260), which NSIS's RMDir cannot delete. Added:
+     `rd /s /q "\\?\<dir>"` before RMDir.
+  3. **Green: "Uninstall checks passed"** (run 36835779207):
+     - the runtime and the app's `.exe` gone;
+     - the user's file in `data\` kept;
+     - no longer listed under *Apps*.
+     - Install and setup at the new location: first start 116 s, second 7 s.
+- **The Linux package is called `dino-training`** (read from the built `.deb`), not
+  `dinotraining`. The README says so.
