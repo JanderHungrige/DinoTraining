@@ -97,4 +97,17 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.modelAuto.title': 'Trainierte Modelle automatisch exportieren',
   'models.modelAuto.on': 'Jedes trainierte Modell nach dem Training in diesen Ordner exportieren',
   'models.modelAuto.folder': 'Ordner für trainierte Modelle',
+  // Hinweis zum Deinstallieren (doc 146)
+  'models.uninstall.lead':
+    'Beim Deinstallieren kann alles entfernt werden, was in DinoTraining liegt (beim Windows-Installer, wenn du „Anwendungsdaten löschen“ anhakst). Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
+  'models.uninstall.allExported': 'Alle Datensätze sind exportiert.',
+  'models.uninstall.noTarget_one': '{count} Datensatz ist noch nicht exportiert: {names}. Leg mit „Exportieren…“ in seiner Zeile fest, wohin er geht.',
+  'models.uninstall.noTarget_other': '{count} Datensätze sind noch nicht exportiert: {names}. Leg mit „Exportieren…“ in ihren Zeilen fest, wohin sie gehen.',
+  'models.uninstall.unexported_one': '{count} Datensatz hat sich seit dem Export geändert: {names}.',
+  'models.uninstall.unexported_other': '{count} Datensätze haben sich seit dem Export geändert: {names}.',
+  'models.uninstall.models_one': '{count} trainiertes Modell liegt nur in der App; exportiere es unter Meine Modelle.',
+  'models.uninstall.models_other': '{count} trainierte Modelle liegen nur in der App; exportiere sie unter Meine Modelle.',
+  'models.uninstall.modelsAuto_one': '{count} trainiertes Modell; neue exportieren sich selbst.',
+  'models.uninstall.modelsAuto_other': '{count} trainierte Modelle; neue exportieren sich selbst.',
+  'models.uninstall.exportNow': 'Jetzt alles exportieren',
 };

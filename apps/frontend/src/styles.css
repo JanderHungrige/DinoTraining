@@ -3891,3 +3891,32 @@ body {
   flex: 1 1 18rem;
   min-width: 0;
 }
+
+/* Uninstall notice (doc 146) */
+.uninstall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-dim);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.9rem;
+}
+
+.uninstall--pending {
+  border-left-color: #d9a400;
+}
+
+.uninstall__lead,
+.uninstall__state {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.uninstall__state {
+  color: var(--text-dim);
+}

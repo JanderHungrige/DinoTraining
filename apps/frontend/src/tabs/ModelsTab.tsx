@@ -14,6 +14,7 @@ import { DatasetImport } from '../components/DatasetImport';
 import { ExampleDataset } from '../components/ExampleDataset';
 import { ModelAutoExport } from '../components/ModelAutoExport';
 import { SubTabBar, type SubTab } from '../components/SubTabBar';
+import { UninstallNotice } from '../components/UninstallNotice';
 import { useT } from '../i18n';
 import { readPersisted, writePersisted } from '../lib/persisted';
 import { AdminTab } from './AdminTab';
@@ -54,6 +55,7 @@ export function ModelsTab(): JSX.Element {
           <>
             <h2 className="library__title">{t('models.datasets.title')}</h2>
             <p className="library__lead">{t('models.datasets.lead')}</p>
+            <UninstallNotice key={`notice-${listVersion}`} onExported={imported} />
             <DatasetImport onImported={imported} />
             <ExampleDataset onImported={imported} />
             <DatasetGuide />
@@ -65,6 +67,7 @@ export function ModelsTab(): JSX.Element {
           <>
             <h2 className="library__title">{t('models.mine.title')}</h2>
             <p className="library__lead">{t('models.mine.lead')}</p>
+            <UninstallNotice />
             <ModelAutoExport />
             <LibraryTab kinds={['head', 'finetune']} headed={false} />
           </>

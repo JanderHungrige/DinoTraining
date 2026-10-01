@@ -71,3 +71,19 @@ export function runExports(reason: 'interval' | 'manual', wait: boolean): Promis
     body: JSON.stringify({ reason, wait }),
   });
 }
+
+/** Doc 146: what uninstalling now would lose. */
+export interface ExportOverview {
+  readonly datasets: number;
+  readonly no_target: readonly string[];
+  readonly unexported: readonly string[];
+  readonly models: number;
+  readonly model_folder: string | null;
+}
+
+const isOverview = (value: unknown): value is ExportOverview =>
+  isRecord(value) && typeof value['datasets'] === 'number' && Array.isArray(value['no_target']);
+
+export function getExportOverview(signal?: AbortSignal): Promise<ExportOverview> {
+  return apiFetch('/exports/overview', isOverview, signal ? { signal } : undefined);
+}

@@ -72,7 +72,7 @@ def is_running() -> bool:
     return _running.is_set()
 
 
-def _datasets(settings: Settings | None) -> list[tuple[str, str, str | None, str | None]]:
+def datasets_with_work(settings: Settings | None) -> list[tuple[str, str, str | None, str | None]]:
     with transaction(settings) as connection:
         rows = connection.execute(
             "SELECT d.id, d.name, d.export_target, d.exported FROM datasets d"
@@ -83,7 +83,7 @@ def _datasets(settings: Settings | None) -> list[tuple[str, str, str | None, str
     return [(row["id"], row["name"], row["export_target"], row["exported"]) for row in rows]
 
 
-def _changed(dataset_id: str, exported: str | None, settings: Settings | None) -> bool:
+def changed_since_export(dataset_id: str, exported: str | None, settings: Settings | None) -> bool:
     if not exported:
         return True
     last = Exported.model_validate_json(exported)
@@ -91,7 +91,7 @@ def _changed(dataset_id: str, exported: str | None, settings: Settings | None) -
 
 
 def _run(report: AutoReport, deadline: float | None, settings: Settings | None) -> None:
-    for dataset_id, name, target, exported in _datasets(settings):
+    for dataset_id, name, target, exported in datasets_with_work(settings):
         named = Named(dataset_id=dataset_id, name=name)
         if target is None:
             report.no_target.append(named)
@@ -100,7 +100,7 @@ def _run(report: AutoReport, deadline: float | None, settings: Settings | None) 
             report.unfinished.append(named)
             continue
         try:
-            if not _changed(dataset_id, exported, settings):
+            if not changed_since_export(dataset_id, exported, settings):
                 report.unchanged += 1
                 continue
             export_to_target(dataset_id, settings)

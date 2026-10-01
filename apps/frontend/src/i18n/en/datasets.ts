@@ -96,4 +96,17 @@ export const datasetsEn = {
   'models.modelAuto.title': 'Export trained models automatically',
   'models.modelAuto.on': 'Export each trained model to this folder when its training finishes',
   'models.modelAuto.folder': 'Folder for trained models',
+  // Uninstall notice (doc 146)
+  'models.uninstall.lead':
+    'Uninstalling can remove everything inside DinoTraining (from the Windows installer when you tick “Delete the application data”). Exported annotations and models stay where you saved them.',
+  'models.uninstall.allExported': 'All datasets are exported.',
+  'models.uninstall.noTarget_one': '{count} dataset has no export yet: {names}. Choose where it goes with “Export…” on its row.',
+  'models.uninstall.noTarget_other': '{count} datasets have no export yet: {names}. Choose where each goes with “Export…” on its row.',
+  'models.uninstall.unexported_one': '{count} dataset changed since its export: {names}.',
+  'models.uninstall.unexported_other': '{count} datasets changed since their export: {names}.',
+  'models.uninstall.models_one': '{count} trained model is only in the app; export it from My Models.',
+  'models.uninstall.models_other': '{count} trained models are only in the app; export them from My Models.',
+  'models.uninstall.modelsAuto_one': '{count} trained model; new ones export by themselves.',
+  'models.uninstall.modelsAuto_other': '{count} trained models; new ones export by themselves.',
+  'models.uninstall.exportNow': 'Export everything now',
 } as const;

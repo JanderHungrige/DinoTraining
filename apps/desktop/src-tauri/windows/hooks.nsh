@@ -1,4 +1,4 @@
-; Doc 132: what Tauri's uninstaller does not reach. Tauri removes its own files by name and
+﻿; Doc 132: what Tauri's uninstaller does not reach. Tauri removes its own files by name and
 ; its "Delete the application data" checkbox clears the bundle identifier's folders only.
 ; DinoTraining keeps everything in %LOCALAPPDATA%\DinoTraining (the backend's folder; the
 ; app is installed there too):
@@ -37,5 +37,19 @@
       !insertmacro DINO_REMOVE_TREE "$LOCALAPPDATA\DinoTraining"
     ${EndIf}
     RMDir "$LOCALAPPDATA\DinoTraining"
+  ${EndIf}
+!macroend
+
+; Doc 146: before anything is removed, and only when the user's work would go with it
+; ("Delete the application data" ticked): say that exports stay, and offer to stop.
+; Not while updating, not unattended (/S, /P): doc 131's smoke test removes silently.
+!macro NSIS_HOOK_PREUNINSTALL
+  ${If} $UpdateMode <> 1
+  ${AndIf} $PassiveMode <> 1
+  ${AndIf} $DeleteAppDataCheckboxState = 1
+  ${AndIfNot} ${Silent}
+    MessageBox MB_OKCANCEL|MB_ICONINFORMATION "This removes everything inside DinoTraining: its datasets, annotations and trained models. Exported annotations and models stay where you saved them. To keep the rest, choose Cancel and export it first (Models & Datasets: Export everything now).$\r$\n$\r$\nDamit wird alles entfernt, was in DinoTraining liegt: Datensätze, Annotationen und trainierte Modelle. Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast. Um den Rest zu behalten, wähle Abbrechen und exportiere zuerst (Modelle & Datensätze: Jetzt alles exportieren)." /SD IDOK IDOK dino_uninstall_confirmed
+    Abort
+    dino_uninstall_confirmed:
   ${EndIf}
 !macroend

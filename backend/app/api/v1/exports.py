@@ -17,6 +17,7 @@ from app.datasets.exchange.auto import (
     run_exports,
     start_in_background,
 )
+from app.datasets.exchange.overview import ExportOverview, export_overview
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -98,3 +99,12 @@ def run(request: RunRequest) -> RunResponse:
         return RunResponse(outcome="started" if start_in_background(request.reason) else "busy")
     report = run_exports(request.reason, request.deadline_seconds)
     return RunResponse(outcome="done", report=report) if report else RunResponse(outcome="busy")
+
+
+@router.get(
+    "/exports/overview",
+    response_model=ExportOverview,
+    summary="What uninstalling now would lose: work without an export, or newer than it",
+)
+def overview() -> ExportOverview:
+    return export_overview()
