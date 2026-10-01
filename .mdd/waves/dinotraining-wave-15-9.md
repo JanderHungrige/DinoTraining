@@ -5,9 +5,9 @@ initiative: dinotraining
 initiative_version: 16
 status: planned
 depends_on: dinotraining-wave-15-8
-demo_state: "A user's annotations and trained models never live only inside the app. Each dataset exports its annotations to a remembered place: 'with the data' (beside its pictures, or into its bucket) or a chosen folder. The export runs on a button, on closing the app and, if switched on, every n minutes, only for what changed; trained models export to their own remembered folder. Importing an exported folder restores the dataset completely. The app says plainly that uninstalling removes what is inside it and that exports stay. A dataset in an S3 bucket (or MinIO, Wasabi, Cloudflare R2) is linked instead of downloaded. The app lists and detects it like a local import, fetches pictures in batches as the Studio, Inspect, training and the Generator need them, keeps a bounded local cache, works offline from that cache, and saves annotations back to the bucket through the same export, refusing to overwrite someone else's newer save."
+demo_state: "A user's annotations and trained models never live only inside the app. Each dataset exports its annotations to a remembered place: 'with the data' (beside its pictures, or into its bucket) or a chosen folder. The export runs on a button, on closing the app and, if switched on, every n minutes, only for what changed; trained models export to their own remembered folder. Importing an exported folder restores the dataset completely. The app says plainly that uninstalling removes what is inside it and that exports stay. A dataset in an S3 bucket (or MinIO, Wasabi, Cloudflare R2), an Azure Blob container or a Google Cloud Storage bucket is linked instead of downloaded. The app lists and detects it like a local import, fetches pictures in batches as the Studio, Inspect, training and the Generator need them, keeps a bounded local cache, works offline from that cache, and saves annotations back to the bucket through the same export, refusing to overwrite someone else's newer save."
 created: 2026-10-01
-hash: e5018462
+hash: 2a2403fd
 ---
 
 # Wave 15.9: Keep your work, and cloud datasets
@@ -128,13 +128,14 @@ hash: e5018462
      data" checkbox.
    - **Under MSIX (15.10)** there is no uninstaller to warn from, so this in-app notice
      is the only one.
-6. **cloud-connection (147): an S3-compatible account.**
-   - **Fields:**
-     - an endpoint (empty for AWS) and a region;
-     - an access key and a secret;
-     - a name.
-   - **Covers** AWS S3, MinIO, Wasabi, Cloudflare R2 and Ceph: one client, one protocol.
-     Azure Blob and Google Cloud Storage only if asked for.
+6. **cloud-connection (147): a storage account, three kinds.**
+   - **S3-compatible** (AWS S3, MinIO, Wasabi, Cloudflare R2, Ceph): an endpoint (empty
+     for AWS), a region, an access key and a secret.
+   - **Azure Blob Storage:** the storage account and an account key or a SAS token
+     (Jan, 2026-10-01).
+   - **Google Cloud Storage:** a service account's JSON key (Jan, 2026-10-01).
+   - Each with a name. **One client library behind one interface**: list, get,
+     conditional put, so features 7–9 never ask which kind it is.
    - **Secrets go into `.env`**, as with `HF_TOKEN` (CLAUDE.md). They are never returned,
      logged or kept in the database. The database keeps only the connection's name and
      endpoint.
@@ -184,17 +185,19 @@ hash: e5018462
   app.
 - **D3, defaults:** export on closing **on**; every 10 minutes **off**; models after
   training **off**.
-- **D4, credentials** in `.env`, like the HF token, and not in the OS keychain:
+- **D4, credentials** in `.env` (the GCS JSON key base64-encoded on one line), like the HF token, and not in the OS keychain:
   - it is what CLAUDE.md asks for;
   - one mechanism to protect;
   - the keychain could follow later.
-- **D5, stores:** S3-compatible only.
+- **D5, stores:** S3-compatible, Azure Blob and Google Cloud Storage (Jan asked for all
+  three, 2026-10-01).
 
 ## Open research
 
-- **The S3 client for the bundled runtime:** `boto3` (large, ubiquitous) or `obstore`
-  (small, Rust-based, async) or `minio`. Measure the runtime size each adds, and check
-  `If-Match` support on R2 and MinIO.
+- **The storage client for the bundled runtime:** `obstore` (one Rust-based client for
+  S3, Azure and GCS, with conditional puts) against `boto3` + `azure-storage-blob` +
+  `google-cloud-storage`. Measure the size each adds to the runtime, and check
+  conditional writes on R2, MinIO, Azure (ETag) and GCS (generation).
 - **The training loader's prefetch** with doc 11's feature cache: does a cached feature
   ever need its picture again (augmentation does)?
 - **How long the shell may wait on quit** before Windows or macOS treats the app as hung.

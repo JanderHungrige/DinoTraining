@@ -3,7 +3,7 @@ id: dinotraining
 title: DinoTraining
 status: active
 version: 16
-hash: fb2eabbe
+hash: 806d0f95
 created: 2026-08-14
 ---
 
@@ -164,6 +164,6 @@ became **three waves** — 13 training knobs and default recipes, 14 annotating 
 | Wave 15.6 | waves/dinotraining-wave-15-6.md | MLOps: a model card for every trained model, an export bundle (weights, card, runnable example, ONNX where possible), and MLflow tracking and registry, including models trained before. | in_progress |
 | Wave 15.7 | waves/dinotraining-wave-15-7.md | Installer: bundled Python and uv instead of PyInstaller; PyTorch from pytorch.org with the accelerator chosen at first start (CUDA / MPS / CPU), switchable later, updates that fetch only changes; CI installs and starts it on all three platforms. | built (0.1.0) |
 | Wave 15.8 | waves/dinotraining-wave-15-8.md | Models & Datasets as the entry point (sub-tabs Official Models, Datasets, My Models; Library folded in), dataset import for images, video, COCO, YOLO, VOC, OpenLABEL with saved parameters, a layout guide and dataset sites, OSDaR23 as an example; an own emblem. | built, in dev (not yet released) |
-| Wave 15.9 | waves/dinotraining-wave-15-9.md | Keep your work, and cloud datasets: annotations and models exported to a remembered place ("with the data" or a chosen folder) on a button, on closing and every n minutes, restored by importing; an uninstall notice; S3-compatible datasets linked, fetched in batches with a bounded cache, annotations saved back without silent overwrites. | planned |
+| Wave 15.9 | waves/dinotraining-wave-15-9.md | Keep your work, and cloud datasets: annotations and models exported to a remembered place ("with the data" or a chosen folder) on a button, on closing and every n minutes, restored by importing; an uninstall notice; S3-compatible, Azure Blob and Google Cloud Storage datasets linked, fetched in batches with a bounded cache, annotations saved back without silent overwrites. | planned |
 | Wave 15.10 | waves/dinotraining-wave-15-10.md | The Microsoft Store: an MSIX edition beside the EXE, signed by Microsoft, smoke-tested in CI and submitted from the release workflow; listing, privacy page, Store-aware app. | planned |
 | Wave 16 | waves/dinotraining-wave-16.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
