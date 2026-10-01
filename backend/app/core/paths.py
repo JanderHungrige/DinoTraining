@@ -21,7 +21,14 @@ class PathConfinementError(ValueError):
 
 
 def default_data_dir() -> Path:
-    """Per-user application data directory, by platform convention."""
+    """Per-user application data directory, by platform convention.
+
+    ``DINO_APP_DIR`` overrides it: the desktop shell sets it for the Microsoft Store
+    edition, whose folder is the package's own (doc 152).
+    """
+    override = os.environ.get("DINO_APP_DIR", "").strip()
+    if override:
+        return Path(override)
     if sys.platform == "darwin":
         return Path.home() / "Library" / "Application Support" / APP_DIR_NAME
     if os.name == "nt":
