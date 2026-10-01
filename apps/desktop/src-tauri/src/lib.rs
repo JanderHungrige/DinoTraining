@@ -16,6 +16,7 @@ pub mod setup_flow;
 pub mod sidecar;
 pub mod support_dir;
 pub mod switch;
+pub mod update_check;
 pub mod uv_sync;
 pub mod vc_runtime;
 
@@ -64,7 +65,8 @@ pub fn run() {
             error_report::open_backend_log,
             error_report::report_issue,
             edition::app_edition,
-            edition::reveal_path
+            edition::reveal_path,
+            update_check::check_for_update
         ])
         .setup(|app| {
             let handle = app.handle().clone();

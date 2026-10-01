@@ -209,3 +209,9 @@ textarea {
 .addapps__error {
   color: var(--danger);
 }
+
+/* Doc 158: the update notice uses the same bar; its links are drawn as buttons. */
+.updatenotice a.btn {
+  display: inline-block;
+  text-decoration: none;
+}

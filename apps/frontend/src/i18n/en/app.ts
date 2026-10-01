@@ -27,6 +27,10 @@ export const appEn = {
   'app.stub.arrives': 'Arrives in Wave {wave}.',
 
   // The backend badge and the API client's own messages.
+  'app.update.available': 'DinoTraining {latest} is available. You have {current}.',
+  'app.update.get': 'Get it',
+  'app.update.notes': 'What’s new',
+  'app.update.later': 'Later',
   'app.addApps.question': 'Add DinoTraining to your Applications folder?',
   'app.addApps.add': 'Add',
   'app.addApps.notNow': 'Not now',
