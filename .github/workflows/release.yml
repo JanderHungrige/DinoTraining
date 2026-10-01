@@ -350,3 +350,18 @@ jobs:
             artifacts/**/*.app.tar.gz
             artifacts/**/*.sha256
             artifacts/**/dinotraining.rb
+
+      # Doc 155: the Store takes the release's MSIX by hand (no submission API for an
+      # individual Partner Center account). Certification does not hold up this release.
+      - name: Microsoft Store steps
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
+        shell: bash
+        run: |
+          TAG="${{ steps.decide.outputs.tag }}"
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('packaging/msix/identity.json')).get('placeholder') else 1)"; then
+            STEP="The MSIX carries the placeholder identity (packaging/msix/identity.json): not for the Store until the reserved name's identity is in."
+          else
+            STEP="Partner Center → DinoTraining → new submission → Packages: upload DinoTraining_${TAG#v}_x64.msix from the $TAG release, then Submit for certification (doc 155)."
+          fi
+          echo "### Microsoft Store" >> "$GITHUB_STEP_SUMMARY"
+          echo "$STEP" >> "$GITHUB_STEP_SUMMARY"
