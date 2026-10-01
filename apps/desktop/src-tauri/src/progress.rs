@@ -10,6 +10,8 @@ use serde::Serialize;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Phase {
+    /// Doc 141: Microsoft's Visual C++ runtime, before anything else (Windows only).
+    Runtime,
     Python,
     Packages,
     Installing,

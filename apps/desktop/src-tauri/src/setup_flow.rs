@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
-use crate::progress::{looks_offline, Tracker};
+use crate::progress::{looks_offline, Phase, Progress, Tracker};
 use crate::runtime::{Env, Runtime};
 use crate::setup::{self, Machine, SetupFailure};
 
@@ -72,7 +72,8 @@ pub fn runtime(app: &tauri::AppHandle) -> Option<Runtime> {
 pub fn needs_setup(app: &tauri::AppHandle) -> bool {
     let Some(runtime) = runtime(app) else { return false };
     if runtime.is_ready() {
-        return false;
+        // Doc 141: a ready environment whose PyTorch cannot load on this Windows.
+        return crate::vc_runtime::needed();
     }
     let stale_ok = app.state::<SetupState>().stale_ok.load(Ordering::SeqCst);
     !(stale_ok && runtime.current().is_some_and(|env| env.usable()))
@@ -167,11 +168,25 @@ pub(crate) async fn install(
     variant: &'static str,
     choice: &setup::Choice,
 ) -> Result<Env, SetupFailure> {
+    ensure_vc_runtime(app).await?;
     setup::check_disk(&runtime.root, choice)?;
     tauri::async_runtime::spawn_blocking(setup::check_online)
         .await
         .map_err(|error| SetupFailure::Failed { message: error.to_string() })??;
     sync(app, runtime, variant).await
+}
+
+/// Doc 141: Microsoft's Visual C++ runtime first, on Windows when it is too old for
+/// PyTorch. The screen says so before Windows asks for permission.
+async fn ensure_vc_runtime(app: &tauri::AppHandle) -> Result<(), SetupFailure> {
+    if !crate::vc_runtime::needed() {
+        return Ok(());
+    }
+    let progress = Progress { phase: Phase::Runtime, done_mb: 0.0, total_mb: 0.0, current: None };
+    let _ = app.emit(PROGRESS_EVENT, progress);
+    tauri::async_runtime::spawn_blocking(crate::vc_runtime::ensure)
+        .await
+        .map_err(|error| SetupFailure::Failed { message: error.to_string() })?
 }
 
 /// `uv sync` into a new environment beside the current one, with progress events.

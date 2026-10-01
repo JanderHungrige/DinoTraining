@@ -52,7 +52,10 @@ pub fn quote(dir: Option<&Path>) -> String {
     let path = dir.join(FILE);
     match tail(&path, 15) {
         lines if lines.is_empty() => format!(" It wrote nothing to {}.", path.display()),
-        lines => format!("\n\nIts last output ({}):\n{lines}", path.display()),
+        lines => {
+            let hint = crate::vc_runtime::backend_hint(&lines).unwrap_or_default();
+            format!("\n\nIts last output ({}):\n{lines}{hint}", path.display())
+        }
     }
 }
 
