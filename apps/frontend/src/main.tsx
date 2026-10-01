@@ -8,6 +8,7 @@ import '@fontsource/lato/latin-400-italic.css';
 import '@fontsource/lato/latin-700.css';
 import './styles.css';
 import './look.css';
+import './sketch.css';
 
 const container = document.getElementById('root');
 if (!container) {
