@@ -37,4 +37,14 @@ export const cloudDe: Catalogue<typeof cloudEn> = {
   'cloud.form.keepSecret': 'Gespeichert; leer lassen, um es zu behalten',
   'cloud.form.save': 'Speichern',
   'cloud.form.cancel': 'Abbrechen',
+  // Cloud-Datensatz verknüpfen (doc 148)
+  'cloud.link.title': 'Cloud-Datensatz verknüpfen',
+  'cloud.link.lead':
+    'Ein Datensatz im Cloud-Speicher wird verknüpft, nicht heruntergeladen: Die App liest seine Liste und seine Annotationsdateien und holt Bilder erst, wenn sie gebraucht werden.',
+  'cloud.link.noConnection': 'Leg zuerst unten unter „Cloud-Speicher“ eine Verbindung an.',
+  'cloud.link.connection': 'Verbindung',
+  'cloud.link.prefix': 'Ordner darin (Präfix, optional)',
+  'cloud.link.check': 'Prüfen',
+  'cloud.link.checking': 'Liste wird gelesen…',
+  'cloud.link.link': 'Verknüpfen',
 };

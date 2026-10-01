@@ -10,6 +10,7 @@ import { useCallback, useState, type JSX } from 'react';
 
 import { AutoExportSettings } from '../components/AutoExportSettings';
 import { CloudConnections } from '../components/CloudConnections';
+import { CloudLink } from '../components/CloudLink';
 import { DatasetGuide } from '../components/DatasetGuide';
 import { DatasetImport } from '../components/DatasetImport';
 import { ExampleDataset } from '../components/ExampleDataset';
@@ -41,6 +42,9 @@ export function ModelsTab(): JSX.Element {
   // Doc 136: an import re-reads the list underneath it.
   const [listVersion, setListVersion] = useState(0);
   const imported = useCallback(() => setListVersion((n) => n + 1), []);
+  // Doc 148: a new cloud connection is offered in "Link a cloud dataset" at once.
+  const [cloudVersion, setCloudVersion] = useState(0);
+  const cloudChanged = useCallback(() => setCloudVersion((n) => n + 1), []);
   const tabs: readonly SubTab<ModelsSubTab>[] = [
     { id: 'official', label: t('models.sub.official') },
     { id: 'datasets', label: t('models.sub.datasets') },
@@ -58,9 +62,10 @@ export function ModelsTab(): JSX.Element {
             <p className="library__lead">{t('models.datasets.lead')}</p>
             <UninstallNotice key={`notice-${listVersion}`} onExported={imported} />
             <DatasetImport onImported={imported} />
+            <CloudLink key={`link-${cloudVersion}`} onLinked={imported} />
             <ExampleDataset onImported={imported} />
             <DatasetGuide />
-            <CloudConnections />
+            <CloudConnections onChanged={cloudChanged} />
             <AutoExportSettings onExported={imported} />
             <LibraryTab key={listVersion} kinds={['dataset']} headed={false} />
           </>

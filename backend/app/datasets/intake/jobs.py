@@ -103,6 +103,19 @@ class ImportJobs:
 
         return self._start(job, work)
 
+    def submit_link(
+        self, link_id: str, name: str, description: str | None, settings: Settings | None = None
+    ) -> ImportJob:
+        """Doc 148: list the bucket (again, if needed), then import without the pictures."""
+        from app.cloud.linking import import_link  # the cloud package imports this module's kin
+
+        job = ImportJob(job_id=uuid.uuid4().hex, path=link_id)
+
+        def work() -> ImportResult:
+            return import_link(link_id, name, description, job.report, settings)
+
+        return self._start(job, work)
+
     def _start(self, job: ImportJob, work: Callable[[], ImportResult]) -> ImportJob:
         with self._lock:
             self._jobs[job.job_id] = job

@@ -12,6 +12,7 @@ import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from typing import Any
 
+from app.cloud.pictures import picture_exists
 from app.datasets.coco_import import split_of
 from app.datasets.intake.documents import Document
 from app.datasets.intake.walk import Listing
@@ -40,7 +41,7 @@ def _picture_for(xml: Path, element: ElementTree.Element) -> Path | None:
         xml.parent.with_name("JPEGImages"),
         xml.parent.parent / "JPEGImages",
     ):
-        if (folder / name).is_file():
+        if picture_exists(folder / name):  # a bucket's picture is listed, not local (doc 148)
             return folder / name
     return None
 

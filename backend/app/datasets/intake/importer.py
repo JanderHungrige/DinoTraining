@@ -16,9 +16,9 @@ import math
 from collections.abc import Callable
 from pathlib import Path
 
-from PIL import Image
 from pydantic import BaseModel
 
+from app.cloud.pictures import picture_size
 from app.core.config import Settings
 from app.core.paths import ensure_within
 from app.datasets.coco_import import ImportOptions, normalise_class, parse_split
@@ -30,6 +30,7 @@ from app.datasets.intake.details import set_details
 from app.datasets.intake.detect import Detection, scan
 from app.datasets.intake.documents import Document
 from app.datasets.intake.segmentation import masks_for_image
+from app.datasets.intake.walk import Listing
 from app.datasets.masks import MaskStore
 from app.datasets.models import ImageMaskAnnotation
 from app.datasets.store import DatasetStore, dataset_dir
@@ -63,8 +64,10 @@ def run_import(
     copy_images: bool,
     progress: Progress = lambda _done, _total, _what: None,
     settings: Settings | None = None,
+    listing: Listing | None = None,
 ) -> ImportResult:
-    detection, documents, listing = scan(path)
+    """`listing`: a bucket's (doc 148); its pictures are referenced at their cache paths."""
+    detection, documents, listing = scan(path, listing)
     if detection.kind == "dinotraining":
         return _restore(path, name, description, progress, settings)
     store = DatasetStore(settings)
@@ -213,8 +216,7 @@ def _add_plain(
         with transaction(settings) as connection:
             for offset, picture in enumerate(batch):
                 try:
-                    with Image.open(picture) as opened:
-                        width, height = opened.size
+                    width, height = picture_size(picture)  # a bucket's: from its header
                 except OSError:
                     result.skipped_pictures += 1
                     continue

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from app.cloud.pictures import picture_exists
 from app.core.paths import ensure_within
 from app.datasets.bbox_conventions import Convention, to_xywh
 from app.datasets.models import Box, ImageAnnotation
@@ -227,7 +228,7 @@ def parse_split(
             logger.warning("Skipping %s — path escapes %s", file_name, root)
             skipped_images += 1
             continue
-        if not image_path.is_file():
+        if not picture_exists(image_path):  # a bucket's picture exists if it was listed
             skipped_images += 1
             continue
 

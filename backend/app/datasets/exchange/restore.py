@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from app.cloud.pictures import picture_exists
 from app.core.config import Settings
 from app.datasets.db import transaction
 from app.datasets.exchange.dump import RECIPE_DIR, STATE_FILES, TABLES, Table
@@ -66,7 +67,7 @@ def pictures_dir(export_file: Path, dump: dict[str, Any]) -> Path | None:
     if original is None:  # absolute paths (pictures on two Windows drives)
         return Path("/") if not images or Path(images[0]["path"]).is_file() else None
     for candidate in (folder / PICTURES_DIR, beside, Path(original)):
-        if not images or resolve(images[0]["path"], candidate).is_file():
+        if not images or picture_exists(resolve(images[0]["path"], candidate)):
             return candidate
     return None
 

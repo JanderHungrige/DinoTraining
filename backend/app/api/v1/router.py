@@ -15,6 +15,7 @@ from app.api.v1 import (
     annotators,
     backbones,
     cloud,
+    cloud_links,
     dataset_classes,
     dataset_examples,
     dataset_exchange,
@@ -83,6 +84,7 @@ api_router.include_router(dataset_examples.router, tags=["datasets"])
 api_router.include_router(dataset_exchange.router, tags=["datasets"])
 api_router.include_router(exports.router, tags=["datasets"])
 api_router.include_router(cloud.router, tags=["cloud"])
+api_router.include_router(cloud_links.router, tags=["cloud"])
 api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])

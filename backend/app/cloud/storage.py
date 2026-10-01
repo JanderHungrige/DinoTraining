@@ -53,6 +53,13 @@ class Storage:
         except Exception as error:  # noqa: BLE001
             raise explain(error, f"{self.where}/{key}") from error
 
+    def get_range(self, key: str, length: int) -> bytes:
+        """The first `length` bytes (all of them for a smaller file): a picture's header."""
+        try:
+            return bytes(obstore.get_range(self._store, key, start=0, length=length))
+        except Exception as error:  # noqa: BLE001
+            raise explain(error, f"{self.where}/{key}") from error
+
     def head(self, key: str) -> Entry | None:
         try:
             meta = obstore.head(self._store, key)

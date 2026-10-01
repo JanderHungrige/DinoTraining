@@ -139,7 +139,7 @@ export function DatasetImport({ onImported }: { readonly onImported: () => void 
   );
 }
 
-function DetectionSummary({ detection }: { readonly detection: Detection }): JSX.Element {
+export function DetectionSummary({ detection }: { readonly detection: Detection }): JSX.Element {
   const { t, tp } = useT();
   const facts = [
     tp('models.import.pictures', detection.pictures),

@@ -14,7 +14,8 @@ function message(error: unknown): string {
   return error instanceof ApiError || error instanceof Error ? error.message : String(error);
 }
 
-export function CloudConnections(): JSX.Element {
+/** `onChanged`: a connection was added, changed or removed (the link section re-reads). */
+export function CloudConnections({ onChanged }: { readonly onChanged?: () => void }): JSX.Element {
   const { t } = useT();
   const [connections, setConnections] = useState<readonly CloudConnection[] | null>(null);
   const [editing, setEditing] = useState<CloudConnection | 'new' | null>(null);
@@ -37,6 +38,7 @@ export function CloudConnections(): JSX.Element {
   const saved = (): void => {
     setEditing(null);
     load();
+    onChanged?.();
   };
 
   return (
@@ -51,7 +53,7 @@ export function CloudConnections(): JSX.Element {
               <CloudConnectionForm key={connection.id} initial={connection} onSaved={saved} onCancel={() => setEditing(null)} />
             </li>
           ) : (
-            <ConnectionRow key={connection.id} connection={connection} onEdit={() => setEditing(connection)} onDeleted={() => load()} />
+            <ConnectionRow key={connection.id} connection={connection} onEdit={() => setEditing(connection)} onDeleted={() => { load(); onChanged?.(); }} />
           ),
         )}
       </ul>

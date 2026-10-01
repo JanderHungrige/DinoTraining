@@ -1,6 +1,7 @@
 /** Cloud storage connections (doc 147). Mirrors backend/app/api/v1/cloud.py. Secrets go in, never out. */
 
 import { apiFetch } from './client';
+import type { Detection, ImportJob } from './datasetImport';
 
 export type CloudKind = 's3' | 'azure' | 'gcs';
 
@@ -64,4 +65,22 @@ export async function deleteConnection(id: string): Promise<void> {
 
 export function testConnection(id: string, bucket: string): Promise<CloudTestResult> {
   return apiFetch(`/cloud/connections/${encodeURIComponent(id)}/test`, isResult, json('POST', { bucket }));
+}
+
+/** Doc 148: a bucket's dataset, detected from its listing and annotation files. */
+export interface LinkDetection {
+  readonly link_id: string;
+  readonly detection: Detection;
+}
+
+const isLinkDetection = (value: unknown): value is LinkDetection =>
+  isRecord(value) && typeof value['link_id'] === 'string' && isRecord(value['detection']);
+const isJob = (value: unknown): value is ImportJob => isRecord(value) && typeof value['job_id'] === 'string';
+
+export function detectLink(connectionId: string, bucket: string, prefix: string): Promise<LinkDetection> {
+  return apiFetch('/cloud/links/detect', isLinkDetection, json('POST', { connection_id: connectionId, bucket, prefix }));
+}
+
+export function startLink(linkId: string, name: string, description: string | null): Promise<ImportJob> {
+  return apiFetch('/cloud/links', isJob, json('POST', { link_id: linkId, name, description }));
 }

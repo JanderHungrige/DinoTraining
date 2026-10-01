@@ -54,11 +54,11 @@ def walk(root: Path) -> Listing:
                     f"{root} holds more than {MAX_FILES:,} files within {MAX_DEPTH} levels: "
                     "choose the dataset's own folder"
                 )
-            _sort_into(listing, Path(directory) / name)
+            sort_into(listing, Path(directory) / name)
     return listing
 
 
-def _sort_into(listing: Listing, path: Path) -> None:
+def sort_into(listing: Listing, path: Path) -> None:
     suffix = path.suffix.lower()
     if suffix in IMAGE_SUFFIXES:
         listing.pictures.append(path)

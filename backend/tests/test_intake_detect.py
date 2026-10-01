@@ -80,3 +80,13 @@ def test_compressed_rle_round_trips_against_pycocotools_encoder() -> None:
 
 def test_a_mask_of_another_size_is_refused() -> None:
     assert mask_rle({"size": [3, 4], "counts": [12]}, width=8, height=8) is None
+
+
+def test_openlabel_counts_only_the_pictures_that_are_there(tmp_path: Path) -> None:
+    """Found 2026-10-01: OSDaR23's 'RGB centre only' detection promised every frame the
+    labels name, though the import keeps only the pictures it can open."""
+    root = fx.openlabel(tmp_path / "o")
+    (root / "rgb_center" / "001.png").unlink()
+    detection, documents, _ = scan(root)
+    assert (detection.pictures, detection.annotated_pictures, detection.objects) == (1, 1, 1)
+    assert [len(doc.payload["annotations"]) for doc in documents] == [1]

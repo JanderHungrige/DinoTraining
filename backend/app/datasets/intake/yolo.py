@@ -15,8 +15,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from PIL import Image
-
+from app.cloud.pictures import picture_exists, picture_size
 from app.datasets.coco_import import split_of
 from app.datasets.intake.documents import Document
 from app.datasets.intake.walk import Listing
@@ -66,7 +65,7 @@ def _picture_for(label: Path, labels_dir: Path) -> Path | None:
     stem = images_dir / label.relative_to(labels_dir).with_suffix("")
     for suffix in (".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"):
         for candidate in (stem.with_suffix(suffix), stem.with_suffix(suffix.upper())):
-            if candidate.is_file():
+            if picture_exists(candidate):  # a bucket's picture is listed, not local
                 return candidate
     return None
 
@@ -103,8 +102,7 @@ def _add(
     split = next((split_of(part) for part in relative.parts if split_of(part)), None)
     doc = by_split.setdefault(split, {"images": [], "annotations": [], "categories": []})
     try:
-        with Image.open(picture) as opened:
-            width, height = opened.size
+        width, height = picture_size(picture)  # a bucket's: from its header (doc 148)
     except OSError:
         return
     image_id = len(doc["images"]) + 1

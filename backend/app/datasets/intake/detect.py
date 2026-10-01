@@ -62,15 +62,20 @@ class Detection(BaseModel):
     uncovered: int = 0
 
 
-def scan(path: Path) -> tuple[Detection, list[Document], Listing | None]:
-    """Detect, and keep what the import needs, so it never reads twice differently."""
+def scan(
+    path: Path, listing: Listing | None = None
+) -> tuple[Detection, list[Document], Listing | None]:
+    """Detect, and keep what the import needs, so it never reads twice differently.
+
+    `listing`: a bucket's, already made (doc 148); otherwise the folder is walked.
+    """
     path = path.expanduser()
-    if path.is_file() and looks_like_video(path):
+    if listing is None and path.is_file() and looks_like_video(path):
         return _video(path, [path], None), [], None
     export = find_export(path)
     if export is not None:
         return _export_detection(path, export), [], None
-    listing = walk(path)
+    listing = listing or walk(path)
     for documents, kind in _annotated(listing):
         if documents:
             if kind == "openlabel":

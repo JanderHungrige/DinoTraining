@@ -36,4 +36,14 @@ export const cloudEn = {
   'cloud.form.keepSecret': 'Saved; leave empty to keep it',
   'cloud.form.save': 'Save',
   'cloud.form.cancel': 'Cancel',
+  // Link a cloud dataset (doc 148)
+  'cloud.link.title': 'Link a cloud dataset',
+  'cloud.link.lead':
+    'A dataset in cloud storage is linked, not downloaded: the app reads its listing and annotation files, and fetches pictures only when they are needed.',
+  'cloud.link.noConnection': 'Add a connection under “Cloud storage” further down first.',
+  'cloud.link.connection': 'Connection',
+  'cloud.link.prefix': 'Folder in it (prefix, optional)',
+  'cloud.link.check': 'Check',
+  'cloud.link.checking': 'Reading the listing…',
+  'cloud.link.link': 'Link',
 } as const;
