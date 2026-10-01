@@ -11,6 +11,7 @@ import { useEffect, useState, type JSX } from 'react';
 import { ApiError, getHealth } from '../api/client';
 import type { HealthResponse } from '../api/types';
 import { useT } from '../i18n';
+import { ErrorActions } from './ErrorActions';
 
 const POLL_INTERVAL_MS = 5_000;
 
@@ -68,10 +69,14 @@ export function BackendStatus(): JSX.Element {
     );
   }
 
+  const text = status.message ?? t('app.backend.unexpected');
   return (
-    <p className="status status--error" role="alert">
-      <span className="status__dot" aria-hidden="true" />
-      {status.message ?? t('app.backend.unexpected')}
-    </p>
+    <div className="status status--error" role="alert">
+      <p className="status__text">
+        <span className="status__dot" aria-hidden="true" />
+        {text}
+      </p>
+      <ErrorActions message={text} />
+    </div>
   );
 }

@@ -4,6 +4,7 @@
 //! logic — that all lives behind `/api/v1` in the Python backend.
 
 pub mod backend_log;
+pub mod error_report;
 pub mod mac_apps;
 pub mod progress;
 pub mod resources;
@@ -55,7 +56,9 @@ pub fn run() {
             switch::runtime_status,
             switch::switch_variant,
             mac_apps::applications_offer,
-            mac_apps::add_to_applications
+            mac_apps::add_to_applications,
+            error_report::open_backend_log,
+            error_report::report_issue
         ])
         .setup(|app| {
             let handle = app.handle().clone();
