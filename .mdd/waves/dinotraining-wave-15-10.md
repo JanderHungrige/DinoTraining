@@ -3,11 +3,11 @@ id: dinotraining-wave-15-10
 title: "Wave 15.10: The Microsoft Store — an MSIX edition beside the EXE, signed by Microsoft"
 initiative: dinotraining
 initiative_version: 16
-status: planned
+status: in_progress
 depends_on: dinotraining-wave-15-9
 demo_state: "DinoTraining is in the Microsoft Store. Installing it there shows no 'Windows protected your PC' warning (Microsoft signs the MSIX), its first start sets up Python and PyTorch exactly as the EXE does (the Visual C++ runtime included), the Store updates it, and uninstalling it after the in-app notice keeps every exported dataset and model. Each release builds the EXE as before and an MSIX, installs and starts the MSIX in CI, and attaches it to the GitHub release for the Store; the download site links to the Store beside the EXE."
 created: 2026-10-01
-hash: 1812e4f9
+hash: ea9777cf
 ---
 
 # Wave 15.10: The Microsoft Store
@@ -69,12 +69,12 @@ hash: 1812e4f9
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | msix-package | docs/151-msix-package.md | planned | — |
-| 2 | msix-runtime | docs/152-msix-runtime.md | planned | msix-package |
-| 3 | msix-smoke-ci | docs/153-msix-smoke-ci.md | planned | msix-package, msix-runtime |
-| 4 | store-listing | docs/154-store-listing.md | planned | — |
-| 5 | store-submission | docs/155-store-submission.md | planned | msix-smoke-ci, store-listing, D0 |
-| 6 | store-aware-app | docs/156-store-aware-app.md | planned | msix-runtime |
+| 1 | msix-package | docs/151-msix-package.md | complete | — |
+| 2 | msix-runtime | docs/152-msix-runtime.md | in_progress (Jan's PCs, R1–R3) | msix-package |
+| 3 | msix-smoke-ci | docs/153-msix-smoke-ci.md | complete | msix-package, msix-runtime |
+| 4 | store-listing | docs/154-store-listing.md | in_progress (screenshots) | — |
+| 5 | store-submission | docs/155-store-submission.md | in_progress (Jan's steps) | msix-smoke-ci, store-listing, D0 |
+| 6 | store-aware-app | docs/156-store-aware-app.md | in_progress (under package identity on Jan's PCs) | msix-runtime |
 
 ### Feature notes
 
@@ -193,6 +193,19 @@ hash: 1812e4f9
 - **D3:** the Store edition shows no update hint of its own.
 - **D4:** the minimum is Windows 10 1809 unless R1 shows WebView2 must be guaranteed;
   then Windows 11.
+
+## Built (2026-10-01/02, with placeholders)
+
+- **The MSIX** is packed beside the EXE from the same Windows build (makeappx, not winapp),
+  test-signed for CI, and **installed, set up, started twice and removed in CI from a clean
+  AppData** (run 36933854791).
+- **R5 answered, and it changed the design:** through the AppData redirection uv's Python
+  link fails, and an existing folder switches the redirection off. The Store edition now
+  writes to its package folder by its real path (doc 152).
+- **R4 answered:** the submission API needs an Entra application on Partner Center's Users
+  page, which an individual account does not have: one manual upload per release (doc 155).
+- **Placeholders:** the identity `DinoTraining.Placeholder` / `CN=DinoTraining Placeholder`
+  in `packaging/msix/identity.json` until Jan reserves the name.
 
 ## Open research (answered while building, in this order)
 
