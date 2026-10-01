@@ -74,7 +74,9 @@ class DeleteResponse(BaseModel):
     removed: bool
 
 
-def describe_instance(instance: HeadInstance, trained_width: int | None = None) -> HeadInstanceInfo:
+def describe_instance(
+    instance: HeadInstance, trained_width: int | None = None
+) -> HeadInstanceInfo:
     """Instance -> API shape. Public because doc 15's catalogue router returns the
     same model — a second copy is how two endpoints start describing one head
     differently."""

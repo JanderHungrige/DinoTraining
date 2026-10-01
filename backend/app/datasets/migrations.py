@@ -197,7 +197,9 @@ def _rebuild_table(connection: sqlite3.Connection, table: str) -> None:
 
     try:
         connection.execute("BEGIN")
-        connection.execute(_TABLE_DDL[table].replace(f"IF NOT EXISTS {table}", scratch))
+        connection.execute(
+            _TABLE_DDL[table].replace(f"IF NOT EXISTS {table}", scratch)
+        )
         connection.execute(
             f"INSERT INTO {scratch} ({columns}) SELECT {columns} FROM {table}"  # noqa: S608
         )
