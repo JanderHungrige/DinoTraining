@@ -17,6 +17,7 @@ import { IntroTab } from './tabs/IntroTab';
 import { ModelsTab } from './tabs/ModelsTab';
 import { PrepareTab } from './tabs/PrepareTab';
 import { SetupGate } from './setup/SetupGate';
+import { useAutoExport } from './hooks/useAutoExport';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 import type { InspectRequest, TrainRequest } from './types/navigation';
 
@@ -57,6 +58,8 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
 }
 
 export function App(): JSX.Element {
+  // Doc 144: exports every n minutes while the app is open, when that is switched on.
+  useAutoExport();
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
   const [inspectRequest, setInspectRequest] = useState<InspectRequest | null>(null);
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);

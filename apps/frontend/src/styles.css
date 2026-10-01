@@ -3869,3 +3869,20 @@ body {
 .dsexport__panel > .btn {
   align-self: flex-start;
 }
+
+/* Automatic export (doc 144) */
+.autoexport__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.autoexport__minutes {
+  width: 4.5rem;
+}
+
+.autoexport__last p {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}

@@ -23,6 +23,7 @@ from app.api.v1 import (
     dataset_phrases,
     dataset_quality,
     datasets,
+    exports,
     finetune_jobs,
     finetune_requirements,
     foundation,
@@ -79,6 +80,7 @@ api_router.include_router(dataset_import.router, tags=["datasets"])
 # Before datasets.router too: /datasets/examples is not a dataset id (doc 138).
 api_router.include_router(dataset_examples.router, tags=["datasets"])
 api_router.include_router(dataset_exchange.router, tags=["datasets"])
+api_router.include_router(exports.router, tags=["datasets"])
 api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])

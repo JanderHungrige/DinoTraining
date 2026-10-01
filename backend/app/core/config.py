@@ -89,6 +89,9 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # --- MLflow (doc 123) --- MLflow's own names, so an existing setup carries over.
+    # Doc 144: exports of changed datasets on closing the app, and every n minutes (0: off).
+    export_on_close: bool = Field(default=True, alias="DINO_EXPORT_ON_CLOSE")
+    export_every_minutes: int = Field(default=0, ge=0, le=1440, alias="DINO_EXPORT_EVERY_MINUTES")
     mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")
     mlflow_experiment: str = Field(default="DinoTraining", alias="DINO_MLFLOW_EXPERIMENT")
     mlflow_register: bool = Field(default=True, alias="DINO_MLFLOW_REGISTER")

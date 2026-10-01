@@ -81,4 +81,16 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.export.now': 'Jetzt exportieren',
   'models.export.busy': 'Wird exportiert…',
   'models.export.done': 'Geschrieben nach {folder}:',
+  // Automatischer Export (doc 144)
+  'models.auto.title': 'Automatischer Export',
+  'models.auto.lead': 'Jeder Datensatz geht an sein eigenes Ziel (festgelegt mit „Exportieren…“ in seiner Zeile), und nur, wenn er sich seit dem letzten Export geändert hat.',
+  'models.auto.onClose': 'Beim Schließen der App',
+  'models.auto.every': 'Alle',
+  'models.auto.minutes': 'Minuten',
+  'models.auto.now': 'Jetzt alle exportieren',
+  'models.auto.busy': 'Wird exportiert…',
+  'models.auto.last': 'Letzter Lauf {when}: {exported} exportiert, {unchanged} unverändert.',
+  'models.auto.failed': 'Nicht exportiert: {names}.',
+  'models.auto.unfinished': 'Für den nächsten Lauf liegen geblieben (das Schließen hat zu lange gedauert): {names}.',
+  'models.auto.noTarget': 'Noch kein Exportziel: {names}. Leg eins fest mit „Exportieren…“ in ihren Zeilen.',
 };

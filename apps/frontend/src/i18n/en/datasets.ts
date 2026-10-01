@@ -80,4 +80,16 @@ export const datasetsEn = {
   'models.export.now': 'Export now',
   'models.export.busy': 'Exporting…',
   'models.export.done': 'Written to {folder}:',
+  // Automatic export (doc 144)
+  'models.auto.title': 'Automatic export',
+  'models.auto.lead': 'Each dataset goes to its own target (set with “Export…” on its row), and only when it changed since its last export.',
+  'models.auto.onClose': 'When closing the app',
+  'models.auto.every': 'Every',
+  'models.auto.minutes': 'minutes',
+  'models.auto.now': 'Export all now',
+  'models.auto.busy': 'Exporting…',
+  'models.auto.last': 'Last run {when}: {exported} exported, {unchanged} unchanged.',
+  'models.auto.failed': 'Not exported: {names}.',
+  'models.auto.unfinished': 'Left for the next run (closing took too long): {names}.',
+  'models.auto.noTarget': 'No export target yet: {names}. Choose one with “Export…” on their rows.',
 } as const;

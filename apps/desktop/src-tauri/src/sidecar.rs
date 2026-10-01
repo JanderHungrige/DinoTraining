@@ -267,6 +267,14 @@ pub struct SidecarHandle {
 }
 
 impl SidecarHandle {
+    /// A backend this shell started and that has not exited (doc 144 asks it to export).
+    pub fn is_running(&self) -> bool {
+        self.child
+            .lock()
+            .map(|mut slot| slot.as_mut().is_some_and(|child| matches!(child.try_wait(), Ok(None))))
+            .unwrap_or(false)
+    }
+
     pub fn store(&self, child: Child) {
         if let Ok(mut slot) = self.child.lock() {
             *slot = Some(child);

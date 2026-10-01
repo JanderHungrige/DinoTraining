@@ -8,6 +8,7 @@
 
 import { useCallback, useState, type JSX } from 'react';
 
+import { AutoExportSettings } from '../components/AutoExportSettings';
 import { DatasetGuide } from '../components/DatasetGuide';
 import { DatasetImport } from '../components/DatasetImport';
 import { ExampleDataset } from '../components/ExampleDataset';
@@ -55,6 +56,7 @@ export function ModelsTab(): JSX.Element {
             <DatasetImport onImported={imported} />
             <ExampleDataset onImported={imported} />
             <DatasetGuide />
+            <AutoExportSettings onExported={imported} />
             <LibraryTab key={listVersion} kinds={['dataset']} headed={false} />
           </>
         )}
