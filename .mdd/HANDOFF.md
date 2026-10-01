@@ -4,26 +4,61 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-01, at the end of the **Wave 15.7 build**.
-- **Waves 1–12:** in `dev` and `main`.
-- **Waves 13, 14, 15, 15.5 and 15.6** (docs 99–124): in `dev`, waiting for Jan's test.
-- **Wave 15.7** (docs 125–131, the installer): built and pushed on
-  `feat/dinotraining-wave-15-7`, not merged. Its status stays `in_progress` until Jan
-  confirms the demo-state.
-
-**Merged to `dev`:** 15.7 (`0057336`) and its follow-ups (`c1bb670`): doc 132 (Windows
-uninstall), doc 133 (download site), Inspect after Start here.
+**Last updated:** 2026-10-01, at the end of the **Wave 15.8 build**.
+- **Waves 1–12 and 15.7, release 0.1.0:** in `main` (`d8f8bb0`), published; the
+  download site https://dino.w3rth.de shows 0.1.0.
+- **Waves 13–15.6:** in `dev` (`43e2e2c`) and in `main` with the release.
+- **Wave 15.8** (docs 134–138): built and pushed on `feat/dinotraining-wave-15-8`,
+  **not merged**. It goes to `dev` when Jan says so, and to `main` only on his go.
 
 **Next, Jan's:**
-- test on the Windows PC with an NVIDIA card;
-- a version bump (e.g. 0.1.0) and the merge to `main` → the first published release,
-  the download buttons and the Mac line on https://dino.w3rth.de start working;
-- `dino.questenterprise.de`: DNS → 159.195.148.193, NPM proxy host 19 → port 8003
-  (it says 8001), and its certificate;
-- the Homebrew tap (`JanderHungrige/homebrew-tap`).
-Then Wave 16, the website with accounts and compute, to be rethought.
+- try Models & Datasets → Datasets: import a folder, and the OSDaR23 example (both
+  variants are already imported in this machine's library, and downloaded);
+- the merge of 15.8 to `dev`;
+- still open from 15.7: the Windows NVIDIA PC; `dino.questenterprise.de` (DNS →
+  159.195.148.193, NPM host 19 → port 8003, certificate); the Homebrew tap.
+
+Then **Wave 15.9** (cloud datasets: S3 and similar, fetched in batches, annotations
+saved back), planned in outline only.
 
 ---
+
+## Wave 15.8 — Models & Datasets, any dataset in, an own emblem (2026-10-01)
+
+Jan: "a tab to use a downloaded dataset and make it a dataset for the tool … this is the
+actual entry point".
+
+| | |
+|---|---|
+| 134 | **Emblem:** a coin with a mirrored T-rex skeleton, yellow on black, no text (`branding/emblem.svg`); every Tauri icon, the app header, favicon, download site and README. |
+| 135 | **Models & Datasets**, second tab: sub-tabs Official Models (the Admin page as it was), Datasets, My Models; the Library tab is folded in. New order: Start here, Models & Datasets, Inspect, Studio, Prepare, Training, Inference, Generator, Connection. |
+| 136 | **Import any folder or video:** pictures, video, COCO (boxes, polygon and RLE masks), YOLO (boxes, polygons), Pascal VOC, OpenLABEL; detected first, named and described, imported as a background job; parameters in the list (pictures, annotated, classes, boxes/masks, media). Unannotated pictures arrive *never saved* and stay out of training and export until saved. |
+| 137 | **Guide:** how each format must be laid out (with a folder tree each), and dataset sites (Hugging Face, Roboflow, Kaggle, Open Images, COCO, OSDaR23). |
+| 138 | **OSDaR23 example:** one click, (A) all sensors or (B) the RGB centre camera only; the 764 MB archive is unpacked while it streams, never stored; imported with authors and licences (pictures CC BY-SA 3.0 DE, annotations CC0 1.0). |
+
+- **Proof, live in the running app (German):**
+  - a COCO folder imported with its description;
+  - YOLO and a video through the API;
+  - OSDaR23 B from the real portal: 764 MB streamed, 61 MB kept, "10 Bilder · 10
+    annotiert · 6 Klassen";
+  - OSDaR23 A: 865 MB kept, "90 Bilder · 90 annotiert · 7 Klassen";
+  - leaving the sub-tab mid-download and coming back resumes the progress.
+- **Tests:** backend 1925, frontend 1150, all green; ruff, mypy and tsc clean.
+- **Found while building and fixed:**
+  - `GET /datasets/profiles` was answered by `/datasets/{id}` (router order);
+  - imported pictures without annotations would have trained as "nothing here";
+  - every `target="_blank"` link was dead in the desktop app: the opener capability
+    never granted `open_url`. It now grants https only, which also fixes the licence
+    links on the model cards and in the token panel. **This was not clicked in the real
+    desktop window** (this session cannot drive one), so it is worth one click there;
+  - OSDaR23's radar PNGs imported as pictures; a camera without one annotation was
+    imported as annotated-empty;
+  - the OSDaR23 licence is two licences; the portal names only one.
+- **Worth knowing:**
+  - the OSDaR23 sequence Jan linked has **10 frames**: enough to show the loop, not to
+    train a useful detector;
+  - B still transfers the whole archive (the server ignores Range requests); it saves
+    disk, not bandwidth.
 
 ## Wave 15.7 — The installer: bundled uv, PyTorch from the source (2026-10-01)
 
