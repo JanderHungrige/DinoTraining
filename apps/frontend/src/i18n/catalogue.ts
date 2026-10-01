@@ -25,6 +25,8 @@ import { adminDe } from './de/admin';
 import { adminEn } from './en/admin';
 import { setupDe } from './de/setup';
 import { setupEn } from './en/setup';
+import { guideDe } from './de/guide';
+import { guideEn } from './en/guide';
 
 export const en = {
   ...commonEn,
@@ -38,6 +40,7 @@ export const en = {
   ...generatorEn,
   ...adminEn,
   ...setupEn,
+  ...guideEn,
 } as const;
 
 export type Key = keyof typeof en;
@@ -54,4 +57,5 @@ export const de: { readonly [K in Key]: string } = {
   ...generatorDe,
   ...adminDe,
   ...setupDe,
+  ...guideDe,
 };

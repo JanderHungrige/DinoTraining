@@ -3719,3 +3719,60 @@ body {
   color: var(--text-dim);
   font-style: italic;
 }
+
+/* Dataset guide (doc 137) */
+.dsguide {
+  margin: 0 0 24px;
+}
+
+.dsguide__section {
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+}
+
+.dsguide__section > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dsguide__lead {
+  color: var(--text-dim);
+}
+
+.dsguide__format h4 {
+  margin: 14px 0 4px;
+}
+
+.dsguide__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+  gap: 12px;
+  align-items: start;
+}
+
+.dsguide__body p {
+  margin: 0;
+}
+
+.dsguide__tree {
+  margin: 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--surface-sunken, rgba(127, 127, 127, 0.1));
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.dsguide__sites li {
+  margin: 0 0 6px;
+}
+
+@media (max-width: 720px) {
+  .dsguide__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
