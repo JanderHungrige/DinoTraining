@@ -44,7 +44,19 @@ export type SetupFailure =
   | { readonly kind: 'offline' }
   | { readonly kind: 'failed'; readonly message: string }
   /** Doc 128: a switch failed and the previous variant was put back. */
-  | { readonly kind: 'rolled_back'; readonly to: Variant; readonly reason: SetupFailure };
+  | { readonly kind: 'rolled_back'; readonly to: Variant; readonly reason: SetupFailure }
+  /** Doc 141: Windows' Visual C++ runtime is too old for PyTorch and was not installed. */
+  | {
+      readonly kind: 'vc_runtime';
+      readonly found: string | null;
+      readonly reason: VcRuntimeReason;
+      readonly code: number | null;
+    };
+
+export type VcRuntimeReason = 'declined' | 'unsigned' | 'download' | 'installer' | 'still_old';
+
+/** Doc 141: what PyTorch needs, and where Microsoft offers it. */
+export const VC_RUNTIME = { minimum: '14.40', url: 'https://aka.ms/vs/17/release/vc_redist.x64.exe' } as const;
 
 /** Doc 128: what is installed, and what this machine could take. */
 export interface RuntimeStatus {
@@ -55,7 +67,7 @@ export interface RuntimeStatus {
 /** CUDA version per GPU variant, for labels. */
 export const CUDA_VERSION: Readonly<Record<Variant, string | null>> = { cpu: null, cu126: '12.6', cu130: '13.0' };
 
-export type Phase = 'python' | 'packages' | 'installing' | 'done';
+export type Phase = 'runtime' | 'python' | 'packages' | 'installing' | 'done';
 
 export interface Progress {
   readonly phase: Phase;

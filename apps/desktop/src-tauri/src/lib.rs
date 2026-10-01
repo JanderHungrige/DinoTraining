@@ -15,6 +15,7 @@ pub mod sidecar;
 pub mod support_dir;
 pub mod switch;
 pub mod uv_sync;
+pub mod vc_runtime;
 
 use tauri::{Emitter, Manager, RunEvent};
 

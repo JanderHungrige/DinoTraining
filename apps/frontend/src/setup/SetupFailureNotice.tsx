@@ -2,9 +2,9 @@
 
 import type { JSX } from 'react';
 
-import { useT, type Language, type Translator } from '../i18n';
+import { useT, type Key, type Language, type Translator } from '../i18n';
 import { formatGb } from './MachineSummary';
-import { CUDA_VERSION, type SetupFailure, type Variant } from './shell';
+import { CUDA_VERSION, VC_RUNTIME, type SetupFailure, type Variant, type VcRuntimeReason } from './shell';
 import { ErrorActions } from '../components/ErrorActions';
 
 /** "CPU" or "GPU (CUDA 13.0)". */
@@ -12,6 +12,14 @@ export function variantName(t: Translator['t'], variant: Variant): string {
   const cuda = CUDA_VERSION[variant];
   return cuda ? t('setup.variant.gpu', { cuda }) : t('setup.variant.cpu');
 }
+
+const VC_REASONS: Readonly<Record<VcRuntimeReason, Key>> = {
+  declined: 'setup.fail.vcRuntime.declined',
+  unsigned: 'setup.fail.vcRuntime.unsigned',
+  download: 'setup.fail.vcRuntime.download',
+  installer: 'setup.fail.vcRuntime.installer',
+  still_old: 'setup.fail.vcRuntime.stillOld',
+};
 
 function message(t: Translator['t'], lang: Language, failure: SetupFailure): string {
   switch (failure.kind) {
@@ -27,6 +35,13 @@ function message(t: Translator['t'], lang: Language, failure: SetupFailure): str
       return t('setup.fail.unsupported');
     case 'failed':
       return t('setup.fail.failed', { message: failure.message });
+    case 'vc_runtime':
+      return t('setup.fail.vcRuntime', {
+        minimum: VC_RUNTIME.minimum,
+        found: failure.found ?? t('setup.fail.vcRuntime.none'),
+        reason: t(VC_REASONS[failure.reason], { code: String(failure.code ?? '') }),
+        url: VC_RUNTIME.url,
+      });
     case 'rolled_back':
       return t('setup.fail.rolledBack', { reason: message(t, lang, failure.reason), to: variantName(t, failure.to) });
     default:

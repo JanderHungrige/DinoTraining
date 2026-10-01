@@ -133,6 +133,9 @@ pub enum SetupFailure {
     Failed { message: String },
     /// Doc 128: a switch failed and the previous variant was put back.
     RolledBack { to: String, reason: Box<SetupFailure> },
+    /// Doc 141: Windows' Visual C++ runtime is too old for PyTorch and was not installed.
+    /// `reason`: declined, unsigned, download, installer, still_old.
+    VcRuntime { found: Option<String>, reason: String, code: Option<i32> },
 }
 
 /// Free space where the runtime goes. The folder may not exist yet; its nearest

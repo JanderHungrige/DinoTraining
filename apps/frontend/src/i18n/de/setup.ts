@@ -21,6 +21,7 @@ export const setupDe: Catalogue<typeof setupEn> = {
   'setup.choice.gpu': 'Mit GPU-Unterstützung installieren (CUDA {cuda}, etwa {gb} GB Download)',
   'setup.choice.cpuOnly': 'Nur CPU (kleiner, etwa {gb} GB)',
 
+  'setup.progress.runtime': 'Die Microsoft-Visual-C++-Laufzeit, die PyTorch braucht, wird installiert. Windows fragt gleich um Erlaubnis…',
   'setup.progress.python': 'Python wird geladen…',
   'setup.progress.packages': 'PyTorch und die übrigen Pakete werden geladen… {done} von {total} MB',
   'setup.progress.installing': 'Wird installiert…',
@@ -36,6 +37,14 @@ export const setupDe: Catalogue<typeof setupEn> = {
     'Dafür braucht es etwa {needed} GB freien Platz auf {path}, frei sind {free} GB. Schaffe etwas Platz und versuche es dann noch einmal.',
   'setup.fail.unsupported': 'Auf diesem Rechner kann DinoTraining nicht laufen (siehe oben).',
   'setup.fail.failed': 'Die Installation wurde abgebrochen: {message}',
+  'setup.fail.vcRuntime':
+    'PyTorch braucht die Microsoft-Visual-C++-Laufzeit {minimum} oder neuer, dieser PC hat {found}. {reason} Installiere sie von {url} und versuche es dann noch einmal.',
+  'setup.fail.vcRuntime.none': 'keine',
+  'setup.fail.vcRuntime.declined': 'Die Erlaubnis von Windows, sie zu installieren, wurde abgelehnt.',
+  'setup.fail.vcRuntime.unsigned': 'Das geladene Installationsprogramm war nicht von Microsoft signiert und wurde deshalb nicht ausgeführt.',
+  'setup.fail.vcRuntime.download': 'Sie konnte nicht geladen werden.',
+  'setup.fail.vcRuntime.installer': 'Ihr Installationsprogramm hat mit Fehler {code} abgebrochen.',
+  'setup.fail.vcRuntime.stillOld': 'Sie wurde installiert, aber Windows meldet weiter die alte Version.',
   'setup.fail.resume': 'Was schon geladen war, bleibt erhalten; ein neuer Versuch macht dort weiter.',
   'setup.variant.cpu': 'der CPU',
   'setup.variant.gpu': 'der GPU (CUDA {cuda})',
