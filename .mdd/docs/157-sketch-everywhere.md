@@ -3,7 +3,7 @@ id: 157-sketch-everywhere
 title: Sketch Everywhere — Fields, Boxes and Tabs in the Buttons' Hand, One Look in Both Schemes, Admin Panels Full Width
 edition: DinoTraining
 depends_on: [79-draft-sketch-controls, 80-legibility-and-motion-pass]
-relates: [77-app-background-layer, 57-gpu-panel]
+relates: [77-app-background-layer, 57-gpu-support-download]
 source_files:
   - apps/frontend/src/sketch.css
   - apps/frontend/src/main.tsx
