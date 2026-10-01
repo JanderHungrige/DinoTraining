@@ -4,24 +4,80 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-01, at the end of the **Wave 15.8 build**.
-- **Waves 1–12 and 15.7, release 0.1.0:** in `main` (`d8f8bb0`), published; the
-  download site https://dino.w3rth.de shows 0.1.0.
-- **Waves 13–15.6:** in `dev` (`43e2e2c`) and in `main` with the release.
-- **Wave 15.8** (docs 134–138): built and pushed on `feat/dinotraining-wave-15-8`,
-  **not merged**. It goes to `dev` when Jan says so, and to `main` only on his go.
+**Last updated:** 2026-10-01, at the end of the **Wave 15.9 build**.
+- **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and the Windows fixes (docs
+  139–141: no standard streams, Open the log / Report an issue, the Visual C++ runtime).
+- **In `dev`** (`4989cb8`): additionally Wave 15.8 (docs 134–138). Not yet released.
+- **Wave 15.9** (docs 142–150): built and pushed on `feat/dinotraining-wave-15-9`, **not
+  merged**.
+- **Wave 15.10 (the Microsoft Store)** is planned (docs 151–156), not started.
 
 **Next, Jan's:**
-- try Models & Datasets → Datasets: import a folder, and the OSDaR23 example (both
-  variants are already imported in this machine's library, and downloaded);
-- the merge of 15.8 to `dev`;
-- still open from 15.7: the Windows NVIDIA PC; `dino.questenterprise.de` (DNS →
-  159.195.148.193, NPM host 19 → port 8003, certificate); the Homebrew tap.
-
-Then **Wave 15.9** (cloud datasets: S3 and similar, fetched in batches, annotations
-saved back), planned in outline only.
+- **0.1.2 on the second Windows PC:** the setup should install the Visual C++ runtime
+  itself.
+- **Test 15.8 and 15.9 from `dev`, once merged:**
+  - Models & Datasets: import, export, automatic export;
+  - cloud storage, linking.
+- **The merges:** 15.9 → `dev`, then a release when he says so.
+- **Still open:**
+  - `dino.questenterprise.de` (DNS, NPM host 19 → 8003, certificate);
+  - the Homebrew tap;
+  - Partner Center for the Store (15.10).
 
 ---
+
+## Wave 15.9 — Keep your work, and cloud datasets (2026-10-01)
+
+Jan: annotations stay in the database and export to a remembered place (with the data or a
+folder) on a button, on closing and every n minutes; models likewise; a warning about
+uninstalling; datasets in S3, Azure or Google Cloud linked, fetched in batches, saved back.
+
+| | |
+|---|---|
+| 142 | **Export / restore:** `dinotraining/dinotraining.json` holds every row of the dataset's tables (`SELECT *`) with picture paths relative to its folder, plus its state files; `annotations.coco.json` beside it; pictures optionally. Importing the folder restores it completely (ids remapped, one transaction). |
+| 143 | **Targets:** per dataset "with the data" (offered only outside the app) or a folder; the dialog opens at the last folder; the list says "Exported 3 min ago"; a content fingerprint answers "changed since?". |
+| 144 | **Auto-export:** on closing (default on: the shell holds the quit up to 25 s) and every n minutes (default off); only what changed; the last run's report names failures and datasets without a target. |
+| 145 | **Models:** the Export dialog remembers its folder; "export each trained model when its training finishes" (off by default) hooks into head training and fine-tuning. |
+| 146 | **Uninstall notice:** in the app (what is not exported yet, "Export everything now"); the EXE uninstaller asks once when "delete the application data" is ticked. |
+| 147 | **Cloud connections:** S3-compatible, Azure Blob, Google Cloud Storage through `obstore` (5 MB); secrets in `.env`, never returned or logged; "Test" words what failed. |
+| 148 | **Linking:** a bucket's dataset detected and imported from its listing and annotation files; picture sizes from the first 64 KB; no picture downloaded. |
+| 149 | **Fetch and cache:** every reader calls `ensure_local` first; one download per picture; the Studio prefetches the next 8, training its whole list; a 5 GB LRU cache; offline from the cache with a clear reason for what is missing; orphan links cleaned at start. |
+| 150 | **Save-back:** "with the data" for a linked dataset is its bucket (its default target); writes are conditional on this app's last ETag; a newer save is never overwritten — ours goes into `conflicts/<time>/`, the export answers 409. |
+
+- **Proof, live (German UI, the real backend):**
+  - **Export/restore:** OSDaR23 exported with its pictures and restored, identical row
+    for row.
+  - **Auto-export:**
+    - "Export all now";
+    - the shell's closing request answered by the backend;
+    - the interval written to a scratch `.env` (Jan's untouched).
+  - **Models:** a real trained head exported by the hook's function (81 MB with ONNX,
+    6 s).
+  - **The uninstall notice** on the real library (16 datasets, 25 models).
+  - **The cloud against the real S3 protocol** (S3Mock in Docker; MinIO's images now
+    need a login):
+    - OSDaR23 linked in 1.4 s with 0 pictures downloaded;
+    - the Studio's route fetched one picture and prefetched 8;
+    - offline, the cache served and the uncached picture said why;
+    - a save-back, then a colleague's save kept and ours beside it, the conflict in
+      German.
+  - **CI:** release dry run 36869568457 green on all three platforms with the new NSIS
+    hook.
+- **Tests:** backend 1982, frontend 1185, Rust 46. ruff, mypy, tsc and clippy clean.
+- **Found while building and fixed (beyond each doc's own list):**
+  - **The dataset list's columns were off** since docs 121/136.
+  - **Every `target="_blank"` link** was dead in the desktop app (fixed in 15.8, doc
+    137).
+  - **YOLO and VOC looked up pictures with `is_file()`.**
+  - **OpenLABEL's detection over-counted** (90 for 10).
+  - **The Studio's picture route was `async`:** a download would have stopped the
+    backend.
+  - **A link kept a changed connection's old settings.**
+  - **The MLflow hook test caught the model-export hook** attaching to every job.
+- **Not seen on real hardware:**
+  - the desktop window's quit (not drivable here);
+  - the Windows uninstaller's message box;
+  - a real AWS, Azure or Google account.
 
 ## Wave 15.8 — Models & Datasets, any dataset in, an own emblem (2026-10-01)
 

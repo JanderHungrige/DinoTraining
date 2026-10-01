@@ -3,11 +3,11 @@ id: dinotraining-wave-15-9
 title: "Wave 15.9: Keep your work, and cloud datasets — exports where the data lives, S3-compatible datasets fetched in batches"
 initiative: dinotraining
 initiative_version: 16
-status: planned
+status: complete
 depends_on: dinotraining-wave-15-8
 demo_state: "A user's annotations and trained models never live only inside the app. Each dataset exports its annotations to a remembered place: 'with the data' (beside its pictures, or into its bucket) or a chosen folder. The export runs on a button, on closing the app and, if switched on, every n minutes, only for what changed; trained models export to their own remembered folder. Importing an exported folder restores the dataset completely. The app says plainly that uninstalling removes what is inside it and that exports stay. A dataset in an S3 bucket (or MinIO, Wasabi, Cloudflare R2), an Azure Blob container or a Google Cloud Storage bucket is linked instead of downloaded. The app lists and detects it like a local import, fetches pictures in batches as the Studio, Inspect, training and the Generator need them, keeps a bounded local cache, works offline from that cache, and saves annotations back to the bucket through the same export, refusing to overwrite someone else's newer save."
 created: 2026-10-01
-hash: 2a2403fd
+hash: a26dcd8e
 ---
 
 # Wave 15.9: Keep your work, and cloud datasets
@@ -63,15 +63,15 @@ hash: 2a2403fd
 
 | # | Feature | Doc | Status | Depends on |
 |---|---------|-----|--------|------------|
-| 1 | annotation-export | docs/142-annotation-export.md | planned | — |
-| 2 | export-targets | docs/143-export-targets.md | planned | annotation-export |
-| 3 | auto-export | docs/144-auto-export.md | planned | export-targets |
-| 4 | model-export-target | docs/145-model-export-target.md | planned | export-targets |
-| 5 | uninstall-notice | docs/146-uninstall-notice.md | planned | auto-export, model-export-target |
-| 6 | cloud-connection | docs/147-cloud-connection.md | planned | — |
-| 7 | cloud-dataset-link | docs/148-cloud-dataset-link.md | planned | cloud-connection |
-| 8 | picture-fetch-cache | docs/149-picture-fetch-cache.md | planned | cloud-dataset-link |
-| 9 | cloud-save-back | docs/150-cloud-save-back.md | planned | export-targets, cloud-dataset-link |
+| 1 | annotation-export | docs/142-annotation-export.md | complete | — |
+| 2 | export-targets | docs/143-export-targets.md | complete | annotation-export |
+| 3 | auto-export | docs/144-auto-export.md | complete | export-targets |
+| 4 | model-export-target | docs/145-model-export-target.md | complete | export-targets |
+| 5 | uninstall-notice | docs/146-uninstall-notice.md | complete | auto-export, model-export-target |
+| 6 | cloud-connection | docs/147-cloud-connection.md | complete | — |
+| 7 | cloud-dataset-link | docs/148-cloud-dataset-link.md | complete | cloud-connection |
+| 8 | picture-fetch-cache | docs/149-picture-fetch-cache.md | complete | cloud-dataset-link |
+| 9 | cloud-save-back | docs/150-cloud-save-back.md | complete | export-targets, cloud-dataset-link |
 
 ### Feature notes
 

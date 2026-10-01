@@ -11,7 +11,6 @@ source_files:
   - backend/app/cloud/errors.py
   - backend/app/cloud/linking.py
   - backend/app/api/v1/dataset_exchange.py
-  - apps/frontend/src/components/DatasetExport.test.tsx
   - backend/app/i18n/de_cloud.py
   - apps/frontend/src/components/DatasetExport.tsx
   - apps/frontend/src/api/datasetExport.ts
@@ -21,6 +20,7 @@ routes:
 models: [datasets, cloud_links]
 test_files:
   - backend/tests/test_cloud_save_back.py
+  - apps/frontend/src/components/DatasetExport.test.tsx
 data_flow: writes-existing
 last_synced: 2026-10-01
 status: complete
