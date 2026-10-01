@@ -62,8 +62,6 @@ sister_projects: []
 
 ## Still to measure (next dry run, then Jan's PCs)
 
-- **The first-run setup end to end** in the package folder, PyTorch importing there, a
-  second start, removal (doc 153 asserts all of it).
 - **R1, WebView2:** present on the runner (Windows Server 2025) and on Windows 11; Windows
   10 without it is untested.
 - **R2/R3, the Visual C++ runtime:** the runner's is current, so doc 141's installer did
@@ -78,3 +76,10 @@ sister_projects: []
 - **Rust:** the Store edition's folder is the package's `LocalCache\Local\DinoTraining`;
   outside the Store the backend is not given a folder.
 - **Backend:** `DINO_APP_DIR` names the app folder; empty or blank is ignored.
+
+## Verified (run 36933854791, 2026-10-02)
+
+- **The first-run setup completes in the package folder** (`…\Packages\<family>\LocalCache\Local\DinoTraining\runtime`),
+  PyTorch imports there, the backend answers, a second start needs no setup, and
+  Windows removes the folder with the package. The real `%LOCALAPPDATA%\DinoTraining`
+  stays absent.

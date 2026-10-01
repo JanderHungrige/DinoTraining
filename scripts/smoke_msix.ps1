@@ -64,7 +64,7 @@ $python = Get-ChildItem (Join-Path $packageDir 'runtime\envs') -Recurse -Filter 
     Where-Object { $_.FullName -match '\\Scripts\\python\.exe$' } | Select-Object -First 1
 if (-not $python) { throw "No runtime under $packageDir; the real folder exists: $(Test-Path $support)" }
 & $python.FullName -c "import torch; print('torch', torch.__version__)"
-if ($LASTEXITCODE -ne 0) { throw 'PyTorch does not import in the package folder's runtime' }
+if ($LASTEXITCODE -ne 0) { throw "PyTorch does not import in the package folder's runtime" }
 if (Test-Path $support) { throw "The app wrote to the real $support, outside the package" }
 $size = [math]::Round(((Get-ChildItem $packageDir -Recurse -File | Measure-Object Length -Sum).Sum) / 1GB, 2)
 

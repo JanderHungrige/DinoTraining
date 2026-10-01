@@ -13,8 +13,8 @@ models: []
 test_files:
   - apps/desktop/src-tauri/src/setup_flow.rs
 data_flow: greenfield
-last_synced: 2026-10-01
-status: in_progress
+last_synced: 2026-10-02
+status: complete
 phase: all
 mdd_version: 11
 tags: [msix, microsoft-store, smoke-test, ci, windows, package-identity]
@@ -64,3 +64,14 @@ sister_projects: []
 6. **`Remove-AppxPackage`,** and check that Windows removed the package's data folder with
    it: what the uninstall notice (doc 146) promises.
 - **On failure, the app's logs from the redirected folder are kept** as an artifact.
+
+## Verified (release dry runs)
+
+- **36926429104 passed but measured nothing:** the EXE run's folder was present, so the
+  runtime was the EXE's (healthy in 58 s). Hence step 0.
+- **36928735299 failed honestly:** uv's Python link through the redirection (doc 152).
+- **36932680251:** the test itself failed to parse (a quote in a message).
+- **36933854791, from a clean AppData, all green:** first start set up unattended,
+  healthy after 66 s; `torch 2.13.0+cpu` imports from the package folder; second start
+  healthy after 7 s; after `Remove-AppxPackage` the package's folder is gone; the real
+  `%LOCALAPPDATA%\DinoTraining` was never created.
