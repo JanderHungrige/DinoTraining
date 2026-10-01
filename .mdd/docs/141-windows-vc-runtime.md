@@ -16,15 +16,16 @@ source_files:
   - apps/frontend/src/setup/SetupFailureNotice.tsx
   - apps/frontend/src/i18n/en/setup.ts
   - apps/frontend/src/i18n/de/setup.ts
-  - .github/workflows/lock-check.yml
+  - .github/workflows/windows-runtime.yml
 routes: []
 models: []
 test_files:
   - apps/desktop/src-tauri/src/vc_runtime.rs
   - apps/frontend/src/setup/SetupFailureNotice.test.tsx
+  - .github/workflows/windows-runtime.yml
 data_flow: greenfield
 last_synced: 2026-10-01
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [installer, windows, msvc, vc-redist, pytorch, setup, dll]
@@ -34,7 +35,9 @@ wave: dinotraining-wave-15-7
 wave_status: active
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "**Not yet run on a PC with an old runtime.** CI's runner has a current one; Jan's second PC (14.28) is the real test."
+  - "An installed app with an old runtime goes through the setup as an 'update' (doc 129): the title says the packages are being updated, which is close but not exact."
 security_read_sites:
   - apps/desktop/src-tauri/src/vc_runtime.ps1 (runs a downloaded installer elevated; only after its Authenticode signature is valid and Microsoft's)
 sister_projects: []
@@ -103,7 +106,27 @@ sister_projects: []
   - the installer's exit codes;
   - the hint for the backend log.
 - **Frontend:** the failure's wording (EN/DE); the new phase.
-- **CI (`lock-check.yml`, Windows):** the script runs for real on the runner.
+- **CI (`windows-runtime.yml`, Windows):** the script runs for real on the runner.
   - It checks the download, the signature and the elevated start; the runner already
     has a newer runtime, so the exit code is 0 or 1638.
   - It does not reproduce an old runtime. That needs Jan's second PC.
+
+## Verified (2026-10-01)
+
+- **Rust (macOS 44 tests; Windows CI 44):**
+  - `reg query` parsing, with Jan's exact output;
+  - 14.28 too old, 14.40 and newer fine, missing counts as too old;
+  - the exit codes;
+  - the backend hint for Jan's traceback only (not for a CUDA DLL, not for other
+    errors).
+  - **On the Windows runner,** the real registry is read and its runtime is current.
+- **Windows CI run 36856952109, against Microsoft's real download:**
+  - the script downloaded the redistributable and accepted its signature;
+  - it started the installer elevated, which answered 1638 (a newer one was there).
+- **Frontend (1158 tests, 3 new):** the failure's wording in EN and DE (found, reason,
+  link, error code); the new phase.
+- **Found while building:**
+  - neither the cpu nor the cu130 wheel carries the C++ runtime, so the NVIDIA PC
+    works only because its runtime is new;
+  - Jan's state (an environment installed, the backend dying) would never have shown
+    the setup again: `needs_setup` now checks the runtime too.
