@@ -20,6 +20,7 @@ export const setupEn = {
   'setup.choice.gpu': 'Install with GPU support (CUDA {cuda}, about {gb} GB download)',
   'setup.choice.cpuOnly': 'CPU only (smaller, about {gb} GB)',
 
+  'setup.progress.runtime': 'Installing the Microsoft Visual C++ runtime that PyTorch needs. Windows will ask for permission…',
   'setup.progress.python': 'Downloading Python…',
   'setup.progress.packages': 'Downloading PyTorch and the other packages… {done} of {total} MB',
   'setup.progress.installing': 'Installing…',
@@ -34,6 +35,14 @@ export const setupEn = {
   'setup.fail.disk': 'This needs about {needed} GB free on {path}, and {free} GB are free. Free up some space, then try again.',
   'setup.fail.unsupported': 'This machine cannot run DinoTraining (see above).',
   'setup.fail.failed': 'The install stopped: {message}',
+  'setup.fail.vcRuntime':
+    'PyTorch needs the Microsoft Visual C++ runtime {minimum} or newer, and this PC has {found}. {reason} Install it from {url}, then try again.',
+  'setup.fail.vcRuntime.none': 'none',
+  'setup.fail.vcRuntime.declined': "Windows' permission to install it was declined.",
+  'setup.fail.vcRuntime.unsigned': 'The downloaded installer was not signed by Microsoft, so it was not run.',
+  'setup.fail.vcRuntime.download': 'It could not be downloaded.',
+  'setup.fail.vcRuntime.installer': 'Its installer stopped with error {code}.',
+  'setup.fail.vcRuntime.stillOld': 'It was installed, but Windows still reports the old version.',
   'setup.fail.resume': 'What was already downloaded is kept, so trying again continues where it stopped.',
   'setup.variant.cpu': 'the CPU',
   'setup.variant.gpu': 'the GPU (CUDA {cuda})',
