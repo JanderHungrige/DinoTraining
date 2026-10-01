@@ -28,7 +28,8 @@ pub fn open_backend_log(app: tauri::AppHandle) -> Result<String, String> {
     if !path.is_file() {
         return Err(format!("No log yet at {}", path.display()));
     }
-    let shown = path.display().to_string();
+    // Under the Store the log is in the package's folder (doc 156).
+    let shown = crate::edition::shown_path(&path).display().to_string();
     app.opener()
         .open_path(&shown, None::<&str>)
         .map_err(|error| format!("Could not open {shown}: {error}"))?;

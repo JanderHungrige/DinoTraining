@@ -100,6 +100,8 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   // Hinweis zum Deinstallieren (doc 146)
   'models.uninstall.lead':
     'Beim Deinstallieren kann alles entfernt werden, was in DinoTraining liegt (beim Windows-Installer, wenn du „Anwendungsdaten löschen“ anhakst). Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
+  'models.uninstall.leadStore':
+    'Wenn du DinoTraining in Windows deinstallierst, wird alles darin ohne Rückfrage entfernt. Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
   'models.uninstall.allExported': 'Alle Datensätze sind exportiert.',
   'models.uninstall.noTarget_one': '{count} Datensatz ist noch nicht exportiert: {names}. Leg mit „Exportieren…“ in seiner Zeile fest, wohin er geht.',
   'models.uninstall.noTarget_other': '{count} Datensätze sind noch nicht exportiert: {names}. Leg mit „Exportieren…“ in ihren Zeilen fest, wohin sie gehen.',

@@ -5,6 +5,7 @@
 
 pub mod auto_export;
 pub mod backend_log;
+pub mod edition;
 pub mod error_report;
 pub mod mac_apps;
 pub mod progress;
@@ -61,7 +62,9 @@ pub fn run() {
             mac_apps::applications_offer,
             mac_apps::add_to_applications,
             error_report::open_backend_log,
-            error_report::report_issue
+            error_report::report_issue,
+            edition::app_edition,
+            edition::reveal_path
         ])
         .setup(|app| {
             let handle = app.handle().clone();
