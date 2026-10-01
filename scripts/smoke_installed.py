@@ -120,14 +120,21 @@ def start(
         time.sleep(3)  # the port, for the next start
 
 
-def run(executable: Path, wrap: list[str], work: Path, port: int) -> list[str]:
+def run(
+    executable: Path,
+    wrap: list[str],
+    work: Path,
+    port: int,
+    runtime: Path | None = None,
+) -> list[str]:
+    """`runtime`: the app's default location, left as the app chooses it (doc 132's
+    uninstall check needs the real one). Without it the runtime goes into `work`."""
     work.mkdir(parents=True, exist_ok=True)
-    runtime, log = work / "runtime", work / "app.log"
-    env = {
-        **os.environ,
-        "DINO_RUNTIME_DIR": str(runtime),
-        "DINO_DATA_DIR": str(work / "data"),
-    }
+    log = work / "app.log"
+    env = {**os.environ, "DINO_DATA_DIR": str(work / "data")}
+    if runtime is None:
+        runtime = work / "runtime"
+        env["DINO_RUNTIME_DIR"] = str(runtime)
     env["DINO_API_PORT"] = str(port)
     command = [*wrap, str(executable)]
 
@@ -162,11 +169,19 @@ def main() -> int:
     parser.add_argument("--wrap", default="", help='e.g. "xvfb-run -a" on Linux')
     parser.add_argument("--port", type=int, default=8756)
     parser.add_argument("--work", type=Path, default=None)
+    parser.add_argument(
+        "--runtime",
+        type=Path,
+        default=None,
+        help="the app's default runtime folder; it is not overridden (doc 132)",
+    )
     args = parser.parse_args()
     work = args.work or Path(tempfile.mkdtemp(prefix="dino-smoke-"))
     work.mkdir(parents=True, exist_ok=True)
     try:
-        lines = run(args.executable, shlex.split(args.wrap), work, args.port)
+        lines = run(
+            args.executable, shlex.split(args.wrap), work, args.port, args.runtime
+        )
     except SmokeFailure as failure:
         print(f"SMOKE TEST FAILED: {failure}", file=sys.stderr)
         log = work / "app.log"

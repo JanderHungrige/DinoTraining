@@ -10,6 +10,7 @@ pub mod runtime;
 pub mod setup;
 pub mod setup_flow;
 pub mod sidecar;
+pub mod support_dir;
 pub mod switch;
 pub mod uv_sync;
 

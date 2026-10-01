@@ -99,6 +99,15 @@ SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
 - **Updates:** a new version brings its own package list; the app updates its packages
   on the first start, and keeps the previous ones until the new ones work.
 - **Model weights** are not in the installer; you download them in the app (see below).
+- **Uninstall:**
+  - **Windows:** *Settings → Apps → DinoTraining → Uninstall*. It also removes the
+    downloaded Python and PyTorch (1–6 GB). Your datasets, trained models and downloaded
+    weights stay in `%LOCALAPPDATA%\DinoTraining`, unless you tick *Delete the
+    application data*.
+  - **macOS:** delete `DinoTraining.app` (or `brew uninstall dinotraining`); everything
+    else, including your data, is in `~/Library/Application Support/DinoTraining`.
+  - **Linux:** `sudo apt remove dino-training`; everything else is in
+    `~/.local/share/DinoTraining`.
 
 ### Option B: from source
 

@@ -172,9 +172,24 @@ jobs:
           $dir = Join-Path $env:LOCALAPPDATA 'DinoTraining'
           if (-not (Test-Path $dir)) { Get-ChildItem $env:LOCALAPPDATA -Directory | Select-Object Name; throw "not installed at $dir" }
           $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
-          python scripts/smoke_installed.py $exe.FullName --work "$env:RUNNER_TEMP/smoke"
+          # Doc 132: the runtime where the app puts it, so the uninstall check sees it.
+          $runtime = Join-Path $dir 'runtime'
+          python scripts/smoke_installed.py $exe.FullName --runtime $runtime --work "$env:RUNNER_TEMP/smoke"
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # --- doc 132: uninstall removes Python/PyTorch, keeps the user's work ---------
+          $kept = Join-Path $dir 'data\keep-me.txt'
+          New-Item -ItemType File -Force -Path $kept | Out-Null
+          if (-not (Test-Path $runtime)) { throw "no runtime at $runtime before the uninstall" }
           Start-Process -FilePath (Join-Path $dir 'uninstall.exe') -ArgumentList '/S' -Wait
+          # NSIS's uninstaller hands off to a copy of itself in %TEMP%: -Wait returns early.
+          for ($i = 0; $i -lt 60 -and ((Test-Path $exe.FullName) -or (Test-Path $runtime)); $i++) { Start-Sleep -Seconds 2 }
+          if (Test-Path $runtime) { throw "the uninstall left the runtime at $runtime" }
+          if (Test-Path $exe.FullName) { throw "the uninstall left $($exe.FullName)" }
+          if (-not (Test-Path $kept)) { throw "the uninstall removed the user's data" }
+          if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\DinoTraining') { throw "still listed under Apps" }
+          "Uninstall: runtime and app removed, user data kept, no longer under Apps." >> $env:GITHUB_STEP_SUMMARY
+          Write-Host "Uninstall checks passed"
 
       - name: Keep the app log of a failed smoke test
         if: failure()
