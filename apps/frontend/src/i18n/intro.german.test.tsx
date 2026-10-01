@@ -19,7 +19,7 @@ describe('the intro in German', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Worum es hier geht' })).toBeInTheDocument();
     expect(screen.getByText('Ein eingefrorenes Backbone')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Inference Viewer öffnen' })).toBeInTheDocument();
-    expect(screen.getAllByText('Warum an dieser Stelle:')).toHaveLength(9);
+    expect(screen.getAllByText('Warum an dieser Stelle:')).toHaveLength(8);
   });
 
   it('opens the dataset-format guide in German, with the file name filled in', async () => {

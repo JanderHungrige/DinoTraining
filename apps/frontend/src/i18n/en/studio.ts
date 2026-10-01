@@ -18,7 +18,7 @@ export const studioEn = {
   // Session setup
   'studio.setup.errorLoadDatasets': 'Could not load datasets.',
   'studio.setup.errorNoHead': 'No head can propose boxes yet — train a detection head first.',
-  'studio.setup.errorNoDetector': 'No general detector is installed — get one in Admin / Models.',
+  'studio.setup.errorNoDetector': 'No general detector is installed — get one in Models & Datasets.',
   'studio.setup.errorNoConcept': 'Name what you are looking for — that model finds only what you ask for.',
   'studio.setup.errorNoFolder': 'Choose a folder of images, or a dataset you already have.',
   'studio.setup.errorNoDataset': 'Choose an existing dataset or name a new one.',

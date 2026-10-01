@@ -60,9 +60,9 @@ describe('blockingReason', () => {
     expect(blockingReason(VALID, [headType()], [backbone()], ENGLISH)).toBeNull();
   });
 
-  it('points at Admin when no backbone is installed', () => {
+  it('points at Models & Datasets when no backbone is installed', () => {
     const reason = blockingReason(VALID, [headType()], [], ENGLISH);
-    expect(reason).toContain('Admin');
+    expect(reason).toContain('Models & Datasets');
   });
 
   it('requires at least one dataset', () => {

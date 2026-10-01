@@ -20,10 +20,8 @@ export const appEn = {
   'app.tabs.inspectLabel': 'Inspect datasets',
   'app.tabs.inspectHint':
     'Play back a dataset — its videos and images — with the annotations it holds.',
-  'app.tabs.libraryLabel': 'Library',
-  'app.tabs.libraryHint': 'Everything you have made — datasets, trained heads and fine-tuned models.',
-  'app.tabs.adminLabel': 'Admin / Models',
-  'app.tabs.adminHint': 'Download and remove models, manage the HF token, cache dir, and device.',
+  'app.tabs.modelsLabel': 'Models & Datasets',
+  'app.tabs.modelsHint': 'Start here: download models, import or open datasets, and find what you have trained.',
   'app.tabs.apiLabel': 'Connection',
   'app.tabs.apiHint': 'Let your own AI assistant drive the app — over MCP, or with a document.',
   'app.stub.arrives': 'Arrives in Wave {wave}.',

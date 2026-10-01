@@ -65,5 +65,5 @@ export const setupEn = {
   'setup.tip.saved': 'A saved picture counts as complete: everything of its classes that is not marked is taught as background.',
   'setup.tip.generator': 'The Dataset Generator annotates new pictures with a head you trained. You only check what it proposes.',
   'setup.tip.export': 'A trained model can be exported as a zip with a small runtime, and as ONNX, to run it outside DinoTraining.',
-  'setup.tip.offline': 'Models are downloaded once in the Admin tab. After that, DinoTraining needs no internet at all.',
+  'setup.tip.offline': 'Models are downloaded once in Models & Datasets. After that, DinoTraining needs no internet at all.',
 } as const;

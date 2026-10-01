@@ -24,12 +24,8 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.tabs.inspectLabel': 'Datensätze ansehen',
   'app.tabs.inspectHint':
     'Spiel einen Datensatz ab – seine Videos und Bilder – mit den Annotationen, die er enthält.',
-  'app.tabs.libraryLabel': 'Bibliothek',
-  'app.tabs.libraryHint':
-    'Alles, was du erstellt hast – Datensätze, trainierte Heads und Modelle aus dem Fine-Tuning.',
-  'app.tabs.adminLabel': 'Verwaltung / Modelle',
-  'app.tabs.adminHint':
-    'Lade Modelle herunter oder entferne sie, verwalte HF-Token, Cache-Ordner und Gerät.',
+  'app.tabs.modelsLabel': 'Modelle & Datensätze',
+  'app.tabs.modelsHint': 'Der Einstieg: Modelle laden, Datensätze importieren oder öffnen und finden, was du trainiert hast.',
   'app.tabs.apiLabel': 'Verbindung',
   'app.tabs.apiHint':
     'Lass deinen eigenen KI-Assistenten die App steuern – über MCP oder mit einem Dokument.',

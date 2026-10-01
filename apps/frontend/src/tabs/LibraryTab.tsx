@@ -16,7 +16,16 @@ import { useT } from '../i18n';
 import { Section, type Row } from '../components/LibrarySection';
 import { ModelExportActions } from '../components/ModelExportActions';
 
-export function LibraryTab(): JSX.Element {
+const ALL_KINDS: readonly LibraryKind[] = ['dataset', 'head', 'finetune'];
+
+interface LibraryTabProps {
+  /** Doc 135: the Models & Datasets sub-tabs each show their part (default: all). */
+  readonly kinds?: readonly LibraryKind[];
+  /** Doc 135: inside a sub-tab, the sub-tab names the list; no heading of its own. */
+  readonly headed?: boolean;
+}
+
+export function LibraryTab({ kinds = ALL_KINDS, headed = true }: LibraryTabProps): JSX.Element {
   const library = useLibrary();
   const { t, tp } = useT();
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -68,16 +77,21 @@ export function LibraryTab(): JSX.Element {
     meta: entry.licence,
   }));
 
+  const shows = (kind: LibraryKind): boolean => kinds.includes(kind);
   const targets: LibraryTarget[] = [
     ...datasetRows.map((row) => ({ kind: 'dataset' as const, id: row.id, name: row.name })),
     ...headRows.map((row) => ({ kind: 'head' as const, id: row.id, name: row.name })),
     ...finetuneRows.map((row) => ({ kind: 'finetune' as const, id: row.id, name: row.name })),
-  ].filter((target) => selected.has(`${target.kind}:${target.id}`));
+  ].filter((target) => shows(target.kind) && selected.has(`${target.kind}:${target.id}`));
 
   return (
     <section className="library">
-      <h2 className="library__title">{t('admin.library.title')}</h2>
-      <p className="library__lead">{t('admin.library.lead')}</p>
+      {headed && (
+        <>
+          <h2 className="library__title">{t('admin.library.title')}</h2>
+          <p className="library__lead">{t('admin.library.lead')}</p>
+        </>
+      )}
 
       {library.error && (
         <p className="admin__error" role="alert">
@@ -141,7 +155,7 @@ export function LibraryTab(): JSX.Element {
         <p role="status">{t('admin.library.loading')}</p>
       ) : (
         <>
-          <Section
+          {shows('dataset') && <Section
             title={t('admin.library.datasets')}
             empty={t('admin.library.datasetsEmpty')}
             rows={datasetRows}
@@ -152,8 +166,8 @@ export function LibraryTab(): JSX.Element {
             onConfirm={setConfirming}
             busyId={library.busyId}
             onDelete={library.remove}
-          />
-          <Section
+          />}
+          {shows('head') && <Section
             title={t('admin.library.heads')}
             empty={t('admin.library.headsEmpty')}
             rows={headRows}
@@ -165,8 +179,8 @@ export function LibraryTab(): JSX.Element {
             busyId={library.busyId}
             onDelete={library.remove}
             actions={(row) => <ModelExportActions kind="heads" instanceId={row.id} name={row.name} />}
-          />
-          <Section
+          />}
+          {shows('finetune') && <Section
             title={t('admin.library.finetunes')}
             empty={t('admin.library.finetunesEmpty')}
             rows={finetuneRows}
@@ -178,7 +192,7 @@ export function LibraryTab(): JSX.Element {
             busyId={library.busyId}
             onDelete={library.remove}
             actions={(row) => <ModelExportActions kind="finetuned" instanceId={row.id} name={row.name} />}
-          />
+          />}
         </>
       )}
     </section>

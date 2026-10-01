@@ -71,5 +71,5 @@ export const setupDe: Catalogue<typeof setupEn> = {
     'Der Dataset Generator annotiert neue Bilder mit einem Head, den du trainiert hast. Du prüfst nur noch seine Vorschläge.',
   'setup.tip.export':
     'Ein trainiertes Modell lässt sich als Zip mit kleiner Runtime und als ONNX exportieren, um es außerhalb von DinoTraining zu nutzen.',
-  'setup.tip.offline': 'Modelle werden einmal im Admin-Tab geladen. Danach braucht DinoTraining kein Internet mehr.',
+  'setup.tip.offline': 'Modelle werden einmal unter Modelle & Datensätze geladen. Danach braucht DinoTraining kein Internet mehr.',
 };

@@ -288,7 +288,7 @@ describe('HeadRunPanel', () => {
   it('points at where heads come from when there are none', () => {
     render(<HeadRunPanel state={state()} onRun={vi.fn()} />);
 
-    expect(screen.getByText(/Admin tab/)).toBeInTheDocument();
+    expect(screen.getByText(/Models & Datasets/)).toBeInTheDocument();
   });
 
   it('runs the selection', () => {

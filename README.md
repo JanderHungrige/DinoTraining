@@ -25,14 +25,13 @@ Everything runs on your own machine, and your pictures are never uploaded.
   - [First steps after starting](#first-steps-after-starting)
 - [Features](#features)
   - [Start here](#start-here)
+  - [Models & Datasets](#models--datasets)
   - [Inspect datasets](#inspect-datasets)
   - [Annotation Studio](#annotation-studio)
   - [Prepare data](#prepare-data)
   - [Training](#training)
   - [Inference Viewer](#inference-viewer)
   - [Dataset Generator](#dataset-generator)
-  - [Library](#library)
-  - [Admin / Models](#admin--models)
   - [Connection (AI assistants and API)](#connection-ai-assistants-and-api)
 - [A typical project, end to end](#a-typical-project-end-to-end)
 - [Models](#models)
@@ -97,7 +96,7 @@ brew install janderhungrige/tap/dinotraining
 SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
 
 - **GPU:** the setup screen picks CUDA 13.0 (driver ≥ 580) or CUDA 12.6 (driver ≥ 560)
-  when it finds an NVIDIA card; *Admin / Models* switches between GPU and CPU later.
+  when it finds an NVIDIA card; *Models & Datasets* switches between GPU and CPU later.
 - **Updates:** a new version brings its own package list; the app updates its packages
   on the first start, and keeps the previous ones until the new ones work.
 - **Model weights** are not in the installer; you download them in the app (see below).
@@ -161,7 +160,7 @@ Having Rust installed both ways is the usual cause: the two `rustc` binaries com
 
 ### First steps after starting
 
-1. **Admin / Models → download the starter set.** Five models, about 1.1 GB, enough to
+1. **Models & Datasets → download the starter set.** Five models, about 1.1 GB, enough to
    label, train and run. Anything else downloads on demand.
 2. **Start here** explains the app in five minutes.
 3. **Annotation Studio**: point it at a folder of pictures and describe what to find.
@@ -183,6 +182,31 @@ A plain-language introduction:
 - what a backbone, a head and fine-tuning are;
 - which model is good for what, with numbers measured in this app;
 - what the app cannot do yet.
+
+### Models & Datasets
+
+The entry point, right after *Start here*: everything the other tabs need comes from
+here. Three parts:
+
+- **Official Models:** download and remove models. The starter set is one click. Gated
+  models (DINOv3, SAM 3) need a HuggingFace token and the licence accepted on
+  HuggingFace. Also here: the model cache folder, the compute device (CPU / Apple GPU /
+  NVIDIA), switching between GPU and CPU, and the appearance.
+- **Datasets:** every dataset in the app (annotated, generated or imported), with what it
+  holds; delete one or several.
+- **My Models:** the heads you trained and the models you fine-tuned, with what they were
+  trained on and how well they scored.
+
+**Export a trained model** to use it outside the app. The zip holds:
+- the **model card** (`model.json`): base model, classes in output order, the exact
+  preprocessing, how to read the outputs, metrics, training data and recipe;
+- the weights;
+- `dino_runtime.py` (the app's own preprocessing, head and decoding code) and
+  `predict.py`, so `python predict.py picture.jpg` prints what the app would;
+- for a head, `model.onnx`: backbone and head as one graph, checked against PyTorch at
+  export.
+
+"Show where it is" opens the folder that holds the model.
 
 ### Inspect datasets
 
@@ -327,30 +351,6 @@ proposes.
 - **Hidden mode:** runs without drawing, showing only progress.
 - **Ask when unclear:** stops on predictions whose score is in a band you set.
 
-### Library
-
-Everything you have made in one place: datasets, trained heads and fine-tuned models,
-with what they were trained on and how well they scored. Rename, delete, or open a
-dataset's folder.
-
-**Export a trained model** to use it outside the app. The zip holds:
-- the **model card** (`model.json`): base model, classes in output order, the exact
-  preprocessing, how to read the outputs, metrics, training data and recipe;
-- the weights;
-- `dino_runtime.py` (the app's own preprocessing, head and decoding code) and
-  `predict.py`, so `python predict.py picture.jpg` prints what the app would;
-- for a head, `model.onnx`: backbone and head as one graph, checked against PyTorch at
-  export.
-
-"Show where it is" opens the folder that holds the model.
-
-### Admin / Models
-
-- **Models:** download and remove models. The starter set is one click. Gated models
-  (DINOv3, SAM 3) need a HuggingFace token and the licence accepted on HuggingFace.
-- **Settings:** the model cache folder and the compute device (CPU / Apple GPU / NVIDIA).
-- **GPU support:** an NVIDIA GPU download, and a check that your GPU is actually used.
-
 ### Connection (AI assistants and API)
 
 - **MCP:** the app runs an MCP server on its own backend, so an AI assistant can drive it.
@@ -390,7 +390,7 @@ dataset's folder.
 
 ## Models
 
-Weights are **not** bundled. They download on demand in *Admin / Models* and are cached
+Weights are **not** bundled. They download on demand in *Models & Datasets* and are cached
 locally.
 
 | Model | Used for | Access |

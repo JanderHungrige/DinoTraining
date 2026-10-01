@@ -3596,3 +3596,40 @@ body {
   align-items: center;
   gap: 0.4rem;
 }
+
+/* --- Doc 135: sub-tabs (Models & Datasets) --- */
+
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+  width: fit-content;
+  max-width: 100%;
+}
+
+.subtabs__tab {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.subtabs__tab:hover {
+  color: var(--text);
+}
+
+.subtabs__tab--active {
+  background: var(--accent);
+  /* The theme's background on its accent: dark on the dark theme's light green, light on
+     the light theme's dark green; both clear 4.5:1. */
+  color: var(--bg);
+  font-weight: 600;
+}

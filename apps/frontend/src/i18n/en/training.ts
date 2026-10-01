@@ -18,7 +18,7 @@ export const trainingEn = {
   'training.tab.trainedHeads': 'Trained heads',
 
   // The head form
-  'training.form.noBackbone': 'No backbone installed — download one in Admin / Models first.',
+  'training.form.noBackbone': 'No backbone installed — download one in Models & Datasets first.',
   'training.form.chooseBackbone': 'Choose a backbone.',
   'training.form.chooseDataset': 'Choose at least one dataset.',
   'training.form.chooseHeadType': 'Choose a head type.',

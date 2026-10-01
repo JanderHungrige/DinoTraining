@@ -110,7 +110,7 @@ def _open(image_path: str, model_id: str) -> tuple[Image.Image, Segmenter]:
     except ModelNotInstalledError:
         raise HTTPException(
             status_code=404,
-            detail=f"{model_id} is not installed. Download it in Admin / Models first.",
+            detail=f"{model_id} is not installed. Download it in Models & Datasets first.",
         ) from None
     except LookupError:
         raise HTTPException(status_code=404, detail=f"Unknown model: {model_id}") from None

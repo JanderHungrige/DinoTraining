@@ -66,7 +66,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
     '{count} allgemeiner Detektor ist verfügbar, aber nicht heruntergeladen. Hol dir einen unter',
   'studio.foundation.notDownloaded_other':
     '{count} allgemeine Detektoren sind verfügbar, aber nicht heruntergeladen. Hol dir einen unter',
-  'studio.foundation.adminModels': 'Verwaltung / Modelle',
+  'studio.foundation.adminModels': 'Modelle & Datensätze',
   'studio.foundation.noTraining': '— RF-DETR braucht kein Training und keinen Prompt.',
   'studio.foundation.nonCommercial': 'nicht kommerziell',
   'studio.foundation.whatToFind': 'Was gefunden werden soll',

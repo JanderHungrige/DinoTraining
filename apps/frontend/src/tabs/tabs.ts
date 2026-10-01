@@ -11,14 +11,13 @@ import { ENGLISH, type Translator } from '../i18n/translate';
 
 export const TAB_IDS = [
   'intro',
+  'models',
   'inspect',
   'studio',
   'prepare',
   'trainer',
   'inference',
   'generator',
-  'library',
-  'admin',
   'api',
 ] as const;
 
@@ -47,6 +46,13 @@ const ENTRIES: readonly TabEntry[] = [
     labelKey: 'app.tabs.introLabel',
     hintKey: 'app.tabs.introHint',
     wave: 7,
+  },
+  {
+    // The entry point (doc 135): get models and data first. Replaces Admin and Library.
+    id: 'models',
+    labelKey: 'app.tabs.modelsLabel',
+    hintKey: 'app.tabs.modelsHint',
+    wave: 1,
   },
   {
     // Right after Start here (Jan, 2026-10-01): look at what you have before annotating
@@ -90,18 +96,6 @@ const ENTRIES: readonly TabEntry[] = [
     labelKey: 'app.tabs.generatorLabel',
     hintKey: 'app.tabs.generatorHint',
     wave: 4,
-  },
-  {
-    id: 'library',
-    labelKey: 'app.tabs.libraryLabel',
-    hintKey: 'app.tabs.libraryHint',
-    wave: 7,
-  },
-  {
-    id: 'admin',
-    labelKey: 'app.tabs.adminLabel',
-    hintKey: 'app.tabs.adminHint',
-    wave: 1,
   },
   {
     id: 'api',

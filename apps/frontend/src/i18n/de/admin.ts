@@ -50,7 +50,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.library.deleteFailed': 'Konnte das nicht löschen. Die Liste unten zeigt, was wirklich noch da ist.',
 
   // Verwaltung / Modelle
-  'admin.models.title': 'Verwaltung / Modelle',
+  'admin.models.title': 'Modelle & Datensätze',
   'admin.models.loading': 'Modellkatalog wird geladen …',
   'admin.system.device': 'Rechengerät',
   'admin.system.freeDisk': 'Freier Speicherplatz',
@@ -262,4 +262,13 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.mcp.noteBody':
     'Der Server hört nur auf Loopback, also kann ein Assistent auf diesem Rechner ihn erreichen und einer anderswo nicht. Das ist Absicht: Es gibt keine Anmeldung, und die Tools können jeden Dateipfad lesen, den sie bekommen.',
   'admin.mcp.reading': 'Verbindungsdetails werden gelesen …',
+  // Models & Datasets (doc 135)
+  'models.sub.label': 'Bereiche von Modelle & Datensätze',
+  'models.sub.official': 'Offizielle Modelle',
+  'models.sub.datasets': 'Datensätze',
+  'models.sub.mine': 'Meine Modelle',
+  'models.datasets.title': 'Datensätze',
+  'models.datasets.lead': 'Jeder Datensatz in der App: was du annotiert, erzeugt oder importiert hast. Wähle mehrere aus, um sie zusammen zu löschen.',
+  'models.mine.title': 'Meine Modelle',
+  'models.mine.lead': 'Die Heads, die du trainiert, und die Modelle, die du per Fine-Tuning angepasst hast, mit den Daten, aus denen sie gelernt haben. Exportiere eins, um es außerhalb der App zu nutzen, oder lösche, was du nicht mehr brauchst.',
 };

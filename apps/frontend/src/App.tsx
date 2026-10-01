@@ -7,7 +7,6 @@ import { LanguageProvider } from './i18n';
 import { BackgroundVideo } from './components/BackgroundVideo';
 import { LookProvider } from './lib/look';
 import { TabBar } from './components/TabBar';
-import { AdminTab } from './tabs/AdminTab';
 import { ApiTab } from './tabs/ApiTab';
 import { AnnotationStudioTab } from './tabs/AnnotationStudioTab';
 import { DatasetGeneratorTab } from './tabs/DatasetGeneratorTab';
@@ -15,7 +14,7 @@ import { HeadTrainerTab } from './tabs/HeadTrainerTab';
 import { InferenceViewerTab } from './tabs/InferenceViewerTab';
 import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
-import { LibraryTab } from './tabs/LibraryTab';
+import { ModelsTab } from './tabs/ModelsTab';
 import { PrepareTab } from './tabs/PrepareTab';
 import { SetupGate } from './setup/SetupGate';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
@@ -48,12 +47,10 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
       return <DatasetGeneratorTab onInspect={nav.onInspect} />;
     case 'inspect':
       return <InspectTab request={nav.inspectRequest} />;
-    case 'library':
-      return <LibraryTab />;
     case 'api':
       return <ApiTab />;
-    case 'admin':
-      return <AdminTab />;
+    case 'models':
+      return <ModelsTab />;
     default:
       throw new Error(`Unhandled tab: ${tab satisfies never}`);
   }

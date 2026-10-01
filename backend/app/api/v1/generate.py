@@ -189,7 +189,7 @@ async def propose_masks(request: MaskProposalRequest) -> MaskProposalResponse:
         raise HTTPException(
             status_code=409,
             detail=(
-                f"{exc} is not installed. Download it from the Admin tab — "
+                f"{exc} is not installed. Download it in Models & Datasets — "
                 f"{spec.name} needs {', '.join(spec.model_ids)}."
             ),
         ) from None

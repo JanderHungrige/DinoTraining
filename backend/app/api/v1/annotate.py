@@ -68,7 +68,7 @@ async def annotate(request: AnnotateRequest) -> AnnotateResponse:
             status_code=404,
             detail=(
                 f"{request.model_id} is not installed. "
-                "Download it in the Admin tab before annotating."
+                "Download it in Models & Datasets before annotating."
             ),
         ) from None
     except LookupError:
