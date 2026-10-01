@@ -1,0 +1,43 @@
+# Doc 141: the Visual C++ runtime check and installer, on a real Windows machine.
+#
+# The runner already has a current runtime (Visual Studio installs it), so this cannot
+# reproduce an old one: that needs a real PC. It does prove the parts that only exist on
+# Windows: the desktop crate compiles there, `reg query` is read correctly, and the
+# installer script downloads, accepts Microsoft's signature and starts the installer.
+name: Windows runtime
+
+on:
+  push:
+    paths:
+      - "apps/desktop/src-tauri/src/**"
+      - "apps/desktop/src-tauri/Cargo.*"
+      - ".github/workflows/windows-runtime.yml"
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows (VC++ runtime)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      # generate_context! embeds the frontend at compile time; a placeholder is enough
+      # to compile and test the shell.
+      - name: Placeholder frontend
+        shell: bash
+        run: mkdir -p apps/frontend/dist && echo '<!doctype html><title>ci</title>' > apps/frontend/dist/index.html
+
+      - name: Rust tests (Windows)
+        working-directory: apps/desktop/src-tauri
+        run: cargo test
+
+      - name: The installer script runs (download, signature, elevated start)
+        shell: pwsh
+        run: |
+          powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File apps/desktop/src-tauri/src/vc_runtime.ps1
+          $code = $LASTEXITCODE
+          Write-Output "exit code: $code"
+          if ($code -notin 0, 3010, 1638) { exit 1 }
+          exit 0
