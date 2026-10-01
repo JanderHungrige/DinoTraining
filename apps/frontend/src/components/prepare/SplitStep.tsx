@@ -6,9 +6,14 @@
 import type { JSX } from 'react';
 
 import type { SplitReport } from '../../api/prep';
+import { useT, type Key } from '../../i18n';
 
 const SIDES = ['train', 'val', 'test'] as const;
-const SIDE_LABEL = { train: 'Training', val: 'Validation', test: 'Test' } as const;
+const SIDE_LABEL: Readonly<Record<(typeof SIDES)[number], Key>> = {
+  train: 'prepare.split.train',
+  val: 'prepare.split.val',
+  test: 'prepare.split.test',
+};
 
 export interface SplitStepProps {
   readonly split: SplitReport | null;
@@ -17,6 +22,7 @@ export interface SplitStepProps {
 }
 
 function Sides({ split }: { readonly split: SplitReport }): JSX.Element {
+  const { t } = useT();
   const classes = [...new Set(SIDES.flatMap((side) => Object.keys(split.sides[side].classes)))].sort();
   return (
     <table className="prep-table">
@@ -24,13 +30,13 @@ function Sides({ split }: { readonly split: SplitReport }): JSX.Element {
         <tr>
           <th />
           {SIDES.map((side) => (
-            <th key={side}>{SIDE_LABEL[side]}</th>
+            <th key={side}>{t(SIDE_LABEL[side])}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         <tr>
-          <th scope="row">Pictures</th>
+          <th scope="row">{t('prepare.table.pictures')}</th>
           {SIDES.map((side) => (
             <td key={side}>{split.sides[side].images}</td>
           ))}
@@ -51,30 +57,25 @@ function Sides({ split }: { readonly split: SplitReport }): JSX.Element {
 }
 
 export function SplitStep({ split, busy, onSplit }: SplitStepProps): JSX.Element {
+  const { t } = useT();
   return (
     <div className="prep-step">
       <p className="prep-step__why">
-        The model learns from the training pictures and is scored on pictures it has never seen.
-        If a near-copy of a test picture is in training — the next frame of a video, another photo
-        of the same scene — the score measures memory, not learning. So frames and scenes are kept
-        together, and frames right at a boundary are set aside.
+        {t('prepare.split.why')}
       </p>
       <div className="prep-step__actions">
         <button type="button" className="btn btn--primary" disabled={busy} onClick={() => onSplit('auto')}>
-          {split ? 'Split again' : 'Split automatically (recommended)'}
+          {split ? t('prepare.split.again') : t('prepare.split.auto')}
         </button>
         <button type="button" className="btn" disabled={busy} onClick={() => onSplit('keep-source')}>
-          Keep the split the dataset came with
+          {t('prepare.split.keep')}
         </button>
       </div>
       {split && (
         <>
           <Sides split={split} />
           {split.buffer > 0 && (
-            <p className="prep-step__hint">
-              {split.buffer} frame(s) beside a boundary are set aside: too close to frames on the
-              other side to be fair either way.
-            </p>
+            <p className="prep-step__hint">{t('prepare.split.buffer', { count: split.buffer })}</p>
           )}
           {split.warnings.map((warning) => (
             <p key={warning} className="prep-step__note">

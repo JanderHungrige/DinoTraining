@@ -23,6 +23,7 @@ import {
   type StartRunRequest,
 } from '../api/video';
 import type { Prediction } from '../api/inference';
+import { useT } from '../i18n';
 
 /** How often to ask the backend how far it has got. */
 const POLL_MS = 700;
@@ -41,11 +42,13 @@ export interface SequenceRunState {
   readonly clear: () => void;
 }
 
+/** The backend's reason, or '' for "use our own words", translated at return. */
 function describe(cause: unknown): string {
-  return cause instanceof ApiError ? cause.message : 'The run could not be started.';
+  return cause instanceof ApiError ? cause.message : '';
 }
 
 export function useSequenceRun(fps: number): SequenceRunState {
+  const { t } = useT();
   const [run, setRun] = useState<SequenceRun | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [byFrame, setByFrame] = useState<ReadonlyMap<number, readonly Prediction[]>>(
@@ -142,7 +145,7 @@ export function useSequenceRun(fps: number): SequenceRunState {
 
   return {
     run,
-    error,
+    error: error === null ? null : error || t('run.player.startFailed'),
     byFrame,
     index,
     playing,

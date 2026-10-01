@@ -22,6 +22,7 @@ import {
   listHeadInstances,
   type HeadInstanceInfo,
 } from '../api/headInstances';
+import { useT, type Key } from '../i18n';
 
 export type LibraryKind = 'dataset' | 'head' | 'finetune';
 
@@ -65,10 +66,11 @@ export function useLibrary(): LibraryState {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const { t } = useT();
 
   const refresh = useCallback(async (): Promise<void> => {
     setLoading(true);
-    const failures: string[] = [];
+    const failures: Key[] = [];
 
     const results = await Promise.allSettled([
       listDatasets(),
@@ -77,22 +79,28 @@ export function useLibrary(): LibraryState {
     ]);
 
     if (results[0].status === 'fulfilled') setDatasets(results[0].value);
-    else failures.push('datasets');
+    else failures.push('admin.library.listDatasets');
 
     if (results[1].status === 'fulfilled') setHeads(results[1].value);
-    else failures.push('heads');
+    else failures.push('admin.library.listHeads');
 
     if (results[2].status === 'fulfilled') {
       setFinetunes(results[2].value.filter(isFineTuned));
     } else {
-      failures.push('fine-tuned models');
+      failures.push('admin.library.listFinetunes');
     }
 
     // Named rather than "something went wrong": the user is here to clean up, and needs
     // to know which list is incomplete before deleting anything based on it.
-    setError(failures.length === 0 ? null : `Could not load ${failures.join(' or ')}.`);
+    setError(
+      failures.length === 0
+        ? null
+        : t('admin.library.loadFailed', {
+            lists: failures.map((key) => t(key)).join(t('admin.library.listJoin')),
+          }),
+    );
     setLoading(false);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -128,13 +136,16 @@ export function useLibrary(): LibraryState {
       await refresh();
       if (failed.length > 0) {
         setError(
-          `Could not delete ${failed.length} of ${targets.length}: ${failed.join(', ')}. ` +
-            'The lists below are what is really there.',
+          t('admin.library.deleteManyFailed', {
+            failed: failed.length,
+            total: targets.length,
+            names: failed.join(', '),
+          }),
         );
       }
       setBusyId(null);
     },
-    [deleteOne, refresh],
+    [deleteOne, refresh, t],
   );
 
   const remove = useCallback(
@@ -152,12 +163,12 @@ export function useLibrary(): LibraryState {
         // the error to null when every list loads — so setting it first meant the user saw
         // nothing at all, and the row they had just tried to delete quietly reappeared.
         await refresh();
-        setError('Could not delete that. The list below is what is really there.');
+        setError(t('admin.library.deleteFailed'));
       } finally {
         setBusyId(null);
       }
     },
-    [deleteOne, refresh],
+    [deleteOne, refresh, t],
   );
 
   return {

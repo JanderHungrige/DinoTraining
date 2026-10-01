@@ -14,6 +14,7 @@ import {
 } from '../api/datasets';
 import type { MaskProposalResponse } from '../api/generate';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
+import { ENGLISH, type Translator } from '../i18n';
 import type { CanvasBox, ReviewMask } from '../types/annotation';
 
 /** Everything needed to show an image's review again, or to save it. */
@@ -31,17 +32,18 @@ export async function saveReview(
   config: GeneratorConfig,
   review: ImageReview,
   frame: FramePosition | null = null,
+  { t }: Translator = ENGLISH,
 ): Promise<DatasetCounts> {
   if (config.kind === 'masks') {
     if (!review.maskResponse) {
       // Reachable by saving before anything was proposed. Refusing beats inventing an
       // empty proposal, which would wipe whatever the image already had stored.
-      throw new Error('Propose masks before saving.');
+      throw new Error(t('generator.session.masksFirst'));
     }
     return saveImageMasks(config.datasetId, review.maskResponse, review.masks, frame);
   }
   if (!review.imageSize) {
-    throw new Error('The image has not loaded yet, so its boxes cannot be placed.');
+    throw new Error(t('generator.session.notLoaded'));
   }
   return saveImageBoxes(
     config.datasetId,

@@ -68,15 +68,11 @@ def _pretrained_classifier(
     return PretrainedClassifier(embed_dim=capabilities.embed_dim)
 
 
-def _pretrained_segmenter(
-    capabilities: BackboneCapabilities, num_classes: int | None
-) -> nn.Module:
+def _pretrained_segmenter(capabilities: BackboneCapabilities, num_classes: int | None) -> nn.Module:
     return PretrainedSegmenter(embed_dim=capabilities.embed_dim)
 
 
-def _pretrained_depth(
-    capabilities: BackboneCapabilities, num_classes: int | None
-) -> nn.Module:
+def _pretrained_depth(capabilities: BackboneCapabilities, num_classes: int | None) -> nn.Module:
     return PretrainedDepth(embed_dim=capabilities.embed_dim)
 
 

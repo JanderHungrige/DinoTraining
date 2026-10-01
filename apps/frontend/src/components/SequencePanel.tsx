@@ -18,6 +18,7 @@ import { DEFAULT_FPS, probeSequence, type SequenceInfo } from '../api/video';
 import { renderOverlayFor } from './overlays/registry';
 import { useSequenceRun } from '../hooks/useSequenceRun';
 import { VideoPlayer } from './VideoPlayer';
+import { useT } from '../i18n';
 import type { AnnotationView } from '../types/annotationView';
 import type { RenderedImage } from '../lib/geometry';
 
@@ -41,6 +42,7 @@ export function SequencePanel({
   backboneId,
   concept,
 }: SequencePanelProps): JSX.Element | null {
+  const { t } = useT();
   // `null` until the path turns out to be something playable. A single image is not.
   const [sequence, setSequence] = useState<SequenceInfo | null>(null);
   const [start, setStart] = useState(0);
@@ -72,7 +74,7 @@ export function SequencePanel({
   if (!path) {
     return (
       <p role="status" className="player__hint">
-        Pick a folder of frames or a video file above.
+        {t('run.sequence.pickSource')}
       </p>
     );
   }
@@ -80,7 +82,7 @@ export function SequencePanel({
   if (!sequence || sequence.frames < 2) {
     return (
       <p role="status" className="player__hint">
-        That path is not a sequence. Pick a folder of frames or a video file to play one.
+        {t('run.sequence.notSequence')}
       </p>
     );
   }

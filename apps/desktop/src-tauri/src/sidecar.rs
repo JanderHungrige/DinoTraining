@@ -1,9 +1,8 @@
 //! Lifecycle for the FastAPI + PyTorch sidecar.
 //!
-//! In development the sidecar is `python -m app` run from the repo's backend venv.
-//! In a packaged build it is a **frozen binary** shipped beside the executable, and
-//! [`Launch`] is the only thing that differs — everything above this module stays put,
-//! which is what the original note promised (doc 56).
+//! The sidecar is `python -m app` in both cases: in development from the repo's backend
+//! venv, in a packaged build from the uv-managed environment of the bundled runtime
+//! (doc 126, [`crate::runtime`]). [`Launch`] is the only thing that differs.
 
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -11,6 +10,8 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use serde::Serialize;
+
+use crate::runtime::{Env, Runtime};
 
 /// How long to wait for the backend to answer before giving up.
 /// Importing torch on a cold filesystem cache genuinely takes many seconds.
@@ -22,6 +23,8 @@ const DEFAULT_PORT: u16 = 8756;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SidecarError {
+    #[error("the app's bundled runtime is missing: reinstall DinoTraining")]
+    RuntimeMissing,
     #[error("could not locate the backend at {0}")]
     BackendMissing(PathBuf),
     #[error("could not find a Python interpreter — expected a venv at {0}")]
@@ -41,14 +44,11 @@ pub enum SidecarError {
 
 /// How the sidecar is started.
 ///
-/// Two variants and no third: either PyInstaller froze it into one binary, or this is a
-/// checkout with a venv. A packaged build has no venv and a checkout has no frozen binary,
-/// so the choice is made by looking rather than by a flag someone has to remember to set.
+/// One way since doc 126: `python -m app`. What differs between a checkout and a packaged
+/// app is only *which* Python and *which* backend folder — the repository's venv, or the
+/// uv-managed environment in the user's data folder running the bundled backend source.
 #[derive(Debug, Clone)]
 pub enum Launch {
-    /// A frozen binary next to the app executable, as Tauri's `externalBin` places it.
-    Frozen(PathBuf),
-    /// `python -m app` from the repository's backend venv.
     Module { python: PathBuf, backend_dir: PathBuf },
 }
 
@@ -67,20 +67,37 @@ impl SidecarConfig {
 
     /// Resolve how to start the sidecar.
     ///
-    /// **The frozen binary wins when it exists.** A packaged app must never fall through to
-    /// a developer's venv that happens to be on the same machine — it would run a different
-    /// build of the backend than the one shipped, and behave correctly enough that nobody
-    /// would notice until the versions diverged.
+    /// **The bundled runtime wins when it exists.** A packaged app must never fall through
+    /// to a developer's venv that happens to be on the same machine — it would run a
+    /// different build of the backend than the one shipped, and behave correctly enough
+    /// that nobody would notice until the versions diverged.
+    ///
+    /// Whether the bundled runtime is *installed* is the caller's question
+    /// ([`Runtime::is_ready`]); this only says where it will be.
     pub fn resolve(resource_dir: Option<&Path>) -> Result<Self, SidecarError> {
-        if let Some(frozen) = frozen_sidecar(resource_dir) {
-            log::info!("Using the bundled sidecar: {}", frozen.display());
-            return Ok(Self {
-                launch: Launch::Frozen(frozen),
-                host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
-                port: env_port(),
-            });
+        match Runtime::find(resource_dir) {
+            Some(runtime) => runtime
+                .current()
+                .map(|env| Self::bundled(&runtime, &env))
+                .ok_or(SidecarError::PythonMissing(runtime.root)),
+            // A release build never runs a developer's venv: on the build machine it would
+            // run another backend than the one shipped, and work well enough that nobody
+            // noticed (found live, doc 130: a start through a symlink did exactly that).
+            None if cfg!(debug_assertions) => Self::for_development(),
+            None => Err(SidecarError::RuntimeMissing),
         }
-        Self::for_development()
+    }
+
+    /// The packaged app: the uv-managed environment running the bundled backend source.
+    pub fn bundled(runtime: &Runtime, env: &Env) -> Self {
+        Self {
+            launch: Launch::Module {
+                python: env.python(),
+                backend_dir: runtime.backend_dir(),
+            },
+            host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
+            port: env_port(),
+        }
     }
 
     /// Resolve paths for a development run, relative to this crate's source location.
@@ -111,78 +128,6 @@ fn env_port() -> u16 {
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(DEFAULT_PORT)
-}
-
-fn sidecar_name() -> &'static str {
-    if cfg!(windows) { "dinotraining-sidecar.exe" } else { "dinotraining-sidecar" }
-}
-
-/// The frozen sidecar to run, preferring a downloaded GPU build (doc 57).
-///
-/// PyInstaller's `--onedir` output is a **directory** — the executable plus `_internal/`
-/// holding 568 MB of torch — so it ships as a Tauri *resource*, not an `externalBin`.
-/// `externalBin` takes a single file, and the `--onefile` alternative unpacks that 636 MB
-/// to a temp directory on **every launch**, which is seconds of disk churn before the port
-/// binds and an app that looks hung for exactly that long.
-///
-/// `resource_dir` comes from Tauri's own path API rather than being derived here, because
-/// the answer differs per platform (`Contents/Resources` on macOS, beside the executable on
-/// Windows, `/usr/lib/<app>` on Linux) and this module deliberately holds no Tauri types.
-///
-/// Wave 8 ships a **CPU-only** sidecar so the installer stays small (doc 56). A user with
-/// an NVIDIA GPU downloads a CUDA build through the Admin tab, which lands in the app's
-/// data directory rather than beside the executable — installed application directories
-/// are read-only on macOS and need elevation on Windows, so writing there is not an option.
-///
-/// **The downloaded build wins when it is there.** That is the whole point of downloading
-/// it, and the alternative — a flag the user has to find — means someone runs on CPU for a
-/// week without noticing.
-///
-/// Tauri strips the target triple from an `externalBin` name when it bundles, so the file
-/// installed next to the app is plain `dinotraining-sidecar`. The build script names it
-/// *with* the triple because that is what the bundler looks for. The two names are
-/// deliberately different and confusing them is the usual first failure.
-fn frozen_sidecar(resource_dir: Option<&Path>) -> Option<PathBuf> {
-    if let Some(gpu) = downloaded_gpu_sidecar() {
-        log::info!("Using the downloaded GPU sidecar: {}", gpu.display());
-        return Some(gpu);
-    }
-    let bundled = resource_dir?.join(BUNDLE_DIR).join(sidecar_name());
-    bundled.is_file().then_some(bundled)
-}
-
-/// The resource subdirectory the onedir build is copied into. Matches the `resources`
-/// entry in `tauri.release.conf.json`; the two are a pair and must agree.
-const BUNDLE_DIR: &str = "sidecar";
-
-/// A CUDA sidecar the user downloaded, under the app data directory.
-///
-/// `DINO_DATA_DIR` is the same variable the Python side reads, so the two agree on where
-/// the app keeps things without either importing the other's notion of it.
-fn downloaded_gpu_sidecar() -> Option<PathBuf> {
-    let root = std::env::var_os("DINO_DATA_DIR")
-        .map(PathBuf::from)
-        .or_else(default_data_dir)?;
-    let candidate = root.join("runtimes").join("cuda").join(sidecar_name());
-    candidate.is_file().then_some(candidate)
-}
-
-/// Where the app keeps its data when `DINO_DATA_DIR` is unset. Mirrors the Python side's
-/// platform choices — the two are checked against each other by a test on that side.
-fn default_data_dir() -> Option<PathBuf> {
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
-    let home = PathBuf::from(home);
-    Some(if cfg!(target_os = "macos") {
-        home.join("Library").join("Application Support").join("DinoTraining").join("data")
-    } else if cfg!(windows) {
-        std::env::var_os("APPDATA")
-            .map(PathBuf::from)
-            .unwrap_or(home)
-            .join("DinoTraining")
-            .join("data")
-    } else {
-        home.join(".local").join("share").join("DinoTraining").join("data")
-    })
 }
 
 fn env_or(fallback: &str, key: &str) -> String {
@@ -219,20 +164,36 @@ pub fn ensure_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
     }
 }
 
+/// Wait up to [`PORT_WAIT`] for the port to free.
+///
+/// A backend stopped a moment ago (doc 128's switch) can leave the port unbindable for a
+/// few seconds on Linux and Windows. A backend that is really still running fails after
+/// the wait with the same message as before.
+pub async fn wait_port_free(config: &SidecarConfig) -> Result<(), SidecarError> {
+    let deadline = std::time::Instant::now() + PORT_WAIT;
+    loop {
+        match ensure_port_free(config) {
+            Ok(()) => return Ok(()),
+            Err(error) if std::time::Instant::now() >= deadline => return Err(error),
+            Err(_) => tokio::time::sleep(POLL_INTERVAL).await,
+        }
+    }
+}
+
+const PORT_WAIT: Duration = Duration::from_secs(5);
+
 /// Start the backend process. Does not wait for it to become healthy.
 pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
-    let mut command = match &config.launch {
-        Launch::Frozen(binary) => {
-            log::info!("Spawning bundled sidecar: {}", binary.display());
-            Command::new(binary)
-        }
-        Launch::Module { python, backend_dir } => {
-            log::info!("Spawning backend: {} -m app", python.display());
-            let mut command = Command::new(python);
-            command.arg("-m").arg("app").current_dir(backend_dir);
-            command
-        }
-    };
+    let Launch::Module { python, backend_dir } = &config.launch;
+    log::info!("Spawning backend: {} -m app", python.display());
+    let mut command = Command::new(python);
+    command.arg("-m").arg("app").current_dir(backend_dir);
+    crate::uv_sync::hide_console(&mut command);
+    // An operation MPS lacks runs on the CPU instead of failing (doc 126). A value the
+    // user set themselves is left alone.
+    if cfg!(target_os = "macos") && std::env::var_os("PYTORCH_ENABLE_MPS_FALLBACK").is_none() {
+        command.env("PYTORCH_ENABLE_MPS_FALLBACK", "1");
+    }
 
     let child = command
         .env("DINO_API_HOST", &config.host)

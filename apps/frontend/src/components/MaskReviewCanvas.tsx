@@ -20,13 +20,14 @@ import { useCallback, useEffect, useRef, useState, type JSX, type KeyboardEvent 
 
 import { fitContain, toDisplay, type RenderedImage } from '../lib/geometry';
 import {
-  LABEL_TITLES,
+  labelTitle,
   LABELS,
   nextLabel,
   type Label,
   type ReviewMask,
 } from '../types/annotation';
 import { CompositedMasks } from './overlays/CompositedMasks';
+import { useT } from '../i18n';
 import {
   DEFAULT_VIEW,
   showsBoxes,
@@ -67,6 +68,7 @@ export function MaskReviewCanvas({
   view = DEFAULT_VIEW,
   disabled = false,
 }: MaskReviewCanvasProps): JSX.Element {
+  const { t } = useT();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [rendered, setRendered] = useState<RenderedImage>(EMPTY_RENDER);
 
@@ -141,9 +143,11 @@ export function MaskReviewCanvas({
               } canvas__box--mask${showsBoxes(view) ? '' : ' canvas__box--bare'}`}
               style={{ left: rect.x, top: rect.y, width: rect.w, height: rect.h }}
               aria-pressed={selected}
-              aria-label={`${LABEL_TITLES[mask.label]} mask${
-                mask.concept ? `: ${mask.concept}` : ''
-              }${score}. Press 1, 2 or 3 to change the verdict.`}
+              aria-label={t(mask.concept ? 'run.maskReview.aria' : 'run.maskReview.ariaBare', {
+                verdict: labelTitle(t, mask.label),
+                concept: mask.concept ?? '',
+                score,
+              })}
               disabled={disabled}
               onClick={() => {
                 onSelect(mask.id);
@@ -153,7 +157,7 @@ export function MaskReviewCanvas({
               onKeyDown={(event) => handleKeyDown(event, mask)}
             >
               <span className="canvas__boxtag">
-                {LABEL_TITLES[mask.label]}
+                {labelTitle(t, mask.label)}
                 {mask.score !== undefined ? ` ${(mask.score * 100).toFixed(0)}%` : ''}
               </span>
             </button>
@@ -161,10 +165,7 @@ export function MaskReviewCanvas({
         })}
       </div>
 
-      <p className="canvas__hint">
-        Click a mask to cycle its verdict, or press 1, 2 or 3 with it focused. Rejecting a
-        mask keeps it as a negative rather than deleting it — the trainer can use that.
-      </p>
+      <p className="canvas__hint">{t('run.maskReview.hint')}</p>
     </div>
   );
 }

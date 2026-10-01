@@ -28,7 +28,8 @@ GROUNDED_SAM_LARGE = "grounded-sam-large"
 SAM3 = "sam3"
 
 #: How an annotator wants its text. `phrases` takes several things at once, separated by
-#: full stops — Grounding DINO was trained that way; `concept` takes one.
+#: full stops — Grounding DINO was trained that way; `concept` is searched one term per
+#: pass (commas or full stops separate them, app/ml/concepts.py).
 #:
 #: Data on the spec rather than an ``annotator_id == GROUNDED_SAM`` in the UI, and not a
 #: style preference: that comparison silently gave every new variant SAM 3's single-concept

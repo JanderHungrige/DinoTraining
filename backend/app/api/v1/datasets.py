@@ -18,6 +18,7 @@ from app.datasets.models import (
     ImageAnnotation,
     ImageMaskAnnotation,
 )
+from app.datasets.quality import read_guideline
 from app.datasets.store import DatasetNotFoundError, DatasetStore, dataset_dir
 
 logger = logging.getLogger(__name__)
@@ -249,6 +250,11 @@ async def export_coco(dataset_id: str) -> ExportResponse:
     images = store.image_annotations(dataset_id)
     masks = MaskStore().image_masks(dataset_id)
     coco = build_coco(info.name, images, info.prompt, masks=masks)
+    # Doc 109: the conventions travel with the annotations they describe (the guideline's
+    # own file, guideline.md, already sits beside the export).
+    guideline = read_guideline(dataset_id)
+    if guideline:
+        coco["info"]["guideline"] = guideline
     path = write_coco(dataset_dir(dataset_id), coco)
 
     logger.info("Exported COCO for %s (%d annotations)", dataset_id, len(coco["annotations"]))

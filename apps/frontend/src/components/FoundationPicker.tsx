@@ -14,6 +14,7 @@
 import type { JSX } from 'react';
 
 import { proposesBoxes, type FoundationInfo } from '../api/foundation';
+import { useT } from '../i18n';
 import { describeOutput } from '../types/annotationView';
 
 export interface FoundationPickerProps {
@@ -36,11 +37,12 @@ export function FoundationPicker({
   onSelect,
   loading = false,
   disabled = false,
-  legend = 'Detector',
+  legend,
   groupName = 'foundation-model',
   concept,
   onConceptChange,
 }: FoundationPickerProps): JSX.Element {
+  const { t, tp } = useT();
   // One shared rule, in `foundation.ts`, rather than `render_hint === 'boxes'` inline. A
   // concept segmenter reports `masks` — that is what the *viewer* draws — but Grounding
   // DINO found boxes on the way there, so this surface can review them. Depth cannot be.
@@ -51,14 +53,14 @@ export function FoundationPicker({
   // prompt box, and two inputs for one string is how they drift apart.
   const needsConcept = selected?.takes_concept === true && onConceptChange !== undefined;
 
-  if (loading) return <p role="status">Loading detectors…</p>;
+  if (loading) return <p role="status">{t('studio.foundation.loading')}</p>;
 
   // Three empty states, because the fix differs for each and one message would send the
   // user looking in the wrong place.
   if (annotatable.length === 0) {
     return (
       <p role="status" className="headpick__empty">
-        No foundation model in the catalogue proposes boxes.
+        {t('studio.foundation.none')}
       </p>
     );
   }
@@ -66,16 +68,15 @@ export function FoundationPicker({
   if (installed.length === 0) {
     return (
       <p role="status" className="headpick__empty">
-        {annotatable.length} general detector
-        {annotatable.length === 1 ? ' is' : 's are'} available but not downloaded. Get one
-        in <strong>Admin / Models</strong> — RF-DETR needs no training and no prompt.
+        {tp('studio.foundation.notDownloaded', annotatable.length)}{' '}
+        <strong>{t('studio.foundation.adminModels')}</strong> {t('studio.foundation.noTraining')}
       </p>
     );
   }
 
   return (
     <fieldset className="headpick">
-      <legend>{legend}</legend>
+      <legend>{legend ?? t('studio.foundation.legend')}</legend>
       {installed.map((entry) => (
         <label key={entry.id} className="headpick__option">
           <input
@@ -89,7 +90,7 @@ export function FoundationPicker({
           <span className="headpick__name">{entry.title}</span>
           <span className="headpick__meta">
             {entry.description}
-            {entry.non_commercial ? ' · non-commercial' : ''}
+            {entry.non_commercial ? ` · ${t('studio.foundation.nonCommercial')}` : ''}
           </span>
         </label>
       ))}
@@ -100,13 +101,13 @@ export function FoundationPicker({
 
           It answers the question behind "boxes, segmentations, or both?": a segmentation
           run gives you boxes too, because the COCO export derives one from each mask. */}
-      {selected && describeOutput(selected.render_hint) && (
-        <p className="genpanel__output">{describeOutput(selected.render_hint)}</p>
+      {selected && describeOutput(selected.render_hint, t) && (
+        <p className="genpanel__output">{describeOutput(selected.render_hint, t)}</p>
       )}
 
       {needsConcept && (
         <label className="headpick__concept">
-          <span>What to find</span>
+          <span>{t('studio.foundation.whatToFind')}</span>
           <input
             type="text"
             value={concept ?? ''}
@@ -115,8 +116,7 @@ export function FoundationPicker({
             onChange={(event) => onConceptChange(event.target.value)}
           />
           <span className="headpick__meta">
-            {selected?.title} finds only what you name here. Separate several with
-            full stops.
+            {t('studio.foundation.conceptHint', { model: selected?.title ?? '' })}
           </span>
         </label>
       )}

@@ -1,8 +1,9 @@
 # Build installers for macOS, Windows and Linux (doc 58).
 #
-# A **matrix, not a runner**: PyInstaller does not cross-compile and the torch wheel differs
-# per platform, so each installer is built on its own OS. That is a consequence of doc 56's
-# spike rather than a preference.
+# A **matrix, not a runner**: each installer carries its platform's uv and Tauri binary,
+# so each is built on its own OS. Python and PyTorch are *not* in the installer: the app
+# installs them on first start from the official sources, exactly as uv.lock pins them
+# (doc 126).
 #
 # Every step here was run by hand on macOS first (doc 58). The order and the arguments are
 # the ones that worked, not a guess at what should.
@@ -12,6 +13,8 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    # Doc 133: a merge to main with a new version in tauri.conf.json is the release.
+    branches: [main]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -32,29 +35,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows first: it is the leg with the untested assumptions — `.build/Scripts`
-          # rather than `.build/bin`, and the CUDA wheel trap that `--index-url` guards
-          # against. They all run in parallel, but this is the one to read first.
-          # **Formats chosen by measurement, not preference** — see doc 58 for the runs.
-          #
-          # macOS/dmg and Linux/deb both build this payload. **AppImage does not**: run #2
-          # failed with `appimage,deb` and run #3 succeeded with `deb` alone, which isolates
-          # it. AppImage repacks the whole tree through linuxdeploy, and the tree is 636 MB
-          # of PyInstaller `_internal` with thousands of files.
-          #
-          # **Windows failed for a different reason**, now fixed in `build_sidecar.py`:
-          # `makensis` hit MAX_PATH on a torch-vendored licence file 265 characters deep.
-          # Registry `LongPathsEnabled` does not help — makensis is a legacy Win32 binary
-          # without the manifest that opts in — so the payload was shortened instead.
+          # **Formats chosen by measurement** — see doc 58 for the runs. AppImage failed
+          # against the 636 MB PyInstaller tree; with the small runtime of doc 126 it may
+          # work now, and doc 131's smoke test is where to find out.
           - os: windows-latest
             label: Windows
             bundles: nsis
+            target: x86_64-pc-windows-msvc
           - os: ubuntu-22.04
             label: Linux
             bundles: deb
+            target: x86_64-unknown-linux-gnu
           - os: macos-14
             label: macOS (Apple silicon)
-            bundles: dmg
+            # Doc 130: the plain .app, packed below. A .dmg invites a browser download,
+            # which quarantines it, and the unsigned app is then blocked.
+            bundles: app
+            target: aarch64-apple-darwin
 
     steps:
       - uses: actions/checkout@v4
@@ -76,26 +73,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      # --- the sidecar -------------------------------------------------------------------
+      # --- the runtime ------------------------------------------------------------------
       #
-      # A **production** venv, not the dev one: `pip install .[dev]` would freeze mypy, ruff
-      # and pytest into the shipped binary for no reason. `--index-url` pins the CPU wheel —
-      # without it, Windows and Linux pull the CUDA build and the installer goes from
-      # ~300 MB to over 2.5 GB (doc 56). GPU support is a separate download (doc 57).
-      - name: Build the sidecar
-        working-directory: backend
+      # uv (checksum-verified) and the backend source with its lock, nothing else. Replaced
+      # the 636 MB PyInstaller sidecar (doc 126).
+      - name: Stage the runtime
         shell: bash
-        run: |
-          python -m venv .build
-          BIN=".build/bin"; [ -d ".build/Scripts" ] && BIN=".build/Scripts"
-          "$BIN/python" -m pip install --upgrade pip
-          "$BIN/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-          "$BIN/pip" install . pyinstaller
-          "$BIN/python" bundling/build_sidecar.py
-
-      - name: Stage the sidecar for the bundler
-        shell: bash
-        run: cp -R backend/dist/dinotraining-sidecar apps/desktop/src-tauri/binaries/
+        run: python scripts/stage_runtime.py ${{ matrix.target }}
 
       # --- the installer -----------------------------------------------------------------
       #
@@ -131,11 +115,110 @@ jobs:
           fi
           echo "No model weights in the bundle."
 
+      # Doc 130: the Mac app as a tarball with its checksum, and the Homebrew formula for
+      # exactly this archive. Jan copies the formula into the tap.
+      - name: Pack the Mac app and render the formula
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          VERSION=$(python -c "import json; print(json.load(open('apps/desktop/src-tauri/tauri.conf.json'))['version'])")
+          OUT=apps/desktop/src-tauri/target/release/bundle/macos
+          NAME="DinoTraining_${VERSION}_aarch64.app.tar.gz"
+          tar -czf "$OUT/$NAME" -C "$OUT" DinoTraining.app
+          (cd "$OUT" && shasum -a 256 "$NAME" > "$NAME.sha256")
+          python scripts/render_formula.py "$VERSION" "$(cut -d' ' -f1 "$OUT/$NAME.sha256")" > "$OUT/dinotraining.rb"
+
+      # Doc 126 promised small installers; the job summary shows whether they are.
+      - name: Record the installer sizes
+        shell: bash
+        run: |
+          {
+            echo "### ${{ matrix.label }}"
+            find apps/desktop/src-tauri/target/release/bundle \( -name '*.tar.gz' -o -name '*.exe' -o -name '*.deb' \) \
+              -exec du -h {} \;
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # --- doc 131: what a user downloads, installed and started -------------------------
+      #
+      # Install silently, first start unattended (Python and PyTorch download, ~1 GB),
+      # /health, a torch check in the installed environment, and a second start that
+      # must need no setup. CPU only: the runners have no GPU.
+      - name: Smoke test (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ARCHIVE=$(ls apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz)
+          DINO_ARCHIVE="$PWD/$ARCHIVE" DINO_INSTALL_DIR="$RUNNER_TEMP/Applications" bash scripts/install-mac.sh
+          EXE=$(ls "$RUNNER_TEMP"/Applications/DinoTraining.app/Contents/MacOS/* | head -n 1)
+          python scripts/smoke_installed.py "$EXE" --work "$RUNNER_TEMP/smoke"
+
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get install -y xvfb
+          DEB=$(ls apps/desktop/src-tauri/target/release/bundle/deb/*.deb)
+          sudo apt-get install -y "./$DEB"
+          PKG=$(dpkg-deb -f "$DEB" Package)
+          EXE=$(dpkg -L "$PKG" | grep '^/usr/bin/' | head -n 1)
+          # The webview needs a display; xvfb-run gives it a virtual one.
+          python scripts/smoke_installed.py "$EXE" --wrap "xvfb-run -a" --work "$RUNNER_TEMP/smoke"
+          sudo apt-get remove -y "$PKG"
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+          $dir = Join-Path $env:LOCALAPPDATA 'DinoTraining'
+          if (-not (Test-Path $dir)) { Get-ChildItem $env:LOCALAPPDATA -Directory | Select-Object Name; throw "not installed at $dir" }
+          $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
+          # Doc 132: the runtime where the app puts it, so the uninstall check sees it.
+          $runtime = Join-Path $dir 'runtime'
+          python scripts/smoke_installed.py $exe.FullName --runtime $runtime --work "$env:RUNNER_TEMP/smoke"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # --- doc 132: uninstall removes Python/PyTorch, keeps the user's work ---------
+          $kept = Join-Path $dir 'data\keep-me.txt'
+          New-Item -ItemType File -Force -Path $kept | Out-Null
+          if (-not (Test-Path $runtime)) { throw "no runtime at $runtime before the uninstall" }
+          Start-Process -FilePath (Join-Path $dir 'uninstall.exe') -ArgumentList '/S' -Wait
+          # NSIS's uninstaller hands off to a copy of itself in %TEMP% (Au_.exe/Un_*.exe), so
+          # -Wait returns early. Wait for that copy; deleting ~2 GB under Defender is slow.
+          $deadline = (Get-Date).AddMinutes(10)
+          do {
+            Start-Sleep -Seconds 3
+            $busy = Get-Process | Where-Object { $_.Name -like 'Au_*' -or $_.Name -like 'Un_*' }
+          } while ($busy -and (Get-Date) -lt $deadline)
+          if (Test-Path $runtime) {
+            $left = Get-ChildItem $runtime -Recurse -Force -File -ErrorAction SilentlyContinue
+            Write-Host "Left behind: $($left.Count) files, $(($left | Where-Object IsReadOnly).Count) read-only"
+            $left | Select-Object -First 10 | ForEach-Object { Write-Host "$($_.FullName.Length) $($_.FullName)" }
+            Write-Host "app exe still there: $(Test-Path $exe.FullName); uninstaller running: $([bool]$busy)"
+            throw "the uninstall left the runtime at $runtime"
+          }
+          if (Test-Path $exe.FullName) { throw "the uninstall left $($exe.FullName)" }
+          if (-not (Test-Path $kept)) { throw "the uninstall removed the user's data" }
+          if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\DinoTraining') { throw "still listed under Apps" }
+          "Uninstall: runtime and app removed, user data kept, no longer under Apps." >> $env:GITHUB_STEP_SUMMARY
+          Write-Host "Uninstall checks passed"
+
+      - name: Keep the app log of a failed smoke test
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-log-${{ matrix.os }}
+          path: ${{ runner.temp }}/smoke/app.log
+          if-no-files-found: ignore
+
       - uses: actions/upload-artifact@v4
         with:
           name: installer-${{ matrix.os }}
           path: |
-            apps/desktop/src-tauri/target/release/bundle/dmg/*.dmg
+            apps/desktop/src-tauri/target/release/bundle/macos/*.app.tar.gz
+            apps/desktop/src-tauri/target/release/bundle/macos/*.sha256
+            apps/desktop/src-tauri/target/release/bundle/macos/dinotraining.rb
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
             apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
@@ -146,17 +229,58 @@ jobs:
     name: Publish
     needs: installer
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - uses: actions/checkout@v4
+
+      # Doc 133. Only after all three installers were built and smoke-tested (`needs`).
+      # - push to main: publish v<version> from tauri.conf.json, unless a release for it
+      #   exists (a draft too): bump the version to release.
+      # - a v* tag: a draft, as before, for anything published by hand.
+      # - anything else (the dry run): decide and say, publish nothing.
+      - name: Decide
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('apps/desktop/src-tauri/tauri.conf.json'))['version'])")
+          TAG="v$VERSION"
+          EXISTS=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
+          MODE=none
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then MODE=draft; fi
+          if [[ "$GITHUB_REF" == refs/heads/main && "$GITHUB_EVENT_NAME" == push ]]; then
+            if [ -n "$EXISTS" ]; then MODE=exists; else MODE=publish; fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          case "$MODE" in
+            publish) NOTE="Publishing $TAG.";;
+            exists)  NOTE="$TAG already has a release: nothing published. Bump the version in tauri.conf.json to release.";;
+            draft)   NOTE="A draft release for $GITHUB_REF_NAME.";;
+            *)       if [ -n "$EXISTS" ]; then STATE="exists"; else STATE="does not exist yet"; fi
+                     NOTE="Not main and not a tag: nothing published (version $VERSION; a release for it $STATE)." ;;
+          esac
+          echo "$NOTE"
+          echo "### Release: $NOTE" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/download-artifact@v4
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
         with:
           path: artifacts
 
-      # Draft, never live. macOS notarization and Windows signing are not wired up yet
-      # (Wave 8 feature 4), so an unsigned build reaching users would be Gatekeeper-blocked
-      # on macOS and SmartScreen-warned on Windows. A human decides when to publish.
+      # Unsigned (no paid certificates, Jan): Windows warns once (SmartScreen), and the
+      # Mac installs through the script or Homebrew, which Gatekeeper does not block (doc 130).
       - uses: softprops/action-gh-release@v2
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
         with:
-          draft: true
+          tag_name: ${{ steps.decide.outputs.mode == 'publish' && steps.decide.outputs.tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          draft: ${{ steps.decide.outputs.mode == 'draft' }}
+          make_latest: ${{ steps.decide.outputs.mode == 'publish' }}
           generate_release_notes: true
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.deb
+            artifacts/**/*.app.tar.gz
+            artifacts/**/*.sha256
+            artifacts/**/dinotraining.rb

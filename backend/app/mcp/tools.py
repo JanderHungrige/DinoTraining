@@ -25,7 +25,9 @@ from app.mcp import client
 
 #: Which poll route a job id belongs to. Three different endpoints, one tool, because the
 #: assistant should not have to remember which kind of job it started.
-JobKind = Literal["download", "training", "finetune", "audit", "foundation-finetune"]
+JobKind = Literal[
+    "download", "training", "finetune", "audit", "foundation-finetune", "default-recipe"
+]
 
 _JOB_PATHS: dict[str, str] = {
     "download": "/models/jobs/{job_id}",
@@ -33,6 +35,7 @@ _JOB_PATHS: dict[str, str] = {
     "finetune": "/foundation/finetune/{job_id}",
     "audit": "/prep/audits/{job_id}",
     "foundation-finetune": "/finetune/jobs/{job_id}",
+    "default-recipe": "/prep/default-recipes/{job_id}",
 }
 
 
@@ -104,9 +107,10 @@ def register(mcp: MCPServer) -> None:
         head_type_id: str,
         backbone_id: str,
         dataset_ids: list[str],
-        epochs: int = 20,
-        learning_rate: float = 0.001,
+        epochs: int | None = None,
+        learning_rate: float | None = None,
         recipe_id: str | None = None,
+        parameters: dict[str, float | int | str] | None = None,
     ) -> Any:
         """Train a head on a frozen backbone. Returns a job id — poll with `get_job`.
 
@@ -119,20 +123,26 @@ def register(mcp: MCPServer) -> None:
 
         Pass `recipe_id` from `save_recipe` (one dataset only): its leak-free split, tiles
         and class handling are applied, and the job reports `test_metrics` — the honest
-        score. Without one the split is random and the job's `notes` say so.
+        score. Without one the split is random and the job's `notes` say so; no recipe yet
+        → `create_default_recipe`.
+
+        Omitted settings take their defaults (20 rounds, learning rate 0.001, …). Any other
+        setting from `get_training_parameters("head")` — `batch_size`, `weight_decay`,
+        `lr_schedule`, `warmup_epochs`, `early_stopping_patience` — goes in `parameters`.
         """
-        return await client.call(
-            "POST",
-            "/training/jobs",
-            json={
-                "head_type_id": head_type_id,
-                "backbone_id": backbone_id,
-                "dataset_ids": dataset_ids,
-                "epochs": epochs,
-                "learning_rate": learning_rate,
-                **({"recipe_id": recipe_id} if recipe_id else {}),
-            },
-        )
+        body: dict[str, Any] = {**(parameters or {})}
+        if epochs is not None:
+            body["epochs"] = epochs
+        if learning_rate is not None:
+            body["learning_rate"] = learning_rate
+        if recipe_id:
+            body["recipe_id"] = recipe_id
+        body |= {
+            "head_type_id": head_type_id,
+            "backbone_id": backbone_id,
+            "dataset_ids": dataset_ids,
+        }
+        return await client.call("POST", "/training/jobs", json=body)
 
     # --- getting data in and out ------------------------------------------------
 

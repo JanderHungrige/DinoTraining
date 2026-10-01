@@ -13,6 +13,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { createDataset, listDatasets, type DatasetInfo } from '../api/datasets';
+import { useT } from '../i18n';
 import { RevealDatasetButton } from './RevealDatasetButton';
 
 export interface GeneratorDestinationProps {
@@ -40,6 +41,7 @@ export function GeneratorDestination({
   onSelect,
   onNameChange,
 }: GeneratorDestinationProps): JSX.Element {
+  const { t, tp } = useT();
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
 
   useEffect(() => {
@@ -57,12 +59,12 @@ export function GeneratorDestination({
   return (
     <>
       <label className="genpanel__field">
-        <span>Save into</span>
+        <span>{t('generator.destination.saveInto')}</span>
         <select value={datasetId} onChange={(event) => onSelect(event.target.value)}>
-          <option value="">Create a new dataset…</option>
+          <option value="">{t('generator.destination.createNew')}</option>
           {datasets.map((dataset) => (
             <option key={dataset.id} value={dataset.id}>
-              {dataset.name} ({dataset.counts.images} images)
+              {tp('generator.destination.option', dataset.counts.images, { name: dataset.name })}
             </option>
           ))}
         </select>
@@ -74,11 +76,11 @@ export function GeneratorDestination({
 
       {datasetId === '' && (
         <label className="genpanel__field">
-          <span>New dataset name</span>
+          <span>{t('generator.destination.newName')}</span>
           <input
             type="text"
             value={newName}
-            placeholder="Bolts, round two"
+            placeholder={t('generator.destination.placeholder')}
             onChange={(event) => onNameChange(event.target.value)}
           />
         </label>

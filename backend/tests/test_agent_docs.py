@@ -202,3 +202,27 @@ class TestBuildGuide:
         document = build_guide(client.get("/openapi.json").json())
 
         assert document.index("## 1. Install a model") < document.index("## Endpoint reference")
+
+
+class TestTrainingKnobsInTheGuide:
+    """Doc 102: the guide points at the settings and the default recipe."""
+
+    def test_it_names_the_settings_and_says_to_keep_defaults(self, guide: str) -> None:
+        assert "/training/parameters/" in guide
+        assert "Keep the defaults unless the user asks" in guide
+
+    def test_it_offers_the_default_recipe_without_pretending_it_fixes(self, guide: str) -> None:
+        assert "/recipes/default" in guide and "create_default_recipe" in guide
+        assert "It does not fix anything" in guide
+
+
+class TestAnnotatingForSam3InTheGuide:
+    """Doc 110: the guide says how to annotate for SAM 3, and why checks matter."""
+
+    def test_checks_variations_and_negatives_are_explained(self, guide: str) -> None:
+        assert "Only checked pictures teach" in guide
+        assert "Two to four variations are enough" in guide
+        assert "num_cross_negatives" in guide and "confusable" in guide
+
+    def test_it_comes_before_preparation(self, guide: str) -> None:
+        assert guide.index("## 2d. Annotate for the model") < guide.index("## 2c. Prepare")

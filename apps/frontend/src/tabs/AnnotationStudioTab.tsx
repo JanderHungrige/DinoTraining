@@ -8,16 +8,40 @@ import { CounterBar } from '../components/CounterBar';
 import { BoxReviewList } from '../components/BoxReviewList';
 import { PrescanPanel } from '../components/PrescanPanel';
 import { SessionSetup } from '../components/SessionSetup';
+import { TargetGuide } from '../components/TargetGuide';
+import { PhraseBar } from '../components/phrases/PhraseBar';
+import { GuidelinePanel } from '../components/GuidelinePanel';
+import { SecondLook } from '../components/SecondLook';
+import { useSecondLook } from '../hooks/useSecondLook';
+import { useAnnotationTargetList } from '../hooks/useAnnotationTargetList';
+import { usePicturePhrases } from '../hooks/usePicturePhrases';
 import { hiddenByThreshold, numbered } from '../lib/boxReview';
 import { usePrescan } from '../hooks/usePrescan';
 import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
 import { prescanOptions, prescanSuggestions } from '../lib/prescanSource';
 import { useAnnotationSession, type SessionConfig } from '../hooks/useAnnotationSession';
-import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
+import { usePromptClasses } from '../hooks/usePromptClasses';
+import { useReview } from '../hooks/useReview';
+import { MaskEditBar } from '../components/MaskEditBar';
+import { NewClassQuestion } from '../components/NewClassQuestion';
+import { ReviewBanner } from '../components/ReviewBanner';
+import { MaskEditOverlay } from '../components/MaskEditOverlay';
+import { StudioActions } from '../components/StudioActions';
+import { StudioBack } from '../components/StudioBack';
+import { StudioViewBar } from '../components/StudioViewBar';
+import { useMaskEditing } from '../hooks/useMaskEditing';
+import { useT } from '../i18n';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 
-export function AnnotationStudioTab(): JSX.Element {
+export interface AnnotationStudioTabProps {
+  /** False while another tab is shown: App keeps the Studio mounted so the session
+   *  survives, and its document-wide keys must not act on a hidden picture. */
+  readonly active?: boolean;
+}
+
+export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps): JSX.Element {
+  const { t } = useT();
   const [config, setConfig] = useState<SessionConfig | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   // Starts at 0 so nothing is ever hidden until the user asks. A review surface that opens
@@ -41,7 +65,16 @@ export function AnnotationStudioTab(): JSX.Element {
   const [concealed, setConcealed] = useState<ReadonlySet<string> | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
+  usePromptClasses(config);
+  const review = useReview(config?.datasetId ?? null, session);
   const prescan = usePrescan();
+  // Doc 104: what this dataset is annotated for, and what this picture still lacks.
+  const target = useAnnotationTargetList().find((entry) => entry.id === (config?.target ?? 'open'));
+  const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
+  const maskEditing = useMaskEditing(session.currentImage, session.boxes, session.setBoxes, selectedId);
+  const selectedBox = session.boxes.find((box) => box.id === selectedId) ?? null;
+  // Doc 109: a second look reuses the prescan's picture filter.
+  const look = useSecondLook(config?.datasetId ?? '', session.setFilter);
 
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
@@ -65,9 +98,14 @@ export function AnnotationStudioTab(): JSX.Element {
   // Classes on the canvas right now, offered alongside the stored vocabulary (doc 60).
   // A proposal run's classes are on screen and unsaved; a picker that could not offer
   // them would be visibly wrong about what this image contains.
+  // A phrase with a class of its own is a class too, before any outline carries it (Jan,
+  // 2026-09-30: "+ phrase" added "flame reflection", and the list's picker did not offer it).
   const inPlay = useMemo(
-    () => boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
-    [boxes],
+    () => [
+      ...boxes.map((box) => box.text ?? '').filter((text) => text !== ''),
+      ...pictures.phrases.map((phrase) => phrase.class_name),
+    ],
+    [boxes, pictures.phrases],
   );
   const vocabulary = useDatasetClasses(config?.datasetId ?? null, inPlay);
 
@@ -98,11 +136,7 @@ export function AnnotationStudioTab(): JSX.Element {
     return (
       <section className="studio">
         <h2 className="studio__title">Annotation Studio</h2>
-        <p className="studio__lead">
-          Point at a folder of images and choose what proposes the boxes — describe what
-          you are looking for, or run a head you already trained. Either way you accept,
-          reject or correct what comes back.
-        </p>
+        <p className="studio__lead">{t('studio.tab.lead')}</p>
         <SessionSetup onStart={setConfig} />
       </section>
     );
@@ -112,15 +146,13 @@ export function AnnotationStudioTab(): JSX.Element {
   // The label names the mode, so the button is not the only thing on screen that knows
   // which one is running — the setup form's radios are behind "Change folder" by now.
   // A prompt is the only source you *write*; the other two you pick and run.
-  const runLabel = config.source.kind === 'prompt' ? 'Run prompt' : 'Run model';
+  const runLabel = t(config.source.kind === 'prompt' ? 'studio.tab.runPrompt' : 'studio.tab.runModel');
 
   return (
     <section className="studio">
       <div className="studio__head">
         <h2 className="studio__title">Annotation Studio</h2>
-        <button type="button" className="btn" onClick={() => setConfig(null)}>
-          Change folder
-        </button>
+        <StudioBack dirty={session.dirty} busy={session.busy} onSave={session.save} onBack={() => setConfig(null)} />
       </div>
 
       <CounterBar
@@ -130,13 +162,28 @@ export function AnnotationStudioTab(): JSX.Element {
         dirty={session.dirty}
       />
 
+      <NewClassQuestion key={config.datasetId} datasetId={config.datasetId} watch={`${vocabulary.names.join('|')}#${session.index}`} onReview={(name) => void review.start(name)} />
+      <ReviewBanner review={review} position={session.index + 1} boxes={boxes} busy={session.busy} />
+
+      {target && (
+        <TargetGuide
+          target={target}
+          boxes={boxes}
+          phraseCount={pictures.phrases.length}
+          statuses={pictures.statuses}
+        />
+      )}
+
+      <GuidelinePanel datasetId={config.datasetId} />
+      <SecondLook look={look} currentImage={session.currentImage} disabled={session.busy} />
+
       {session.error && (
         <p className="admin__error" role="alert">
           {session.error}
         </p>
       )}
 
-      {session.loadingImages && <p role="status">Loading images…</p>}
+      {session.loadingImages && <p role="status">{t('studio.tab.loadingImages')}</p>}
 
       {currentImage && (
         <>
@@ -160,8 +207,7 @@ export function AnnotationStudioTab(): JSX.Element {
             {currentImage}
           </p>
 
-          {/* Hidden probe: gives the session the natural size before any proposal,
-              so boxes drawn by hand on a fresh image are still saveable. */}
+          {/* Hidden probe: the natural size before any proposal, so hand-drawn boxes save. */}
           <img
             ref={imageRef}
             src={imageUrl(currentImage)}
@@ -173,6 +219,13 @@ export function AnnotationStudioTab(): JSX.Element {
                 event.currentTarget.naturalHeight,
               )
             }
+          />
+
+          <PhraseBar
+            datasetId={config.datasetId}
+            pictures={pictures}
+            open={['sam3', 'open', undefined].includes(config.target)}
+            disabled={session.busy || !active}
           />
 
           {imageSize ? (
@@ -188,6 +241,16 @@ export function AnnotationStudioTab(): JSX.Element {
                 onSelect={setSelectedId}
                 view={view}
                 disabled={session.busy}
+                overlay={(rendered) => (
+                  <MaskEditOverlay
+                    rendered={rendered}
+                    tool={maskEditing.tool}
+                    radius={maskEditing.radius}
+                    points={maskEditing.points}
+                    onClick={maskEditing.click}
+                    onStroke={maskEditing.stroke}
+                  />
+                )}
               />
               <BoxReviewList
                 boxes={items}
@@ -208,66 +271,26 @@ export function AnnotationStudioTab(): JSX.Element {
               />
             </div>
           ) : (
-            <p role="status">Loading image…</p>
+            <p role="status">{t('studio.tab.loadingImage')}</p>
           )}
 
-          <div className="studio__viewbar">
-            <AnnotationViewToggle
-              view={view}
-              onChange={setView}
-              hasMasks={anySegmented}
-              hasBoxes={boxes.length > 0}
-              disabled={session.busy}
-              groupName="studio-view"
-            />
+          <StudioViewBar
+            view={view}
+            onView={setView}
+            hasMasks={anySegmented}
+            boxCount={boxes.length}
+            concealed={concealed?.size ?? null}
+            onToggleConceal={toggleConceal}
+            disabled={session.busy}
+          />
 
-            {/* Hiding what is already there is what makes drawing on a busy image
-                possible: thirty proposals cover the thing you wanted to add. Nothing is
-                deleted — hidden boxes are still saved, the same rule the slider follows. */}
-            {(boxes.length > 0 || concealed !== null) && (
-              <button type="button" className="btn btn--small" onClick={toggleConceal}>
-                {concealed === null
-                  ? `Hide the ${boxes.length} box${boxes.length === 1 ? '' : 'es'} already here`
-                  : `Show ${concealed.size} hidden box${concealed.size === 1 ? '' : 'es'}`}
-              </button>
-            )}
-          </div>
+          <MaskEditBar
+            editing={maskEditing}
+            selection={selectedBox === null ? 'none' : selectedBox.mask ? 'outline' : 'box'}
+            disabled={session.busy}
+          />
 
-          <div className="studio__actions">
-            <button
-              type="button"
-              className="btn btn--primary"
-              disabled={session.proposing || session.busy}
-              onClick={() => void session.propose()}
-            >
-              {session.proposing ? 'Detecting…' : runLabel}
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={session.busy || !session.dirty}
-              onClick={() => void session.save()}
-            >
-              {session.busy ? 'Saving…' : 'Save'}
-            </button>
-            <span className="studio__spacer" />
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoPrevious || session.busy}
-              onClick={() => void session.previous()}
-            >
-              ← Previous
-            </button>
-            <button
-              type="button"
-              className="btn"
-              disabled={!session.canGoNext || session.busy}
-              onClick={() => void session.next()}
-            >
-              Next →
-            </button>
-          </div>
+          <StudioActions session={session} runLabel={runLabel} {...(review.className ? { only: review.className } : {})} />
         </>
       )}
     </section>

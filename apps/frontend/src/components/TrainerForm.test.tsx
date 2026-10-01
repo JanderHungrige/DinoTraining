@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { BackboneInfo } from '../api/backbones';
 import type { HeadTypeInfo } from '../api/heads';
+import { ENGLISH } from '../i18n';
 import { blockingReason, type TrainerSelection } from './TrainerForm';
 
 function backbone(overrides: Partial<BackboneInfo> = {}): BackboneInfo {
@@ -52,39 +53,36 @@ const VALID: TrainerSelection = {
   datasetIds: ['ds1'],
   backboneId: 'dinov2-small',
   headTypeId: 'linear-classifier',
-  epochs: 20,
-  learningRate: 0.001,
-  earlyStoppingPatience: 5,
 };
 
 describe('blockingReason', () => {
   it('allows a complete, compatible selection', () => {
-    expect(blockingReason(VALID, [headType()], [backbone()])).toBeNull();
+    expect(blockingReason(VALID, [headType()], [backbone()], ENGLISH)).toBeNull();
   });
 
   it('points at Admin when no backbone is installed', () => {
-    const reason = blockingReason(VALID, [headType()], []);
+    const reason = blockingReason(VALID, [headType()], [], ENGLISH);
     expect(reason).toContain('Admin');
   });
 
   it('requires at least one dataset', () => {
-    const reason = blockingReason({ ...VALID, datasetIds: [] }, [headType()], [backbone()]);
+    const reason = blockingReason({ ...VALID, datasetIds: [] }, [headType()], [backbone()], ENGLISH);
     expect(reason).toContain('dataset');
   });
 
   it('requires a backbone', () => {
-    const reason = blockingReason({ ...VALID, backboneId: '' }, [headType()], [backbone()]);
+    const reason = blockingReason({ ...VALID, backboneId: '' }, [headType()], [backbone()], ENGLISH);
     expect(reason).toContain('backbone');
   });
 
   it('requires a head type', () => {
-    const reason = blockingReason({ ...VALID, headTypeId: '' }, [headType()], [backbone()]);
+    const reason = blockingReason({ ...VALID, headTypeId: '' }, [headType()], [backbone()], ENGLISH);
     expect(reason).toContain('head type');
   });
 
   it('explains that a non-trainable head is still usable for inference', () => {
     const depth = headType({ id: 'linear-depth', title: 'Linear depth', trainable: false });
-    const reason = blockingReason({ ...VALID, headTypeId: 'linear-depth' }, [depth], [backbone()]);
+    const reason = blockingReason({ ...VALID, headTypeId: 'linear-depth' }, [depth], [backbone()], ENGLISH);
     expect(reason).toContain('pretrained default');
   });
 
@@ -93,7 +91,7 @@ describe('blockingReason', () => {
       compatible: false,
       incompatible_reason: 'Linear classifier supports dinov3 backbones, but dinov2-small is dinov2.',
     });
-    expect(blockingReason(VALID, [incompatible], [backbone()])).toBe(
+    expect(blockingReason(VALID, [incompatible], [backbone()], ENGLISH)).toBe(
       'Linear classifier supports dinov3 backbones, but dinov2-small is dinov2.',
     );
   });

@@ -29,6 +29,8 @@ export interface StoredMaskDto {
   readonly producer: CanvasBox['producer'] | null;
   /** Preview only — base64 PNG, 0 background / 255 object. */
   readonly mask_png: string;
+  /** Doc 103: its phrases, class name first. */
+  readonly phrases?: readonly string[];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -60,6 +62,7 @@ let counter = 0;
 export function storedMasksToCanvasBoxes(masks: readonly StoredMaskDto[]): CanvasBox[] {
   return masks.map((mask) => ({
     id: `mask-${(counter += 1)}`,
+    saved: true,
     label: mask.label,
     provenance: mask.provenance,
     x: mask.x,
@@ -69,6 +72,7 @@ export function storedMasksToCanvasBoxes(masks: readonly StoredMaskDto[]): Canva
     ...(mask.score === null ? {} : { score: mask.score }),
     ...(mask.prompt ? { text: mask.prompt } : {}),
     ...(mask.producer ? { producer: mask.producer } : {}),
+    ...(mask.phrases && mask.phrases.length > 1 ? { phrases: mask.phrases } : {}),
     mask: { rle: mask.rle, png: mask.mask_png },
   }));
 }
@@ -127,6 +131,9 @@ export function saveImageSegmentations(
             ...(box.text ? { prompt: box.text } : {}),
             ...(box.score === undefined ? {} : { score: box.score }),
             ...(box.producer ? { producer: box.producer } : {}),
+            // Doc 103: linked phrases survive a re-save (the store replaces an image's
+            // masks, and their links with them).
+            ...(box.phrases ? { phrases: box.phrases } : {}),
           })),
       }),
     },

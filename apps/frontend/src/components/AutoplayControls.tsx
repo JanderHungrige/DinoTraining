@@ -10,6 +10,7 @@
 import type { JSX } from 'react';
 
 import type { Autoplay } from '../hooks/useAutoplay';
+import { useT } from '../i18n';
 
 export interface AutoplayControlsProps {
   readonly autoplay: Autoplay;
@@ -18,13 +19,14 @@ export interface AutoplayControlsProps {
 }
 
 export function AutoplayControls({ autoplay, canPlay }: AutoplayControlsProps): JSX.Element {
+  const { t } = useT();
   const { running, hidden, progress } = autoplay;
 
   return (
     <span className="genbar__pair genbar__autoplay">
       {running ? (
         <button type="button" className="btn genbar__stop" onClick={autoplay.stop}>
-          ■ Stop
+          {t('generator.autoplay.stop')}
         </button>
       ) : (
         <button
@@ -32,9 +34,9 @@ export function AutoplayControls({ autoplay, canPlay }: AutoplayControlsProps): 
           className="btn"
           disabled={!canPlay}
           onClick={autoplay.play}
-          title="Propose, show for half a second, save, and move on — from this image to the last"
+          title={t('generator.autoplay.startTitle')}
         >
-          ▶ Start analysis
+          {t('generator.autoplay.start')}
         </button>
       )}
       {running && !hidden && progress && (
@@ -48,16 +50,17 @@ export function AutoplayControls({ autoplay, canPlay }: AutoplayControlsProps): 
 
 /** The "Run hidden" choice, shown with the other automation boxes below the buttons. */
 export function AutoplayHiddenOption({ autoplay }: { readonly autoplay: Autoplay }): JSX.Element {
+  const { t } = useT();
   return (
-    <label className="genbar__auto" title="Run without drawing each image; show progress only">
+    <label className="genbar__auto" title={t('generator.autoplay.hiddenTitle')}>
       <input
         type="checkbox"
         checked={autoplay.hidden}
         disabled={autoplay.running}
-        aria-label="Run hidden, without drawing each image"
+        aria-label={t('generator.autoplay.hiddenAria')}
         onChange={(event) => autoplay.setHidden(event.target.checked)}
       />
-      Run hidden
+      {t('generator.autoplay.hidden')}
     </label>
   );
 }

@@ -6,6 +6,8 @@
  * the COCO export.
  */
 
+import { ENGLISH, type Translator } from '../i18n/translate';
+
 export type Label = 'positive' | 'negative' | 'unclear';
 /**
  * Who proposed a box. Mirrors PROVENANCE_VALUES in backend/app/datasets/schema.py, where
@@ -26,10 +28,22 @@ export type Provenance =
 
 export const LABELS: readonly Label[] = Object.freeze(['positive', 'negative', 'unclear']);
 
+const LABEL_TITLE_KEYS = {
+  positive: 'app.verdict.positive',
+  negative: 'app.verdict.negative',
+  unclear: 'app.verdict.unclear',
+} as const;
+
+/** A verdict's name in the current language (doc 112). */
+export function labelTitle(t: Translator['t'], label: Label): string {
+  return t(LABEL_TITLE_KEYS[label]);
+}
+
+/** English verdict names, for code outside the React tree. Rendered text uses `labelTitle`. */
 export const LABEL_TITLES: Readonly<Record<Label, string>> = Object.freeze({
-  positive: 'Positive',
-  negative: 'Negative',
-  unclear: 'Unclear',
+  positive: labelTitle(ENGLISH.t, 'positive'),
+  negative: labelTitle(ENGLISH.t, 'negative'),
+  unclear: labelTitle(ENGLISH.t, 'unclear'),
 });
 
 /**
@@ -84,6 +98,16 @@ export interface CanvasBox {
    * separately and storing both would double every segmented object in the export.
    */
   readonly mask?: CanvasMask;
+  /**
+   * Doc 103: the SAM 3 phrases a mask answers to, its class name first as the store
+   * returns it. Absent means "just its class". Re-sent on save, so a re-save keeps them.
+   */
+  readonly phrases?: readonly string[];
+  /**
+   * Doc 119: in the dataset — loaded from it, or its picture was saved since. A re-run of
+   * the proposer keeps it; only unsaved proposals are replaced.
+   */
+  readonly saved?: boolean;
 }
 
 /** Does this annotation carry a segmentation? The one test that decides how it is saved. */

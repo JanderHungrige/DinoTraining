@@ -1,0 +1,69 @@
+# Doc 125: the lock users install from is current, and the backend's tests pass on each
+# platform from exactly that lock — the versions users get are the versions tested.
+#
+# CPU only: GitHub's runners have no GPU. The CUDA variants are resolved in the lock (and
+# checked there for hashes) but not installed here; that is doc 131's import check.
+name: Lock check
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "scripts/stage_runtime.py"
+      - "scripts/test_stage_runtime.py"
+      - "scripts/*.sh"
+      - "scripts/*formula*"
+      - "scripts/*smoke*"
+      - "packaging/**"
+      - ".github/workflows/lock-check.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+  workflow_dispatch:
+
+jobs:
+  lock:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            label: macOS (Apple Silicon)
+          - os: windows-latest
+            label: Windows (x86_64)
+          - os: ubuntu-22.04
+            label: Linux (x86_64)
+    defaults:
+      run:
+        working-directory: backend
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      # A quoting slip in dev.sh reached dev unnoticed (2026-10-01): parse every script.
+      - name: Shell scripts parse
+        run: for script in ../scripts/*.sh; do bash -n "$script" || exit 1; done
+
+      - name: The lock matches pyproject.toml
+        run: uv lock --check
+
+      - name: Install from the lock (CPU)
+        run: uv sync --frozen --extra cpu --extra dev --extra export --python 3.12
+
+      # No -x: a runner is a machine none of us develops on, and the first run there
+      # should report every test that assumed otherwise, not only the first.
+      - name: Backend tests
+        run: uv run --frozen --no-sync pytest -q
+
+      # Doc 126: the release build stages its runtime with this script on each OS.
+      - name: Runtime staging tests
+        run: uv run --frozen --no-sync pytest -q -p no:cacheprovider ../scripts/test_stage_runtime.py ../scripts/test_render_formula.py ../scripts/test_smoke_installed.py
+
+      # Doc 130: the Mac install script, against local archives (no network).
+      - name: Mac install script tests
+        if: runner.os == 'macOS'
+        run: bash ../scripts/test_install_mac.sh

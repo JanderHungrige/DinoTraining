@@ -29,12 +29,14 @@ import {
   resolveDataset,
 } from './GeneratorDestination';
 import type { GeneratorConfig } from '../hooks/useGeneratorSession';
+import { useT } from '../i18n';
 
 export interface GeneratorSetupProps {
   readonly onStart: (config: GeneratorConfig) => void;
 }
 
 export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
+  const { t } = useT();
   // Doc 69: every entry is remembered across tab switches and restarts.
   const {
     source,
@@ -187,7 +189,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
         placeholder="/Users/you/new-photos"
         variant="genpanel"
         allowVideo
-        datasetHint="Its images are re-annotated into whichever dataset you choose below — the source is only where the pictures come from."
+        datasetHint={t('generator.setup.datasetHint')}
       />
 
       <MaskSourceFields
@@ -202,7 +204,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
 
       {mode === 'expert' && (
         <label className="genpanel__field">
-          <span>Backbone</span>
+          <span>{t('generator.setup.backbone')}</span>
           <select
             value={backboneId}
             disabled={loadingBackbones || installed.length === 0}
@@ -227,7 +229,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
           foundations={foundations}
           selectedId={selectedDetector}
           onSelect={setDetectorOverride}
-          legend="Detector"
+          legend={t('generator.setup.detector')}
           groupName="generator-detector"
           concept={concept}
           onConceptChange={setConcept}
@@ -245,7 +247,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       )}
 
       <label className="genpanel__field">
-        <span>Score threshold — {threshold.toFixed(2)}</span>
+        <span>{t('generator.setup.threshold', { value: threshold.toFixed(2) })}</span>
         <input
           type="range"
           min={0}
@@ -263,7 +265,7 @@ export function GeneratorSetup({ onStart }: GeneratorSetupProps): JSX.Element {
       )}
 
       <button type="submit" className="btn btn--primary" disabled={!ready || starting}>
-        {starting ? 'Starting…' : 'Start generating'}
+        {starting ? t('generator.setup.starting') : t('generator.setup.start')}
       </button>
     </form>
   );

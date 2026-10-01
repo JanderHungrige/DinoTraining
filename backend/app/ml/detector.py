@@ -15,6 +15,7 @@ from PIL import Image
 
 from app.core.config import get_settings
 from app.core.paths import is_installed, resolve_model_dir
+from app.ml.concepts import best_terms, prompt_terms, term_spans
 from app.ml.errors import ModelNotInstalledError
 from app.ml.registry import ModelSpec, get_model
 
@@ -56,15 +57,16 @@ _lock = threading.Lock()
 
 
 def normalise_prompt(prompt: str) -> str:
-    """Grounding DINO expects lowercase phrases ending in a period.
+    """Grounding DINO expects lowercase phrases, each ending in a period.
 
     Wording is left alone — silently rewriting a user's prompt makes it impossible to
-    tune. Only casing and the trailing separator are normalised.
+    tune. Only casing and the separators are normalised: a comma separates two terms as a
+    period does, or "flame, reflection" comes back as one label.
     """
-    text = prompt.strip().lower()
-    if not text:
+    terms = prompt_terms(prompt)
+    if not terms:
         raise ValueError("Prompt must not be empty")
-    return text if text.endswith(".") else f"{text}."
+    return " ".join(f"{term}." for term in terms)
 
 
 def _require_spec(model_id: str) -> ModelSpec:
@@ -131,7 +133,24 @@ def detect(
         target_sizes=[(image.height, image.width)],
     )[0]
 
+    terms = prompt_terms(prompt)
+    if len(terms) > 1 and len(results["boxes"]):
+        results["text_labels"] = _one_term_per_box(detector, outputs, text, terms, box_threshold)
     return _to_detections(results)
+
+
+def _one_term_per_box(
+    detector: Detector, outputs: Any, text: str, terms: list[str], box_threshold: float
+) -> list[str]:
+    """Relabel the kept boxes, in the post-processor's order (same `keep` rule), with the
+    single best-matching term instead of every token above the text threshold."""
+    import torch
+
+    probs = torch.sigmoid(outputs.logits[0])
+    kept = probs[probs.max(dim=-1).values > box_threshold]
+    encoded = detector.processor.tokenizer(text, return_offsets_mapping=True)
+    offsets = [tuple(pair) for pair in encoded["offset_mapping"]]
+    return best_terms(kept.detach().cpu().tolist(), offsets, term_spans(text, terms), terms)
 
 
 def _to_detections(results: dict[str, Any]) -> list[Detection]:

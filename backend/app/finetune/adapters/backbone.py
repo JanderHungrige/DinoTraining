@@ -27,7 +27,7 @@ import torch
 
 from app.core.config import Settings
 from app.core.paths import resolve_model_dir
-from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState
+from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState, param
 from app.ml.backbone import Backbone, read_capabilities
 from app.ml.foundation.variant import BACKBONE_DIR, HEAD_FILE
 from app.ml.heads.builders import build_head
@@ -43,7 +43,8 @@ from app.ml.training.unfreeze import apply_unfreeze, optimiser_for
 logger = logging.getLogger(__name__)
 
 HEAD_FOR_TASK = {"classification": "linear-classifier", "segmentation": "linear-segmenter"}
-DEFAULT_UNFROZEN = 4
+#: The catalogue family (doc 99); its default for unfrozen blocks is 4.
+FAMILY = "dino-backbone"
 
 
 @dataclass
@@ -94,7 +95,13 @@ class BackboneAdapter:
         head = build_head(self.spec.id, backbone.capabilities, self._num_classes(data))
         head.to(backbone.device)
         apply_unfreeze(backbone, blocks)
-        optimiser = optimiser_for(head, backbone, settings.learning_rate, 0.01)
+        optimiser = optimiser_for(
+            head,
+            backbone,
+            settings.learning_rate,
+            param(settings, FAMILY, "weight_decay"),
+            param(settings, FAMILY, "backbone_lr_scale"),
+        )
         plan = plan_preprocessing(backbone.capabilities, self.spec)
         return BackboneState(
             backbone, head, self.spec, plan, optimiser, self._num_classes(data), settings
@@ -103,7 +110,7 @@ class BackboneAdapter:
     def prepare(
         self, data: FinetuneData, settings: FinetuneSettings, app_settings: Settings
     ) -> TrainingState:
-        blocks = int(settings.options.get("unfreeze_blocks", DEFAULT_UNFROZEN))
+        blocks = int(param(settings, FAMILY, "unfreeze_blocks"))
         return self._build(data, settings, app_settings, blocks)
 
     def baseline(

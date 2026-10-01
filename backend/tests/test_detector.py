@@ -43,6 +43,12 @@ class TestNormalisePrompt:
         """Wording is the user's tuning surface; only casing and the separator change."""
         assert normalise_prompt("A Cat. A Dog") == "a cat. a dog."
 
+    def test_a_comma_separates_two_terms(self) -> None:
+        """Found by Jan: "flame, reflection" came back as one label, because Grounding DINO
+        only separates phrases at a full stop."""
+        assert normalise_prompt("Flame, flame reflection") == "flame. flame reflection."
+        assert normalise_prompt("a cat;a dog\n a bird,") == "a cat. a dog. a bird."
+
     def test_strips_surrounding_whitespace(self) -> None:
         assert normalise_prompt("  a cat  ") == "a cat."
 
@@ -89,9 +95,7 @@ class TestToDetections:
 
     def test_drops_degenerate_boxes(self) -> None:
         """A zero-area proposal is not a box and would fail the store's CHECK anyway."""
-        found = _to_detections(
-            results([[10, 10, 10, 50], [0, 0, 20, 20]], [0.9, 0.8], ["a", "b"])
-        )
+        found = _to_detections(results([[10, 10, 10, 50], [0, 0, 20, 20]], [0.9, 0.8], ["a", "b"]))
         assert len(found) == 1
         assert found[0].w == 20
 

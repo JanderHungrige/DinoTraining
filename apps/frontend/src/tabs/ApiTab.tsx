@@ -21,26 +21,23 @@
 
 import { useCallback, useEffect, useState, type JSX } from 'react';
 
-import { fetchAgentGuide, GUIDE_FILENAME } from '../api/agentGuide';
+import { fetchAgentGuide, GuideLoadError, GUIDE_FILENAME } from '../api/agentGuide';
 import { MarkdownView } from '../components/MarkdownView';
 import { McpPanel } from '../components/McpPanel';
+import { MlflowPanel } from '../components/MlflowPanel';
+import { useT, type Key } from '../i18n';
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
 /** Which way of connecting is on screen. */
-type ConnectionMode = 'mcp' | 'manual';
+type ConnectionMode = 'mcp' | 'manual' | 'mlflow';
 
-const MODES: readonly { id: ConnectionMode; name: string; hint: string }[] = Object.freeze([
-  {
-    id: 'mcp',
-    name: 'MCP',
-    hint: 'Typed tools your assistant calls directly. Best, if it supports MCP.',
-  },
-  {
-    id: 'manual',
-    name: 'Any assistant',
-    hint: 'One document to paste in. Works anywhere, including without MCP.',
-  },
+/** `name` is a key, or null for "MCP", which is a name in every language. */
+const MODES: readonly { id: ConnectionMode; name: Key | null; hint: Key }[] = Object.freeze([
+  { id: 'mcp', name: null, hint: 'admin.connection.mcpHint' },
+  { id: 'manual', name: 'admin.connection.manualName', hint: 'admin.connection.manualHint' },
+  // Doc 123: the other direction — this app reporting its runs to the user's MLOps tool.
+  { id: 'mlflow', name: null, hint: 'admin.connection.mlflowHint' },
 ]);
 
 export function ApiTab(): JSX.Element {
@@ -49,6 +46,7 @@ export function ApiTab(): JSX.Element {
   const [guide, setGuide] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<CopyState>('idle');
+  const { t } = useT();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -58,10 +56,16 @@ export function ApiTab(): JSX.Element {
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : 'Could not load the API guide.');
+        setError(
+          cause instanceof GuideLoadError
+            ? t('admin.connection.guideStatus', { status: cause.status })
+            : cause instanceof Error
+              ? cause.message
+              : t('admin.connection.guideFailed'),
+        );
       });
     return () => controller.abort();
-  }, []);
+  }, [t]);
 
   const copy = useCallback(async (): Promise<void> => {
     if (!guide) return;
@@ -88,14 +92,11 @@ export function ApiTab(): JSX.Element {
 
   return (
     <section className="apidocs">
-      <h2 className="studio__title">Connection</h2>
-      <p className="studio__lead">
-        Everything this app does, it does through a local API — so your own AI assistant can
-        do it too. Two ways to give it access, and both run entirely on this machine.
-      </p>
+      <h2 className="studio__title">{t('admin.connection.title')}</h2>
+      <p className="studio__lead">{t('admin.connection.lead')}</p>
 
       <fieldset className="modeswitch">
-        <legend className="modeswitch__legend">How to connect</legend>
+        <legend className="modeswitch__legend">{t('admin.connection.legend')}</legend>
         {MODES.map((entry) => (
           <label
             key={entry.id}
@@ -108,21 +109,19 @@ export function ApiTab(): JSX.Element {
               checked={mode === entry.id}
               onChange={() => setMode(entry.id)}
             />
-            <span className="modeswitch__name">{entry.name}</span>
-            <span className="modeswitch__hint">{entry.hint}</span>
+            <span className="modeswitch__name">{entry.name ? t(entry.name) : entry.id === 'mlflow' ? 'MLflow' : 'MCP'}</span>
+            <span className="modeswitch__hint">{t(entry.hint)}</span>
           </label>
         ))}
       </fieldset>
 
       {mode === 'mcp' && <McpPanel />}
 
+      {mode === 'mlflow' && <MlflowPanel />}
+
       {mode === 'manual' && (
         <div className="conn__mode">
-          <p className="intro__note">
-            Copy this document into your assistant and describe what you want. It documents
-            every workflow in order, with the traps named — which is the part a schema
-            cannot express. Use this when your assistant does not speak MCP.
-          </p>
+          <p className="intro__note">{t('admin.connection.manualNote')}</p>
 
       <div className="apidocs__actions">
         <button
@@ -132,22 +131,20 @@ export function ApiTab(): JSX.Element {
           onClick={() => void copy()}
         >
           {copied === 'copied'
-            ? '✓ Copied'
+            ? t('admin.connection.copied')
             : copied === 'failed'
-              ? 'Could not copy — use Download'
-              : 'Copy for your AI'}
+              ? t('admin.connection.copyFailed')
+              : t('admin.connection.copy')}
         </button>
         <button type="button" className="btn" disabled={!guide} onClick={download}>
-          Download .md
+          {t('admin.connection.downloadMd')}
         </button>
         {/* Print, not "export": the browser's dialog is what turns it into a PDF, and
             calling it Export would promise a file this button does not create. */}
         <button type="button" className="btn" disabled={!guide} onClick={() => window.print()}>
-          Save as PDF
+          {t('admin.connection.savePdf')}
         </button>
-        <span className="apidocs__note">
-          Markdown is what these models read best — the PDF is for people.
-        </span>
+        <span className="apidocs__note">{t('admin.connection.mdNote')}</span>
       </div>
 
       {error && (
@@ -156,7 +153,7 @@ export function ApiTab(): JSX.Element {
         </p>
       )}
 
-      {!guide && !error && <p role="status">Loading the guide…</p>}
+      {!guide && !error && <p role="status">{t('admin.connection.loadingGuide')}</p>}
 
       {/* The print target. Everything outside it is hidden when printing — see the
           `@media print` block — so the PDF is the document and not the app around it. */}

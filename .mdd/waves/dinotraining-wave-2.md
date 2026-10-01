@@ -110,7 +110,7 @@ segmentation and depth useful before the app can train them.
 - Training config with good defaults: split method, save-best-only, epochs, lr, batch,
   early stopping, augmentation on/off.
 - Job runner interface (local now) designed so a remote/hyperscaler runner drops in later
-  (Wave 13).
+  (Wave 16).
 - Live metrics streamed to the UI (WebSocket/SSE) with loss + the metric set the head's
   registry entry declares (acc / mAP / mIoU / …) — the stream must not hardcode metric names.
 - **Head-instance provenance is a hard requirement, not a nice-to-have.** Every registered

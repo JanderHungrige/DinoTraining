@@ -13,6 +13,7 @@ import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { AnnotationTimeline } from '../components/AnnotationTimeline';
 import { DatasetPlayer } from '../components/DatasetPlayer';
 import { useInspectData } from '../hooks/useInspectData';
+import { useT } from '../i18n';
 import { usePersistentState } from '../hooks/usePersistentState';
 import { usePlayback } from '../hooks/usePlayback';
 import { looksLikeVideo } from '../lib/imageSource';
@@ -39,6 +40,7 @@ function playbackFps(sourceFps: number | null, frames: readonly SequenceFrame[])
 }
 
 export function InspectTab({ request }: { readonly request: InspectRequest | null }): JSX.Element {
+  const { t, tp } = useT();
   const [datasets, setDatasets] = useState<readonly DatasetInfo[]>([]);
   const [datasetChoice, setDatasetChoice] = usePersistentState('inspect.dataset', '', isString);
   const [trackChoice, setTrackChoice] = useState('');
@@ -78,9 +80,9 @@ export function InspectTab({ request }: { readonly request: InspectRequest | nul
     }));
     const loose = data.sequences.loose;
     return loose.length > 0
-      ? [...found, { key: LOOSE, label: `Images not in a sequence · ${loose.length}`, frames: loose }]
+      ? [...found, { key: LOOSE, label: t('generator.inspect.loose', { count: loose.length }), frames: loose }]
       : found;
-  }, [data.sequences]);
+  }, [data.sequences, t]);
   const track = tracks.find((entry) => entry.key === trackChoice) ?? tracks[0] ?? null;
 
   const [sourceFps, setSourceFps] = useState<number | null>(null);
@@ -99,26 +101,24 @@ export function InspectTab({ request }: { readonly request: InspectRequest | nul
 
   return (
     <section className="studio">
-      <h2 className="studio__title">Inspect datasets</h2>
-      <p className="studio__lead">
-        Play a dataset back with what it holds drawn on — a video, a folder, or its loose images.
-      </p>
+      <h2 className="studio__title">{t('generator.inspect.title')}</h2>
+      <p className="studio__lead">{t('generator.inspect.lead')}</p>
 
       <div className="inspect__pickers">
         <label className="genpanel__field">
-          <span>Dataset</span>
+          <span>{t('generator.inspect.dataset')}</span>
           <select value={datasetId} onChange={(event) => setDatasetChoice(event.target.value)}>
-            {datasets.length === 0 && <option value="">No datasets yet</option>}
+            {datasets.length === 0 && <option value="">{t('generator.inspect.noDatasets')}</option>}
             {datasets.map((entry) => (
               <option key={entry.id} value={entry.id}>
-                {entry.name} ({entry.counts.images} images)
+                {tp('generator.destination.option', entry.counts.images, { name: entry.name })}
               </option>
             ))}
           </select>
         </label>
         {tracks.length > 1 && (
           <label className="genpanel__field">
-            <span>Play</span>
+            <span>{t('generator.inspect.play')}</span>
             <select value={track?.key ?? ''} onChange={(event) => setTrackChoice(event.target.value)}>
               {tracks.map((entry) => (
                 <option key={entry.key} value={entry.key}>
@@ -133,14 +133,14 @@ export function InspectTab({ request }: { readonly request: InspectRequest | nul
         )}
       </div>
 
-      {data.loading && <p role="status">Loading the dataset…</p>}
+      {data.loading && <p role="status">{t('generator.inspect.loading')}</p>}
       {data.error && (
         <p className="admin__error" role="alert">
           {data.error}
         </p>
       )}
       {!data.loading && datasetId && tracks.length === 0 && !data.error && (
-        <p role="status">This dataset has no images yet.</p>
+        <p role="status">{t('generator.inspect.empty')}</p>
       )}
 
       {track && data.sequences && (

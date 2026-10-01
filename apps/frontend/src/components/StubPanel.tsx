@@ -7,19 +7,21 @@
 
 import type { JSX } from 'react';
 
-import { getTab, type TabId } from '../tabs/tabs';
+import { useT } from '../i18n';
+import { getTab, tabHint, tabLabel, type TabId } from '../tabs/tabs';
 
 export interface StubPanelProps {
   readonly tabId: TabId;
 }
 
 export function StubPanel({ tabId }: StubPanelProps): JSX.Element {
+  const { t } = useT();
   const tab = getTab(tabId);
   return (
     <section className="stub">
-      <h2 className="stub__title">{tab.label}</h2>
-      <p className="stub__hint">{tab.hint}</p>
-      <p className="stub__wave">Arrives in Wave {tab.wave}.</p>
+      <h2 className="stub__title">{tabLabel(t, tabId)}</h2>
+      <p className="stub__hint">{tabHint(t, tabId)}</p>
+      <p className="stub__wave">{t('app.stub.arrives', { wave: tab.wave })}</p>
     </section>
   );
 }

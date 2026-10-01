@@ -10,6 +10,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../api/client';
 import { EMPTY_COUNTS, type DatasetCounts } from '../api/datasets';
 import type { ImageSource } from '../components/ImageSourceField';
+import { useT } from '../i18n';
+import { mergeProposal } from '../lib/mergeProposal';
 import { proposalFailure, proposeFor } from '../lib/proposeFor';
 import { saveAnnotations } from '../lib/saveAnnotations';
 import { useSessionImages } from './useSessionImages';
@@ -57,6 +59,8 @@ export interface SessionConfig {
    *  canvas and edits replace them. */
   readonly datasetId: string;
   readonly source: ProposalSource;
+  /** Doc 104: what the dataset is annotated for; "open" when not given. */
+  readonly target?: string;
 }
 
 export interface AnnotationSession {
@@ -80,8 +84,10 @@ export interface AnnotationSession {
   /** The canvas reports the image's natural size on load, so a user who draws
    *  boxes without ever running the prompt can still save. */
   readonly reportImageSize: (width: number, height: number) => void;
-  readonly propose: () => Promise<void>;
-  readonly save: () => Promise<void>;
+  /** Doc 119: `only` restricts the proposals to one class (the review). */
+  readonly propose: (only?: string) => Promise<void>;
+  /** False when the save failed (the error is on the session). */
+  readonly save: () => Promise<boolean>;
   readonly next: () => Promise<void>;
   readonly previous: () => Promise<void>;
   readonly canGoNext: boolean;
@@ -96,6 +102,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
   // A prescan's hits (doc 53). Null means no filter. The **full** list stays loaded, so
   // turning the filter off costs nothing and re-reads nothing — which is what makes
   // "check every image after all" a toggle rather than a restart.
+  const tr = useT();
   const [filter, setFilterState] = useState<readonly string[] | null>(null);
   const [index, setIndex] = useState(0);
   const [boxes, setBoxesState] = useState<readonly CanvasBox[]>([]);
@@ -135,20 +142,19 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     setFilterState(null);
   }, [loaded.generation]);
 
-  /** Show only these images, or all of them when given null (doc 53).
-   *
-   *  Resets to the first image, because keeping the index would land the user on an
-   *  arbitrary one — position 7 of the filtered list is not position 7 of the full list,
-   *  and nothing on screen would explain the jump. */
+  /** Show only these images, or all of them when given null (doc 53). Resets to the first:
+   *  position 7 of the filtered list is not position 7 of the full one. */
   const setFilter = useCallback(
     (paths: readonly string[] | null): void => {
       setFilterState(paths);
       setIndex(0);
+      // Same picture first: keep it — it would not reload its size or stored masks (doc 119).
+      if ((paths ?? allImages)[0] === currentImage) return;
       setBoxesState([...(existing.get((paths ?? allImages)[0] ?? '') ?? [])]);
       setImageSize(null);
       setDirty(false);
     },
-    [allImages, existing],
+    [allImages, existing, currentImage],
   );
 
   // Stored masks arrive per image and are merged into `boxes` (doc 61). One array, so
@@ -171,28 +177,27 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
     setDirty(true);
   }, []);
 
-  const propose = useCallback(async (): Promise<void> => {
+  const propose = useCallback(async (only?: string): Promise<void> => {
     if (!config || !currentImage) return;
-    const { source } = config;
+    // Doc 119: a review for one class asks a prompt for that class alone.
+    const source = only !== undefined && config.source.kind === 'prompt' ? { ...config.source, prompt: only } : config.source;
     setProposing(true);
     try {
       const proposed = await proposeFor(source, currentImage);
       if (!mounted.current) return;
-
-      // Hand-drawn boxes survive a re-run: they are work the model cannot reproduce.
-      const handDrawn = stateRef.current.boxes.filter((box) => box.provenance === 'hand-drawn');
-      setBoxesState([...proposed.boxes, ...handDrawn]);
+      // Saved and hand-drawn annotations survive a re-run; only unsaved proposals go.
+      setBoxesState(mergeProposal(stateRef.current.boxes, proposed.boxes, only));
       setImageSize({ width: proposed.width, height: proposed.height });
       setDirty(true);
       setError(null);
     } catch (cause) {
       if (mounted.current) {
-        setError(describe(cause, proposalFailure(source)));
+        setError(describe(cause, proposalFailure(source, tr)));
       }
     } finally {
       if (mounted.current) setProposing(false);
     }
-  }, [config, currentImage]);
+  }, [config, currentImage, tr]);
 
   const saveAt = useCallback(
     async (imagePath: string): Promise<boolean> => {
@@ -213,9 +218,7 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
             path: imagePath,
             width: size.width,
             height: size.height,
-            // Head mode has no phrase to record. Each box carries its own class instead,
-            // which `saveImageBoxes` sends as `prompt` — so the image-level fallback in
-            // `replace_image_boxes` is neither needed nor a lie here. See doc 31.
+            // Head mode has no phrase: each box sends its own class as `prompt` (doc 31).
             prompt: config.source.kind === 'prompt' ? config.source.prompt : null,
           },
           stateRef.current.boxes,
@@ -224,21 +227,22 @@ export function useAnnotationSession(config: SessionConfig | null): AnnotationSe
         // Counts come from the backend's aggregate — a local tally drifts the first
         // time a save fails.
         setCounts(fresh);
+        setBoxesState((current) => current.map((box) => (box.saved ? box : { ...box, saved: true })));
         setDirty(false);
         setError(null);
         return true;
       } catch (cause) {
-        if (mounted.current) setError(describe(cause, 'Could not save annotations.'));
+        if (mounted.current) setError(describe(cause, tr.t('studio.session.saveError')));
         return false;
       } finally {
         if (mounted.current) setBusy(false);
       }
     },
-    [config],
+    [config, tr],
   );
 
-  const save = useCallback(async (): Promise<void> => {
-    if (currentImage) await saveAt(currentImage);
+  const save = useCallback(async (): Promise<boolean> => {
+    return currentImage ? saveAt(currentImage) : true;
   }, [currentImage, saveAt]);
 
   const go = useCallback(

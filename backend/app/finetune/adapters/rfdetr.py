@@ -15,19 +15,22 @@ import torch
 from PIL import Image
 
 from app.core.config import Settings
-from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState
+from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState, param
 from app.ml.foundation.detect import RfDetrModel
 from app.ml.foundation.finetune import evaluate, freeze_backbone, prepared_model, to_detr_labels
 from app.ml.training.samples import TrainingSample
 
-#: Gradient clip, doc 44's: DETR losses spike on a re-opened classifier's first steps.
-MAX_NORM = 0.1
+FAMILY = "rf-detr"
 
 
 @dataclass
 class RfDetrState:
     model: RfDetrModel
     optimiser: torch.optim.Optimizer
+    #: Doc 44's clip: DETR losses spike on a re-opened classifier's first steps.
+    max_norm: float = 0.1
+    #: Pictures per correction, by gradient accumulation (doc 99).
+    per_step: int = 1
 
 
 class RfDetrAdapter:
@@ -43,16 +46,26 @@ class RfDetrAdapter:
         model = prepared_model(
             self.finetune_id, len(data.class_names), data.class_names, app_settings
         )
-        freeze_backbone(model.model, int(settings.options.get("unfreeze_blocks", 0)))
+        freeze_backbone(model.model, int(param(settings, FAMILY, "unfreeze_blocks")))
         trainable = [p for p in model.model.parameters() if p.requires_grad]
-        optimiser = torch.optim.AdamW(trainable, lr=settings.learning_rate, weight_decay=1e-4)
-        return RfDetrState(model, optimiser)
+        optimiser = torch.optim.AdamW(
+            trainable,
+            lr=settings.learning_rate,
+            weight_decay=param(settings, FAMILY, "weight_decay"),
+        )
+        return RfDetrState(
+            model,
+            optimiser,
+            max_norm=param(settings, FAMILY, "max_grad_norm"),
+            per_step=int(param(settings, FAMILY, "batch_size")),
+        )
 
     def train_epoch(self, state: TrainingState, data: FinetuneData, epoch: int) -> float:
         assert isinstance(state, RfDetrState)
         module, processor = state.model.model, state.model.processor
         module.train()
-        total = 0.0
+        total, pending = 0.0, 0
+        state.optimiser.zero_grad(set_to_none=True)
         for sample in data.train:
             if data.stopped:
                 break
@@ -61,15 +74,23 @@ class RfDetrAdapter:
             inputs = processor(images=image, return_tensors="pt")  # type: ignore[operator]
             inputs = {k: v.to(state.model.device) for k, v in inputs.items()}
             loss = module(**inputs, labels=[to_detr_labels(sample, state.model.device)]).loss
-            state.optimiser.zero_grad(set_to_none=True)
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                [p for p in module.parameters() if p.requires_grad], max_norm=MAX_NORM
-            )
-            state.optimiser.step()
+            (loss / state.per_step).backward()
+            pending += 1
+            if pending == state.per_step:
+                self._step(state)
+                pending = 0
             total += float(loss.detach())
+        if pending:
+            self._step(state)
         module.eval()
         return total / max(1, len(data.train))
+
+    @staticmethod
+    def _step(state: RfDetrState) -> None:
+        trainable = [p for p in state.model.model.parameters() if p.requires_grad]
+        torch.nn.utils.clip_grad_norm_(trainable, max_norm=state.max_norm)
+        state.optimiser.step()
+        state.optimiser.zero_grad(set_to_none=True)
 
     def evaluate(self, state: TrainingState, samples: list[TrainingSample]) -> dict[str, float]:
         assert isinstance(state, RfDetrState)

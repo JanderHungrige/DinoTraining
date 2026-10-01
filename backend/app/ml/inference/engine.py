@@ -61,9 +61,7 @@ def load_head(instance: HeadInstance, backbone: Backbone, settings: Settings) ->
     spec = _require_spec(instance)
     capabilities = backbone.capabilities
 
-    head = build_head(
-        spec.id, capabilities, instance.num_classes if spec.trainable else None
-    )
+    head = build_head(spec.id, capabilities, instance.num_classes if spec.trainable else None)
     head.load_state_dict(HeadInstanceStore(settings).load_weights(instance.id), strict=True)
     # The caller moves the head, matching runner.py:135. build_head returns a CPU
     # module while load_backbone honours the resolved device, and the mismatch raises

@@ -16,6 +16,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { listAnnotators, type AnnotatorInfo } from '../api/annotators';
+import { useT } from '../i18n';
 
 export interface AnnotatorReadinessProps {
   /** Bumped by the parent after a download, so readiness re-reads rather than going stale. */
@@ -23,6 +24,7 @@ export interface AnnotatorReadinessProps {
 }
 
 export function AnnotatorReadiness({ refreshKey = 0 }: AnnotatorReadinessProps): JSX.Element | null {
+  const { t } = useT();
   const [annotators, setAnnotators] = useState<readonly AnnotatorInfo[]>([]);
 
   useEffect(() => {
@@ -40,10 +42,10 @@ export function AnnotatorReadiness({ refreshKey = 0 }: AnnotatorReadinessProps):
 
   return (
     <section className="admin__group">
-      <h3 className="admin__grouptitle">Concept segmentation — type what you want, get masks</h3>
+      <h3 className="admin__grouptitle">{t('studio.readiness.title')}</h3>
       <p className="starter__body">
-        These are <strong>pipelines</strong>, not single models, which is why they are not
-        in the list above under their own names. Each needs every one of its parts.
+        {t('studio.readiness.before')} <strong>{t('studio.readiness.pipelines')}</strong>
+        {t('studio.readiness.after')}
       </p>
 
       <ul className="annot__list">
@@ -52,7 +54,7 @@ export function AnnotatorReadiness({ refreshKey = 0 }: AnnotatorReadinessProps):
             <div className="annot__head">
               <span className="annot__name">{entry.name}</span>
               <span className={`annot__state annot__state--${entry.ready ? 'on' : 'off'}`}>
-                {entry.ready ? 'Ready' : 'Not installed'}
+                {t(entry.ready ? 'studio.readiness.ready' : 'studio.readiness.notInstalled')}
               </span>
             </div>
 
@@ -64,7 +66,7 @@ export function AnnotatorReadiness({ refreshKey = 0 }: AnnotatorReadinessProps):
                   <span aria-hidden="true">{model.installed ? '✓' : '○'}</span>
                   <code>{model.id}</code>
                   <span className="starter__size">{model.approx_size_mb} MB</span>
-                  {model.gated && <span className="annot__gated">needs your token</span>}
+                  {model.gated && <span className="annot__gated">{t('studio.readiness.gated')}</span>}
                 </li>
               ))}
             </ul>
@@ -73,10 +75,9 @@ export function AnnotatorReadiness({ refreshKey = 0 }: AnnotatorReadinessProps):
                 each with its own licence to read first — which is doc 35's whole point. */}
             {!entry.ready && (
               <p className="annot__todo">
-                Install {entry.missing_model_ids.join(' and ')} above
-                {entry.requires_access_request
-                  ? ', after requesting access on HuggingFace — approved by hand, so it is not instant.'
-                  : '.'}
+                {t(entry.requires_access_request ? 'studio.readiness.installAccess' : 'studio.readiness.install', {
+                  models: entry.missing_model_ids.join(` ${t('studio.readiness.and')} `),
+                })}
               </p>
             )}
           </li>

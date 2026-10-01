@@ -7,6 +7,8 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { previewInput, type InputPreview, type ObjectSizes } from '../../api/prepPlan';
+import { useT } from '../../i18n';
+import { richText } from './richText';
 
 export interface InputStepProps {
   readonly datasetId: string;
@@ -17,11 +19,14 @@ export interface InputStepProps {
 }
 
 function Sizes({ label, sizes }: { readonly label: string; readonly sizes: ObjectSizes }): JSX.Element {
+  const { t } = useT();
+  const text = t('prepare.input.sizes', { label, p10: sizes.p10_px, needed: sizes.needed_px });
   return (
     <p className="prep-step__summary">
-      {label}: a typical object is <strong>{sizes.median_px} px</strong> across, the smallest tenth{' '}
-      {sizes.p10_px} px. This model needs about {sizes.needed_px} px —{' '}
-      <strong>{Math.round(sizes.too_small_share * 100)}%</strong> are smaller.
+      {richText(text, {
+        median: <strong>{sizes.median_px} px</strong>,
+        share: <strong>{Math.round(sizes.too_small_share * 100)}%</strong>,
+      })}
     </p>
   );
 }
@@ -45,18 +50,19 @@ function usePreview(datasetId: string, target: string, grid: number | null) {
 }
 
 function GridPicker({ grid, onGrid }: { readonly grid: number | null; readonly onGrid: (grid: number | null) => void }): JSX.Element {
+  const { t } = useT();
   return (
     <label className="genpanel__field prep-step__grid">
-      <span>Cut into tiles</span>
+      <span>{t('prepare.input.tiles')}</span>
       <select
         value={grid === null ? 'auto' : String(grid)}
         onChange={(event) => onGrid(event.target.value === 'auto' ? null : Number(event.target.value))}
       >
-        <option value="auto">Recommended</option>
-        <option value="1">Off — whole pictures</option>
+        <option value="auto">{t('prepare.input.recommended')}</option>
+        <option value="1">{t('prepare.input.off')}</option>
         {[2, 3, 4, 5, 6].map((n) => (
           <option key={n} value={n}>
-            {n} tiles along the long side
+            {t('prepare.input.grid', { count: n })}
           </option>
         ))}
       </select>
@@ -65,15 +71,17 @@ function GridPicker({ grid, onGrid }: { readonly grid: number | null; readonly o
 }
 
 function Seen({ preview }: { readonly preview: InputPreview }): JSX.Element {
+  const { t, tp } = useT();
   return (
     <div className="prep-seen">
       {preview.images.map((image) => (
         <figure key={image.path} className="prep-seen__item">
-          <img src={image.data_url} alt={`As the model sees ${image.path}`} width={image.width} height={image.height} />
+          <img src={image.data_url} alt={t('prepare.input.seenAlt', { path: image.path })} width={image.width} height={image.height} />
           <figcaption>
-            {image.objects} object(s){image.too_small ? `, ${image.too_small} too small (red)` : ''}
-            {image.lost ? `, ${image.lost} cut off` : ''}
-            {image.tile ? ' · one tile' : ''}
+            {tp('prepare.input.objects', image.objects)}
+            {image.too_small ? t('prepare.input.tooSmall', { count: image.too_small }) : ''}
+            {image.lost ? t('prepare.input.cutOff', { count: image.lost }) : ''}
+            {image.tile ? t('prepare.input.oneTile') : ''}
           </figcaption>
         </figure>
       ))}
@@ -82,24 +90,23 @@ function Seen({ preview }: { readonly preview: InputPreview }): JSX.Element {
 }
 
 export function InputStep({ datasetId, target, grid, onGrid }: InputStepProps): JSX.Element {
+  const { t } = useT();
   const { preview, error } = usePreview(datasetId, target, grid);
   const plan = preview?.plan;
   return (
     <div className="prep-step">
       <p className="prep-step__why">
-        Every model shrinks a picture to a fixed size before looking at it. Below are your own
-        pictures exactly as this model will get them. If you cannot see an object here, neither can
-        the model.
+        {t('prepare.input.why')}
       </p>
       {error && <p className="admin__error" role="alert">{error}</p>}
-      {!preview && !error && <p role="status">Preparing the pictures…</p>}
+      {!preview && !error && <p role="status">{t('prepare.input.preparing')}</p>}
       {plan && (
         <>
           <p className="prep-step__summary">
             <strong>{plan.input_size} px.</strong> {plan.fit_explained}
           </p>
-          {plan.objects && <Sizes label="Whole pictures" sizes={plan.objects} />}
-          {plan.tiling.objects_after && <Sizes label="On tiles" sizes={plan.tiling.objects_after} />}
+          {plan.objects && <Sizes label={t('prepare.input.whole')} sizes={plan.objects} />}
+          {plan.tiling.objects_after && <Sizes label={t('prepare.input.onTiles')} sizes={plan.tiling.objects_after} />}
           <p className="prep-step__note">{plan.tiling.reason}</p>
           {plan.tiling.supported && <GridPicker grid={grid} onGrid={onGrid} />}
           {plan.masks && <p className="prep-step__hint">{plan.masks}</p>}

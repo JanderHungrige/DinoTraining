@@ -1,6 +1,6 @@
 """Local execution backend for training jobs.
 
-Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 13
+Callers depend on :class:`app.ml.training.job.JobRunner`, never on this class. Wave 16
 adds a hyperscaler runner by implementing the same three methods and swapping the
 construction in :func:`get_job_runner` — no call site changes.
 """
@@ -35,6 +35,7 @@ from app.ml.training.samples import (
     learnable_classes,
     samples_for_task,
 )
+from app.ml.training.schedule import apply_schedule, lr_factor
 from app.ml.training.unfreeze import apply_unfreeze, caching_is_valid, optimiser_for
 
 logger = logging.getLogger(__name__)
@@ -180,6 +181,7 @@ class LocalJobRunner:
             config.weight_decay,
             config.backbone_lr_scale,
         )
+        base_rates = [group["lr"] for group in optimiser.param_groups]
         compute_metrics = metrics_for(spec)
         decode = decode_for(spec)
 
@@ -224,13 +226,18 @@ class LocalJobRunner:
                 job.finish("cancelled", f"Cancelled at epoch {epoch}")
                 return
 
+            factor = lr_factor(epoch, config.epochs, config.warmup_epochs, config.lr_schedule)
+            apply_schedule(optimiser, base_rates, factor)
             order = prepared.order(split.train, epoch)
             if live is None:
-                train_loss = run_epoch(head, optimiser, compute_loss, cache, order)
+                train_loss = run_epoch(
+                    head, optimiser, compute_loss, cache, order, config.batch_size
+                )
             else:
                 train_loss = run_live_epoch(
-                    live, head, optimiser, compute_loss, order, prepared.rng(epoch)
-                )
+                    live, head, optimiser, compute_loss, order, prepared.rng(epoch),
+                    config.batch_size,
+                )  # fmt: skip
             val_loss, outputs, targets = evaluate_on(split.val)
             # Decode before metrics: detection metrics need boxes, not per-cell logits.
             decoded = [decode(out, plan.patch_size) for out in outputs]
@@ -280,12 +287,12 @@ def _save_completed_head(
     from app.ml.training.persist import register_trained_head
 
     instance = register_trained_head(job, spec, capabilities)
-    job.head_instance_id = instance.id
+    job.mark_saved(instance.id)
     logger.info("Saved head instance %s from job %s", instance.id, job.job_id)
 
 
 def get_job_runner() -> LocalJobRunner:
-    """Process-wide runner. Wave 13 swaps the construction here, not at call sites."""
+    """Process-wide runner. Wave 16 swaps the construction here, not at call sites."""
     global _runner
     with _runner_lock:
         if _runner is None:

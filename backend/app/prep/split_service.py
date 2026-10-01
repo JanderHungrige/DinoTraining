@@ -115,6 +115,17 @@ def make_split(
             raise SplitRefusedError(
                 "Not every image came with a split from its source, so it cannot be kept."
             )
+        # Recorded like a made split: without it a recipe (doc 88) refused a dataset that
+        # was split, saying it was not (found by doc 101's default recipe).
+        count = len(sides)
+        shares = {side: sum(1 for s in sides.values() if s == side) / count for side in SIDES}
+        save_split_settings(
+            dataset_id,
+            SplitSettings(
+                mode=mode, seed=seed, val_fraction=shares["val"], test_fraction=shares["test"]
+            ),
+            settings,
+        )
         return _report(facts, sides, mode, seed, 0, 0)
     audit = last_audit(dataset_id, settings)
     groups = build_groups(facts, audit.scene_groups if audit else [])

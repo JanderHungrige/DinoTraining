@@ -16,6 +16,7 @@ import {
   type PrescanJob,
   type StartPrescanOptions,
 } from '../api/prescan';
+import { useT } from '../i18n';
 
 const POLL_MS = 1500;
 
@@ -30,6 +31,7 @@ export interface PrescanState {
 }
 
 export function usePrescan(): PrescanState {
+  const { t } = useT();
   const [job, setJob] = useState<PrescanJob | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,12 +70,12 @@ export function usePrescan(): PrescanState {
       if (mounted.current) setJob(started);
     } catch (cause) {
       if (mounted.current) {
-        setError(cause instanceof Error ? cause.message : 'Could not start the scan.');
+        setError(cause instanceof Error ? cause.message : t('studio.prescan.startError'));
       }
     } finally {
       if (mounted.current) setStarting(false);
     }
-  }, []);
+  }, [t]);
 
   const cancel = useCallback((): void => {
     if (job === null) return;
@@ -81,8 +83,8 @@ export function usePrescan(): PrescanState {
       .then((next) => {
         if (mounted.current) setJob(next);
       })
-      .catch(() => setError('Could not stop the scan.'));
-  }, [job]);
+      .catch(() => setError(t('studio.prescan.stopError')));
+  }, [job, t]);
 
   const clear = useCallback((): void => {
     setJob(null);

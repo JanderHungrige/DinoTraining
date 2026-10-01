@@ -189,3 +189,37 @@ def test_cancelling_takes_effect_within_an_epoch(
         time.sleep(0.02)
     assert job.state == "cancelled" and "during epoch 1" in job.message
     assert len(seen) < 10 and job.instance_id is None
+
+
+class Recorder:
+    """Stands in for the MLflow tracker (doc 123)."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, object]] = []
+
+    def epoch(self, epoch: int, metrics: dict[str, float]) -> None:
+        self.calls.append(("epoch", (epoch, metrics)))
+
+    def saved(self, kind: str, instance_id: str) -> None:
+        self.calls.append(("saved", kind))
+
+    def finished(self, state: str) -> None:
+        self.calls.append(("finished", state))
+
+
+def test_a_fine_tune_reports_its_baseline_epochs_and_saved_model_to_mlflow(
+    env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    recorder = Recorder()
+    monkeypatch.setattr(runner_module, "finetune_tracker", lambda _job: recorder)
+    job = run(
+        monkeypatch, FinetuneData([sample("train")], [sample("val")], [sample("test")], ("cell",))
+    )
+    deadline = time.monotonic() + 5
+    while not recorder.calls or recorder.calls[-1][0] not in ("saved", "finished"):
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    assert job.state == "complete"
+    assert recorder.calls[0] == ("epoch", (0, {"baseline_miou": 0.1}))
+    assert [call[1][0] for call in recorder.calls if call[0] == "epoch"] == [0, 1, 2, 3]
+    assert recorder.calls[-1] == ("saved", "finetuned")

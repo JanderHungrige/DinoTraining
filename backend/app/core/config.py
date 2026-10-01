@@ -88,6 +88,27 @@ class Settings(BaseSettings):
     # --- Logging ---
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
+    # --- MLflow (doc 123) --- MLflow's own names, so an existing setup carries over.
+    mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")
+    mlflow_experiment: str = Field(default="DinoTraining", alias="DINO_MLFLOW_EXPERIMENT")
+    mlflow_register: bool = Field(default=True, alias="DINO_MLFLOW_REGISTER")
+    mlflow_username: str | None = Field(default=None, alias="MLFLOW_TRACKING_USERNAME")
+    mlflow_password: SecretStr | None = Field(default=None, alias="MLFLOW_TRACKING_PASSWORD")
+    mlflow_token: SecretStr | None = Field(default=None, alias="MLFLOW_TRACKING_TOKEN")
+
+    @field_validator(
+        "mlflow_uri",
+        "mlflow_username",
+        "mlflow_password",
+        "mlflow_token",
+        mode="before",
+    )
+    @classmethod
+    def _blank_mlflow_is_unset(cls, value: Any) -> Any:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("hf_token", "model_cache_dir", "data_dir", mode="before")
     @classmethod
     def _blank_is_unset(cls, value: Any) -> Any:

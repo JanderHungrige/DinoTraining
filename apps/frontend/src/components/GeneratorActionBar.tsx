@@ -10,6 +10,8 @@
 
 import type { JSX, ReactNode } from 'react';
 
+import { useT } from '../i18n';
+
 export interface GeneratorActionBarProps {
   readonly proposeLabel: string;
   readonly proposing: boolean;
@@ -52,46 +54,47 @@ export function GeneratorActionBar({
   children,
   options,
 }: GeneratorActionBarProps): JSX.Element {
+  const { t } = useT();
   const busy = proposing || saving || locked;
 
   return (
     <div className="genbar__wrap">
-      <div className="studio__actions genbar" role="toolbar" aria-label="Review this image">
+      <div className="studio__actions genbar" role="toolbar" aria-label={t('generator.bar.label')}>
         <button type="button" className="btn btn--primary" disabled={busy} onClick={onPropose}>
-          {proposing ? 'Proposing…' : proposeLabel}
+          {proposing ? t('generator.bar.proposing') : proposeLabel}
         </button>
         <button type="button" className="btn" disabled={busy || !dirty} onClick={onSave}>
-          {saving ? 'Saving…' : 'Save to dataset'}
+          {saving ? t('generator.bar.saving') : t('generator.bar.save')}
         </button>
         <button type="button" className="btn" disabled={!canGoPrevious || busy} onClick={onPrevious}>
-          ← Previous
+          {t('generator.bar.previous')}
         </button>
         <button type="button" className="btn" disabled={!canGoNext || busy} onClick={onNext}>
-          Next →
+          {t('generator.bar.next')}
         </button>
         {children}
       </div>
 
-      <div className="genbar__options" role="group" aria-label="Automation">
-        <label className="genbar__auto" title="Propose as soon as each new image appears">
+      <div className="genbar__options" role="group" aria-label={t('generator.bar.automation')}>
+        <label className="genbar__auto" title={t('generator.bar.autoProposeTitle')}>
           <input
             type="checkbox"
             checked={autoPropose}
             disabled={locked}
-            aria-label="Auto-propose: propose automatically on each new image"
+            aria-label={t('generator.bar.autoProposeAria')}
             onChange={(event) => onAutoProposeChange(event.target.checked)}
           />
-          Auto-propose
+          {t('generator.bar.autoPropose')}
         </label>
-        <label className="genbar__auto" title="Save a changed image when you move on from it">
+        <label className="genbar__auto" title={t('generator.bar.autoSaveTitle')}>
           <input
             type="checkbox"
             checked={autoSave}
             disabled={locked}
-            aria-label="Auto-save: save automatically when moving to another image"
+            aria-label={t('generator.bar.autoSaveAria')}
             onChange={(event) => onAutoSaveChange(event.target.checked)}
           />
-          Auto-save
+          {t('generator.bar.autoSave')}
         </label>
         {options}
       </div>

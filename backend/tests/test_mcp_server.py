@@ -16,6 +16,7 @@ failure rather than as a plausible-looking success.
 
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -153,6 +154,25 @@ class TestTheToolContract:
             "get_finetune_requirements",
             "check_dataset_for",
             "start_finetune",
+            # Doc 102: the Training tab's settings and default recipes, for an assistant too.
+            "get_training_parameters",
+            "create_default_recipe",
+            # Doc 110: annotating for SAM 3, and keeping it consistent.
+            "get_annotation_targets",
+            "list_phrases",
+            "add_phrase",
+            "set_phrase_status",
+            "get_annotation_guideline",
+            "set_annotation_guideline",
+            # Doc 117/118: which saved pictures are unknown for a class, and the answer
+            # "it does not occur there".
+            "get_completeness",
+            "mark_absent_in_older_pictures",
+            # Wave 15.6: trained models' cards, export and MLflow.
+            "get_model_card",
+            "export_model",
+            "get_mlflow_status",
+            "send_models_to_mlflow",
         }
 
     async def test_every_tool_describes_itself(
@@ -190,7 +210,13 @@ class TestTheToolContract:
         async with running_app(tmp_path, monkeypatch) as app:
             described = await descriptions(app)
 
-        for name in ("install_model", "train_head", "start_finetune", "audit_dataset"):
+        for name in (
+            "install_model",
+            "train_head",
+            "start_finetune",
+            "audit_dataset",
+            "create_default_recipe",
+        ):
             assert "get_job" in described[name], f"{name} does not point at get_job"
 
     async def test_parameters_are_typed_rather_than_free_text(
@@ -266,6 +292,7 @@ class TestTheClientLayer:
             "finetune",
             "audit",
             "foundation-finetune",
+            "default-recipe",
         }
         assert all("{job_id}" in path for path in _JOB_PATHS.values())
 
@@ -358,3 +385,121 @@ class TestFinetuneTools:
         assert refused["result"].get("isError") is True
         text = str(refused["result"])
         assert "outline" in text and "Prepare data" in text
+
+
+class TestTrainingKnobTools:
+    """Doc 102: the assistant gets the Training tab's settings and default recipe."""
+
+    async def test_it_reads_a_model_s_settings_with_their_reasons(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            answer = await rpc(
+                app,
+                "tools/call",
+                {"name": "get_training_parameters", "arguments": {"model_id": "sam3"}},
+            )
+        body = json.loads(answer["result"]["content"][0]["text"])
+        rounds = next(p for p in body["parameters"] if p["key"] == "epochs")
+        assert (rounds["label"], rounds["term"], rounds["default"]) == ("Rounds", "epochs", 4)
+        assert rounds["why"]
+
+    async def test_a_misspelt_option_is_an_error_that_names_it(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            refused = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "start_finetune",
+                    "arguments": {
+                        "finetune_id": "sam2.1-hiera-small",
+                        "dataset_ids": ["x"],
+                        "name": "x",
+                        "options": {"box_jiter": 0.2},
+                    },
+                },
+            )
+        assert refused["result"].get("isError") is True
+        assert "box_jiter" in str(refused["result"])
+
+    async def test_it_starts_a_default_recipe_and_names_its_job_kind(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Empty"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            started = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "create_default_recipe",
+                    "arguments": {"dataset_id": dataset_id, "model_id": "rf-detr-nano"},
+                },
+            )
+            described = await descriptions(app)
+            job = json.loads(started["result"]["content"][0]["text"])
+            # Waited out inside the app: a job thread still reading the database when the
+            # next test closes the connection segfaults the whole run (found 2026-09-30).
+            finished = await _finished(app, job["job_id"])
+        assert finished["state"] == "failed"  # an empty dataset has nothing to split
+        assert "no images" in finished["message"].lower()
+        assert "default-recipe" in described["create_default_recipe"]
+
+
+async def _finished(app: FastAPI, job_id: str) -> dict[str, Any]:
+    for _ in range(200):
+        polled = await rpc(
+            app,
+            "tools/call",
+            {"name": "get_job", "arguments": {"job_id": job_id, "kind": "default-recipe"}},
+        )
+        body: dict[str, Any] = json.loads(polled["result"]["content"][0]["text"])
+        if body["state"] not in ("pending", "running"):
+            return body
+        await asyncio.sleep(0.05)
+    raise AssertionError("the default-recipe job did not finish")
+
+
+class TestAnnotationTools:
+    """Doc 110: phrases with variations, checks and the guideline, over MCP."""
+
+    async def test_a_phrase_with_variations_and_a_guideline(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        async with running_app(tmp_path, monkeypatch) as app:
+            created = await rpc(
+                app, "tools/call", {"name": "create_dataset", "arguments": {"name": "Rails"}}
+            )
+            dataset_id = json.loads(created["result"]["content"][0]["text"])["id"]
+            added = await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "add_phrase",
+                    "arguments": {"dataset_id": dataset_id, "text": "signal, light signal"},
+                },
+            )
+            await rpc(
+                app,
+                "tools/call",
+                {
+                    "name": "set_annotation_guideline",
+                    "arguments": {"dataset_id": dataset_id, "text": "Poles count."},
+                },
+            )
+            guideline = await rpc(
+                app,
+                "tools/call",
+                {"name": "get_annotation_guideline", "arguments": {"dataset_id": dataset_id}},
+            )
+            described = await descriptions(app)
+        phrase = json.loads(added["result"]["content"][0]["text"])
+        assert (phrase["text"], phrase["variants"]) == ("signal", ["light signal"])
+        assert json.loads(guideline["result"]["content"][0]["text"]) == {"text": "Poles count."}
+        # The rules an assistant would otherwise break, in the tool it reads.
+        assert "Only checked pictures teach" in described["set_phrase_status"]
+        assert "Two to four variations are enough" in described["add_phrase"]

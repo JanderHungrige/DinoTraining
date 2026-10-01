@@ -91,12 +91,18 @@ def run_live_epoch(
     compute_loss: LossFn,
     indices: tuple[int, ...],
     rng: random.Random | None = None,
+    batch_size: int = 1,
 ) -> float:
-    """One training pass with the backbone training too. Returns mean loss."""
+    """One training pass with the backbone training too. Returns mean loss.
+
+    `batch_size` pictures per correction, by gradient accumulation (doc 99).
+    """
     head.train()
     live.backbone.model.train()
     total = 0.0
     counted = 0
+    pending = 0
+    optimiser.zero_grad()
 
     for index in indices:
         pair = forward_one(live, head, live.samples[index], rng)
@@ -104,19 +110,27 @@ def run_live_epoch(
             continue
         output, targets = pair
         loss = compute_loss(output, targets)
-
-        optimiser.zero_grad()
-        loss.backward()  # type: ignore[no-untyped-call]
-        # Both sets of parameters, not just the head's: the whole point here is that the
-        # backbone is receiving gradients, and it is the one that cannot survive a spike.
-        for group in optimiser.param_groups:
-            torch.nn.utils.clip_grad_norm_(group["params"], GRAD_CLIP)
-        optimiser.step()
+        (loss / batch_size).backward()  # type: ignore[no-untyped-call]
+        pending += 1
+        if pending == batch_size:
+            _step(optimiser)
+            pending = 0
 
         total += float(loss.detach())
         counted += 1
 
+    if pending:
+        _step(optimiser)
     return total / counted if counted else 0.0
+
+
+def _step(optimiser: torch.optim.Optimizer) -> None:
+    # Both sets of parameters, not just the head's: the whole point here is that the
+    # backbone is receiving gradients, and it is the one that cannot survive a spike.
+    for group in optimiser.param_groups:
+        torch.nn.utils.clip_grad_norm_(group["params"], GRAD_CLIP)
+    optimiser.step()
+    optimiser.zero_grad()
 
 
 def evaluate_live(

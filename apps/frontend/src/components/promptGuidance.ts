@@ -13,25 +13,22 @@
  * home, so the next person adding a fourth prompting mode finds the other three first.
  */
 
-/** Grounding DINO's syntax, which is not guessable from an empty field. */
-export const GROUNDING_DINO_HINT =
-  'Grounding DINO reads each phrase between full stops as a separate thing to look for. ' +
-  'One label type: “a bolt”. Several: “a bolt. a nut. a washer.” Lower case, a leading ' +
-  '“a”, and a full stop after each — that is the form it was trained on. It will also ' +
-  'find things you did not ask for, which is what the reject key is for.';
+import { ENGLISH, type Translator } from '../i18n';
+
+/** Grounding DINO's syntax, which is not guessable from an empty field. In English; a
+ *  component renders `studio.guidance.groundingDino` through its own translator. */
+export const GROUNDING_DINO_HINT = ENGLISH.t('studio.guidance.groundingDino');
 
 /**
  * Why head mode has no prompt. Naming the head's own classes answers the question the
  * missing field raises — "so what *will* it look for?" — instead of only explaining the
  * absence.
  */
-export function headModeHint(classNames: readonly string[]): string {
-  if (classNames.length === 0) {
-    return 'No prompt here: a trained head already knows what it is looking for. It proposes its own classes, and you accept, reject or correct them.';
-  }
+export function headModeHint(classNames: readonly string[], { t }: Translator = ENGLISH): string {
+  if (classNames.length === 0) return t('studio.guidance.headNone');
   const listed =
     classNames.length <= 4
       ? classNames.join(', ')
-      : `${classNames.slice(0, 4).join(', ')} and ${classNames.length - 4} more`;
-  return `No prompt here: this head was trained to find ${listed}. It proposes those and nothing else — prompting is for models that take words, and this one takes an image.`;
+      : t('studio.guidance.andMore', { list: classNames.slice(0, 4).join(', '), count: classNames.length - 4 });
+  return t('studio.guidance.head', { classes: listed });
 }

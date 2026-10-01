@@ -12,16 +12,13 @@
 import { useState, type JSX } from 'react';
 
 import { BULK, useLibrary, type LibraryKind, type LibraryTarget } from '../hooks/useLibrary';
-
-interface Row {
-  readonly id: string;
-  readonly name: string;
-  readonly detail: string;
-  readonly meta: string;
-}
+import { useT } from '../i18n';
+import { Section, type Row } from '../components/LibrarySection';
+import { ModelExportActions } from '../components/ModelExportActions';
 
 export function LibraryTab(): JSX.Element {
   const library = useLibrary();
+  const { t, tp } = useT();
   const [confirming, setConfirming] = useState<string | null>(null);
   // Keyed by `kind:id`, because ids are opaque and three stores answer to them — a bare id
   // could name a dataset and a head at once and nothing would notice.
@@ -45,7 +42,10 @@ export function LibraryTab(): JSX.Element {
   const datasetRows: Row[] = library.datasets.map((entry) => ({
     id: entry.id,
     name: entry.name,
-    detail: `${entry.counts.images} image${entry.counts.images === 1 ? '' : 's'} · ${entry.counts.positive + entry.counts.negative + entry.counts.unclear} box${entry.counts.positive + entry.counts.negative + entry.counts.unclear === 1 ? '' : 'es'}`,
+    detail: `${tp('admin.library.images', entry.counts.images)} · ${tp(
+      'admin.library.boxes',
+      entry.counts.positive + entry.counts.negative + entry.counts.unclear,
+    )}`,
     meta: new Date(entry.created_at).toLocaleDateString(),
   }));
 
@@ -57,7 +57,7 @@ export function LibraryTab(): JSX.Element {
     detail: entry.summary,
     // Resolved to names, because an id tells the user nothing about which data it saw.
     meta: entry.dataset_ids.length
-      ? `from ${entry.dataset_ids.map(datasetName).join(', ')}`
+      ? t('admin.library.from', { names: entry.dataset_ids.map(datasetName).join(', ') })
       : entry.backbone_id,
   }));
 
@@ -76,11 +76,8 @@ export function LibraryTab(): JSX.Element {
 
   return (
     <section className="library">
-      <h2 className="library__title">Your library</h2>
-      <p className="library__lead">
-        Everything this app has made for you. Deleting is permanent and is not undone by
-        re-running anything — a head you delete has to be retrained.
-      </p>
+      <h2 className="library__title">{t('admin.library.title')}</h2>
+      <p className="library__lead">{t('admin.library.lead')}</p>
 
       {library.error && (
         <p className="admin__error" role="alert">
@@ -89,9 +86,9 @@ export function LibraryTab(): JSX.Element {
       )}
 
       {targets.length > 0 && (
-        <div className="library__bulk" role="group" aria-label="Selected items">
+        <div className="library__bulk" role="group" aria-label={t('admin.library.selectedGroup')}>
           <span>
-            <strong>{targets.length}</strong> selected
+            <strong>{targets.length}</strong> {t('admin.library.selected')}
           </span>
           {confirmingBulk ? (
             <>
@@ -105,14 +102,14 @@ export function LibraryTab(): JSX.Element {
                   void library.removeMany(targets);
                 }}
               >
-                Delete {targets.length} permanently
+                {t('admin.library.deleteMany', { count: targets.length })}
               </button>
               <button
                 type="button"
                 className="btn btn--small"
                 onClick={() => setConfirmingBulk(false)}
               >
-                Keep them
+                {t('admin.library.keepThem')}
               </button>
             </>
           ) : (
@@ -122,7 +119,7 @@ export function LibraryTab(): JSX.Element {
               disabled={library.busyId !== null}
               onClick={() => setConfirmingBulk(true)}
             >
-              {library.busyId === BULK ? 'Deleting…' : 'Delete selected'}
+              {library.busyId === BULK ? t('admin.library.deleting') : t('admin.library.deleteSelected')}
             </button>
           )}
           <button
@@ -130,7 +127,7 @@ export function LibraryTab(): JSX.Element {
             className="btn btn--small"
             onClick={() => setSelected(new Set())}
           >
-            Clear selection
+            {t('admin.library.clearSelection')}
           </button>
           {/* Named in full while the confirmation is up: eleven checkboxes are easy to
               mis-tick, and this is the last chance to notice. */}
@@ -141,12 +138,12 @@ export function LibraryTab(): JSX.Element {
       )}
 
       {library.loading ? (
-        <p role="status">Loading your library…</p>
+        <p role="status">{t('admin.library.loading')}</p>
       ) : (
         <>
           <Section
-            title="Datasets"
-            empty="No datasets yet. Annotate a folder, generate one, or import a COCO export."
+            title={t('admin.library.datasets')}
+            empty={t('admin.library.datasetsEmpty')}
             rows={datasetRows}
             kind="dataset"
             selected={selected}
@@ -157,8 +154,8 @@ export function LibraryTab(): JSX.Element {
             onDelete={library.remove}
           />
           <Section
-            title="Trained heads"
-            empty="No heads yet. Train one in Training."
+            title={t('admin.library.heads')}
+            empty={t('admin.library.headsEmpty')}
             rows={headRows}
             kind="head"
             selected={selected}
@@ -167,10 +164,11 @@ export function LibraryTab(): JSX.Element {
             onConfirm={setConfirming}
             busyId={library.busyId}
             onDelete={library.remove}
+            actions={(row) => <ModelExportActions kind="heads" instanceId={row.id} name={row.name} />}
           />
           <Section
-            title="Fine-tuned models"
-            empty="No fine-tuned models yet. Fine-tune a detector in Training."
+            title={t('admin.library.finetunes')}
+            empty={t('admin.library.finetunesEmpty')}
             rows={finetuneRows}
             kind="finetune"
             selected={selected}
@@ -179,102 +177,9 @@ export function LibraryTab(): JSX.Element {
             onConfirm={setConfirming}
             busyId={library.busyId}
             onDelete={library.remove}
+            actions={(row) => <ModelExportActions kind="finetuned" instanceId={row.id} name={row.name} />}
           />
         </>
-      )}
-    </section>
-  );
-}
-
-interface SectionProps {
-  readonly title: string;
-  readonly empty: string;
-  readonly rows: readonly Row[];
-  readonly kind: LibraryKind;
-  readonly selected: ReadonlySet<string>;
-  readonly onToggle: (kind: LibraryKind, id: string) => void;
-  readonly confirming: string | null;
-  readonly onConfirm: (id: string | null) => void;
-  readonly busyId: string | null;
-  readonly onDelete: (kind: LibraryKind, id: string) => Promise<void>;
-}
-
-function Section({
-  title,
-  empty,
-  rows,
-  kind,
-  selected,
-  onToggle,
-  confirming,
-  onConfirm,
-  busyId,
-  onDelete,
-}: SectionProps): JSX.Element {
-  return (
-    <section className="library__section">
-      <h3 className="library__heading">
-        {title} <span className="library__count">{rows.length}</span>
-      </h3>
-
-      {rows.length === 0 ? (
-        <p className="library__empty">{empty}</p>
-      ) : (
-        <ul className="library__list">
-          {rows.map((row) => (
-            <li key={row.id} className="library__row">
-              <input
-                type="checkbox"
-                className="library__pick"
-                checked={selected.has(`${kind}:${row.id}`)}
-                disabled={busyId !== null}
-                // Name *and* detail: four heads here are all called "Object detection:
-                // dog, person" and differ only by what they were trained on and their
-                // mAP. Identical labels on four checkboxes is a real ambiguity for
-                // anyone not reading the row visually.
-                aria-label={`Select ${row.name} — ${row.detail}`}
-                onChange={() => onToggle(kind, row.id)}
-              />
-              <span className="library__name">{row.name}</span>
-              <span className="library__detail">{row.detail}</span>
-              <span className="library__meta">{row.meta}</span>
-              {/* Two clicks, not a browser confirm(): a modal cannot say *which* item it
-                  is about, and this list is full of similarly-named things. */}
-              {confirming === row.id ? (
-                <span className="library__confirm">
-                  <button
-                    type="button"
-                    className="btn btn--small btn--danger"
-                    disabled={busyId !== null}
-                    onClick={() => {
-                      onConfirm(null);
-                      void onDelete(kind, row.id);
-                    }}
-                  >
-                    Delete “{row.name}”
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn--small"
-                    onClick={() => onConfirm(null)}
-                  >
-                    Keep
-                  </button>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  className="btn btn--small"
-                  disabled={busyId !== null}
-                  aria-label={`Delete ${row.name}`}
-                  onClick={() => onConfirm(row.id)}
-                >
-                  {busyId === row.id ? 'Deleting…' : 'Delete'}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
       )}
     </section>
   );

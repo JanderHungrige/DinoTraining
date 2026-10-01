@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -247,7 +247,9 @@ def _owning_tile(bbox: list[float], tiles: list[Tile]) -> int | None:
 
 
 def tiled_name(file_name: str, tile: Tile) -> str:
-    path = Path(file_name)
+    # A COCO file name is a document value, not an OS path: always "/", or a dataset
+    # tiled on Windows would name its tiles "rgb\\0_r0c0.png" for every other machine.
+    path = PurePosixPath(file_name)
     return str(path.with_name(f"{path.stem}{tile.suffix()}{path.suffix}"))
 
 

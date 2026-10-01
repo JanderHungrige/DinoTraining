@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 # Formats PIL reports after a successful open. Extensions are a hint; this is the check.
 ALLOWED_FORMATS = frozenset({"JPEG", "PNG", "BMP", "WEBP", "TIFF", "GIF"})
 
-IMAGE_SUFFIXES = frozenset(
-    {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff", ".gif"}
-)
+IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff", ".gif"})
 
 
 class ImageReadError(ValueError):

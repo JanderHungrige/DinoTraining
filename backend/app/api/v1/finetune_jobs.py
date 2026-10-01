@@ -12,6 +12,7 @@ from app.finetune.runner import (
     FoundationFinetuneJob,
     get_foundation_finetune_runner,
 )
+from app.params import family_for
 
 router = APIRouter()
 
@@ -21,11 +22,28 @@ class StartRequest(BaseModel):
     dataset_ids: list[str] = Field(min_length=1)
     name: str = Field(min_length=1, max_length=200)
     recipe_id: str | None = None
-    epochs: int = Field(default=10, ge=1, le=200)
-    learning_rate: float = Field(default=1e-4, gt=0, le=1.0)
-    seed: int = 42
-    #: Adapter options, e.g. {"unfreeze_blocks": 4} for DINOv3 (doc 95).
+    #: Omitted → the model's own default from the catalogue (doc 99): SAM 3 takes 4
+    #: rounds, a DINO backbone 1e-3, instead of one number for all.
+    epochs: int | None = None
+    learning_rate: float | None = None
+    seed: int | None = None
+    #: Every other catalogue parameter, e.g. {"unfreeze_blocks": 4} (doc 95) or
+    #: {"box_jitter": 0.2}. Unknown keys are refused (422), never silently ignored.
     options: dict[str, float] = Field(default_factory=dict)
+
+    def settings(self) -> FinetuneSettings:
+        """Checked against the catalogue; `ValueError` names the parameter (→ 422)."""
+        given: dict[str, object] = dict(self.options)
+        for key in ("epochs", "learning_rate", "seed"):
+            if (value := getattr(self, key)) is not None:
+                given[key] = value
+        resolved = family_for(self.finetune_id).resolve(given)
+        return FinetuneSettings(
+            epochs=int(resolved.pop("epochs")),
+            learning_rate=float(resolved.pop("learning_rate")),
+            seed=int(resolved.pop("seed")),
+            options={k: float(v) for k, v in resolved.items()},
+        )
 
 
 class EpochInfo(BaseModel):
@@ -68,7 +86,7 @@ def _describe(job: FoundationFinetuneJob) -> JobInfo:
         final_metrics=job.final_metrics,
         held_out=job.held_out,
         history=[EpochInfo(**vars(e)) for e in job.history],
-        notes=job.notes,
+        notes=[*job.notes, *job.adapter_notes],
         message=job.message,
         instance_id=job.instance_id,
     )
@@ -81,12 +99,6 @@ def _describe(job: FoundationFinetuneJob) -> JobInfo:
     summary="Start a fine-tune; refused (409) with the failed requirements named",
 )
 def start(request: StartRequest) -> JobInfo:
-    settings = FinetuneSettings(
-        epochs=request.epochs,
-        learning_rate=request.learning_rate,
-        seed=request.seed,
-        options=request.options,
-    )
     try:
         job = get_foundation_finetune_runner().submit(
             FinetuneRequest(
@@ -94,7 +106,7 @@ def start(request: StartRequest) -> JobInfo:
                 dataset_ids=tuple(request.dataset_ids),
                 name=request.name,
                 recipe_id=request.recipe_id,
-                settings=settings,
+                settings=request.settings(),
             )
         )
     except LookupError as error:

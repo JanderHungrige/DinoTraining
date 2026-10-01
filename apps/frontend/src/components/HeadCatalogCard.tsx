@@ -9,6 +9,7 @@
 import type { JSX } from 'react';
 
 import { formatSize, type CatalogEntry } from '../api/headCatalog';
+import { useT, type Translator } from '../i18n';
 
 export interface HeadCatalogCardProps {
   readonly entry: CatalogEntry;
@@ -17,26 +18,28 @@ export interface HeadCatalogCardProps {
 }
 
 /** Why the install button is unavailable, or null when it is not. */
-function blockedReason(entry: CatalogEntry): string | null {
+function blockedReason(entry: CatalogEntry, { t }: Translator): string | null {
   if (entry.installed) return null;
   if (!entry.backbone_installed) {
-    return `Download the ${entry.backbone_id} backbone first.`;
+    return t('admin.heads.backboneFirst', { backbone: entry.backbone_id });
   }
   if (entry.compatible === false) {
-    return entry.incompatible_reason ?? 'Not compatible with the selected backbone.';
+    return entry.incompatible_reason ?? t('admin.heads.incompatible');
   }
   return null;
 }
 
 export function HeadCatalogCard({ entry, busy, onInstall }: HeadCatalogCardProps): JSX.Element {
-  const blocked = blockedReason(entry);
-  const classes = entry.num_classes === null ? null : `${entry.num_classes} classes`;
+  const translator = useT();
+  const { t, tp } = translator;
+  const blocked = blockedReason(entry, translator);
+  const classes = entry.num_classes === null ? null : tp('admin.heads.classes', entry.num_classes);
 
   return (
     <article className="headcard">
       <div className="headcard__head">
         <h4 className="headcard__title">{entry.title}</h4>
-        {entry.installed && <span className="badge badge--installed">Installed</span>}
+        {entry.installed && <span className="badge badge--installed">{t('admin.heads.installed')}</span>}
       </div>
 
       <p className="headcard__desc">{entry.trained_on}</p>
@@ -47,7 +50,7 @@ export function HeadCatalogCard({ entry, busy, onInstall }: HeadCatalogCardProps
 
       <div className="headcard__actions">
         {entry.installed ? (
-          <span className="headcard__done">Ready to use in the Inference Viewer</span>
+          <span className="headcard__done">{t('admin.heads.ready')}</span>
         ) : (
           <button
             type="button"
@@ -55,7 +58,7 @@ export function HeadCatalogCard({ entry, busy, onInstall }: HeadCatalogCardProps
             disabled={busy || blocked !== null}
             onClick={() => onInstall(entry.id)}
           >
-            {busy ? 'Installing…' : 'Install'}
+            {busy ? t('admin.heads.installing') : t('admin.heads.install')}
           </button>
         )}
       </div>

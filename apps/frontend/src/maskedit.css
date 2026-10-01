@@ -1,0 +1,80 @@
+/* Doc 106: outline tools. */
+
+.maskbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.maskbar__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.maskbar__on {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.maskbar__size {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.maskbar__hint {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.maskedit {
+  position: absolute;
+  z-index: 5;
+  touch-action: none;
+}
+
+.maskedit--add,
+.maskedit--remove {
+  cursor: crosshair;
+}
+
+.maskedit--brush,
+.maskedit--erase {
+  cursor: cell;
+}
+
+.maskedit__marks {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.maskedit__stroke {
+  fill: none;
+  stroke: var(--accent);
+  stroke-opacity: 0.45;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.maskedit__stroke--erase {
+  stroke: var(--danger);
+}
+
+.maskedit__point {
+  stroke: #fff;
+  stroke-width: 0.15%;
+}
+
+.maskedit__point--add {
+  fill: var(--accent);
+}
+
+.maskedit__point--remove {
+  fill: var(--danger);
+}

@@ -44,6 +44,8 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "masks": {"producer": "TEXT"},
     # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a
     # photo, which is not part of any sequence.
+    # Doc 120: per-epoch history, for the model card and MLflow. NULL for older heads.
+    "head_instances": {"history": "TEXT"},
     "images": {
         "sequence": "TEXT",
         "frame_index": "INTEGER",
@@ -167,7 +169,9 @@ CREATE TABLE IF NOT EXISTS head_instances (
     epochs_trained       INTEGER NOT NULL DEFAULT 0,
     best_epoch           INTEGER,
     weights_path         TEXT NOT NULL,
-    created_at           TEXT NOT NULL
+    created_at           TEXT NOT NULL,
+    -- Doc 120: the per-epoch results as JSON, NULL for heads trained before Wave 15.6.
+    history              TEXT
 );
 
 -- The dataset's class vocabulary (doc 60). Until this table existed a class was only
@@ -191,6 +195,47 @@ CREATE TABLE IF NOT EXISTS dataset_classes (
     UNIQUE (dataset_id, name)
 );
 
+-- Doc 103: SAM 3's phrases. A phrase belongs to one class, carries its variations (one
+-- concept, several wordings, expanded only at training) and the phrases it must not be
+-- confused with. New tables, so every install gets them from this file alone.
+CREATE TABLE IF NOT EXISTS phrases (
+    id         INTEGER PRIMARY KEY,
+    dataset_id TEXT NOT NULL REFERENCES datasets(id) ON DELETE CASCADE,
+    text       TEXT NOT NULL,
+    class_name TEXT NOT NULL,
+    variants   TEXT NOT NULL DEFAULT '[]',
+    confusable TEXT NOT NULL DEFAULT '[]',
+    created_at TEXT NOT NULL,
+    UNIQUE (dataset_id, text)
+);
+
+-- Which phrases a mask answers to. None stored means "its class name", so nothing
+-- existing needs a row.
+CREATE TABLE IF NOT EXISTS mask_phrases (
+    mask_id   INTEGER NOT NULL REFERENCES masks(id) ON DELETE CASCADE,
+    phrase_id INTEGER NOT NULL REFERENCES phrases(id) ON DELETE CASCADE,
+    PRIMARY KEY (mask_id, phrase_id)
+);
+
+-- Whether a picture was checked for a phrase: every instance marked, or none there.
+-- No row is "not checked" — which training must never read as "none here".
+CREATE TABLE IF NOT EXISTS image_phrase_status (
+    image_id  INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    phrase_id INTEGER NOT NULL REFERENCES phrases(id) ON DELETE CASCADE,
+    status    TEXT NOT NULL CHECK (status IN ('complete', 'absent')),
+    PRIMARY KEY (image_id, phrase_id)
+);
+
+-- Doc 115: an umbrella term ("screw") over several classes (m8, m9). Its phrases row has
+-- class_name '' and answers to every outline of its member classes; nothing per outline.
+CREATE TABLE IF NOT EXISTS phrase_classes (
+    phrase_id  INTEGER NOT NULL REFERENCES phrases(id) ON DELETE CASCADE,
+    class_name TEXT NOT NULL,
+    PRIMARY KEY (phrase_id, class_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_phrases_dataset ON phrases(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_mask_phrases_phrase ON mask_phrases(phrase_id);
 CREATE INDEX IF NOT EXISTS idx_images_dataset ON images(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_dataset_classes_dataset ON dataset_classes(dataset_id);
 {BOX_INDEXES}

@@ -51,9 +51,10 @@ def register(mcp: MCPServer) -> None:
         dataset_ids: list[str],
         name: str,
         recipe_id: str | None = None,
-        epochs: int = 6,
+        epochs: int | None = None,
         learning_rate: float | None = None,
         unfreeze_blocks: int | None = None,
+        options: dict[str, float] | None = None,
     ) -> Any:
         """Fine-tune a foundation model. Returns a job id — poll `get_job` with kind
         `foundation-finetune`.
@@ -63,21 +64,28 @@ def register(mcp: MCPServer) -> None:
         `final_metrics` on the same held-out pictures: **report both**. When no round beat
         the base model, nothing is saved and `notes` says so; say that too.
 
-        `unfreeze_blocks` is for DINO backbones (default 4). The default learning rate is
-        1e-3 for DINO backbones and 1e-4 otherwise.
+        Omitted `epochs` and `learning_rate` take **this model's** defaults (doc 99: e.g.
+        SAM 3 4 rounds at 1e-5, DINO backbones 0.001) — see `get_training_parameters`. Every other
+        setting goes in `options`, e.g. `{"box_jitter": 0.2}` for SAM 2; an unknown one is
+        refused with its name. `unfreeze_blocks` is for DINO backbones (default 4) and
+        RF-DETR (default 0).
         """
-        backbone = finetune_id.startswith("dinov")
         body: dict[str, Any] = {
             "finetune_id": finetune_id,
             "dataset_ids": dataset_ids,
             "name": name,
-            "epochs": epochs,
-            "learning_rate": learning_rate or (1e-3 if backbone else 1e-4),
         }
+        if epochs is not None:
+            body["epochs"] = epochs
+        if learning_rate is not None:
+            body["learning_rate"] = learning_rate
         if recipe_id:
             body["recipe_id"] = recipe_id
-        if backbone:
-            body["options"] = {"unfreeze_blocks": unfreeze_blocks or 4}
+        extra = dict(options or {})
+        if unfreeze_blocks is not None:
+            extra["unfreeze_blocks"] = unfreeze_blocks
+        if extra:
+            body["options"] = extra
         return await client.call("POST", "/finetune/jobs", json=body)
 
 

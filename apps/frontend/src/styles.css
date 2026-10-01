@@ -805,6 +805,27 @@ body {
   flex-wrap: wrap;
 }
 
+.studio__back {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+
+.studio__backask {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.studio__backask p {
+  flex-basis: 100%;
+  margin: 0;
+  text-align: right;
+}
+
 .studio__title {
   margin: 0;
   font-size: 1.35rem;
@@ -3527,4 +3548,40 @@ body {
   a[href]::after {
     content: none;
   }
+}
+
+/* Read by screen readers, not drawn (docs 100, 104). */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Doc 121: Export / Show where it is, beside a trained model in the Library. */
+.library__actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Doc 123: the MLflow settings, one field per line. */
+.mlflow__form {
+  display: grid;
+  gap: 0.5rem;
+  max-width: 34rem;
+}
+
+.mlflow__form label {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.mlflow__form .mlflow__check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }

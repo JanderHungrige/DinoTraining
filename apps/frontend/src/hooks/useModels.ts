@@ -19,6 +19,7 @@ import {
   type ModelInfo,
   type SystemInfo,
 } from '../api/models';
+import { useT } from '../i18n';
 
 const POLL_INTERVAL_MS = 750;
 
@@ -45,6 +46,7 @@ export function useModels(): UseModelsResult {
   const [busy, setBusy] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useT();
 
   // Tracks whether the component is still mounted, so a late response from an
   // in-flight request cannot set state on an unmounted tree.
@@ -64,11 +66,11 @@ export function useModels(): UseModelsResult {
       setSystem(nextSystem);
       setError(null);
     } catch (cause) {
-      if (mounted.current) setError(describeError(cause, 'Could not load the model catalogue.'));
+      if (mounted.current) setError(describeError(cause, t('admin.models.loadFailed')));
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -81,7 +83,7 @@ export function useModels(): UseModelsResult {
         try {
           job = await getDownloadJob(jobId);
         } catch (cause) {
-          if (mounted.current) setError(describeError(cause, 'Lost track of the download.'));
+          if (mounted.current) setError(describeError(cause, t('admin.models.lostTrack')));
           return;
         }
 
@@ -93,14 +95,14 @@ export function useModels(): UseModelsResult {
           // before it would silently wipe the message the user needs.
           await refresh();
           if (job.state === 'failed' && mounted.current) {
-            setError(job.message || 'Download failed.');
+            setError(job.message || t('admin.models.downloadFailed'));
           }
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
       }
     },
-    [refresh],
+    [refresh, t],
   );
 
   const download = useCallback(
@@ -113,12 +115,12 @@ export function useModels(): UseModelsResult {
         setError(null);
         await pollJob(job.job_id);
       } catch (cause) {
-        if (mounted.current) setError(describeError(cause, 'Could not start the download.'));
+        if (mounted.current) setError(describeError(cause, t('admin.models.startFailed')));
       } finally {
         if (mounted.current) setBusy((current) => ({ ...current, [modelId]: false }));
       }
     },
-    [pollJob],
+    [pollJob, t],
   );
 
   const remove = useCallback(
@@ -135,12 +137,12 @@ export function useModels(): UseModelsResult {
         setError(null);
         await refresh();
       } catch (cause) {
-        if (mounted.current) setError(describeError(cause, 'Could not remove the model.'));
+        if (mounted.current) setError(describeError(cause, t('admin.models.removeFailed')));
       } finally {
         if (mounted.current) setBusy((current) => ({ ...current, [modelId]: false }));
       }
     },
-    [refresh],
+    [refresh, t],
   );
 
   return { models, system, jobs, loading, error, busy, download, remove, refresh };

@@ -134,3 +134,28 @@ describe('recommendations arrive after the first render', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Run the Split step first.');
   });
 });
+
+describe('steps the chosen model does not use (doc 107)', () => {
+  it('marks class balance and changed copies "not used" for SAM 3, and says why', async () => {
+    const user = userEvent.setup();
+    const sam3: PrepTarget = { ...TARGET, id: 'sam3', label: 'Fine-tune SAM 3', annotation_kind: 'masks' };
+    expect(statusesFor(data(), 'sam3')).toMatchObject({ balance: 'unused', augment: 'unused', input: 'choice' });
+    render(
+      <PrepareSteps
+        datasetId="d"
+        datasetName="Rings"
+        target={sam3}
+        data={data({ audit: audit('sam3') })}
+        plans={{ balance: BALANCE, augmentation: AUGMENT }}
+        choices={{ key: 'k' }}
+        onChoose={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /Unequal classes \(not used\)/ }));
+    expect(screen.getByText(/does not balance classes/)).toBeInTheDocument();
+  });
+
+  it('keeps them for a DINO head', () => {
+    expect(statusesFor(data(), TARGET.id)).toMatchObject({ balance: 'choice', augment: 'choice' });
+  });
+});

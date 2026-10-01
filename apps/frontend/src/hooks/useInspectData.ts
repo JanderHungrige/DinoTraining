@@ -8,10 +8,11 @@
  * are ~13 KB each and a sequence can have hundreds.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { listDatasetImages, type DatasetImageInfo } from '../api/datasets';
 import { listDatasetSequences, type DatasetSequences } from '../api/datasetSequences';
+import { useT } from '../i18n';
 
 export interface InspectData {
   readonly sequences: DatasetSequences | null;
@@ -28,6 +29,10 @@ export function useInspectData(datasetId: string): InspectData {
   const [images, setImages] = useState<ReadonlyMap<string, DatasetImageInfo>>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Read when a load fails, not a reason to load again: a language switch must not refetch.
+  const tr = useT();
+  const translate = useRef(tr);
+  translate.current = tr;
 
   useEffect(() => {
     // Cleared before loading, so one dataset's frames never play under another's name.
@@ -47,7 +52,7 @@ export function useInspectData(datasetId: string): InspectData {
       })
       .catch((caught: unknown) => {
         if (controller.signal.aborted) return;
-        setError(caught instanceof Error ? caught.message : 'Could not load that dataset.');
+        setError(caught instanceof Error ? caught.message : translate.current.t('generator.inspect.loadFailed'));
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);

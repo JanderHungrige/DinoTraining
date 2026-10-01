@@ -80,13 +80,14 @@ export function CompositedMasks({
 
   // Keyed on what actually changes the picture. Without the ids and verdicts a relabel
   // would leave the old colour on screen; with the mask objects themselves it would
-  // re-decode every PNG on every render.
+  // re-decode every PNG on every render. The PNG's fingerprint is in it since doc 106:
+  // an outline edited in place keeps its id, and without it the old shape stayed drawn.
   const signature = masks
     .map(
       (mask) =>
         `${mask.id}:${mask.label}:${mask.id === selectedId ? 1 : 0}:${
           mask.rgb ? `${mask.rgb.r},${mask.rgb.g},${mask.rgb.b}` : ''
-        }`,
+        }:${fingerprint(mask.png)}`,
     )
     .join('|');
 
@@ -147,4 +148,14 @@ export function CompositedMasks({
       }}
     />
   );
+}
+
+/** FNV-1a over the string: cheap enough per render, and a different PNG changes it. */
+export function fingerprint(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
 }

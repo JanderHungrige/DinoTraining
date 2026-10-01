@@ -12,10 +12,13 @@ import {
   type ApiErrorBody,
   type HealthResponse,
 } from './types';
+import { translate } from '../i18n/translate';
+import { markBackendReached, mayRetry, pause, RETRY_EVERY_MS } from './startupWait';
+import type { Language } from '../i18n/types';
 
 const DEFAULT_BASE_URL = 'http://127.0.0.1:8756';
 
-/** Overridable for the Wave 13 website build, where the backend is not on loopback. */
+/** Overridable for the Wave 16 website build, where the backend is not on loopback. */
 export const API_BASE_URL: string = import.meta.env['VITE_DINO_API_URL'] ?? DEFAULT_BASE_URL;
 
 export const API_PREFIX = '/api/v1';
@@ -75,24 +78,45 @@ async function readErrorBody(response: Response): Promise<ApiErrorBody['error']>
  *               here, at the boundary, rather than leak `undefined` into the UI.
  * @throws {ApiError} on transport failure, non-2xx status, or a shape mismatch.
  */
+/** Doc 111: the UI's language, sent so the backend can answer in it (doc 113). */
+let apiLanguage: Language = 'en';
+
+export function setApiLanguage(language: Language): void {
+  apiLanguage = language;
+}
+
+function unreachable(cause: unknown): ApiError {
+  return new ApiError(
+    0,
+    'unreachable',
+    // Worded here, in the language last set: a component cannot reach this message.
+    translate(apiLanguage, 'app.client.unreachable', { url: API_BASE_URL }),
+    cause,
+  );
+}
+
 export async function apiFetch<T>(
   path: string,
   narrow: (value: unknown) => value is T,
   init?: RequestInit,
 ): Promise<T> {
   let response: Response;
-  try {
-    response = await fetch(buildUrl(path), {
-      ...init,
-      headers: { Accept: 'application/json', ...init?.headers },
-    });
-  } catch (cause) {
-    throw new ApiError(
-      0,
-      'unreachable',
-      `Cannot reach the DinoTraining backend at ${API_BASE_URL}. Is the sidecar running?`,
-      cause,
-    );
+  for (;;) {
+    try {
+      response = await fetch(buildUrl(path), {
+        ...init,
+        headers: { Accept: 'application/json', 'Accept-Language': apiLanguage, ...init?.headers },
+      });
+      markBackendReached();
+      break;
+    } catch (cause) {
+      // The backend may still be starting beside the app (see startupWait.ts).
+      if (mayRetry(init?.method, init?.signal)) {
+        await pause(RETRY_EVERY_MS, init?.signal);
+        continue;
+      }
+      throw unreachable(cause);
+    }
   }
 
   if (!response.ok) {
@@ -105,7 +129,7 @@ export async function apiFetch<T>(
     throw new ApiError(
       response.status,
       'malformed_response',
-      `Unexpected response shape from ${path}. Backend and frontend contracts have drifted.`,
+      translate(apiLanguage, 'app.client.malformed', { path }),
       body,
     );
   }

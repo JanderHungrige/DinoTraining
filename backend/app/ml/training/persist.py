@@ -76,4 +76,5 @@ def register_trained_head(
         config=asdict(job.config),
         epochs_trained=len(job.history),
         best_epoch=job.best_epoch,
+        history=[asdict(entry) for entry in job.history],
     )

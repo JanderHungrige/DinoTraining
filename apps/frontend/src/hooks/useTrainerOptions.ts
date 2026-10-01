@@ -6,12 +6,13 @@
  * the user is no longer training against.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ApiError } from '../api/client';
 import { listBackbones, type BackboneInfo } from '../api/backbones';
 import { listDatasets, type DatasetInfo } from '../api/datasets';
 import { listHeadTypes, type HeadTypeInfo } from '../api/heads';
+import { useT } from '../i18n';
 
 export interface UseTrainerOptionsResult {
   readonly datasets: readonly DatasetInfo[];
@@ -37,6 +38,10 @@ export function useTrainerOptions(backboneId: string | null): UseTrainerOptionsR
   const [headTypes, setHeadTypes] = useState<readonly HeadTypeInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Through a ref: a language switch must not reload the options.
+  const { t } = useT();
+  const tr = useRef(t);
+  tr.current = t;
 
   const load = useCallback(async (): Promise<void> => {
     setLoading(true);
@@ -46,7 +51,7 @@ export function useTrainerOptions(backboneId: string | null): UseTrainerOptionsR
       setBackbones(nextBackbones);
       setError(null);
     } catch (cause) {
-      setError(describeError(cause, 'Could not load training options.'));
+      setError(describeError(cause, tr.current('training.error.options')));
     } finally {
       setLoading(false);
     }
@@ -65,7 +70,7 @@ export function useTrainerOptions(backboneId: string | null): UseTrainerOptionsR
         const next = await listHeadTypes(backboneId ?? undefined);
         if (!cancelled) setHeadTypes(next);
       } catch (cause) {
-        if (!cancelled) setError(describeError(cause, 'Could not load head types.'));
+        if (!cancelled) setError(describeError(cause, tr.current('training.error.headTypes')));
       }
     }
     void loadHeadTypes();

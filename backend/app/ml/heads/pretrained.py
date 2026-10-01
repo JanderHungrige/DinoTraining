@@ -118,9 +118,7 @@ class PretrainedDepth(nn.Module):
         # from (min_depth, max_depth, n_bins), not learned — and if they were
         # persistent, strict=True loading of a converted checkpoint would fail on a
         # missing "bins" key, since upstream ships only conv_depth.*.
-        self.register_buffer(
-            "bins", torch.linspace(min_depth, max_depth, n_bins), persistent=False
-        )
+        self.register_buffer("bins", torch.linspace(min_depth, max_depth, n_bins), persistent=False)
 
     def forward(self, features: BackboneFeatures) -> dict[str, Tensor]:
         patches = features.patches

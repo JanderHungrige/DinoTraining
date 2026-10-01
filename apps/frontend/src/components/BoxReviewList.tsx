@@ -13,6 +13,7 @@
 
 import type { JSX } from 'react';
 
+import { useT, type Key } from '../i18n';
 import { hasScores, type NumberedBox } from '../lib/boxReview';
 import { ClassPicker } from './ClassPicker';
 import type { CanvasBox, Label } from '../types/annotation';
@@ -44,11 +45,11 @@ export interface BoxReviewListProps {
 }
 
 /** One click each, rather than cycling. `null` is remove. */
-const VERDICTS: readonly (readonly [Label | null, string, string])[] = [
-  ['positive', '✓', 'True'],
-  ['negative', '✗', 'False'],
-  ['unclear', '?', 'Not sure'],
-  [null, '🗑', 'Remove'],
+const VERDICTS: readonly (readonly [Label | null, string, Key])[] = [
+  ['positive', '✓', 'studio.review.true'],
+  ['negative', '✗', 'studio.review.false'],
+  ['unclear', '?', 'studio.review.notSure'],
+  [null, '🗑', 'studio.review.remove'],
 ];
 
 const EMPTY: ReadonlySet<string> = new Set<string>();
@@ -70,29 +71,30 @@ export function BoxReviewList({
   onRenameClass,
   disabled = false,
 }: BoxReviewListProps): JSX.Element {
+  const { t, tp } = useT();
   const all = boxes.map((entry) => entry.box);
   const scored = hasScores(all);
   const visible = boxes.filter((entry) => !hidden.has(entry.box.id));
   const concealed = [...hidden].filter((id) => !belowCutoff.has(id)).length;
 
   return (
-    <aside className="review" aria-label="Boxes">
+    <aside className="review" aria-label={t('studio.review.aria')}>
       <header className="review__head">
         <h3 className="review__title">
-          {visible.length} box{visible.length === 1 ? '' : 'es'}
+          {tp('studio.review.count', visible.length)}
           {/* Counted apart, because "below cutoff" is a claim about the score and would be
               a lie about a box the reviewer simply hid. */}
           {belowCutoff.size > 0 && (
-            <span className="review__dim"> · {belowCutoff.size} below cutoff</span>
+            <span className="review__dim"> · {t('studio.review.belowCutoff', { count: belowCutoff.size })}</span>
           )}
-          {concealed > 0 && <span className="review__dim"> · {concealed} hidden</span>}
+          {concealed > 0 && <span className="review__dim"> · {t('studio.review.hidden', { count: concealed })}</span>}
         </h3>
       </header>
 
       {scored && (
         <div className="review__threshold">
           <label htmlFor="review-threshold">
-            Show above <span className="review__value">{threshold.toFixed(2)}</span>
+            {t('studio.review.showAbove')} <span className="review__value">{threshold.toFixed(2)}</span>
           </label>
           <input
             id="review-threshold"
@@ -113,7 +115,7 @@ export function BoxReviewList({
             disabled={disabled || belowCutoff.size === 0}
             onClick={onRemoveHidden}
           >
-            Remove {belowCutoff.size} below
+            {t('studio.review.removeBelow', { count: belowCutoff.size })}
           </button>
         </div>
       )}
@@ -121,10 +123,10 @@ export function BoxReviewList({
       {visible.length === 0 ? (
         <p className="review__empty" role="status">
           {all.length === 0
-            ? 'No boxes yet. Run a model, or drag on the image to draw one.'
+            ? t('studio.review.emptyNone')
             : concealed > 0 && belowCutoff.size === 0
-              ? 'Every box is hidden. Show them again to review them.'
-              : 'Every box is below the cutoff. Lower it to see them.'}
+              ? t('studio.review.emptyHidden')
+              : t('studio.review.emptyCutoff')}
         </p>
       ) : (
         <ul className="review__list">
@@ -177,6 +179,7 @@ function Row({
   onCreateClass,
   onRenameClass,
 }: RowProps): JSX.Element {
+  const { t } = useT();
   const percent = box.score === undefined ? null : `${(box.score * 100).toFixed(0)}%`;
 
   return (
@@ -196,7 +199,7 @@ function Row({
       <ClassPicker
         value={box.text ?? ''}
         options={classes}
-        label={`Class of box ${number}`}
+        label={t('studio.review.classOf', { number })}
         disabled={disabled}
         onChange={(name) => onRename(box.id, name)}
         onCreate={onCreateClass}
@@ -206,20 +209,23 @@ function Row({
       <span className="review__score">{percent ?? '—'}</span>
 
       <span className="review__verdicts">
-        {VERDICTS.map(([label, glyph, title]) => (
-          <button
-            key={title}
-            type="button"
-            className={`review__verdict${label !== null && box.label === label ? ' review__verdict--on' : ''}`}
-            title={title}
-            aria-label={`${title}, box ${number}`}
-            aria-pressed={label === null ? undefined : box.label === label}
-            disabled={disabled}
-            onClick={() => (label === null ? onRemove(box.id) : onLabel(box.id, label))}
-          >
-            <span aria-hidden="true">{glyph}</span>
-          </button>
-        ))}
+        {VERDICTS.map(([label, glyph, key]) => {
+          const title = t(key);
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`review__verdict${label !== null && box.label === label ? ' review__verdict--on' : ''}`}
+              title={title}
+              aria-label={t('studio.review.verdictAria', { verdict: title, number })}
+              aria-pressed={label === null ? undefined : box.label === label}
+              disabled={disabled}
+              onClick={() => (label === null ? onRemove(box.id) : onLabel(box.id, label))}
+            >
+              <span aria-hidden="true">{glyph}</span>
+            </button>
+          );
+        })}
       </span>
     </li>
   );

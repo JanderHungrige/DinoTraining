@@ -37,7 +37,7 @@ export function useBoxEditing(
 
   const rename = useCallback(
     (id: string, text: string): void => {
-      setBoxes(boxes.map((box) => (box.id === id ? { ...box, text } : box)));
+      setBoxes(boxes.map((box) => (box.id === id ? renamed(box, text) : box)));
     },
     [boxes, setBoxes],
   );
@@ -57,7 +57,7 @@ export function useBoxEditing(
     (from: string, to: string): void => {
       const target = to.trim();
       if (target === '' || target === from) return;
-      setBoxes(boxes.map((box) => (box.text === from ? { ...box, text: target } : box)));
+      setBoxes(boxes.map((box) => (box.text === from ? renamed(box, target) : box)));
     },
     [boxes, setBoxes],
   );
@@ -78,4 +78,16 @@ export function useBoxEditing(
   );
 
   return { setLabel, rename, renameClass, remove, removeAll };
+}
+
+/**
+ * A box under a new class. Its old class name leaves its phrases (doc 103): sent back, it
+ * would become a phrase of the new class, or be refused as another class's phrase.
+ */
+function renamed(box: CanvasBox, text: string): CanvasBox {
+  if (!box.phrases) return { ...box, text };
+  const old = (box.text ?? '').trim().toLowerCase();
+  const phrases = box.phrases.filter((phrase) => phrase !== old);
+  const { phrases: _dropped, ...rest } = box;
+  return phrases.length > 0 ? { ...rest, text, phrases } : { ...rest, text };
 }

@@ -23,12 +23,12 @@ Everything runs on your own machine, and your pictures are never uploaded.
   - [First steps after starting](#first-steps-after-starting)
 - [Features](#features)
   - [Start here](#start-here)
+  - [Inspect datasets](#inspect-datasets)
   - [Annotation Studio](#annotation-studio)
   - [Prepare data](#prepare-data)
   - [Training](#training)
   - [Inference Viewer](#inference-viewer)
   - [Dataset Generator](#dataset-generator)
-  - [Inspect datasets](#inspect-datasets)
   - [Library](#library)
   - [Admin / Models](#admin--models)
   - [Connection (AI assistants and API)](#connection-ai-assistants-and-api)
@@ -63,18 +63,51 @@ Everything runs on your own machine, and your pictures are never uploaded.
 
 ### Option A: installer
 
-Installers for macOS (`.dmg`), Windows (`.exe`, NSIS) and Linux (`.deb`) are built from
-version tags and published as **draft releases** on GitHub.
+The installers are small: they carry the app and a pinned copy of
+[uv](https://docs.astral.sh/uv/), not Python or PyTorch. **On its first start the app
+installs those itself**, from the official sources and exactly in the versions it was
+tested with: about 1 GB for the CPU and Apple silicon, and about 3.5 GB with NVIDIA GPU
+support. A setup screen shows what it found (Apple GPU, NVIDIA card and driver), what it
+installs, and the progress. After that the app works offline.
 
-> ⚠️ **The installers are not code-signed yet.**
-> - **macOS** blocks the first launch (Gatekeeper). Right-click the app → *Open* →
->   *Open*.
-> - **Windows** shows a SmartScreen warning. *More info* → *Run anyway*.
-> - **Linux** is `.deb` only.
+**macOS (Apple silicon)** — in the Terminal, either:
 
-Model weights are **not** in the installer; you download them in the app (see below).
-The installer is CPU/Apple-GPU only; NVIDIA GPU support is a separate download offered in
-the app.
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/JanderHungrige/DinoTraining/main/scripts/install-mac.sh)"
+```
+
+(installs into `~/Applications`, no admin rights; run it again to update), or with
+Homebrew, once the tap is published:
+
+```bash
+brew install janderhungrige/tap/dinotraining
+```
+
+> **Why not a download in the browser?** The app is not signed with a paid Apple
+> certificate. macOS blocks unsigned apps only when a *browser* downloaded them; the
+> script and Homebrew fetch them without that mark, so the app starts normally. If you
+> did download the archive in the browser: open the app once, then *System Settings →
+> Privacy & Security → Open Anyway*. Intel Macs are not supported: PyTorch no longer
+> makes builds for them.
+
+**Windows** (`.exe`, NSIS) and **Linux** (`.deb`) installers are on the
+[releases page](https://github.com/JanderHungrige/DinoTraining/releases). Windows shows a
+SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
+
+- **GPU:** the setup screen picks CUDA 13.0 (driver ≥ 580) or CUDA 12.6 (driver ≥ 560)
+  when it finds an NVIDIA card; *Admin / Models* switches between GPU and CPU later.
+- **Updates:** a new version brings its own package list; the app updates its packages
+  on the first start, and keeps the previous ones until the new ones work.
+- **Model weights** are not in the installer; you download them in the app (see below).
+- **Uninstall:**
+  - **Windows:** *Settings → Apps → DinoTraining → Uninstall*. It also removes the
+    downloaded Python and PyTorch (1–6 GB). Your datasets, trained models and downloaded
+    weights stay in `%LOCALAPPDATA%\DinoTraining`, unless you tick *Delete the
+    application data*.
+  - **macOS:** delete `DinoTraining.app` (or `brew uninstall dinotraining`); everything
+    else, including your data, is in `~/Library/Application Support/DinoTraining`.
+  - **Linux:** `sudo apt remove dino-training`; everything else is in
+    `~/.local/share/DinoTraining`.
 
 ### Option B: from source
 
@@ -88,10 +121,12 @@ git clone https://github.com/JanderHungrige/DinoTraining
 cd DinoTraining
 cp .env.example .env            # add HF_TOKEN only if you need the gated models
 
-# Backend
-python3.12 -m venv backend/.venv
-source backend/.venv/bin/activate
-pip install -e "backend[dev]"
+# Backend: from the lock file users install from (uv: https://docs.astral.sh/uv/).
+# `cpu` is the Mac's variant too (Apple GPU via MPS); with an NVIDIA card use `cu130`
+# (driver >= 580) or `cu126` (driver >= 560).
+cd backend && uv sync --extra cpu --extra dev --extra export && cd ..
+# without uv: python3.12 -m venv backend/.venv && source backend/.venv/bin/activate
+#             pip install -e "backend[cpu,dev,export]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps
@@ -135,12 +170,23 @@ Having Rust installed both ways is the usual cause: the two `rustc` binaries com
 
 The app is organised as tabs, in the order a project runs through them.
 
+**Language:** English or German, switched in the header (the first start follows your
+system language). The backend's explanations (audit findings, requirements, setting
+help) follow the same choice. Prompts for Grounding DINO and SAM 3 stay English, because
+those models read English.
+
 ### Start here
 
 A plain-language introduction:
 - what a backbone, a head and fine-tuning are;
 - which model is good for what, with numbers measured in this app;
 - what the app cannot do yet.
+
+### Inspect datasets
+
+Play back a dataset (its videos, folders and loose pictures) with all stored annotations
+drawn on. Coloured bars under the player show where each class appears; click one and
+jump to its first, previous or next occurrence.
 
 ### Annotation Studio
 
@@ -154,6 +200,40 @@ Label a folder of pictures.
 - **Masks and boxes:** show masks, boxes or both. A segmented object is saved as an outline
   with its box derived from it.
 - **Datasets:** saved with a live counter of what you have; exportable as standard COCO.
+
+**Annotating for a model.** At the start you say what the dataset will train:
+- keep all options open (recommended);
+- a picture classifier;
+- a detector;
+- SAM 2;
+- SAM 3.
+
+The Studio then marks each layer as required, recommended or optional, with the reason,
+and shows what the picture in view still lacks.
+
+**For SAM 3:**
+- **Every class is a phrase.** Classes are made in the annotation list; a picture you save
+  counts as complete for the classes that exist then, so no per-picture checks are needed.
+- **Umbrella terms** name several classes at once: "screw" over m8 and m9. SAM 3 learns
+  both levels from the same outlines.
+- **Variations** (technical vocabulary, comma-separated, two to four) and **look-alikes**
+  ("not to be confused with") per class.
+- **A class added later:** the Studio asks whether it occurs in the pictures already saved.
+  Either they are marked "does not occur", or **Review for** the class shows just those
+  pictures with their saved annotations and proposes only the new class, adding to them.
+- Re-running the proposer never replaces what is saved; it adds.
+- For imported or partly annotated datasets, per-picture checks (all marked / not in this
+  picture) are still there, folded away.
+
+**Outline tools:**
+- ⊕/⊖ clicks that SAM redraws the outline from;
+- a brush and an eraser;
+- undo;
+- **Outlines from my boxes**.
+
+**Consistency:**
+- a written **annotation guideline** per dataset;
+- a **second look** at a random 5 % that reports how many needed a change.
 
 ### Prepare data
 
@@ -220,6 +300,15 @@ Measured in this app, on data with a leak-free split:
 - RF-DETR reached 0.62 test mAP on blood cells, against 0.41 for a DINO head.
 - SAM 2 went from 0.80 to 0.96 mIoU on an outline convention it could not know.
 
+**Settings, explained.** Every setting a model's training honours is shown as
+"Plain name (technical term)", e.g. *Rounds (epochs)* or *Box looseness (box jitter)*, with
+a **?** that explains it and gives the default and why. Basic settings come first; the rest
+sit under *Advanced settings*. Changed values are marked and can be reset.
+
+**No recipe yet?** Where a recipe can be chosen and none is, a card explains what a recipe
+is and offers **Create the default recipe**: Prepare data's steps with every recommendation
+taken, in one click. **Open Prepare data** goes there at this dataset and model instead.
+
 ### Inference Viewer
 
 Run trained heads and foundation models on one picture, side by side with the original.
@@ -236,17 +325,22 @@ proposes.
 - **Hidden mode:** runs without drawing, showing only progress.
 - **Ask when unclear:** stops on predictions whose score is in a band you set.
 
-### Inspect datasets
-
-Play back a dataset (its videos, folders and loose pictures) with all stored annotations
-drawn on. Coloured bars under the player show where each class appears; click one and
-jump to its first, previous or next occurrence.
-
 ### Library
 
 Everything you have made in one place: datasets, trained heads and fine-tuned models,
 with what they were trained on and how well they scored. Rename, delete, or open a
 dataset's folder.
+
+**Export a trained model** to use it outside the app. The zip holds:
+- the **model card** (`model.json`): base model, classes in output order, the exact
+  preprocessing, how to read the outputs, metrics, training data and recipe;
+- the weights;
+- `dino_runtime.py` (the app's own preprocessing, head and decoding code) and
+  `predict.py`, so `python predict.py picture.jpg` prints what the app would;
+- for a head, `model.onnx`: backbone and head as one graph, checked against PyTorch at
+  export.
+
+"Show where it is" opens the folder that holds the model.
 
 ### Admin / Models
 
@@ -268,6 +362,12 @@ dataset's folder.
 - **API guide:** a guide written for an AI assistant (the order of calls, and the traps),
   plus the full REST API under `http://127.0.0.1:8756/api/v1`, reachable from a "Copy for
   your AI" button.
+- **MLflow:** set a tracking URI (and credentials, if your server needs them) and every
+  head training and fine-tune appears there as a run: settings and recipe as params,
+  metrics per epoch, the model card and export bundle as artifacts, and a registered model
+  version. "Send existing models to MLflow" adds everything trained before, each model
+  once. Training never waits for MLflow or fails because of it. On macOS port 5000 is
+  taken by the system (AirPlay), so run `mlflow server --port 5001`.
 - **Local only:** everything is bound to this machine, without authentication.
 
 ---
@@ -385,7 +485,12 @@ state.
 | 10 | Look and feel |
 | 11 | Guided data preparation |
 | 12 | Fine-tuning SAM 2, SAM 3 and DINO backbones |
-| 13 | Website and cloud compute (planned) |
+| 13 | Every training setting explained, default recipes |
+| 14 | Annotating for the model: phrases, hard negatives, mask editing |
+| 15 | English and German |
+| 15.5 | Annotating the normal way: saved means complete, umbrella terms, review for a new class |
+| 15.6 | MLOps: model cards, export with runtime and ONNX, MLflow tracking and registry |
+| 16 | Website and cloud compute (planned) |
 
 **Branches:**
 - `main` is stable;

@@ -18,19 +18,18 @@ from pathlib import Path
 
 from app.datasets.coco_import import COCO_FILENAME, find_coco_files
 
-GUIDE = (
-    Path(__file__).resolve().parents[2]
-    / "apps"
-    / "frontend"
-    / "src"
-    / "tabs"
-    / "datasetFormat.ts"
-)
+SRC = Path(__file__).resolve().parents[2] / "apps" / "frontend" / "src"
+#: The constants live in datasetFormat.ts; since doc 112 the prose lives in the catalogue,
+#: English (the source) and German (which must make the same claims).
+GUIDE = SRC / "tabs" / "datasetFormat.ts"
+PROSE_EN = SRC / "i18n" / "en" / "intro.ts"
+PROSE_DE = SRC / "i18n" / "de" / "intro.ts"
 
 
-def _guide_text() -> str:
-    assert GUIDE.is_file(), f"doc 48's content moved from {GUIDE}; update this test with it"
-    return GUIDE.read_text(encoding="utf-8")
+def _guide_text(prose: Path = PROSE_EN) -> str:
+    for path in (GUIDE, prose):
+        assert path.is_file(), f"doc 48's content moved from {path}; update this test with it"
+    return GUIDE.read_text(encoding="utf-8") + prose.read_text(encoding="utf-8")
 
 
 class TestTheGuideMatchesTheImporter:
@@ -60,4 +59,11 @@ class TestTheGuideMatchesTheImporter:
     def test_it_gives_the_box_convention_and_what_it_is_not(self) -> None:
         text = _guide_text()
         assert "absolute pixels from the top-left" in text
+        assert "x1, y1, x2, y2" in text
+
+    def test_the_german_guide_makes_the_same_claims(self) -> None:
+        """Doc 112: a translation that drops the category-0 warning or the box convention
+        misleads exactly the users this guide exists for."""
+        text = _guide_text(PROSE_DE)
+        assert "platelets" in text
         assert "x1, y1, x2, y2" in text

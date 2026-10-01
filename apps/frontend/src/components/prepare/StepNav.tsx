@@ -5,22 +5,26 @@
 
 import type { JSX } from 'react';
 
+import { useT, type Key } from '../../i18n';
+
 export const STEPS = ['audit', 'fix', 'split', 'input', 'balance', 'augment', 'save'] as const;
 export type StepId = (typeof STEPS)[number];
 
-export type StepStatus = 'done' | 'open' | 'choice';
+/** `unused`: the chosen model does not use this step (doc 107); it says why when opened. */
+export type StepStatus = 'done' | 'open' | 'choice' | 'unused';
 
-export const STEP_LABEL: Readonly<Record<StepId, string>> = {
-  audit: 'Check the data',
-  fix: 'Fix what is safe',
-  split: 'Split',
-  input: 'What the model sees',
-  balance: 'Unequal classes',
-  augment: 'Changed copies',
-  save: 'Save the recipe',
+/** Each step's name, as a catalogue key. */
+export const STEP_LABEL: Readonly<Record<StepId, Key>> = {
+  audit: 'prepare.step.audit',
+  fix: 'prepare.step.fix',
+  split: 'prepare.step.split',
+  input: 'prepare.step.input',
+  balance: 'prepare.step.balance',
+  augment: 'prepare.step.augment',
+  save: 'prepare.step.save',
 };
 
-const STATUS_MARK: Readonly<Record<StepStatus, string>> = { done: '✓', open: '•', choice: '○' };
+const STATUS_MARK: Readonly<Record<StepStatus, string>> = { done: '✓', open: '•', choice: '○', unused: '–' };
 
 export function firstOpen(statuses: Readonly<Record<StepId, StepStatus>>): StepId {
   return STEPS.find((step) => statuses[step] === 'open') ?? 'save';
@@ -33,8 +37,9 @@ export interface StepNavProps {
 }
 
 export function StepNav({ current, statuses, onSelect }: StepNavProps): JSX.Element {
+  const { t } = useT();
   return (
-    <ol className="prep-nav" aria-label="Preparation steps">
+    <ol className="prep-nav" aria-label={t('prepare.nav.label')}>
       {STEPS.map((step, index) => (
         <li key={step}>
           <button
@@ -46,7 +51,8 @@ export function StepNav({ current, statuses, onSelect }: StepNavProps): JSX.Elem
             <span className="prep-nav__mark" aria-hidden="true">
               {STATUS_MARK[statuses[step]]}
             </span>
-            {index + 1}. {STEP_LABEL[step]}
+            {index + 1}. {t(STEP_LABEL[step])}
+            {statuses[step] === 'unused' ? t('prepare.nav.unused') : ''}
           </button>
         </li>
       ))}

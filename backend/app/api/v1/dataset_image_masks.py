@@ -46,6 +46,8 @@ class StoredMask(BaseModel):
     score: float | None = None
     prompt: str | None = None
     producer: dict[str, object] | None = None
+    #: Doc 103: the phrases it answers to, its class name first.
+    phrases: list[str] = []
     #: Preview only. Dense pixels travel as base64 PNG, never nested JSON.
     mask_png: str
 
@@ -103,6 +105,7 @@ def _to_stored(mask: Mask) -> StoredMask:
         score=mask.score,
         prompt=mask.prompt,
         producer=mask.producer.model_dump() if mask.producer else None,
+        phrases=mask.phrases,
         # 0/255 rather than 0/1: a boolean mask rendered as a PNG would be invisible.
         mask_png=encode_png(decoded.astype("uint8") * 255),
     )

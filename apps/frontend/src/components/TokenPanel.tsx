@@ -18,6 +18,7 @@ import {
   type LicenceNotice,
   type TokenStatus,
 } from '../api/settings';
+import { useT } from '../i18n';
 
 const TOKEN_HELP_URL = 'https://huggingface.co/settings/tokens';
 
@@ -30,21 +31,22 @@ function LicenceRow({
   readonly onAccept: (modelId: string) => void;
   readonly busy: boolean;
 }): JSX.Element {
+  const { t } = useT();
   return (
     <li className="tokenpanel__licence">
       <div className="tokenpanel__licence-head">
         <strong>{notice.model_id}</strong>
         <span className="tokenpanel__licence-name">{notice.licence}</span>
         {notice.requires_access_request ? (
-          <span className="tokenpanel__badge" title="A person at Meta approves this by hand">
-            manual approval
+          <span className="tokenpanel__badge" title={t('admin.token.manualTitle')}>
+            {t('admin.token.manual')}
           </span>
         ) : null}
       </div>
       <p className="tokenpanel__explain">{notice.explanation}</p>
       <div className="tokenpanel__licence-actions">
         <a href={notice.licence_url} target="_blank" rel="noreferrer noopener">
-          Open the model page
+          {t('admin.token.openPage')}
         </a>
         <label className="tokenpanel__ack">
           <input
@@ -53,7 +55,7 @@ function LicenceRow({
             disabled={notice.accepted || busy}
             onChange={() => onAccept(notice.model_id)}
           />
-          I have read the {notice.licence}
+          {t('admin.token.haveRead', { licence: notice.licence })}
         </label>
       </div>
     </li>
@@ -69,6 +71,7 @@ export function TokenPanel(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const { t } = useT();
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
     const [nextStatus, nextNotices] = await Promise.all([
@@ -95,7 +98,7 @@ export function TokenPanel(): JSX.Element {
       await refresh();
       setDraft('');
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Could not save the token.');
+      setError(caught instanceof Error ? caught.message : t('admin.token.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -108,22 +111,19 @@ export function TokenPanel(): JSX.Element {
 
   return (
     <section className="tokenpanel">
-      <h3 className="tokenpanel__title">HuggingFace access</h3>
+      <h3 className="tokenpanel__title">{t('admin.token.title')}</h3>
 
       <p className="tokenpanel__intro">
-        Some models are gated by their publisher. DinoTraining never downloads them for you
-        and never ships a token — you provide your own, and you start every download
-        yourself. Everything needed for the open models, including{' '}
-        <strong>Grounded SAM</strong> for segmentation masks, works without any of this.
+        {t('admin.token.introBefore')} <strong>Grounded SAM</strong> {t('admin.token.introAfter')}
       </p>
 
       <label className="tokenpanel__field">
-        <span>Your HuggingFace access token</span>
+        <span>{t('admin.token.field')}</span>
         <input
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder={status?.configured ? (status.hint ?? 'Configured') : 'hf_…'}
+          placeholder={status?.configured ? (status.hint ?? t('admin.token.configured')) : 'hf_…'}
           value={draft}
           disabled={busy}
           onChange={(event) => {
@@ -134,12 +134,15 @@ export function TokenPanel(): JSX.Element {
       </label>
 
       <p className="tokenpanel__hint">
-        A <em>read</em> token is enough. Create one at{' '}
+        {t('admin.token.hintBefore')}
+        <em>{t('admin.token.hintEm')}</em>
+        {t('admin.token.hintMiddle')}
         <a href={TOKEN_HELP_URL} target="_blank" rel="noreferrer noopener">
           {TOKEN_HELP_URL}
         </a>
-        . It is stored in <code>{status?.env_file ?? '.env'}</code>, readable only by you,
-        and never leaves this machine.
+        {t('admin.token.hintStored')}
+        <code>{status?.env_file ?? '.env'}</code>
+        {t('admin.token.hintAfter')}
       </p>
 
       <div className="tokenpanel__actions">
@@ -149,26 +152,26 @@ export function TokenPanel(): JSX.Element {
           disabled={busy || draft.trim().length === 0}
           onClick={onSave}
         >
-          {busy ? 'Saving…' : 'Save token'}
+          {busy ? t('admin.token.saving') : t('admin.token.save')}
         </button>
         {status?.configured ? (
           <button type="button" className="btn" disabled={busy} onClick={() => void run(clearToken)}>
-            Remove
+            {t('admin.token.remove')}
           </button>
         ) : null}
         <span className="tokenpanel__state">
           {status?.configured
-            ? `Configured (${status.hint ?? 'stored'})`
-            : 'Not set — gated models stay unavailable'}
+            ? t('admin.token.stateConfigured', { hint: status.hint ?? t('admin.token.stored') })
+            : t('admin.token.stateUnset')}
         </span>
       </div>
 
-      {saved ? <p className="tokenpanel__ok">Token saved. Gated models are now offered.</p> : null}
+      {saved ? <p className="tokenpanel__ok">{t('admin.token.saved')}</p> : null}
       {error ? <p className="tokenpanel__error">{error}</p> : null}
 
       {notices.length > 0 ? (
         <>
-          <h4 className="tokenpanel__subtitle">Models that need something from you</h4>
+          <h4 className="tokenpanel__subtitle">{t('admin.token.needs')}</h4>
           <ul className="tokenpanel__licences">
             {notices.map((notice) => (
               <LicenceRow

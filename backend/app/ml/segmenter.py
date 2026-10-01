@@ -208,6 +208,35 @@ def segment_boxes(
     return masks.astype(bool), scores
 
 
+def segment_refined(
+    segmenter: Segmenter,
+    image: Image.Image,
+    box: PromptBox,
+    points: list[tuple[float, float, bool]],
+) -> tuple[npt.NDArray[np.bool_], float]:
+    """One outline from a box plus clicked points (doc 106): ⊕ include, ⊖ exclude.
+
+    Measured against the real checkpoint: the nesting is image → object → point, so one
+    object's points go in `[[points]]` beside its `[[box]]`. A box over two discs with ⊕ on
+    one and ⊖ on the other left 21 px of the second (from 5 128).
+    """
+    import torch
+
+    kwargs: dict[str, Any] = {"images": image, "input_boxes": [[list(box)]], "return_tensors": "pt"}
+    if points:
+        kwargs["input_points"] = [[[[x, y] for x, y, _ in points]]]
+        kwargs["input_labels"] = [[[1 if positive else 0 for _, _, positive in points]]]
+    inputs = segmenter.processor(**kwargs).to(segmenter.device)
+    with torch.no_grad():
+        outputs = segmenter.model(**inputs, multimask_output=False)
+    post = segmenter.processor.post_process_masks(outputs.pred_masks, inputs["original_sizes"])[0]
+    masks = _to_numpy(post)
+    while masks.ndim > 2:
+        masks = masks[0]
+    score = float(_to_numpy(outputs.iou_scores).reshape(-1)[0])
+    return masks.astype(bool), score
+
+
 def _to_numpy(tensor: Any) -> npt.NDArray[Any]:
     """The one device→host conversion.
 

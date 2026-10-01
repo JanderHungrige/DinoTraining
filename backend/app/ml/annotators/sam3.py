@@ -29,6 +29,7 @@ from PIL import Image
 from app.datasets.rle import rle_bbox, rle_encode
 from app.ml.annotators.base import MaskProposal
 from app.ml.annotators.registry import SAM3
+from app.ml.concepts import prompt_terms
 from app.ml.segmenter import Segmenter, _to_numpy, load_segmenter
 
 logger = logging.getLogger(__name__)
@@ -53,12 +54,13 @@ class Sam3Annotator:
         self, image: Image.Image, concept: str, *, threshold: float = DEFAULT_THRESHOLD
     ) -> list[MaskProposal]:
         segmenter = load_segmenter(self._model_id)
-        instances = segment_concept(segmenter, image, concept, threshold)
-
-        proposals = _to_proposals(instances, concept)
-        logger.info(
-            "SAM 3 proposed %d mask(s) for %r", len(proposals), concept
-        )
+        # SAM 3 reads one concept per pass: "flame, reflection" is two passes, each
+        # labelling its own masks. An empty prompt still reaches segment_concept's refusal.
+        proposals: list[MaskProposal] = []
+        for term in prompt_terms(concept) or [concept]:
+            instances = segment_concept(segmenter, image, term, threshold)
+            proposals += _to_proposals(instances, term)
+        logger.info("SAM 3 proposed %d mask(s) for %r", len(proposals), concept)
         return proposals
 
 
@@ -77,9 +79,7 @@ def segment_concept(
         # Prompting SAM 3 with an empty concept asks it to segment nothing in particular.
         raise ValueError("A concept is required — SAM 3 is prompted by text.")
 
-    inputs = segmenter.processor(images=image, text=text, return_tensors="pt").to(
-        segmenter.device
-    )
+    inputs = segmenter.processor(images=image, text=text, return_tensors="pt").to(segmenter.device)
     with torch.no_grad():
         outputs = segmenter.model(**inputs)
 

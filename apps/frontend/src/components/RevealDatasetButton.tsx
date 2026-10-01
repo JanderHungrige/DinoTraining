@@ -5,7 +5,7 @@
  * over files the user still owns, and at some point they want the files — to back them up,
  * to add more, or to check that the thing they picked is the thing they meant.
  *
- * **Tauri only.** In the browser dev mode and in Wave 13 there is no file manager to open,
+ * **Tauri only.** In the browser dev mode and in Wave 16 there is no file manager to open,
  * so the button is simply absent — the same rule the folder pickers follow.
  *
  * The folder comes from the backend rather than being derived from the dataset id, because
@@ -17,6 +17,7 @@
 import { useEffect, useState, type JSX } from 'react';
 
 import { getDatasetFolder } from '../api/datasets';
+import { useT } from '../i18n';
 import { hasNativeDialog, revealFolder } from '../lib/dialog';
 
 export interface RevealDatasetButtonProps {
@@ -30,6 +31,7 @@ export function RevealDatasetButton({
 }: RevealDatasetButtonProps): JSX.Element | null {
   // Read in an effect, not at module scope: it asks whether Tauri injected its globals,
   // and on the first render it has not.
+  const { t } = useT();
   const [available, setAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -54,12 +56,12 @@ export function RevealDatasetButton({
       if (!target.exists) {
         // The store still has the boxes; the pictures have been moved or deleted. Saying
         // which is the difference between a broken button and a moved folder.
-        setError(`That folder is gone: ${target.folder}`);
+        setError(t('studio.reveal.gone', { folder: target.folder }));
         return;
       }
       await revealFolder(target.folder);
     } catch {
-      setError('Could not open that folder.');
+      setError(t('studio.reveal.error'));
     } finally {
       setBusy(false);
     }
@@ -71,10 +73,10 @@ export function RevealDatasetButton({
         type="button"
         className="btn btn--small"
         disabled={disabled || busy}
-        title="Show this dataset's images in the file manager"
+        title={t('studio.reveal.title')}
         onClick={() => void reveal()}
       >
-        {busy ? 'Opening…' : 'Open folder'}
+        {t(busy ? 'studio.reveal.opening' : 'studio.reveal.open')}
       </button>
       {error && (
         <span className="reveal__error" role="alert">

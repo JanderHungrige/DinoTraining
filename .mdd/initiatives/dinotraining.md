@@ -2,8 +2,8 @@
 id: dinotraining
 title: DinoTraining
 status: active
-version: 10
-hash: 120c5dcb
+version: 15
+hash: 41a889c9
 created: 2026-08-14
 ---
 
@@ -121,7 +121,7 @@ as a swappable job runner so hyperscaler GPUs can be added later.
       — Wave 4 is dataset-generator only. Video is unassigned and tracked in
       `.mdd/BACKLOG.md` until a wave claims it.
 - [ ] Code-signing / notarization for macOS + Windows installers (Wave 8).
-- [ ] Which hyperscaler(s) to support first for the website (Wave 13).
+- [ ] Which hyperscaler(s) to support first for the website (Wave 16).
 
 ## Waves
 
@@ -135,6 +135,12 @@ and cheaper.
 wave moved 9 → 10. The cost above was paid once more — 40 references in docs and source
 comments, retargeted mechanically and checked with a grep that came back empty.
 
+**Wave 13 was inserted on 2026-09-30 by renumbering**, again at Jan's request: annotating
+for fine-tuning (phrases, hard negatives, mask editing), every training parameter explained,
+default recipes and a language switch come before the website. At Jan's request that plan
+became **three waves** — 13 training knobs and default recipes, 14 annotating for the model,
+15 English/German last — and the website moved 13 → 16 (29 files, grep clean).
+
 
 | Wave | File | Demo-state | Status |
 |------|------|------------|--------|
@@ -147,8 +153,14 @@ comments, retargeted mechanically and checked with a grep that came back empty.
 | Wave 7 | waves/dinotraining-wave-7.md | Someone who has never seen the app opens an Intro tab, understands what a frozen backbone and a head are and why the stages run in that order, writes a Grounding DINO prompt for one label type and for several, and adds images by dragging them onto the window. | complete |
 | Wave 7.5 | waves/dinotraining-wave-7-5.md | The user downloads RF-DETR and gets useful boxes on any image with no training at all — in the Inference Viewer, the Annotation Studio and the Dataset Generator — then fine-tunes it on their own dataset and saves it as a named model beside their trained heads. | complete |
 | Wave 8 | waves/dinotraining-wave-8.md | A new user installs a signed macOS/Windows/Linux installer; on first run it downloads required weights via the admin tab and the full annotate→train→infer loop works. | complete |
-| Wave 9 | waves/dinotraining-wave-9.md | In the Dataset Generator the user picks a video, presses Play and watches it propose and save frame by frame, stopping only on predictions inside their 'unclear' score band. They then open the dataset in 'Inspect datasets', play it back with coloured per-class bars under it, and jump to a class's first annotation. Every entry they typed survives a tab switch or restart. | in_progress |
-| Wave 10 | waves/dinotraining-wave-10.md | The app opens over a seamlessly looping particle background, every button has NinaNatur's hand-drawn outline, all text is Lato, and it stays legible and calm under reduced motion — in the packaged app. | planned |
-| Wave 11 | waves/dinotraining-wave-11.md | A user without data-science background imports external data; the app audits it in plain language, fixes what is safe, splits it without leakage, shows what the model will see, handles class imbalance, and saves a reproducible recipe that training consumes — the same over MCP. | planned |
-| Wave 12 | waves/dinotraining-wave-12.md | SAM 2, SAM 3 and DINOv3 fine-tune on the user's own data, each with a requirements card (UI and MCP) and a preflight that says exactly what the data must look like; held-out metrics show the gain over the base model. | planned |
-| Wave 13 | waves/dinotraining-wave-13.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |
+| Wave 9 | waves/dinotraining-wave-9.md | In the Dataset Generator the user picks a video, presses Play and watches it propose and save frame by frame, stopping only on predictions inside their 'unclear' score band. They then open the dataset in 'Inspect datasets', play it back with coloured per-class bars under it, and jump to a class's first annotation. Every entry they typed survives a tab switch or restart. | complete |
+| Wave 10 | waves/dinotraining-wave-10.md | The app opens over a seamlessly looping particle background, every button has NinaNatur's hand-drawn outline, all text is Lato, and it stays legible and calm under reduced motion — in the packaged app. | complete |
+| Wave 11 | waves/dinotraining-wave-11.md | A user without data-science background imports external data; the app audits it in plain language, fixes what is safe, splits it without leakage, shows what the model will see, handles class imbalance, and saves a reproducible recipe that training consumes — the same over MCP. | complete |
+| Wave 12 | waves/dinotraining-wave-12.md | SAM 2, SAM 3 and DINOv3 fine-tune on the user's own data, each with a requirements card (UI and MCP) and a preflight that says exactly what the data must look like; held-out metrics show the gain over the base model. | complete |
+| Wave 13 | waves/dinotraining-wave-13.md | Every model's training parameters are shown as 'Plain name (technical term)' with a ? explanation and default, Basic/Advanced with reset; a user without a recipe learns what it is and creates the default one in one click — the same over MCP. | in_progress |
+| Wave 14 | waves/dinotraining-wave-14.md | The user annotates for a chosen model: phrases with comma-separated variations, per-picture phrase status, click-refined masks; Prepare data checks it per task and the recipe carries prompts and hard negatives that SAM 3 trains on. | in_progress |
+| Wave 15 | waves/dinotraining-wave-15.md | The whole app, including the backend's plain-language texts, switches between English and German; a missing German text fails the build. | in_progress |
+| Wave 15.5 | waves/dinotraining-wave-15-5.md | Annotating the normal way: saved means complete, umbrella terms over several classes (screw for m8 and m9), a question when a class is added later, and an add-only review of earlier pictures. | in_progress |
+| Wave 15.6 | waves/dinotraining-wave-15-6.md | MLOps: a model card for every trained model, an export bundle (weights, card, runnable example, ONNX where possible), and MLflow tracking and registry, including models trained before. | in_progress |
+| Wave 15.7 | waves/dinotraining-wave-15-7.md | Installer: bundled Python and uv instead of PyInstaller; PyTorch from pytorch.org with the accelerator chosen at first start (CUDA / MPS / CPU), switchable later, updates that fetch only changes; CI installs and starts it on all three platforms. | planned |
+| Wave 16 | waves/dinotraining-wave-16.md | The app runs as a website; a user connects a cloud GPU for training and cloud object storage for datasets/models. | planned |

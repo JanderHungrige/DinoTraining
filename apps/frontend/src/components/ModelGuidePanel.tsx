@@ -13,10 +13,13 @@
 
 import { useState, type JSX } from 'react';
 
-import { MODEL_GUIDE, MODEL_GUIDE_LEAD } from '../tabs/introContent';
+import { useT } from '../i18n';
+import { modelGuide, modelGuideLead } from '../tabs/introContent';
 
 export function ModelGuidePanel(): JSX.Element {
   const [open, setOpen] = useState(false);
+  const translator = useT();
+  const { t } = translator;
 
   return (
     <div className="guide">
@@ -26,22 +29,22 @@ export function ModelGuidePanel(): JSX.Element {
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        {open ? '▾' : '▸'} Which model should I use?
+        {open ? '▾' : '▸'} {t('admin.guide.toggle')}
       </button>
 
       {open && (
         <div className="guide__body">
-          <p className="intro__note">{MODEL_GUIDE_LEAD}</p>
+          <p className="intro__note">{modelGuideLead(translator)}</p>
 
           <ul className="guide__list">
-            {MODEL_GUIDE.map((entry) => (
+            {modelGuide(translator).map((entry) => (
               <li key={entry.name} className="guide__entry">
                 <h4 className="guide__name">{entry.name}</h4>
                 <p className="guide__best">{entry.bestFor}</p>
 
                 <div className="guide__cols">
                   <div>
-                    <h5 className="guide__colhead">Good at</h5>
+                    <h5 className="guide__colhead">{t('admin.guide.goodAt')}</h5>
                     <ul className="guide__points">
                       {entry.strengths.map((point) => (
                         <li key={point}>{point}</li>
@@ -49,7 +52,7 @@ export function ModelGuidePanel(): JSX.Element {
                     </ul>
                   </div>
                   <div>
-                    <h5 className="guide__colhead">Watch out for</h5>
+                    <h5 className="guide__colhead">{t('admin.guide.watchOut')}</h5>
                     <ul className="guide__points">
                       {entry.weaknesses.map((point) => (
                         <li key={point}>{point}</li>
@@ -62,7 +65,7 @@ export function ModelGuidePanel(): JSX.Element {
                     numbers are what settle it, and they were all measured in this app. */}
                 {entry.measured && (
                   <p className="guide__measured">
-                    <strong>Measured here:</strong> {entry.measured}
+                    <strong>{t('admin.guide.measured')}</strong> {entry.measured}
                   </p>
                 )}
               </li>

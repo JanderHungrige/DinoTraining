@@ -4,18 +4,237 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 12 build**. Waves 1–8 and docs
-60–68 are in `dev` and `main`. **Wave 9** (docs 69–75) is in `dev` (`076f56a`) and waits
-for Jan's test before `main`. Three waves are built and pushed, each on its own branch, and
-none is merged:
-- **Wave 10** (Look & Feel, docs 76–80) on `feat/dinotraining-wave-10`;
-- **Wave 11** (Guided Data Preparation, docs 81–91) on `feat/dinotraining-wave-11`;
-- **Wave 12** (Fine-Tuning, docs 92–98) on `feat/dinotraining-wave-12`, which branches from
-  Wave 11.
+**Last updated:** 2026-10-01, at the end of the **Wave 15.7 build**.
+- **Waves 1–12:** in `dev` and `main`.
+- **Waves 13, 14, 15, 15.5 and 15.6** (docs 99–124): in `dev`, waiting for Jan's test.
+- **Wave 15.7** (docs 125–131, the installer): built and pushed on
+  `feat/dinotraining-wave-15-7`, not merged. Its status stays `in_progress` until Jan
+  confirms the demo-state.
 
-The website is Wave 13.
+**Merged to `dev`:** 15.7 (`0057336`) and its follow-ups (`c1bb670`): doc 132 (Windows
+uninstall), doc 133 (download site), Inspect after Start here.
+
+**Next, Jan's:**
+- test on the Windows PC with an NVIDIA card;
+- a version bump (e.g. 0.1.0) and the merge to `main` → the first published release,
+  the download buttons and the Mac line on https://dino.w3rth.de start working;
+- `dino.questenterprise.de`: DNS → 159.195.148.193, NPM proxy host 19 → port 8003
+  (it says 8001), and its certificate;
+- the Homebrew tap (`JanderHungrige/homebrew-tap`).
+Then Wave 16, the website with accounts and compute, to be rethought.
 
 ---
+
+## Wave 15.7 — The installer: bundled uv, PyTorch from the source (2026-10-01)
+
+Jan: "PyTorch und CUDA können doch so gezogen werden", no paid signing, the Mac stays a
+Tauri app, offered via Homebrew.
+
+| | |
+|---|---|
+| 125 | **Lock:** one hashed `uv.lock`; extras `cpu` / `cu126` / `cu130` from pytorch.org (Mac: PyPI with MPS); three platforms; Python 3.12. CI (`lock-check.yml`) installs from it and runs the backend suite on macOS, Windows, Linux. |
+| 126 | **Bundled runtime:** the app carries uv (checksum-verified) and the backend source; PyInstaller is gone. **46 MB app, 24 MB Mac download** (was 298 MB). |
+| 127 | **First-run setup:** machine detected (Apple Silicon/MPS, NVIDIA + driver → cu130/cu126/cpu, Intel Mac refused), disk and connection checked, progress by MB, **Dino Run** and tips while it installs. `DINO_SETUP_AUTO=cpu` installs unattended; the screen's steps go to the app log. |
+| 128 | **CPU ⇄ GPU** in Admin: builds the other variant while the backend runs, swaps, and points back if it does not start. |
+| 129 | **Updates:** each sync builds `runtime/envs/<id>`; `current` names the active one. A new lock updates by itself; a failed update leaves the old one and offers "Start with the previous packages". |
+| 130 | **Mac:** `scripts/install-mac.sh` (no admin, no Gatekeeper warning), Homebrew formula rendered per release, "Add to Applications" for Homebrew installs, README. |
+| 132 | **Uninstall (Windows):** removes Python/PyTorch (needed `rd \\?\` beyond MAX_PATH), keeps the user's data unless ticked; runtime moved out of the roaming profile. CI-verified. |
+| 133 | **Download site:** https://dino.w3rth.de, from `main` (dev until then) by jan's cron every 10 min, own container on 172.17.0.1:8002/8003; a merge to main with a new version publishes the release. |
+| 131 | **Smoke test** in the release workflow: silent install, unattended first start, `/health`, PyTorch in the installed env, second start without setup — on all three platforms. |
+
+- **Proof, live on the M1:**
+  - first start into an empty folder: installed and healthy in 52–60 s; second start 3–5 s;
+  - a simulated app update: 68 packages from uv's cache in 0.4 s, old env removed; a
+    broken update left the old env current and intact;
+  - the script-installed app, started through LaunchServices: no Gatekeeper, no quarantine;
+  - the smoke script against the real installed app: torch 2.13, torchvision, onnxruntime.
+- **Proof, CI (release dry run 36786933587, nothing published): all three installers
+  installed, set up and started, green on the first run.** Windows 18 MB (was 172),
+  Linux 26 MB (was 361), Mac 23 MB (was 298); first start 28–54 s, second 6–36 s. The
+  first time the Windows app was ever installed and started.
+- **Found live and fixed:**
+  - a hidden window's webview pauses its timers, so the setup screen must not poll;
+  - started through a symlink (Homebrew's `opt`), the release app silently ran the repo's
+    dev venv; resources now come from the resolved path, and release builds never fall back;
+  - the installed env had no `onnxruntime` (the ONNX export); the `export` extra is
+    installed with every variant;
+  - tile names used `\` on Windows; the metrics stream could drop the last epochs; three
+    tests assumed this Mac; two frontend tests waited exactly as long as their component.
+- **Not verified here, and why:**
+  - the CUDA path and the CPU ⇄ GPU switch need an NVIDIA machine;
+  - the Homebrew install: this Mac's Command Line Tools are outdated (sudo needed);
+  - the setup screen's final switch to the app and the Add button: no permission to see
+    or click the packaged window (both unit-tested; everything before was live).
+
+---
+
+## Wave 15.6 — MLOps: model cards, export, ONNX, MLflow (2026-09-30)
+
+Jan: "Trained models should be exportable … and an interface for MLOps tools, e.g.
+MLflow" — before the website.
+
+| | |
+|---|---|
+| 120 | **Model card:** base, head and module, classes in order, the exact preprocessing, decode, metrics, datasets and recipe, per-epoch history (persisted from now on), weights with SHA-256. `GET /cards/{kind}/{id}`; MCP `get_model_card`. |
+| 121 | **Export zip:** card, weights, `dino_runtime.py` assembled from the app's own source (parity-tested per head type), `predict.py`, pinned requirements, README. Library: Export and Show where it is. |
+| 122 | **ONNX:** backbone and head as one graph, dynamic batch, parity checked at export (refused above 1e-3). An optional `[export]` extra. |
+| 123 | **MLflow tracking** over REST (checked against a real MLflow 3): a run per training with params, tags, per-epoch metrics, card and bundle, and a registry version. Never at training's cost. Admin → Connection → MLflow. |
+| 124 | **Backfill:** "Send existing models to MLflow", each model once. |
+
+- **Proof, live:**
+  - A real DINOv2 detector head was exported and run outside the app: the same 12 boxes
+    as `/inference`, 0.0 px apart.
+  - Its ONNX file matched PyTorch within 4.4e-5 px.
+  - A 3-epoch head appeared in MLflow with curves, artifacts and version 1.
+  - The real library was backfilled: 25 of 30 sent, a second press sent 0.
+- **Found live and fixed:**
+  - MLflow refuses ':' in model names.
+  - A failed registration left the run RUNNING.
+  - The MLflow docs give the wrong registry path.
+  - A SAM card claimed "backbone not installed".
+- **Clean-up:** the two test heads were deleted, MLflow was disconnected in `.env`, and the
+  scratch MLflow server was stopped.
+- **To try it:** `pip install mlflow`, then `mlflow server --port 5001` (on macOS the
+  system holds port 5000), then enter `http://127.0.0.1:5001` under Connection → MLflow.
+
+---
+
+## Wave 15.5 — Annotating the normal way (2026-09-30)
+
+From Jan's test of the phrase bar: "when annotating, all objects are marked"; classes
+m8 and m9 with "screw" over both.
+
+| | |
+|---|---|
+| 115 | **Umbrella terms:** a phrase over several classes (`phrase_classes`). SAM 3 asks "screw" with all m8 and m9 outlines, never a negative where a member is present, and skips it where a member is unknown. The API, MCP and recipe carry it; the job note names it. |
+| 116 | **Slim phrase bar:** chips, "+ Umbrella term", Manage phrases (variations and look-alikes per class, umbrellas, older sub-phrases), and the help rewritten. The checks are folded for imports, and their keys work only while open. No class is created there. |
+| 117 | **Saved means complete:** a picture is known for a class when it was saved after the class existed (`annotated_at >= since`), or when it was checked by hand. This replaces doc 108's checked mode. `/completeness`; the audit finding `saved-before-class`; the Studio stores its prompt's terms as classes. |
+| 118 | **New-class question:** a banner for each class with pictures saved before it. "It does not occur there" marks them absent; "Review them later" keeps a reminder. MCP: `get_completeness`, `mark_absent_in_older_pictures`. |
+| 119 | **Add-only review:** `CanvasBox.saved`; a re-run keeps saved and hand-drawn annotations and adds no duplicates. "Review for X" filters to the unknown pictures and proposes only X. "No X here →" marks the picture absent. |
+
+- **Demo run** (SAM 3, 1 epoch): mIoU 0.217 → 0.450. The notes name the umbrella and the
+  70 pictures left out for the class added later.
+- **Found:** a filter that started on the picture already shown hung on "Loading image…".
+  The prescan filter had it too. It is fixed, with a regression test.
+- **Test data:** "Wave 12 filled-ring convention" is unchanged. The test umbrella, the
+  class, the checks and the run's model were all deleted.
+
+---
+
+## Wave 15 — English and German (2026-09-30)
+
+| | |
+|---|---|
+| 111 | **Framework:** typed catalogues (`src/i18n/en|de/<ns>.ts`); a missing German key is a compile error. `useT()` with `t`/`tp` (plurals via Intl.PluralRules). A language switch in the header, stored as `language`. The API client sends `Accept-Language`. |
+| 112 | **Frontend:** about 1 070 keys in 9 namespaces, with a German smoke test per namespace. Hand-written plurals became real ones. |
+| 113 | **Backend:** the English stays in the code. An ASGI middleware translates the text fields of `/api/v1` JSON answers for `Accept-Language: de`, using 475 templates. Tests check all 20 audit rules and the four static endpoints; MCP stays English. |
+| 114 | **German:** `GLOSSARY.md`, informal "du", one word per concept. |
+
+**Known gaps (doc 113):**
+- An audit stored before a rule's wording changed keeps those sentences in English until it
+  is re-run.
+- Still English: training and video job messages, model and head descriptions, rarer 422
+  details, unhandled 500s.
+- The model-input examples and the copied AI guide stay English on purpose.
+
+**For Jan:** review the glossary choices listed in doc 114.
+
+**From Jan's test (2026-09-30, same branch):**
+- **Technical terms in German are English now** (doc 114, amended).
+- **A comma separates search terms** for Grounding DINO and SAM 3, with one term per box
+  (doc 105).
+- **The Studio:** "← Back to overview", and the session survives other tabs (doc 105).
+- **Phrases:**
+  - a "belongs to" class choice;
+  - look-alikes explained;
+  - Delete;
+  - no look-alike negative beside a rejected outline (doc 108).
+
+---
+
+## Wave 14 — Annotate for the model (2026-09-30)
+
+| | |
+|---|---|
+| 103 | **Phrases:** text, class, variants (stored once, expanded at training), look-alikes; outlines linked to phrases; a check per picture and phrase (all marked / not in this picture). Class names are implicit phrases, so there is no migration. |
+| 104 | **"What will this dataset train?"** A matrix of targets × layers (required / recommended / optional, each with why) for the Studio and MCP, and a checklist per picture. |
+| 105 | **Phrase bar:** chips with counts, keys 1–9, comma variations, the selected outline's phrases, picture checks (A / N), Manage phrases, and "How phrases work". |
+| 106 | **Outline editing:** ⊕/⊖ SAM 2 clicks, a brush and an eraser (server-side, exact), undo, Outlines from my boxes. |
+| 107 | **Audit per task:** classifier pictures with two classes; outlines in pieces or twice; SAM 3 thin phrases, unchecked pictures, no variations, no negatives. Unused Prepare steps are marked. |
+| 108 | **SAM 3 training:** checked pairs only (legacy datasets unchanged), variations, and negatives (cross, generic `num_negatives`, look-alikes, rejected); the job notes its queries. SAM 2 learns clicks. |
+| 109 | **Quality:** a guideline per dataset, a second look with a change rate, frame consistency, and *unclear* is never a negative. |
+| 110 | **MCP:** six tools, and guide section 2d. |
+
+**Measured:**
+- **SAM 2 with click prompts:** 0.804 → **0.955** in one round (Wave 12's box-only
+  training took six).
+- **SAM 3 fine-tuning improves a model for the first time:** one round at 1e-5 took
+  held-out mIoU from 0.434 to **0.603**.
+  - At the old default 1e-4 it fell below the base (0.193 on validation; 0.160 without
+    generic negatives), and nothing was saved.
+  - The SAM 3 default is now 1e-5.
+
+**Found and fixed:**
+- **Outline editing:** `CompositedMasks` did not redraw an outline edited in place.
+- **Wave 11:** the keep-source split stored no settings, so its recipe was refused (fixed
+  in Wave 13).
+- **Wave 13:** an MCP test left a prep job reading SQLite, and the suite segfaulted
+  intermittently.
+- **Settings:** two catalogue keys were missing after a failed text replacement. A test
+  now guards against that.
+
+**Gates:** backend 1784 (three clean runs), frontend 1032, tsc, ruff and mypy app.
+
+## Waiting on Jan — Wave 14
+
+1. **Studio, "What will this dataset train?" → SAM 3:**
+   - Read the panel.
+   - Add a phrase with variations; mark pictures with A / N.
+   - Select an outline and try ⊕ / ⊖, brush and undo.
+2. **Annotation guideline and Second look.**
+3. **Prepare data → Fine-tune SAM 3:** read the audit's phrase findings.
+4. **Merge:** if it holds, merge `feat/dinotraining-wave-14` → `dev`.
+
+## Wave 13 — Every training setting explained, default recipes (2026-09-30)
+
+| | |
+|---|---|
+| 99 | **Parameter catalogue.** One declaration per family (DINO head, RF-DETR, SAM 2.1, SAM 3, DINO backbone): plain name, term, help, default + why, range, basic/advanced. `GET /training/parameters[/{model}]`; fine-tune requests are resolved against it (unknown option or out of range → 422 naming it). Adapter constants became settings with unchanged defaults. |
+| 100 | **Parameter form.** "Rounds (epochs)" with a **?** (explanation, default, why; Esc returns focus), Advanced folded with a changed count, reset per field and all, recipe-set fields locked. Only overrides are state, per family. |
+| 101 | **Default recipes.** `POST /datasets/{id}/recipes/default` (a job): audit, the leak-free split (kept if made or imported), recommended balance and copies, "Default for <model>", idempotent. Profiles for every trainable model. The "What is a recipe?" card, with Create the default recipe and Open Prepare data. |
+| 102 | **Agents.** `get_training_parameters`, `create_default_recipe` (`get_job` kind `default-recipe`), `train_head` `parameters`, `start_finetune` `options` with per-model defaults; the guide updated. |
+
+**Found and fixed while building:**
+- **Head `batch_size` (16) was accepted and never read**: every head trained one picture
+  per step. It is now honest (gradient accumulation), with default 1, so no result moves.
+  `save_best_only` was never honoured either, and is left out of the catalogue.
+- **`keep-source` split stored no settings,** so a recipe refused a dataset that was split
+  (Wave 11).
+- **A cleared number field showed "NaN"** (NaN ≠ NaN in the draft sync).
+
+**Verified live:**
+- The ? popovers and Advanced settings for RF-DETR and the DINO head.
+- The default recipe on "Wave 11 intake check": the imported split was kept (16/3/1),
+  weighted loss, the indoor preset, and the preflight passed.
+- Open Prepare data landed at the dataset and model.
+- MCP returned the same catalogue, and the same recipe.
+
+**Gates:** backend 1725, frontend 995, ruff, `mypy app` and tsc all clean.
+
+**Not clean, and older than this wave:** `mypy app tests` stops on `head_testkit` being
+imported under two module names. With `--explicit-package-bases` it reports about 164 old
+typing errors in 40 test files. A background task chip was offered for it.
+
+## Waiting on Jan — Wave 13
+
+1. **Training → DINO head, and Fine-tune a model:**
+   - Open a **?**, and read whether the explanations make sense to a non-expert.
+   - Change a value, reset it, and open *Advanced settings*.
+2. **A dataset without a recipe:**
+   - Read the "What is a recipe?" card.
+   - Press **Create the default recipe**, and check that it is selected.
+   - Try **Open Prepare data**.
+3. **Merge:** if it holds, merge `feat/dinotraining-wave-13` → `dev`, and later → `main`.
 
 ## Wave 12 — Fine-tuning SAM 2, SAM 3 and DINO backbones (2026-09-30)
 

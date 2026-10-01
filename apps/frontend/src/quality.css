@@ -1,0 +1,41 @@
+/* Doc 109: guideline and second look. */
+
+.guideline {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  background: var(--bg-raised);
+}
+
+.guideline > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.guideline textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.guideline__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.guideline__actions,
+.secondlook {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+}
+
+.secondlook__on {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}

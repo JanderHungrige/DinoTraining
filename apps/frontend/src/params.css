@@ -1,0 +1,142 @@
+/* Doc 100: the training-parameter form. */
+
+.params {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+}
+
+.params__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 0.6rem 1.5rem;
+}
+
+.params__advanced > summary {
+  cursor: pointer;
+  color: var(--text-dim);
+  margin-bottom: 0.6rem;
+}
+
+.param-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.param-field__label {
+  flex: 1 1 100%;
+  font-size: 0.9rem;
+}
+
+.param-field__term {
+  color: var(--text-dim);
+}
+
+.param-field__input {
+  width: 8rem;
+}
+
+.param-field--changed .param-field__input,
+.param-field--changed select {
+  border-color: var(--accent);
+}
+
+.param-field__reset {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.param-field__note {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.param-field__problem {
+  flex: 1 1 100%;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+
+.param-help {
+  position: relative;
+  display: inline-flex;
+}
+
+.param-help__button {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.param-help__button[aria-expanded='true'],
+.param-help__button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.param-help__box {
+  position: absolute;
+  z-index: 20;
+  top: 1.7rem;
+  left: -0.5rem;
+  width: min(22rem, 80vw);
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 30%);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.param-help__default {
+  color: var(--text-dim);
+}
+
+
+/* Doc 101: "What is a recipe?" where none is chosen. */
+.recipe-explainer {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg-raised);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.recipe-explainer p {
+  margin: 0;
+}
+
+.recipe-explainer__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.recipe-explainer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}

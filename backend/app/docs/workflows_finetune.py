@@ -23,8 +23,14 @@ Relay `data_format` as it is. In short:
   them);
 - DINO backbones want one class per image, or outlines.
 
+**1b. Settings.** `GET /training/parameters/{finetune_id}` lists every setting the model
+honours, each with a plain name, the technical term, what it does, the default and why.
+Keep the defaults unless the user asks; they are what the results below were measured
+with. Say which values you changed.
+
 **2. Check the dataset before starting.** A recipe (section 2c) is required for SAM and
-DINO models.
+DINO models; with none yet, `POST /datasets/{id}/recipes/default {"model_id": "<finetune_id>"}`
+makes the model's default one.
 
 ```
 POST /finetune/check {"finetune_id": "sam2.1-hiera-small", "dataset_id": "...", "recipe_id": "..."}
@@ -37,12 +43,13 @@ Every failed rule comes with its `fix`. Do not start until `ready` is true.
 ```
 POST /finetune/jobs
 {"finetune_id": "sam2.1-hiera-small", "dataset_ids": ["..."], "name": "My SAM",
- "recipe_id": "...", "epochs": 6, "learning_rate": 0.0001}
+ "recipe_id": "..."}
 GET  /finetune/jobs/{job_id}             # poll until state != "running"
 ```
 
-For DINO backbones add `"options": {"unfreeze_blocks": 4}` and use a learning rate of
-0.001.
+Omitted `epochs` and `learning_rate` take the model's own defaults. Other settings go in
+`"options"`, e.g. `{"unfreeze_blocks": 4}` for a DINO backbone; an unknown key is a 422
+that names it.
 
 **4. Report both numbers.** A finished job has `baseline_metrics` (the model before) and
 `final_metrics` (after), on the same held-out pictures. **If no round beat the base
