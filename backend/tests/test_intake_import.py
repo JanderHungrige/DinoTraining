@@ -129,6 +129,8 @@ def test_the_api_detects_imports_in_the_background_and_profiles(tmp_path: Path) 
     profile = client.get(f"/api/v1/datasets/{dataset_id}/profile").json()
     assert profile["pictures"] == 3 and profile["classes"] == ["car", "person"]
     assert client.get("/api/v1/datasets/nope/profile").status_code == 404
+    listed = client.get("/api/v1/datasets/profiles").json()["profiles"]
+    assert [entry["dataset_id"] for entry in listed] == [dataset_id]
     assert client.get("/api/v1/datasets/import/jobs/nope").status_code == 404
 
 

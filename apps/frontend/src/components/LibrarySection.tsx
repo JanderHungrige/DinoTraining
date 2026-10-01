@@ -14,6 +14,8 @@ export interface Row {
   readonly name: string;
   readonly detail: string;
   readonly meta: string;
+  /** Doc 136: a dataset's description, under its parameters. */
+  readonly note?: string | null;
 }
 
 export interface SectionProps {
@@ -71,6 +73,7 @@ export function Section({
               />
               <span className="library__name">{row.name}</span>
               <span className="library__detail">{row.detail}</span>
+              {row.note && <span className="library__note">{row.note}</span>}
               <span className="library__meta">{row.meta}</span>
               {actions?.(row)}
               {/* Two clicks, not a browser confirm(): a modal cannot say *which* item it

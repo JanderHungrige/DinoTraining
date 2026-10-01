@@ -10,6 +10,10 @@ import { de, en } from './catalogue';
 /** Values that are the same in both languages on purpose: names, units, symbols. */
 export const SAME_IN_BOTH = new Set<string>([
   'English',
+  // Format names (doc 136).
+  'YOLO',
+  'Pascal VOC',
+  'OpenLABEL (OSDaR23)',
   // Technical terms stay English in German too (Jan, 2026-09-30).
   'Experiment',
   'Token',

@@ -23,7 +23,7 @@ def test_coco_splits_classes_types_and_the_picture_in_no_file(tmp_path: Path) ->
     assert detection.classes == ["person", "signal"]
     assert detection.annotation_types == ["boxes", "masks"]
     assert detection.convention == "xywh"
-    assert any("in no annotation file" in note for note in detection.notes)
+    assert detection.notes == ["uncovered"] and detection.uncovered == 1
 
 
 def test_yolo_names_from_data_yaml_and_polygons_as_masks(tmp_path: Path) -> None:

@@ -23,6 +23,9 @@ from app.ml.video.decode import looks_like_video
 from app.prep.intake import _evidence, decide
 
 Kind = Literal["images", "video", "coco", "yolo", "voc", "openlabel"]
+#: What the UI words (doc 111): pictures in no annotation file (`uncovered` says how
+#: many), boxes that fit no convention clearly, no annotations at all, video frames.
+Note = Literal["uncovered", "ambiguous-convention", "no-annotations", "video-frames"]
 
 
 class Detection(BaseModel):
@@ -41,7 +44,8 @@ class Detection(BaseModel):
     splits: list[str]
     #: COCO only: the box convention the numbers support (doc 82); None if ambiguous.
     convention: Convention | None = None
-    notes: list[str]
+    notes: list[Note]
+    uncovered: int = 0
 
 
 def scan(path: Path) -> tuple[Detection, list[Document], Listing | None]:
@@ -100,7 +104,10 @@ def _annotated_detection(
             covered.add((document.root / str(image["file_name"])).resolve())
             sizes[image["id"]] = (int(image.get("width") or 0), int(image.get("height") or 0))
         # Classes that are used: Roboflow exports declare an unused placeholder (doc 31).
-        names = {c.get("id"): normalise_class(str(c.get("name", ""))) for c in document.payload["categories"]}
+        names = {
+            c.get("id"): normalise_class(str(c.get("name", "")))
+            for c in document.payload["categories"]
+        }
         for annotation in document.payload["annotations"]:
             objects += 1
             classes.add(names.get(annotation.get("category_id"), ""))
@@ -112,15 +119,10 @@ def _annotated_detection(
             if annotation.get("segmentation"):
                 types.add("masks")
     uncovered = [p for p in listing.pictures if p.resolve() not in covered]
-    notes = []
-    if uncovered:
-        notes.append(
-            f"{len(uncovered)} picture(s) are in no annotation file: they are imported "
-            "without annotations."
-        )
+    notes: list[Note] = ["uncovered"] if uncovered else []
     convention = decide(_evidence(boxes)) if kind == "coco" else "xywh"
     if kind == "coco" and convention is None:
-        notes.append("The boxes fit neither [x, y, w, h] nor [x1, y1, x2, y2] clearly.")
+        notes.append("ambiguous-convention")
     return Detection(
         path=str(path),
         kind=kind,
@@ -135,6 +137,7 @@ def _annotated_detection(
         splits=sorted({d.split for d in documents if d.split}),
         convention=convention,
         notes=notes,
+        uncovered=len(uncovered),
     )
 
 
@@ -151,7 +154,7 @@ def _plain(path: Path, kind: Kind, listing: Listing) -> Detection:
         classes=[],
         annotation_types=[],
         splits=[],
-        notes=["No annotation files: the pictures are imported for annotating in the app."],
+        notes=["no-annotations"],
     )
 
 
@@ -168,5 +171,5 @@ def _video(path: Path, videos: list[Path], listing: Listing | None) -> Detection
         classes=[],
         annotation_types=[],
         splits=[],
-        notes=["Each video is imported as its frames, one sequence per video, not annotated."],
+        notes=["video-frames"],
     )

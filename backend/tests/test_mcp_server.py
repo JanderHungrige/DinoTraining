@@ -136,6 +136,10 @@ class TestTheToolContract:
             "get_job",
             "train_head",
             "import_coco_dataset",
+            # Doc 136: any folder or video.
+            "detect_dataset",
+            "import_dataset",
+            "get_dataset_profile",
             "create_dataset",
             "list_folder_images",
             "export_dataset",

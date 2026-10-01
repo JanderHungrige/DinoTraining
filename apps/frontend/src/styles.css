@@ -3633,3 +3633,89 @@ body {
   color: var(--bg);
   font-weight: 600;
 }
+
+/* --- Doc 136: importing a dataset --- */
+
+.dsimport {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+}
+
+.dsimport__title {
+  margin: 0 0 4px;
+}
+
+.dsimport__lead,
+.dsimport__note,
+.dsimport__classes {
+  margin: 0 0 10px;
+  color: var(--text-dim);
+}
+
+.dsimport__pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dsimport__found,
+.dsimport__done {
+  margin: 14px 0 0;
+}
+
+.dsimport__found p,
+.dsimport__done p {
+  margin: 0 0 6px;
+}
+
+.dsimport__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dsimport__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(560px, 100%);
+}
+
+.dsimport__check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.dsimport__error {
+  color: var(--danger);
+}
+
+.dsimport__progress {
+  margin-top: 12px;
+}
+
+.dsimport__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-dim) 25%, transparent);
+  overflow: hidden;
+}
+
+.dsimport__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease-out;
+}
+
+.library__note {
+  display: block;
+  color: var(--text-dim);
+  font-style: italic;
+}

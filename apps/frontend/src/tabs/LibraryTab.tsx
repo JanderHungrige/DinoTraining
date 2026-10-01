@@ -12,11 +12,28 @@
 import { useState, type JSX } from 'react';
 
 import { BULK, useLibrary, type LibraryKind, type LibraryTarget } from '../hooks/useLibrary';
+import { useDatasetProfiles } from '../hooks/useDatasetProfiles';
+import { annotationTypes } from '../components/DatasetImport';
+import type { DatasetProfile } from '../api/datasetImport';
+import type { Translator } from '../i18n';
 import { useT } from '../i18n';
 import { Section, type Row } from '../components/LibrarySection';
 import { ModelExportActions } from '../components/ModelExportActions';
 
 const ALL_KINDS: readonly LibraryKind[] = ['dataset', 'head', 'finetune'];
+
+/** Doc 136: "1 284 pictures · 1 102 annotated · 3 classes · boxes, masks · video". */
+function profileLine(profile: DatasetProfile, t: Translator['t'], tp: Translator['tp']): string {
+  return [
+    tp('models.import.pictures', profile.pictures),
+    tp('models.import.annotated', profile.annotated_pictures),
+    tp('models.import.classes', profile.classes.length),
+    annotationTypes(profile.annotation_types, t) || null,
+    t(`models.profile.media.${profile.media}`),
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+}
 
 interface LibraryTabProps {
   /** Doc 135: the Models & Datasets sub-tabs each show their part (default: all). */
@@ -48,15 +65,22 @@ export function LibraryTab({ kinds = ALL_KINDS, headed = true }: LibraryTabProps
     setConfirmingBulk(false);
   };
 
-  const datasetRows: Row[] = library.datasets.map((entry) => ({
-    id: entry.id,
-    name: entry.name,
-    detail: `${tp('admin.library.images', entry.counts.images)} · ${tp(
-      'admin.library.boxes',
-      entry.counts.positive + entry.counts.negative + entry.counts.unclear,
-    )}`,
-    meta: new Date(entry.created_at).toLocaleDateString(),
-  }));
+  const profiles = useDatasetProfiles(kinds.includes('dataset'), library.datasets.map((d) => d.id).join());
+  const datasetRows: Row[] = library.datasets.map((entry) => {
+    const profile = profiles.get(entry.id);
+    return {
+      id: entry.id,
+      name: entry.name,
+      detail: profile
+        ? profileLine(profile, t, tp)
+        : `${tp('admin.library.images', entry.counts.images)} · ${tp(
+            'admin.library.boxes',
+            entry.counts.positive + entry.counts.negative + entry.counts.unclear,
+          )}`,
+      meta: new Date(entry.created_at).toLocaleDateString(),
+      note: profile?.description ?? null,
+    };
+  });
 
   const headRows: Row[] = library.heads.map((entry) => ({
     id: entry.id,

@@ -96,6 +96,19 @@ async def import_job(job_id: str) -> ImportJobView:
     return _view(job)
 
 
+class ProfileList(BaseModel):
+    profiles: list[DatasetProfile]
+
+
+@router.get(
+    "/datasets/profiles",
+    response_model=ProfileList,
+    summary="Every dataset's parameters at once (the Datasets list)",
+)
+async def profiles() -> ProfileList:
+    return ProfileList(profiles=[dataset_profile(info.id) for info in DatasetStore().list_all()])
+
+
 @router.get(
     "/datasets/{dataset_id}/profile",
     response_model=DatasetProfile,

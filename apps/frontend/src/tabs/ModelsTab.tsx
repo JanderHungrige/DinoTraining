@@ -6,8 +6,9 @@
  * the OSDaR23 example to Datasets.
  */
 
-import { useState, type JSX } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
+import { DatasetImport } from '../components/DatasetImport';
 import { SubTabBar, type SubTab } from '../components/SubTabBar';
 import { useT } from '../i18n';
 import { readPersisted, writePersisted } from '../lib/persisted';
@@ -31,6 +32,9 @@ export function ModelsTab(): JSX.Element {
     setActive(next);
     writePersisted(REMEMBERED, next);
   };
+  // Doc 136: an import re-reads the list underneath it.
+  const [listVersion, setListVersion] = useState(0);
+  const imported = useCallback(() => setListVersion((n) => n + 1), []);
   const tabs: readonly SubTab<ModelsSubTab>[] = [
     { id: 'official', label: t('models.sub.official') },
     { id: 'datasets', label: t('models.sub.datasets') },
@@ -46,7 +50,8 @@ export function ModelsTab(): JSX.Element {
           <>
             <h2 className="library__title">{t('models.datasets.title')}</h2>
             <p className="library__lead">{t('models.datasets.lead')}</p>
-            <LibraryTab kinds={['dataset']} headed={false} />
+            <DatasetImport onImported={imported} />
+            <LibraryTab key={listVersion} kinds={['dataset']} headed={false} />
           </>
         )}
         {active === 'mine' && (
