@@ -18,6 +18,20 @@
       ],
       "cwd": "apps/frontend",
       "port": 1420
+    },
+    {
+      "name": "site-preview",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8090",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "/private/tmp/claude-501/-Users-jwh-Code-DinoTraining--claude-worktrees-repo-status-update-299fae/2bf6b7db-ee42-4a3c-a614-7d30a2621519/scratchpad/sitepreview"
+      ],
+      "port": 8090
     }
   ]
 }

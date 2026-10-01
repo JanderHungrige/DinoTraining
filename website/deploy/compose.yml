@@ -1,0 +1,14 @@
+# Doc 133: the download site. Only the host's docker bridge address, like every other
+# app on this server; Nginx Proxy Manager maps the two domains to these ports.
+services:
+  site:
+    image: nginx:alpine
+    container_name: dinotraining-site
+    restart: unless-stopped
+    ports:
+      - "172.17.0.1:8002:80"   # dino.w3rth.de
+      - "172.17.0.1:8003:80"   # dino.questenterprise.de
+    volumes:
+      - ${SITE_ROOT:-/home/jan/dinotraining-site}:/site:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    mem_limit: 64m

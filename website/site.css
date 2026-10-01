@@ -1,0 +1,263 @@
+/* Doc 133: the download page. Colours and surfaces from the app (styles.css, look.css). */
+
+:root {
+  --bg: #14161a;
+  --bg-raised: #1c1f26;
+  --border: #2b303a;
+  --text: #e7e9ee;
+  --text-dim: #b3bac6;
+  --accent: #4ade80;
+  --accent-ink: #0b1f12;
+  --surface: color-mix(in srgb, var(--bg-raised) 80%, transparent);
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.55;
+}
+
+a {
+  color: var(--accent);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- the moving background ------------------------------------------------------- */
+
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--bg) url('media/particles-poster.jpg') center / cover no-repeat;
+}
+
+.bg__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bg__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(10 11 14 / 0.55), rgb(10 11 14 / 0.7));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg__video {
+    display: none;
+  }
+}
+
+/* --- layout ---------------------------------------------------------------------- */
+
+.top,
+main,
+.foot {
+  position: relative;
+  z-index: 1;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 20px;
+}
+
+.top__name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.top__links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.lang {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.hero {
+  padding: 72px 0 40px;
+  max-width: 760px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 4.5vw, 3.1rem);
+  line-height: 1.15;
+  margin: 0 0 18px;
+}
+
+.hero__lead {
+  font-size: 1.15rem;
+  color: var(--text-dim);
+  margin: 0 0 18px;
+}
+
+.hero__version {
+  display: inline-block;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+/* --- download cards -------------------------------------------------------------- */
+
+.downloads {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 18px;
+}
+
+.card,
+.fact {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  backdrop-filter: blur(6px);
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.card__meta {
+  margin: 2px 0 16px;
+  color: var(--text-dim);
+}
+
+.card__step {
+  margin: 14px 0 6px;
+}
+
+.card__note {
+  margin: 14px 0 0;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+}
+
+.btn {
+  display: inline-block;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+}
+
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.cmd {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.35);
+}
+
+.cmd code {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  /* The whole command visible, broken anywhere: it is copied, not read word by word. */
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.cmd__copy {
+  font: inherit;
+  font-size: 0.9rem;
+  border: 0;
+  border-left: 1px solid var(--border);
+  background: var(--bg-raised);
+  color: var(--text);
+  padding: 0 14px;
+  cursor: pointer;
+}
+
+/* --- facts and footer ------------------------------------------------------------ */
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+  margin-top: 36px;
+}
+
+.fact h3 {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+}
+
+.fact p {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.more {
+  margin: 34px 0 0;
+  text-align: center;
+}
+
+.foot {
+  padding-top: 40px;
+  padding-bottom: 28px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding-top: 40px;
+  }
+}
