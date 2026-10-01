@@ -23,6 +23,8 @@ from app.core.config import Settings
 from app.core.paths import ensure_within
 from app.datasets.coco_import import ImportOptions, normalise_class, parse_split
 from app.datasets.db import transaction
+from app.datasets.exchange.layout import find_export
+from app.datasets.exchange.restore import restore
 from app.datasets.images import NEVER_SAVED, store_image_file
 from app.datasets.intake.details import set_details
 from app.datasets.intake.detect import Detection, scan
@@ -63,6 +65,8 @@ def run_import(
     settings: Settings | None = None,
 ) -> ImportResult:
     detection, documents, listing = scan(path)
+    if detection.kind == "dinotraining":
+        return _restore(path, name, description, progress, settings)
     store = DatasetStore(settings)
     dataset = store.create(
         name=name.strip() or detection.name, prompt=None, copy_images=copy_images
@@ -94,6 +98,34 @@ def run_import(
         store.delete(dataset.id)
         raise
     return result
+
+
+def _restore(
+    path: Path, name: str, description: str | None, progress: Progress, settings: Settings | None
+) -> ImportResult:
+    """Doc 142: an export of this app goes back whole, ids remapped, nothing re-detected."""
+    export = find_export(path.expanduser())
+    assert export is not None  # scan found it
+    progress(0, 1, export.name)
+    restored = restore(export, name, settings)
+    if description and description.strip():
+        with transaction(settings) as connection:
+            connection.execute(
+                "UPDATE datasets SET description = ? WHERE id = ?",
+                (description.strip(), restored.dataset_id),
+            )
+    progress(1, 1, export.name)
+    return ImportResult(
+        dataset_id=restored.dataset_id,
+        name=restored.name,
+        pictures=restored.pictures,
+        annotated_pictures=restored.annotated_pictures,
+        objects=restored.objects,
+        masks=restored.masks,
+        classes=restored.classes,
+        skipped_pictures=0,
+        skipped_objects=0,
+    )
 
 
 def _import_documents(

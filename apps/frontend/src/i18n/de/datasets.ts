@@ -15,6 +15,7 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.import.kind.yolo': 'YOLO',
   'models.import.kind.voc': 'Pascal VOC',
   'models.import.kind.openlabel': 'OpenLABEL (OSDaR23)',
+  'models.import.kind.dinotraining': 'ein DinoTraining-Export (wird vollständig wiederhergestellt)',
   'models.import.pictures_one': '{count} Bild',
   'models.import.pictures_other': '{count} Bilder',
   'models.import.annotated_one': '{count} annotiert',
@@ -44,6 +45,8 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.import.note.uncovered_other': '{count} Bilder stehen in keiner Annotationsdatei: Sie werden ohne Annotationen importiert, zum Annotieren in der App.',
   'models.import.note.ambiguous': 'Die Boxen passen weder klar zu [x, y, w, h] noch zu [x1, y1, x2, y2]. Prüf nach dem Import ein paar Bilder.',
   'models.import.note.noAnnotations': 'Keine Annotationsdateien: Die Bilder werden ohne Annotationen importiert, zum Annotieren in der App. Fürs Training zählen sie erst, wenn du sie im Studio speicherst.',
+  'models.import.note.exportPictures':
+    'Die Bilder dieses Exports wurden nicht gefunden: weder hineinkopiert, noch daneben, noch am alten Ort. Leg den Export wieder neben seine Bilder und prüf dann noch einmal.',
   'models.import.note.video': 'Jedes Video wird zu seinen Frames (gleichmäßig verteilt, bis 3 000 pro Video), eine Sequenz pro Video, ohne Annotationen.',
   'models.profile.type.boxes': 'Boxen',
   'models.profile.type.masks': 'Masks',

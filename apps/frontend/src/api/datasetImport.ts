@@ -2,7 +2,7 @@
 
 import { apiFetch } from './client';
 
-export type DetectedKind = 'images' | 'video' | 'coco' | 'yolo' | 'voc' | 'openlabel';
+export type DetectedKind = 'images' | 'video' | 'coco' | 'yolo' | 'voc' | 'openlabel' | 'dinotraining';
 
 export interface Detection {
   readonly path: string;
@@ -22,7 +22,13 @@ export interface Detection {
   readonly uncovered: number;
 }
 
-export type DetectionNote = 'uncovered' | 'ambiguous-convention' | 'no-annotations' | 'video-frames';
+export type DetectionNote =
+  | 'uncovered'
+  | 'ambiguous-convention'
+  | 'no-annotations'
+  | 'video-frames'
+  /** Doc 142: an export whose pictures are nowhere to be found. */
+  | 'export-pictures-missing';
 
 export interface ImportResult {
   readonly dataset_id: string;

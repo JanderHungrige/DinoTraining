@@ -17,6 +17,7 @@ const NOTE_KEYS: Readonly<Record<Exclude<DetectionNote, 'uncovered'>, Key>> = {
   'ambiguous-convention': 'models.import.note.ambiguous',
   'no-annotations': 'models.import.note.noAnnotations',
   'video-frames': 'models.import.note.video',
+  'export-pictures-missing': 'models.import.note.exportPictures',
 };
 
 /** "boxes, masks" in the reader's language. */
@@ -31,6 +32,7 @@ const KIND_KEYS: Readonly<Record<Detection['kind'], Key>> = {
   yolo: 'models.import.kind.yolo',
   voc: 'models.import.kind.voc',
   openlabel: 'models.import.kind.openlabel',
+  dinotraining: 'models.import.kind.dinotraining',
 };
 
 export function megabytes(bytes: number): string {
@@ -86,6 +88,8 @@ export function DatasetImport({ onImported }: { readonly onImported: () => void 
   useImportJob(job, setJob, onImported, (failure) => setError(message(failure)));
 
   const running = job?.state === 'running';
+  // Doc 142: an export whose pictures are nowhere would only be refused by the backend.
+  const picturesMissing = detection?.notes.includes('export-pictures-missing') ?? false;
   return (
     <section className="dsimport" aria-labelledby="dsimport-title">
       <h3 id="dsimport-title" className="dsimport__title">{t('models.import.title')}</h3>
@@ -118,11 +122,13 @@ export function DatasetImport({ onImported }: { readonly onImported: () => void 
             <textarea rows={2} value={description} placeholder={t('models.import.descriptionHint')}
               onChange={(event) => setDescription(event.target.value)} />
           </label>
-          <label className="dsimport__check">
-            <input type="checkbox" checked={copy} onChange={(event) => setCopy(event.target.checked)} />
-            {t('models.import.copy')}
-          </label>
-          <button type="button" className="btn btn--primary" disabled={!name.trim()} onClick={() => void start()}>
+          {detection.kind !== 'dinotraining' && (
+            <label className="dsimport__check">
+              <input type="checkbox" checked={copy} onChange={(event) => setCopy(event.target.checked)} />
+              {t('models.import.copy')}
+            </label>
+          )}
+          <button type="button" className="btn btn--primary" disabled={!name.trim() || picturesMissing} onClick={() => void start()}>
             {t('models.import.start')}
           </button>
         </div>

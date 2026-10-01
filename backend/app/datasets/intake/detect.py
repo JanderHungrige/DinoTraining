@@ -15,6 +15,8 @@ from pydantic import BaseModel
 
 from app.datasets.bbox_conventions import Convention
 from app.datasets.coco_import import normalise_class
+from app.datasets.exchange.layout import find_export
+from app.datasets.exchange.restore import load, pictures_dir
 from app.datasets.intake.documents import (
     Document,
     camera_pictures,
@@ -27,10 +29,17 @@ from app.datasets.intake.yolo import is_yolo, yolo_documents
 from app.ml.video.decode import looks_like_video
 from app.prep.intake import _evidence, decide
 
-Kind = Literal["images", "video", "coco", "yolo", "voc", "openlabel"]
+Kind = Literal["images", "video", "coco", "yolo", "voc", "openlabel", "dinotraining"]
 #: What the UI words (doc 111): pictures in no annotation file (`uncovered` says how
 #: many), boxes that fit no convention clearly, no annotations at all, video frames.
-Note = Literal["uncovered", "ambiguous-convention", "no-annotations", "video-frames"]
+Note = Literal[
+    "uncovered",
+    "ambiguous-convention",
+    "no-annotations",
+    "video-frames",
+    # Doc 142: an export whose pictures are neither copied, beside it, nor where they were.
+    "export-pictures-missing",
+]
 
 
 class Detection(BaseModel):
@@ -58,6 +67,9 @@ def scan(path: Path) -> tuple[Detection, list[Document], Listing | None]:
     path = path.expanduser()
     if path.is_file() and looks_like_video(path):
         return _video(path, [path], None), [], None
+    export = find_export(path)
+    if export is not None:
+        return _export_detection(path, export), [], None
     listing = walk(path)
     for documents, kind in _annotated(listing):
         if documents:
@@ -179,4 +191,36 @@ def _video(path: Path, videos: list[Path], listing: Listing | None) -> Detection
         annotation_types=[],
         splits=[],
         notes=["video-frames"],
+    )
+
+
+def _export_detection(path: Path, export: Path) -> Detection:
+    """Doc 142: a DinoTraining export, read from its own file; restored, not imported."""
+    dump = load(export)
+    tables = dump["tables"]
+    images = tables.get("images", [])
+    kinds = [kind for kind, table in (("boxes", "boxes"), ("masks", "masks")) if tables.get(table)]
+    prompts = {
+        row["prompt"]
+        for key in ("boxes", "masks")
+        for row in tables.get(key, [])
+        if row.get("prompt")
+    }
+    classes = sorted({row["name"] for row in tables.get("dataset_classes", [])} | prompts)
+    notes: list[Note] = (
+        [] if pictures_dir(export, dump) is not None else ["export-pictures-missing"]
+    )
+    return Detection(
+        path=str(path),
+        kind="dinotraining",
+        name=str(dump["dataset"].get("name") or path.name),
+        pictures=len(images),
+        videos=0,
+        annotation_files=1,
+        annotated_pictures=sum(1 for image in images if image.get("annotated_at")),
+        objects=len(tables.get("boxes", [])) + len(tables.get("masks", [])),
+        classes=classes,
+        annotation_types=kinds,
+        splits=sorted({image["split"] for image in images if image.get("split")}),
+        notes=notes,
     )
