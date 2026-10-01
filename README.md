@@ -63,18 +63,42 @@ Everything runs on your own machine, and your pictures are never uploaded.
 
 ### Option A: installer
 
-Installers for macOS (`.dmg`), Windows (`.exe`, NSIS) and Linux (`.deb`) are built from
-version tags and published as **draft releases** on GitHub.
+The installers are small: they carry the app and a pinned copy of
+[uv](https://docs.astral.sh/uv/), not Python or PyTorch. **On its first start the app
+installs those itself**, from the official sources and exactly in the versions it was
+tested with: about 1 GB for the CPU and Apple silicon, and about 3.5 GB with NVIDIA GPU
+support. A setup screen shows what it found (Apple GPU, NVIDIA card and driver), what it
+installs, and the progress. After that the app works offline.
 
-> ⚠️ **The installers are not code-signed yet.**
-> - **macOS** blocks the first launch (Gatekeeper). Right-click the app → *Open* →
->   *Open*.
-> - **Windows** shows a SmartScreen warning. *More info* → *Run anyway*.
-> - **Linux** is `.deb` only.
+**macOS (Apple silicon)** — in the Terminal, either:
 
-Model weights are **not** in the installer; you download them in the app (see below).
-The installer is CPU/Apple-GPU only; NVIDIA GPU support is a separate download offered in
-the app.
+```bash
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/JanderHungrige/DinoTraining/main/scripts/install-mac.sh)"
+```
+
+(installs into `~/Applications`, no admin rights; run it again to update), or with
+Homebrew, once the tap is published:
+
+```bash
+brew install janderhungrige/tap/dinotraining
+```
+
+> **Why not a download in the browser?** The app is not signed with a paid Apple
+> certificate. macOS blocks unsigned apps only when a *browser* downloaded them; the
+> script and Homebrew fetch them without that mark, so the app starts normally. If you
+> did download the archive in the browser: open the app once, then *System Settings →
+> Privacy & Security → Open Anyway*. Intel Macs are not supported: PyTorch no longer
+> makes builds for them.
+
+**Windows** (`.exe`, NSIS) and **Linux** (`.deb`) installers are on the
+[releases page](https://github.com/JanderHungrige/DinoTraining/releases). Windows shows a
+SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
+
+- **GPU:** the setup screen picks CUDA 13.0 (driver ≥ 580) or CUDA 12.6 (driver ≥ 560)
+  when it finds an NVIDIA card; *Admin / Models* switches between GPU and CPU later.
+- **Updates:** a new version brings its own package list; the app updates its packages
+  on the first start, and keeps the previous ones until the new ones work.
+- **Model weights** are not in the installer; you download them in the app (see below).
 
 ### Option B: from source
 
@@ -88,10 +112,12 @@ git clone https://github.com/JanderHungrige/DinoTraining
 cd DinoTraining
 cp .env.example .env            # add HF_TOKEN only if you need the gated models
 
-# Backend
-python3.12 -m venv backend/.venv
-source backend/.venv/bin/activate
-pip install -e "backend[dev,export]"
+# Backend: from the lock file users install from (uv: https://docs.astral.sh/uv/).
+# `cpu` is the Mac's variant too (Apple GPU via MPS); with an NVIDIA card use `cu130`
+# (driver >= 580) or `cu126` (driver >= 560).
+cd backend && uv sync --extra cpu --extra dev --extra export && cd ..
+# without uv: python3.12 -m venv backend/.venv && source backend/.venv/bin/activate
+#             pip install -e "backend[cpu,dev,export]"
 
 # Frontend  (--legacy-peer-deps works around an npm 10.9 resolver bug)
 npm install --prefix apps/frontend --legacy-peer-deps

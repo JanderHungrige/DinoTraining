@@ -12,6 +12,7 @@ import torch
 from torch import nn
 
 from app.ml.backbone import load_backbone
+from app.ml.errors import ModelNotInstalledError
 from app.ml.training.config import TrainingConfig
 from app.ml.training.unfreeze import (
     ALL_BLOCKS,
@@ -25,7 +26,11 @@ from app.ml.training.unfreeze import (
 
 @pytest.fixture(scope="module")
 def backbone():  # type: ignore[no-untyped-def]
-    return load_backbone("dinov2-small")
+    # Real weights: present on a developer's machine, absent on a fresh CI runner.
+    try:
+        return load_backbone("dinov2-small")
+    except ModelNotInstalledError:
+        pytest.skip("dinov2-small is not installed here")
 
 
 class TestTheCacheGate:

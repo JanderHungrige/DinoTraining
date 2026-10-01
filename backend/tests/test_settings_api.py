@@ -8,6 +8,7 @@ leak would most likely appear somewhere nobody thought to parse.
 from __future__ import annotations
 
 import stat
+import sys
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -75,6 +76,7 @@ class TestSaveToken:
         assert body["hint"].endswith(TOKEN[-4:])
         assert TOKEN[:-4] not in body["hint"]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="POSIX modes; Windows uses ACLs")
     def test_the_file_is_not_world_readable(
         self, client: TestClient, env_file: Path
     ) -> None:

@@ -14,11 +14,9 @@ import { DistributionNotice } from '../components/DistributionNotice';
 import { GpuPanel } from '../components/GpuPanel';
 import { ModelCard } from '../components/ModelCard';
 import { getAccelerator, type AcceleratorInfo } from '../api/models';
+import { SwitchOverlay } from '../setup/SwitchOverlay';
+import { runtimeStatus, type RuntimeStatus, type Variant } from '../setup/shell';
 
-/** The CUDA sidecar's download size. Stated here rather than fetched: it is a property
- *  of the *release*, not of the running app, and the app cannot know it before asking
- *  for it. Update alongside the release. */
-const CUDA_SIDECAR_MB = 2400;
 import { TokenPanel } from '../components/TokenPanel';
 import { AppearancePanel } from '../components/AppearancePanel';
 import { useModels } from '../hooks/useModels';
@@ -73,19 +71,40 @@ function SystemPanel({
 }
 
 export function AdminTab(): JSX.Element {
-  const { models, system, jobs, loading, error, busy, download, remove } = useModels();
+  const { models, system, jobs, loading, error, busy, download, remove, refresh } = useModels();
   const { t } = useT();
 
   // Its own effect and its own failure: a driver probe that errors should cost the GPU
   // panel, not the model list beneath it.
   const [accelerator, setAccelerator] = useState<AcceleratorInfo | null>(null);
+  // Doc 128: bumped after a CPU ⇄ GPU switch, so the panel re-reads what the new
+  // backend runs on — the device check the switch ends with.
+  const [probe, setProbe] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     void getAccelerator(controller.signal)
       .then(setAccelerator)
       .catch(() => setAccelerator(null));
     return () => controller.abort();
-  }, []);
+  }, [probe]);
+  const [runtime, setRuntime] = useState<RuntimeStatus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    runtimeStatus()
+      .then((status) => !cancelled && setRuntime(status))
+      .catch((failure: unknown) => {
+        console.error('runtime_status failed; the GPU switch stays hidden', failure);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [probe]);
+  const [switchTo, setSwitchTo] = useState<Variant | null>(null);
+  const switched = (): void => {
+    setSwitchTo(null);
+    setProbe((n) => n + 1);
+    void refresh();
+  };
   // Null backbone: the head-catalogue panel does its own per-backbone filtering, and
   // asking for verdicts here would tie the whole tab to one selection.
   const { backbones, headTypes } = useTrainerOptions(null);
@@ -112,7 +131,8 @@ export function AdminTab(): JSX.Element {
           remove buttons are just below. */}
       {/* Above the model list and below the system panel: it is about this machine,
           like the panel above it, and it appears only when there is something to do. */}
-      <GpuPanel accelerator={accelerator} downloadMb={CUDA_SIDECAR_MB} />
+      <GpuPanel accelerator={accelerator} runtime={runtime} onSwitch={setSwitchTo} />
+      {switchTo && runtime && <SwitchOverlay machine={runtime.machine} variant={switchTo} onClose={switched} />}
 
       <DistributionNotice models={models} />
 

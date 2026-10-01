@@ -2,7 +2,7 @@
 name = "dinotraining-backend"
 version = "0.0.1"
 description = "FastAPI + PyTorch ML sidecar for DinoTraining (annotate / train / infer / generate)."
-requires-python = ">=3.11"
+requires-python = ">=3.12,<3.13"  # the bundled Python (doc 126); tests run on it
 readme = "README.md"
 license = { text = "MIT" }
 dependencies = [
@@ -16,11 +16,12 @@ dependencies = [
     # sidecar's size is torch, not this. Pinned to 2.x: 1.x named the server `FastMCP`
     # and every call site here would fail to import against it.
     "mcp>=2.1,<3",
+    # Doc 123's MLflow client. Declared, not inherited through mcp (doc 125).
+    "httpx>=0.27",
 
     # --- ML ---
-    # NOTE: install torch/torchvision per-platform (CUDA/MPS/CPU) — see project-docs.
-    "torch>=2.2",
-    "torchvision>=0.17",
+    # torch / torchvision are chosen per machine: the `cpu`, `cu126` and `cu130` extras
+    # below (doc 125). Exactly one is installed.
     "transformers>=4.44",       # Grounding DINO + DINOv2/v3 via AutoModel
     "huggingface-hub>=0.24",    # model download manager (gated DINOv3 needs HF_TOKEN)
     "pillow>=10.3",
@@ -43,6 +44,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Doc 125: one PyTorch per machine. `cpu` is also the Mac's (PyPI's macOS wheels carry MPS).
+cpu = ["torch==2.13.0", "torchvision==0.28.0"]
+# CUDA exists only for Windows and Linux; on a Mac these extras are empty.
+cu126 = [
+    "torch==2.13.0; sys_platform != 'darwin'",
+    "torchvision==0.28.0; sys_platform != 'darwin'",
+]
+cu130 = [
+    "torch==2.13.0; sys_platform != 'darwin'",
+    "torchvision==0.28.0; sys_platform != 'darwin'",
+]
 # Doc 122: ONNX export of trained heads, checked with onnxruntime. Optional at runtime:
 # without them an export bundle simply has no model.onnx and says why.
 export = [
@@ -85,8 +97,47 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 # Explicit, because setuptools' flat-layout discovery finds *every* top-level directory and
-# then refuses when there is more than one. Adding `bundling/` broke `pip install .` the
-# moment it appeared — a good argument for saying what ships rather than letting it be
-# inferred. `bundling/` is build tooling and is deliberately not part of the wheel.
+# then refuses when there is more than one — a good argument for saying what ships rather
+# than letting it be inferred.
 [tool.setuptools.packages.find]
 include = ["app*"]
+
+# --- Doc 125: the lock users install from ------------------------------------------------
+[tool.uv]
+# Runs from source (`python -m app`), never installed as a package.
+package = false
+# Exactly one PyTorch variant.
+conflicts = [[{ extra = "cpu" }, { extra = "cu126" }, { extra = "cu130" }]]
+# The three platforms the app ships for. PyTorch has no Intel-Mac wheels since 2.3.
+environments = [
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'win32' and platform_machine == 'AMD64'",
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", extra = "cpu", marker = "sys_platform != 'darwin'" },
+    { index = "pytorch-cu126", extra = "cu126" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+torchvision = [
+    { index = "pytorch-cpu", extra = "cpu", marker = "sys_platform != 'darwin'" },
+    { index = "pytorch-cu126", extra = "cu126" },
+    { index = "pytorch-cu130", extra = "cu130" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true

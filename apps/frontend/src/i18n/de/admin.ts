@@ -138,12 +138,14 @@ export const adminDe: Catalogue<typeof adminEn> = {
     'Den Treiber neu zu installieren oder zu aktualisieren behebt das meistens. Solange er nicht antwortet, kann diese App nicht erkennen, ob eine GPU vorhanden ist.',
   'admin.gpu.title': 'Deine GPU wird nicht genutzt',
   'admin.gpu.driver': 'Treiber {version}',
-  'admin.gpu.footBefore':
-    'Das Installationsprogramm enthält eine CPU-Version, damit es klein bleibt. GPU-Unterstützung ist ein separater Download von etwa',
-  'admin.gpu.footAfter':
-    '— so groß, weil er NVIDIAs CUDA-Laufzeit enthält, nicht wegen der App. Training und Inference laufen damit meist um ein Vielfaches schneller.',
-  'admin.gpu.downloading': 'Wird heruntergeladen …',
-  'admin.gpu.download': 'GPU-Unterstützung herunterladen ({size} GB)',
+  'admin.gpu.devFoot':
+    'Das ist ein Entwicklungs-Checkout, seine Umgebung gehört dir: Installiere die GPU-Version in backend/ mit uv sync --extra cu130 (oder cu126 bei einem älteren Treiber).',
+  'admin.gpu.use': 'GPU nutzen (CUDA {cuda}, etwa {gb} GB Download)',
+  'admin.gpu.switchNote':
+    'Der Wechsel tauscht PyTorch aus und startet das Backend neu: Ein laufendes Training oder ein Prescan wird beendet. Deine Datensätze und Modelle bleiben.',
+  'admin.gpu.inUse': 'GPU in Benutzung: {name}, CUDA {cuda}',
+  'admin.gpu.notUsedTitle': 'Die GPU-Version (CUDA {cuda}) ist installiert, wird aber nicht genutzt',
+  'admin.gpu.backToCpu': 'Zurück zur CPU',
 
   // Weitergabe
   'admin.dist.title': 'Bevor du diese App weitergibst',

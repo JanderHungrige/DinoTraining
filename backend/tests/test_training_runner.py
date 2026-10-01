@@ -161,8 +161,9 @@ class TestToDevice:
 
     def test_available_accelerator_receives_every_tensor(self) -> None:
         from app.ml.training.loop import to_device
+        from tests.devices import mps_usable
 
-        if torch.backends.mps.is_available():
+        if mps_usable():
             device = "mps"
         elif torch.cuda.is_available():
             device = "cuda"

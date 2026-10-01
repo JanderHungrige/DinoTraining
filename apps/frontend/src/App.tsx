@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
+import { AddToApplications } from './components/AddToApplications';
 import { BackendStatus } from './components/BackendStatus';
 import { LanguageSwitch } from './components/LanguageSwitch';
 import { LanguageProvider } from './i18n';
@@ -16,6 +17,7 @@ import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
 import { LibraryTab } from './tabs/LibraryTab';
 import { PrepareTab } from './tabs/PrepareTab';
+import { SetupGate } from './setup/SetupGate';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 import type { InspectRequest, TrainRequest } from './types/navigation';
 
@@ -81,12 +83,14 @@ export function App(): JSX.Element {
     <LanguageProvider>
     <LookProvider>
       <BackgroundVideo />
+      <SetupGate>
       <div className="app">
         <header className="app__header">
           <h1 className="app__title">DinoTraining</h1>
           <LanguageSwitch />
           <BackendStatus />
         </header>
+        <AddToApplications />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -105,6 +109,7 @@ export function App(): JSX.Element {
           {renderTab(activeTab, { onNavigate: setActiveTab, onInspect, inspectRequest, onTrain, trainRequest })}
         </main>
       </div>
+      </SetupGate>
     </LookProvider>
     </LanguageProvider>
   );

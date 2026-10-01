@@ -4,13 +4,57 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-09-30, at the end of the **Wave 15.6 build**.
+**Last updated:** 2026-10-01, at the end of the **Wave 15.7 build**.
 - **Waves 1–12:** in `dev` and `main`.
-- **Waves 13, 14, 15 and 15.5** (docs 99–119): in `dev`, waiting for Jan's test.
-- **Wave 15.6** (docs 120–124): built and pushed on `feat/dinotraining-wave-15-6`, not
-  merged. Its status stays `in_progress` until Jan confirms the demo-state.
+- **Waves 13, 14, 15, 15.5 and 15.6** (docs 99–124): in `dev`, waiting for Jan's test.
+- **Wave 15.7** (docs 125–131, the installer): built and pushed on
+  `feat/dinotraining-wave-15-7`, not merged. Its status stays `in_progress` until Jan
+  confirms the demo-state.
 
-**Next:** Jan's test of 15.6 and the merge to `dev`. Then Wave 16, the website.
+**Next:** Jan's test of 15.7 (ideally the Windows PC with an NVIDIA card), the merge to
+`dev`, and the Homebrew tap (Jan creates `JanderHungrige/homebrew-tap`). Then Wave 16, the
+website, to be rethought.
+
+---
+
+## Wave 15.7 — The installer: bundled uv, PyTorch from the source (2026-10-01)
+
+Jan: "PyTorch und CUDA können doch so gezogen werden", no paid signing, the Mac stays a
+Tauri app, offered via Homebrew.
+
+| | |
+|---|---|
+| 125 | **Lock:** one hashed `uv.lock`; extras `cpu` / `cu126` / `cu130` from pytorch.org (Mac: PyPI with MPS); three platforms; Python 3.12. CI (`lock-check.yml`) installs from it and runs the backend suite on macOS, Windows, Linux. |
+| 126 | **Bundled runtime:** the app carries uv (checksum-verified) and the backend source; PyInstaller is gone. **46 MB app, 24 MB Mac download** (was 298 MB). |
+| 127 | **First-run setup:** machine detected (Apple Silicon/MPS, NVIDIA + driver → cu130/cu126/cpu, Intel Mac refused), disk and connection checked, progress by MB, **Dino Run** and tips while it installs. `DINO_SETUP_AUTO=cpu` installs unattended; the screen's steps go to the app log. |
+| 128 | **CPU ⇄ GPU** in Admin: builds the other variant while the backend runs, swaps, and points back if it does not start. |
+| 129 | **Updates:** each sync builds `runtime/envs/<id>`; `current` names the active one. A new lock updates by itself; a failed update leaves the old one and offers "Start with the previous packages". |
+| 130 | **Mac:** `scripts/install-mac.sh` (no admin, no Gatekeeper warning), Homebrew formula rendered per release, "Add to Applications" for Homebrew installs, README. |
+| 131 | **Smoke test** in the release workflow: silent install, unattended first start, `/health`, PyTorch in the installed env, second start without setup — on all three platforms. |
+
+- **Proof, live on the M1:**
+  - first start into an empty folder: installed and healthy in 52–60 s; second start 3–5 s;
+  - a simulated app update: 68 packages from uv's cache in 0.4 s, old env removed; a
+    broken update left the old env current and intact;
+  - the script-installed app, started through LaunchServices: no Gatekeeper, no quarantine;
+  - the smoke script against the real installed app: torch 2.13, torchvision, onnxruntime.
+- **Proof, CI (release dry run 36786933587, nothing published): all three installers
+  installed, set up and started, green on the first run.** Windows 18 MB (was 172),
+  Linux 26 MB (was 361), Mac 23 MB (was 298); first start 28–54 s, second 6–36 s. The
+  first time the Windows app was ever installed and started.
+- **Found live and fixed:**
+  - a hidden window's webview pauses its timers, so the setup screen must not poll;
+  - started through a symlink (Homebrew's `opt`), the release app silently ran the repo's
+    dev venv; resources now come from the resolved path, and release builds never fall back;
+  - the installed env had no `onnxruntime` (the ONNX export); the `export` extra is
+    installed with every variant;
+  - tile names used `\` on Windows; the metrics stream could drop the last epochs; three
+    tests assumed this Mac; two frontend tests waited exactly as long as their component.
+- **Not verified here, and why:**
+  - the CUDA path and the CPU ⇄ GPU switch need an NVIDIA machine;
+  - the Homebrew install: this Mac's Command Line Tools are outdated (sudo needed);
+  - the setup screen's final switch to the app and the Add button: no permission to see
+    or click the packaged window (both unit-tested; everything before was live).
 
 ---
 

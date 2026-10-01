@@ -221,6 +221,30 @@ class TestEventStream:
         assert '"accuracy": 0.6' in epochs[0]
         assert events[-1][0] == "done"
 
+    def test_epochs_that_land_with_the_finish_are_not_lost(
+        self, client: TestClient, fake: FakeRunner, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The race CI hit: the last epochs and the finish arrive after the drain.
+
+        Deterministic: the first time the stream asks whether the job is finished, the
+        worker "records" three epochs and finishes, exactly between drain and check.
+        """
+        fake.job.state = "running"
+        job_type = type(fake.job)
+        real = job_type.finished
+
+        def racing(job: TrainingJob) -> bool:
+            if job.state == "running":
+                for epoch in range(1, 4):
+                    job.record(EpochRecord(epoch=epoch, train_loss=1.0, val_loss=1.0, metrics={}))
+                job.finish("complete", "done")
+            return bool(real.fget(job))  # type: ignore[attr-defined]
+
+        monkeypatch.setattr(job_type, "finished", property(racing))
+        events = parse_events(client.get("/api/v1/training/jobs/job-1/events").text)
+        assert len([name for name, _ in events if name == "epoch"]) == 3
+        assert events[-1][0] == "done"
+
     def test_no_buffering_header_is_set(self, client: TestClient, fake: FakeRunner) -> None:
         """A buffering proxy would hold every frame until the run ends."""
         fake.job.finish("complete")

@@ -63,11 +63,11 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 
-# Bundled sidecar binaries — built per platform by the release job, never committed.
-apps/desktop/src-tauri/binaries/*
-!apps/desktop/src-tauri/binaries/README.md
-
-# Production venv and PyInstaller output — build artefacts, regenerated per release.
+# Leftovers of the PyInstaller build (doc 56, replaced by doc 126), in older checkouts.
+apps/desktop/src-tauri/binaries/
 backend/.build/
 backend/dist/
 backend/*.spec
+
+# Doc 126: staged by scripts/stage_runtime.py for a release build, never committed.
+apps/desktop/src-tauri/runtime/
