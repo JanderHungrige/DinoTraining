@@ -3798,3 +3798,27 @@ body {
   color: var(--text-dim);
   font-size: 0.85rem;
 }
+
+/* --- Doc 140: "Open the log" / "Report an issue" beside an error --- */
+
+.erroractions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.erroractions__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.status__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}

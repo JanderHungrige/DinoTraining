@@ -32,6 +32,11 @@ export const appEn = {
   'app.addApps.notNow': 'Not now',
   'app.addApps.added': 'Added: {path}',
   'app.addApps.failed': 'Could not add it: {message}',
+  // Doc 140: beside an error
+  'app.report.openLog': 'Open the log',
+  'app.report.issue': 'Report an issue',
+  'app.report.issueHint': 'Opens a new GitHub issue with the error, the version and the last lines of the log filled in. You read it and submit it with your GitHub account; your user name is replaced by ~.',
+  'app.report.failed': 'Could not open the issue page: {reason}',
   'app.backend.connecting': 'Connecting to backend…',
   'app.backend.unexpected': 'Unexpected error contacting the backend.',
   'app.client.unreachable': 'Cannot reach the DinoTraining backend at {url}. Is the sidecar running?',

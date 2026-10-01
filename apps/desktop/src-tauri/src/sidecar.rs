@@ -31,10 +31,11 @@ pub enum SidecarError {
     PythonMissing(PathBuf),
     #[error("failed to spawn the backend process: {0}")]
     Spawn(#[from] std::io::Error),
-    #[error("backend did not become healthy within {0:?}")]
-    Timeout(Duration),
-    #[error("backend exited during startup ({0}) — see the log above for the Python traceback")]
-    BackendExited(std::process::ExitStatus),
+    #[error("backend did not become healthy within {after:?}.{output}")]
+    Timeout { after: Duration, output: String },
+    /// `output` quotes `backend.log`'s last lines (doc 139), or says where to look.
+    #[error("backend exited during startup ({status}).{output}")]
+    BackendExited { status: std::process::ExitStatus, output: String },
     #[error(
         "port {0} is already in use. Another DinoTraining backend is probably still \
          running — stop it (lsof -ti:{0} | xargs kill) and relaunch."
@@ -58,6 +59,9 @@ pub struct SidecarConfig {
     pub launch: Launch,
     pub host: String,
     pub port: u16,
+    /// Doc 139: where `backend.log` goes. `None` (a development run) inherits this
+    /// process's terminal instead.
+    pub log_dir: Option<PathBuf>,
 }
 
 impl SidecarConfig {
@@ -97,6 +101,7 @@ impl SidecarConfig {
             },
             host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
             port: env_port(),
+            log_dir: None,
         }
     }
 
@@ -119,6 +124,7 @@ impl SidecarConfig {
             launch: Launch::Module { python, backend_dir },
             host: env_or(DEFAULT_HOST, "DINO_API_HOST"),
             port: env_port(),
+            log_dir: None,
         })
     }
 }
@@ -195,14 +201,25 @@ pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
         command.env("PYTORCH_ENABLE_MPS_FALLBACK", "1");
     }
 
+    // Never inherit in a packaged app: a Windows GUI app has no standard streams to give,
+    // and the backend's traceback went nowhere (doc 139).
+    let (stdout, stderr) = match &config.log_dir {
+        Some(dir) => {
+            let (file, path) = crate::backend_log::create(dir)?;
+            log::info!("Backend output: {}", path.display());
+            (Stdio::from(file.try_clone()?), Stdio::from(file))
+        }
+        None => (Stdio::inherit(), Stdio::inherit()),
+    };
     let child = command
         .env("DINO_API_HOST", &config.host)
         .env("DINO_API_PORT", config.port.to_string())
-        // Unbuffered, so the Python log reaches our stderr as it happens rather than
+        // Unbuffered, so the Python log reaches the file as it happens rather than
         // in one lump when the process dies — which is exactly when you need it.
         .env("PYTHONUNBUFFERED", "1")
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
+        .env("PYTHONIOENCODING", "utf-8")
+        .stdout(stdout)
+        .stderr(stderr)
         .spawn()?;
 
     Ok(child)
@@ -223,7 +240,8 @@ pub async fn wait_until_healthy(
 
     while std::time::Instant::now() < deadline {
         if let Some(status) = child.try_wait()? {
-            return Err(SidecarError::BackendExited(status));
+            let output = crate::backend_log::quote(config.log_dir.as_deref());
+            return Err(SidecarError::BackendExited { status, output });
         }
 
         match client.get(&url).timeout(Duration::from_secs(2)).send().await {
@@ -236,7 +254,10 @@ pub async fn wait_until_healthy(
         }
     }
 
-    Err(SidecarError::Timeout(READY_TIMEOUT))
+    Err(SidecarError::Timeout {
+        after: READY_TIMEOUT,
+        output: crate::backend_log::quote(config.log_dir.as_deref()),
+    })
 }
 
 /// Owns the child process so it can be killed when the window closes.

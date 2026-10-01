@@ -36,6 +36,11 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.addApps.notNow': 'Jetzt nicht',
   'app.addApps.added': 'Hinzugefügt: {path}',
   'app.addApps.failed': 'Konnte nicht hinzugefügt werden: {message}',
+  // Doc 140: beside an error
+  'app.report.openLog': 'Log öffnen',
+  'app.report.issue': 'Problem melden',
+  'app.report.issueHint': 'Öffnet ein neues GitHub-Issue mit Fehler, Version und den letzten Zeilen des Logs. Du liest es und schickst es mit deinem GitHub-Konto ab; dein Benutzername wird durch ~ ersetzt.',
+  'app.report.failed': 'Die Issue-Seite ließ sich nicht öffnen: {reason}',
   'app.backend.connecting': 'Verbindung zum Backend wird hergestellt …',
   'app.backend.unexpected': 'Unerwarteter Fehler bei der Verbindung zum Backend.',
   'app.client.unreachable':

@@ -3,6 +3,8 @@
 //! Responsibilities stop at the window and the sidecar process. No ML, no business
 //! logic — that all lives behind `/api/v1` in the Python backend.
 
+pub mod backend_log;
+pub mod error_report;
 pub mod mac_apps;
 pub mod progress;
 pub mod resources;
@@ -54,7 +56,9 @@ pub fn run() {
             switch::runtime_status,
             switch::switch_variant,
             mac_apps::applications_offer,
-            mac_apps::add_to_applications
+            mac_apps::add_to_applications,
+            error_report::open_backend_log,
+            error_report::report_issue
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -127,10 +131,15 @@ pub(crate) async fn start_backend(app: tauri::AppHandle) -> Result<(), String> {
     }
     let _ = app.emit(BACKEND_EVENT, BackendState::Starting);
 
-    let config = match SidecarConfig::resolve(resource_dir(&app).as_deref()) {
+    let mut config = match SidecarConfig::resolve(resource_dir(&app).as_deref()) {
         Ok(config) => config,
         Err(error) => return Err(report_failure(&app, error.to_string())),
     };
+    // A packaged app writes the backend's output beside its own log (doc 139); a
+    // development run keeps it in the terminal it was started from.
+    if !cfg!(debug_assertions) {
+        config.log_dir = app.path().app_log_dir().ok();
+    }
 
     if let Err(error) = sidecar::wait_port_free(&config).await {
         return Err(report_failure(&app, error.to_string()));
