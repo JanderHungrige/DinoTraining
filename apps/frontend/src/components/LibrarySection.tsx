@@ -72,8 +72,12 @@ export function Section({
                 onChange={() => onToggle(kind, row.id)}
               />
               <span className="library__name">{row.name}</span>
-              <span className="library__detail">{row.detail}</span>
-              {row.note && <span className="library__note">{row.note}</span>}
+              {/* The description belongs to the parameters' cell: as a cell of its own it
+                  pushed every later one into the wrong column (found in doc 143). */}
+              <span className="library__detail">
+                {row.detail}
+                {row.note && <span className="library__note">{row.note}</span>}
+              </span>
               <span className="library__meta">{row.meta}</span>
               {actions?.(row)}
               {/* Two clicks, not a browser confirm(): a modal cannot say *which* item it

@@ -105,7 +105,7 @@ export function FolderField({
                 type="button"
                 className="btn"
                 disabled={disabled}
-                onClick={() => browse(pickFolder)}
+                onClick={() => browse(() => pickFolder())}
               >
                 {t('studio.picker.folder')}
               </button>

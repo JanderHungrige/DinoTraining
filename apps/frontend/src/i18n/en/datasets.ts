@@ -65,4 +65,19 @@ export const datasetsEn = {
   'models.example.downloading': 'Downloading… {done} of {total} MB · {current}',
   'models.example.authors':
     'By the German Centre for Rail Traffic Research (DZSF), Digitale Schiene Deutschland / DB Netz AG and FusionSystems GmbH.',
+  // Export targets (doc 143)
+  'models.export.open': 'Export…',
+  'models.export.close': 'Close',
+  'models.export.label': 'Export {name}',
+  'models.export.never': 'Not exported yet',
+  'models.export.when': 'Exported {when}',
+  'models.export.withData': 'With the data ({folder})',
+  'models.export.toFolder': 'To a folder',
+  'models.export.choose': 'Choose…',
+  'models.export.pictures': 'Copy the pictures too',
+  'models.export.insideApp':
+    "This dataset's pictures live inside the app, which removes them when it is uninstalled. Export to a folder of yours, with the pictures, so the export is complete on its own.",
+  'models.export.now': 'Export now',
+  'models.export.busy': 'Exporting…',
+  'models.export.done': 'Written to {folder}:',
 } as const;

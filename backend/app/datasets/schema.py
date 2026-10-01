@@ -41,7 +41,13 @@ PROVENANCE_TABLES = ("boxes", "masks")
 #: a different kind of change, and cheaper.
 ADDED_COLUMNS: dict[str, dict[str, str]] = {
     # Doc 136: what the user wrote about an imported dataset, and where it came from.
-    "datasets": {"description": "TEXT", "source": "TEXT"},
+    # Doc 143: where the dataset's export goes, and when it last went (both JSON).
+    "datasets": {
+        "description": "TEXT",
+        "source": "TEXT",
+        "export_target": "TEXT",
+        "exported": "TEXT",
+    },
     "boxes": {"producer": "TEXT"},
     "masks": {"producer": "TEXT"},
     # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a

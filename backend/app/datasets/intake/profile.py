@@ -24,6 +24,7 @@ def pending_paths(dataset_id: str, settings: Settings | None = None) -> set[str]
         ).fetchall()
     return {str(row["path"]) for row in rows}
 
+
 Media = Literal["images", "video", "mixed", "empty"]
 
 
@@ -39,6 +40,9 @@ class DatasetProfile(BaseModel):
     sequences: int
     classes: list[str]
     annotation_types: list[str]
+    #: Doc 143: the last export, for the list ("exported 3 min ago").
+    exported_at: str | None = None
+    exported_folder: str | None = None
 
 
 def dataset_profile(dataset_id: str, settings: Settings | None = None) -> DatasetProfile:
@@ -74,6 +78,7 @@ def dataset_profile(dataset_id: str, settings: Settings | None = None) -> Datase
         else "images"
     )
     types = [kind for kind, found in (("boxes", has_boxes), ("masks", has_masks)) if found]
+    exported_at, exported_folder = _exported(dataset_id, settings)
     return DatasetProfile(
         dataset_id=dataset_id,
         name=info.name,
@@ -86,4 +91,14 @@ def dataset_profile(dataset_id: str, settings: Settings | None = None) -> Datase
         sequences=int(row["sequences"] or 0),
         classes=sorted(entry.name for entry in ClassStore(settings).list_for(dataset_id)),
         annotation_types=types,
+        exported_at=exported_at,
+        exported_folder=exported_folder,
     )
+
+
+def _exported(dataset_id: str, settings: Settings | None) -> tuple[str | None, str | None]:
+    """Doc 143's last export. Imported here, not at the top: the exchange package reads
+    this module's `pending_paths`."""
+    from app.datasets.exchange.targets import exported_summary
+
+    return exported_summary(dataset_id, settings)

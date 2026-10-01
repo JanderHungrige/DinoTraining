@@ -9,9 +9,10 @@
  * and a rule about what a rename does to provenance already recorded inside trained heads.
  */
 
-import { useState, type JSX } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
 import { BULK, useLibrary, type LibraryKind, type LibraryTarget } from '../hooks/useLibrary';
+import { DatasetExport } from '../components/DatasetExport';
 import { useDatasetProfiles } from '../hooks/useDatasetProfiles';
 import { annotationTypes } from '../components/DatasetImport';
 import type { DatasetProfile } from '../api/datasetImport';
@@ -65,7 +66,10 @@ export function LibraryTab({ kinds = ALL_KINDS, headed = true }: LibraryTabProps
     setConfirmingBulk(false);
   };
 
-  const profiles = useDatasetProfiles(kinds.includes('dataset'), library.datasets.map((d) => d.id).join());
+  // Doc 143: an export changes a row's line, so the profiles are read again after one.
+  const [exports, setExports] = useState(0);
+  const exported = useCallback(() => setExports((count) => count + 1), []);
+  const profiles = useDatasetProfiles(kinds.includes('dataset'), `${library.datasets.map((d) => d.id).join()}#${exports}`);
   const datasetRows: Row[] = library.datasets.map((entry) => {
     const profile = profiles.get(entry.id);
     return {
@@ -184,6 +188,9 @@ export function LibraryTab({ kinds = ALL_KINDS, headed = true }: LibraryTabProps
             empty={t('admin.library.datasetsEmpty')}
             rows={datasetRows}
             kind="dataset"
+            actions={(row) => (
+              <DatasetExport datasetId={row.id} name={row.name} exportedAt={profiles.get(row.id)?.exported_at ?? null} onExported={exported} />
+            )}
             selected={selected}
             onToggle={toggle}
             confirming={confirming}

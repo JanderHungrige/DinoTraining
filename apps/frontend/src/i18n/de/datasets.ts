@@ -66,4 +66,19 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.example.downloading': 'Wird geladen … {done} von {total} MB · {current}',
   'models.example.authors':
     'Von DZSF (Deutsches Zentrum für Schienenverkehrsforschung), Digitale Schiene Deutschland / DB Netz AG und FusionSystems GmbH.',
+  // Exportziele (doc 143)
+  'models.export.open': 'Exportieren…',
+  'models.export.close': 'Schließen',
+  'models.export.label': '{name} exportieren',
+  'models.export.never': 'Noch nicht exportiert',
+  'models.export.when': 'Exportiert {when}',
+  'models.export.withData': 'Bei den Daten ({folder})',
+  'models.export.toFolder': 'In einen Ordner',
+  'models.export.choose': 'Auswählen…',
+  'models.export.pictures': 'Die Bilder mitkopieren',
+  'models.export.insideApp':
+    'Die Bilder dieses Datensatzes liegen in der App, und die entfernt sie beim Deinstallieren. Exportiere in einen eigenen Ordner, mit den Bildern, damit der Export für sich vollständig ist.',
+  'models.export.now': 'Jetzt exportieren',
+  'models.export.busy': 'Wird exportiert…',
+  'models.export.done': 'Geschrieben nach {folder}:',
 };

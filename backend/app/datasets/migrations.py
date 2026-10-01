@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 #: version reaches it, so widening PROVENANCE_VALUES without moving this number rebuilds
 #: the CHECK on fresh databases only — every test passes and the real install raises
 #: IntegrityError on first write. The rebuild itself needs no new code; the gate does.
-LATEST_VERSION = 10
+LATEST_VERSION = 11
 
 # Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
 # silently transpose two same-typed columns if a schema is ever reordered.

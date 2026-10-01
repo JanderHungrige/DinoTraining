@@ -67,6 +67,9 @@ export interface DatasetProfile {
   readonly sequences: number;
   readonly classes: readonly string[];
   readonly annotation_types: readonly string[];
+  /** Doc 143: the last export, for the list. */
+  readonly exported_at?: string | null;
+  readonly exported_folder?: string | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

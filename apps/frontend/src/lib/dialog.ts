@@ -30,8 +30,9 @@ async function open(options: Record<string, unknown>): Promise<string | null> {
   }
 }
 
-export function pickFolder(): Promise<string | null> {
-  return open({ directory: true, multiple: false });
+/** `defaultPath`: where the dialog opens (doc 143 remembers the last export folder). */
+export function pickFolder(defaultPath?: string): Promise<string | null> {
+  return open({ directory: true, multiple: false, ...(defaultPath ? { defaultPath } : {}) });
 }
 
 /** Doc 73: the containers the backend decodes. */

@@ -2990,7 +2990,8 @@ body {
 
 .library__row {
   display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
+  /* pick, name, parameters, date, actions (export, show — empty for some lists), delete */
+  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.4rem 0.5rem;
@@ -3821,4 +3822,50 @@ body {
   align-items: center;
   gap: 0.45rem;
   margin: 0;
+}
+
+/* Export targets (doc 143): a popover under the row's "Export…" */
+.dsexport {
+  position: relative;
+}
+
+.dsexport__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(30rem, 86vw);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  /* Opaque: the translucent surface lets the rows beneath show through a popover. */
+  background: var(--bg-raised);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+.dsexport__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.dsexport__choice input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.dsexport__hint,
+.dsexport__done {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.dsexport__panel > .btn {
+  align-self: flex-start;
 }

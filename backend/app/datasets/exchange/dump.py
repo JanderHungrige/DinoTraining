@@ -8,6 +8,7 @@ other, read by the restore too.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 from dataclasses import dataclass
@@ -67,6 +68,7 @@ STATE_FILES = (
     "second_look.json",
 )
 RECIPE_DIR = "recipes"
+_NOT_EXPORTED = frozenset({"id", "export_target", "exported"})
 
 
 def _rows(connection: sqlite3.Connection, table: Table, dataset_id: str) -> list[dict[str, Any]]:
@@ -107,7 +109,8 @@ def dump_dataset(dataset_id: str, settings: Settings | None = None) -> dict[str,
         "app_version": __version__,
         "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "pictures_root": str(root) if root else None,
-        "dataset": {key: dataset[key] for key in dataset.keys() if key != "id"},
+        # Doc 143's bookkeeping is about this install's exports, not the dataset's content.
+        "dataset": {key: dataset[key] for key in dataset.keys() if key not in _NOT_EXPORTED},
         "tables": tables,
         "files": _state_files(dataset_id, settings),
     }
@@ -118,6 +121,14 @@ def counts(dump: dict[str, Any]) -> tuple[int, int, int]:
     tables = dump["tables"]
     saved = sum(1 for image in tables["images"] if image.get("annotated_at"))
     return len(tables["images"]), saved, len(tables["boxes"]) + len(tables["masks"])
+
+
+def fingerprint(dump: dict[str, Any]) -> str:
+    """The content's hash, without the export's own time and app version (doc 143)."""
+    content = {
+        key: value for key, value in dump.items() if key not in ("exported_at", "app_version")
+    }
+    return hashlib.sha256(json.dumps(content, sort_keys=True).encode()).hexdigest()
 
 
 def to_json(dump: dict[str, Any]) -> str:
