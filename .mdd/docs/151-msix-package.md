@@ -15,8 +15,8 @@ models: []
 test_files:
   - scripts/test_stage_msix.py
 data_flow: greenfield
-last_synced: 2026-10-01
-status: in_progress
+last_synced: 2026-10-02
+status: complete
 phase: all
 mdd_version: 11
 tags: [msix, microsoft-store, windows, packaging, release, ci]
@@ -88,3 +88,12 @@ sister_projects: []
     and is well-formed XML;
   - each refusal.
 - **The release dry run** packs and signs on a real Windows runner.
+
+## Verified (release dry runs, 2026-10-01/02)
+
+- **Run 36925265003:** staged as "DinoTraining.Placeholder 0.1.2.0", packed by makeappx
+  10.0.26100.0; the `msix-test` artifact 24 MB, the Windows installer artifact (EXE and
+  unsigned MSIX) 42 MB.
+- **Run 36933854791:** the test-signed copy installs with `Add-AppxPackage` once the
+  certificate is trusted, under `C:\Program Files\WindowsApps\DinoTraining.Placeholder_0.1.2.0_x64__xh0apdpcamsft`.
+- `scripts/test_stage_msix.py`: 9 passed.
