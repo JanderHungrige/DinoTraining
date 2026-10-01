@@ -6,6 +6,8 @@ export interface ExportSettings {
   readonly on_close: boolean;
   /** 0: off. */
   readonly every_minutes: number;
+  /** Doc 145: trained models exported here when their training finishes; null: off. */
+  readonly model_folder?: string | null;
 }
 
 export interface NamedDataset {

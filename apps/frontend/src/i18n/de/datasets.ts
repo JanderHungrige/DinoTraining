@@ -93,4 +93,8 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.auto.failed': 'Nicht exportiert: {names}.',
   'models.auto.unfinished': 'Für den nächsten Lauf liegen geblieben (das Schließen hat zu lange gedauert): {names}.',
   'models.auto.noTarget': 'Noch kein Exportziel: {names}. Leg eins fest mit „Exportieren…“ in ihren Zeilen.',
+  // Modelle automatisch exportieren (doc 145)
+  'models.modelAuto.title': 'Trainierte Modelle automatisch exportieren',
+  'models.modelAuto.on': 'Jedes trainierte Modell nach dem Training in diesen Ordner exportieren',
+  'models.modelAuto.folder': 'Ordner für trainierte Modelle',
 };

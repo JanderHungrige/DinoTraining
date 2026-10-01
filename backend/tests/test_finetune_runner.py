@@ -223,3 +223,24 @@ def test_a_fine_tune_reports_its_baseline_epochs_and_saved_model_to_mlflow(
     assert recorder.calls[0] == ("epoch", (0, {"baseline_miou": 0.1}))
     assert [call[1][0] for call in recorder.calls if call[0] == "epoch"] == [0, 1, 2, 3]
     assert recorder.calls[-1] == ("saved", "finetuned")
+
+
+def test_a_saved_fine_tune_is_handed_to_the_automatic_export(
+    env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Doc 145: the runner hands every saved model to the export, which decides."""
+    handed: list[tuple[str, str]] = []
+    monkeypatch.setattr(runner_module, "finetune_tracker", lambda _job: Recorder())
+    monkeypatch.setattr(
+        runner_module,
+        "export_after_training",
+        lambda kind, instance_id, _note: handed.append((kind, instance_id)),
+    )
+    job = run(
+        monkeypatch, FinetuneData([sample("train")], [sample("val")], [sample("test")], ("cell",))
+    )
+    deadline = time.monotonic() + 5
+    while not handed:
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    assert handed == [("finetuned", job.instance_id)]

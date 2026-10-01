@@ -92,6 +92,8 @@ class Settings(BaseSettings):
     # Doc 144: exports of changed datasets on closing the app, and every n minutes (0: off).
     export_on_close: bool = Field(default=True, alias="DINO_EXPORT_ON_CLOSE")
     export_every_minutes: int = Field(default=0, ge=0, le=1440, alias="DINO_EXPORT_EVERY_MINUTES")
+    # Doc 145: each trained model exported here when its training finishes; unset is off.
+    model_export_folder: str | None = Field(default=None, alias="DINO_MODEL_EXPORT_FOLDER")
     mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")
     mlflow_experiment: str = Field(default="DinoTraining", alias="DINO_MLFLOW_EXPERIMENT")
     mlflow_register: bool = Field(default=True, alias="DINO_MLFLOW_REGISTER")
@@ -101,6 +103,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "mlflow_uri",
+        "model_export_folder",
         "mlflow_username",
         "mlflow_password",
         "mlflow_token",

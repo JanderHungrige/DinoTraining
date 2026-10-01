@@ -12,6 +12,7 @@ import { AutoExportSettings } from '../components/AutoExportSettings';
 import { DatasetGuide } from '../components/DatasetGuide';
 import { DatasetImport } from '../components/DatasetImport';
 import { ExampleDataset } from '../components/ExampleDataset';
+import { ModelAutoExport } from '../components/ModelAutoExport';
 import { SubTabBar, type SubTab } from '../components/SubTabBar';
 import { useT } from '../i18n';
 import { readPersisted, writePersisted } from '../lib/persisted';
@@ -64,6 +65,7 @@ export function ModelsTab(): JSX.Element {
           <>
             <h2 className="library__title">{t('models.mine.title')}</h2>
             <p className="library__lead">{t('models.mine.lead')}</p>
+            <ModelAutoExport />
             <LibraryTab kinds={['head', 'finetune']} headed={false} />
           </>
         )}

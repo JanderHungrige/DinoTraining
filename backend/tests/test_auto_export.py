@@ -107,9 +107,13 @@ def test_the_api_settings_closing_and_status(tmp_path: Path) -> None:
 
     two_datasets(tmp_path)
     client = TestClient(create_app())
-    assert client.get("/api/v1/exports/settings").json() == {"on_close": True, "every_minutes": 0}
+    assert client.get("/api/v1/exports/settings").json() == {
+        "on_close": True,
+        "every_minutes": 0,
+        "model_folder": None,
+    }
     saved = client.put("/api/v1/exports/settings", json={"on_close": False, "every_minutes": 10})
-    assert saved.json() == {"on_close": False, "every_minutes": 10}
+    assert saved.json() == {"on_close": False, "every_minutes": 10, "model_folder": None}
     assert "DINO_EXPORT_EVERY_MINUTES=10" in (tmp_path / ".env").read_text()
     assert (
         client.post("/api/v1/exports/run", json={"reason": "close", "deadline_seconds": 20}).json()[
@@ -118,7 +122,10 @@ def test_the_api_settings_closing_and_status(tmp_path: Path) -> None:
         == "off"
     )
 
-    client.put("/api/v1/exports/settings", json={"on_close": True, "every_minutes": 0})
+    client.put(
+        "/api/v1/exports/settings",
+        json={"on_close": True, "every_minutes": 0, "model_folder": None},
+    )
     closing = client.post(
         "/api/v1/exports/run", json={"reason": "close", "deadline_seconds": 20}
     ).json()

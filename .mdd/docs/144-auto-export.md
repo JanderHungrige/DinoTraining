@@ -17,6 +17,8 @@ source_files:
   - apps/frontend/src/components/AutoExportSettings.tsx
   - apps/frontend/src/App.tsx
   - apps/frontend/src/tabs/ModelsTab.tsx
+  - apps/frontend/src/i18n/en/datasets.ts
+  - apps/frontend/src/i18n/de/datasets.ts
 routes:
   - GET /api/v1/exports/settings
   - PUT /api/v1/exports/settings
@@ -27,8 +29,6 @@ test_files:
   - backend/tests/test_auto_export.py
   - apps/desktop/src-tauri/src/auto_export.rs
   - apps/frontend/src/components/AutoExportSettings.test.tsx
-  - apps/frontend/src/i18n/en/datasets.ts
-  - apps/frontend/src/i18n/de/datasets.ts
 data_flow: reads-existing
 last_synced: 2026-10-01
 status: complete

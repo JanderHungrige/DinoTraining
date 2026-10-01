@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
@@ -24,6 +25,9 @@ router = APIRouter()
 class ExportSettings(BaseModel):
     on_close: bool
     every_minutes: int = Field(ge=0, le=1440, description="0: off.")
+    #: Doc 145: trained models exported here when their training finishes; None: off.
+    #: A PUT without the field leaves it as it is.
+    model_folder: str | None = None
 
 
 class ExportStatus(BaseModel):
@@ -51,7 +55,9 @@ class RunResponse(BaseModel):
 def get_export_settings() -> ExportSettings:
     settings = get_settings()
     return ExportSettings(
-        on_close=settings.export_on_close, every_minutes=settings.export_every_minutes
+        on_close=settings.export_on_close,
+        every_minutes=settings.export_every_minutes,
+        model_folder=settings.model_export_folder,
     )
 
 
@@ -61,8 +67,14 @@ def get_export_settings() -> ExportSettings:
     summary="Choose when datasets export by themselves (.env)",
 )
 def put_export_settings(request: ExportSettings) -> ExportSettings:
+    folder = (request.model_folder or "").strip()
+    # Checked before anything is written: a refused request changes nothing.
+    if folder and not Path(folder).expanduser().is_absolute():
+        raise HTTPException(status_code=422, detail=f"Choose a full folder path, not {folder!r}.")
     write_env_value("DINO_EXPORT_ON_CLOSE", "true" if request.on_close else "false")
     write_env_value("DINO_EXPORT_EVERY_MINUTES", str(request.every_minutes))
+    if "model_folder" in request.model_fields_set:
+        write_env_value("DINO_MODEL_EXPORT_FOLDER", folder)
     get_settings.cache_clear()
     return get_export_settings()
 

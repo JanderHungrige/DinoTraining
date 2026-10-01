@@ -18,6 +18,7 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.i18n.middleware import GermanTextMiddleware
 from app.mcp.server import mount_mcp
+from app.mlops import auto_export as model_auto_export
 from app.mlops import tracking_hooks
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     # Doc 123: training runs go to MLflow when it is set up; a no-op otherwise.
     tracking_hooks.install()
+    # Doc 145: trained models exported when their training finishes, if switched on.
+    model_auto_export.install()
     app.include_router(api_router, prefix=settings.api_prefix)
 
     # Last, and after the router: the MCP mount composes itself into the app's lifespan,

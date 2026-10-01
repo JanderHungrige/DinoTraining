@@ -24,6 +24,7 @@ from app.finetune.preflight import preflight, refusal
 from app.finetune.requirements import get_requirements
 from app.ml.foundation.instances import FoundationInstanceStore
 from app.ml.training.job import JobState
+from app.mlops.auto_export import export_after_training
 from app.mlops.tracking import MlflowTracker, NullTracker
 from app.mlops.tracking_hooks import finetune_tracker
 
@@ -127,6 +128,7 @@ class FoundationFinetuneRunner:
         final: JobState = job.state
         if final == "complete" and job.instance_id:
             tracker.saved("finetuned", job.instance_id)
+            export_after_training("finetuned", job.instance_id, job.notes.append)  # doc 145
         else:
             tracker.finished(final)
 

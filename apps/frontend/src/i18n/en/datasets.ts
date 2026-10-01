@@ -92,4 +92,8 @@ export const datasetsEn = {
   'models.auto.failed': 'Not exported: {names}.',
   'models.auto.unfinished': 'Left for the next run (closing took too long): {names}.',
   'models.auto.noTarget': 'No export target yet: {names}. Choose one with “Export…” on their rows.',
+  // Model auto-export (doc 145)
+  'models.modelAuto.title': 'Export trained models automatically',
+  'models.modelAuto.on': 'Export each trained model to this folder when its training finishes',
+  'models.modelAuto.folder': 'Folder for trained models',
 } as const;

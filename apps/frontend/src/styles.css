@@ -3886,3 +3886,8 @@ body {
   margin: 8px 0 0;
   font-size: 0.85rem;
 }
+
+.autoexport__folder {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
