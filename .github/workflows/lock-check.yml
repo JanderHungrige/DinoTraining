@@ -11,7 +11,7 @@ on:
       - "backend/**"
       - "scripts/stage_runtime.py"
       - "scripts/test_stage_runtime.py"
-      - "scripts/install-mac.sh"
+      - "scripts/*.sh"
       - "scripts/*formula*"
       - "scripts/*smoke*"
       - "packaging/**"
@@ -43,6 +43,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: astral-sh/setup-uv@v6
+
+      # A quoting slip in dev.sh reached dev unnoticed (2026-10-01): parse every script.
+      - name: Shell scripts parse
+        run: for script in ../scripts/*.sh; do bash -n "$script" || exit 1; done
 
       - name: The lock matches pyproject.toml
         run: uv lock --check
