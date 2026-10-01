@@ -4,27 +4,50 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-01, at the end of the **Wave 15.9 build**.
+**Last updated:** 2026-10-02, at the end of the **Wave 15.10 build** (with placeholders)
+and two side tasks Jan asked for overnight.
 - **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and the Windows fixes (docs
-  139–141: no standard streams, Open the log / Report an issue, the Visual C++ runtime).
-- **In `dev`** (`4989cb8`): additionally Wave 15.8 (docs 134–138). Not yet released.
-- **Wave 15.9** (docs 142–150): built and pushed on `feat/dinotraining-wave-15-9`, **not
-  merged**.
-- **Wave 15.10 (the Microsoft Store)** is planned (docs 151–156), not started.
+  139–141).
+- **In `dev`** (`b4035a6`): additionally Waves 15.8 and 15.9. Not yet released.
+- **Wave 15.10 (the Microsoft Store, docs 151–156):** built on
+  `feat/dinotraining-wave-15-10`, **not merged**. The MSIX packs, installs, sets up and
+  is removed cleanly in CI; the identity is a placeholder until Jan reserves the name.
+- **Side task, look (doc 157):** `feat/ui-sketch-polish` (from `dev`), **not merged**.
+- **Side task, update check (doc 158):** `feat/update-checker` (from the 15.10 branch: it
+  needs the edition), **not merged**.
 
 **Next, Jan's:**
-- **0.1.2 on the second Windows PC:** the setup should install the Visual C++ runtime
-  itself.
-- **Test 15.8 and 15.9 from `dev`, once merged:**
-  - Models & Datasets: import, export, automatic export;
-  - cloud storage, linking.
-- **The merges:** 15.9 → `dev`, then a release when he says so.
-- **Still open:**
-  - `dino.questenterprise.de` (DNS, NPM host 19 → 8003, certificate);
-  - the Homebrew tap;
-  - Partner Center for the Store (15.10).
+- **Look at doc 157's decision:** the app now has one, dark look in both OS schemes (the
+  light scheme can only be bright over the original background). Say if a light theme is
+  wanted back.
+- **D0** (individual or company account), **reserve "DinoTraining"**, send `Identity
+  Name` / `Publisher` / `PublisherDisplayName` (doc 155's checklist).
+- **Test the test-signed MSIX** on both Windows PCs (the `msix-test` artifact of run
+  36933854791: trust `DinoTraining_test.cer` in "Trusted People", open the `.msix`).
+- **The merges:** 15.10, then the update check (it sits on 15.10), and the look, into
+  `dev`; a release when he says so. The privacy page goes live with the next site update.
+- **Still open:** `dino.questenterprise.de` (DNS, NPM), the Homebrew tap, 0.1.2 on the
+  second Windows PC.
 
 ---
+
+## Side tasks (2026-10-01/02, Jan: "if the current task is done, start with two sidetasks")
+
+| | |
+|---|---|
+| 157 | **Sketch everywhere** (`feat/ui-sketch-polish`): fields, boxes, tabs, chips in the buttons' Draft Sketch hand (`sketch.css`); things over images stay plain. **One look in both schemes:** the light scheme washed the loop out, and the contrast script (now checking the brightest *and* darkest pixel) showed it failing AA over the dark frames anyway. **The GPU panel and distribution notice** lost their `max-width: 72rem` and now span the Admin column like the others. |
+| 158 | **Update check** (`feat/update-checker`): the installer edition asks `dino.w3rth.de/latest.json` (GitHub as fallback) once at start; a bar "DinoTraining 0.1.3 is available" with Get it / What's new / Later (remembered per version). Never for the Store or dev builds; silent when offline; `DINO_UPDATE_CHECK=0` turns it off; the privacy page says so. The shell's `reqwest` gained TLS (rustls, OS root store). |
+
+## Wave 15.10 — The Microsoft Store (2026-10-01/02)
+
+| | |
+|---|---|
+| 151 | **MSIX** staged by `scripts/stage_msix.py` (exe, `runtime/`, logos, manifest from a template + `packaging/msix/identity.json`), packed by makeappx beside the EXE; a test-signed copy for CI; the unsigned one rides in the release. |
+| 152 | **Under package identity, measured:** Windows does not redirect into an existing AppData folder, and through the redirection uv's Python link fails. The Store edition writes to `Packages\<family>\LocalCache\Local\DinoTraining` by its real path and tells the backend (`DINO_APP_DIR`). Open: R1 WebView2 on Windows 10, R2/R3 the VC++ runtime, Jan's PCs. |
+| 153 | **CI smoke test:** clean AppData, install, unattended setup, `/health`, PyTorch in the package folder, second start, removal, folder gone. Green in run 36933854791 (66 s / 7 s). |
+| 154 | **Listing** (`packaging/store/`): EN/DE texts naming the 1–6 GB first-start download first, properties, IARC answers, screenshot list, certification notes; **privacy page** `website/privacy.html`. |
+| 155 | **Submission:** no API for an individual account (it needs an Entra app on the Users page), so one manual upload per release; Jan's checklist; the release summary says what to upload. |
+| 156 | **Store-aware app:** edition `store`/`installer`/`dev`; "Show in Explorer" and "Open the log" go through the shell; Store wording in the uninstall notice. |
 
 ## Wave 15.9 — Keep your work, and cloud datasets (2026-10-01)
 
