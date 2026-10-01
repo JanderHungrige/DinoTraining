@@ -125,10 +125,12 @@ function ExportPanel({ datasetId, onExported }: { readonly datasetId: string; re
           </button>
         )}
       </div>
-      <label className="dsexport__choice">
-        <input type="checkbox" checked={pictures} onChange={(event) => setPicturesChoice(event.target.checked)} />
-        {t('models.export.pictures')}
-      </label>
+      {!(target?.linked && kind === 'data') && (
+        <label className="dsexport__choice">
+          <input type="checkbox" checked={pictures} onChange={(event) => setPicturesChoice(event.target.checked)} />
+          {t('models.export.pictures')}
+        </label>
+      )}
       <button type="button" className="btn btn--primary btn--small" disabled={!ready} onClick={() => void exportNow()}>
         {busy ? t('models.export.busy') : t('models.export.now')}
       </button>

@@ -38,7 +38,7 @@ class ExportResult(BaseModel):
     written_at: str
 
 
-def _coco(dataset_id: str, root: Path | None, settings: Settings | None) -> dict[str, Any]:
+def coco_document(dataset_id: str, root: Path | None, settings: Settings | None) -> dict[str, Any]:
     """Doc 31's COCO of the saved pictures, `file_name` relative to the pictures' folder."""
     store = DatasetStore(settings)
     info = store.get(dataset_id)
@@ -83,7 +83,7 @@ def export_dataset(
     copied = 0
     if include_pictures and root is not None:
         copied = _copy_pictures(dump, root, folder / PICTURES_DIR)
-    write_atomically(folder / COCO_FILE, to_json(_coco(dataset_id, root, settings)))
+    write_atomically(folder / COCO_FILE, to_json(coco_document(dataset_id, root, settings)))
     write_atomically(folder / DATA_FILE, to_json(dump))
     pictures, annotated, objects = counts(dump)
     logger.info("Exported %s to %s (%d pictures, %d copied)", dataset_id, folder, pictures, copied)

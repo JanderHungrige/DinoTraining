@@ -8,6 +8,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.datasets.exchange.cloud_export import ExportConflict
 from app.datasets.exchange.export import ExportResult, export_dataset
 from app.datasets.exchange.targets import (
     Target,
@@ -62,6 +63,9 @@ async def export(dataset_id: str, request: ExportRequest | None = None) -> Expor
         set_target(dataset_id, target)
         record(dataset_id, result)
         return result
+    except ExportConflict as error:  # before ValueError, which it is (CLAUDE.md: ordering)
+        logger.info("Save-back of %s met a newer export: %s", dataset_id, error)
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except (ValueError, OSError) as error:
         raise _refused(dataset_id, error) from error
 

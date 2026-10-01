@@ -93,4 +93,12 @@ ENTRIES: dict[str, str] = {
     "{name} is not in the cache, and {bucket} could not be read: {*error}": (
         "{name} liegt nicht im Cache, und {bucket} konnte nicht gelesen werden: {*error}"
     ),
+    # Doc 150: a save-back that met a newer export
+    (
+        "Someone else saved annotations to {where} since your last export. "
+        "Nothing was overwritten: yours is at {copy}."
+    ): (
+        "Jemand anderes hat seit deinem letzten Export Annotationen nach {where} gespeichert. "
+        "Nichts wurde überschrieben: Deine liegen unter {copy}."
+    ),
 }

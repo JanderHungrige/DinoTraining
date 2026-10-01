@@ -12,15 +12,17 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
+from app.cloud.links import Link, all_links
 from app.core.config import Settings
 from app.datasets.db import data_root, transaction
+from app.datasets.exchange.cloud_export import export_to_bucket
 from app.datasets.exchange.dump import dump_dataset, fingerprint
 from app.datasets.exchange.export import ExportResult, export_dataset
-from app.datasets.exchange.layout import pictures_root
+from app.datasets.exchange.layout import EXPORT_DIR, pictures_root
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,8 @@ class Exported(BaseModel):
     at: str
     folder: str
     fingerprint: str
+    #: Doc 150: the bucket's ETags of this app's last export, the condition for the next.
+    e_tags: dict[str, str] = {}
 
 
 class TargetView(BaseModel):
@@ -49,6 +53,8 @@ class TargetView(BaseModel):
     exported_folder: str | None
     #: Whether the content differs from the last export (True before the first).
     changed: bool
+    #: Doc 150: "with the data" is the dataset's bucket; pictures are never copied there.
+    linked: bool = False
 
 
 def _read(dataset_id: str, settings: Settings | None) -> tuple[Target | None, Exported | None]:
@@ -84,23 +90,33 @@ def data_folder(dataset_id: str, settings: Settings | None = None) -> Path | Non
     return None if root.resolve().is_relative_to(app_data.resolve()) else root
 
 
+def linked(dataset_id: str, settings: Settings | None = None) -> Link | None:
+    """Doc 150: a linked dataset's "with the data" is its bucket."""
+    return next((link for link in all_links(settings) if link.dataset_id == dataset_id), None)
+
+
 def view(dataset_id: str, settings: Settings | None = None) -> TargetView:
     target, exported = _read(dataset_id, settings)
-    offered = data_folder(dataset_id, settings)
+    link = linked(dataset_id, settings)
+    offered: Path | str | None = (
+        f"{link.uri}/{EXPORT_DIR}" if link else data_folder(dataset_id, settings)
+    )
     current = fingerprint(dump_dataset(dataset_id, settings))
     return TargetView(
         kind=target.kind if target else None,
         folder=target.folder if target else None,
-        include_pictures=target.include_pictures if target else offered is None,
+        include_pictures=(target.include_pictures if target else offered is None) and link is None,
         data_folder=str(offered) if offered else None,
         exported_at=exported.at if exported else None,
         exported_folder=exported.folder if exported else None,
         changed=exported is None or exported.fingerprint != current,
+        linked=link is not None,
     )
 
 
 def set_target(dataset_id: str, target: Target, settings: Settings | None = None) -> None:
-    if target.kind == "data" and data_folder(dataset_id, settings) is None:
+    offered = linked(dataset_id, settings) or data_folder(dataset_id, settings)
+    if target.kind == "data" and offered is None:
         raise ValueError(
             "This dataset's pictures live inside the app, so 'with the data' would be removed "
             "with it. Choose a folder."
@@ -122,13 +138,42 @@ def resolve_target(dataset_id: str, target: Target, settings: Settings | None = 
 
 def export_to_target(dataset_id: str, settings: Settings | None = None) -> ExportResult:
     """Export to the stored target, and remember it (doc 143; doc 144 calls this too)."""
-    target, _ = _read(dataset_id, settings)
+    target, exported = _read(dataset_id, settings)
     if target is None:
         raise ValueError("This dataset has no export target yet. Choose where it goes first.")
+    link = linked(dataset_id, settings)
+    if target.kind == "data" and link is not None:
+        return _save_back(dataset_id, link, exported, settings)
     folder = resolve_target(dataset_id, target, settings)
     result = export_dataset(dataset_id, folder, target.include_pictures, settings)
     record(dataset_id, result, settings)
     return result
+
+
+def _save_back(
+    dataset_id: str, link: Link, exported: Exported | None, settings: Settings | None
+) -> ExportResult:
+    """Doc 150: into the bucket, conditional on this app's last export there."""
+    last = exported.e_tags if exported and exported.folder.startswith(link.uri) else {}
+    result, e_tags, text = export_to_bucket(dataset_id, link, last, settings)
+    record_bucket(dataset_id, result.folder, e_tags, json.loads(text), settings)
+    return result
+
+
+def record_bucket(
+    dataset_id: str,
+    folder: str,
+    e_tags: dict[str, str],
+    dump: dict[str, Any],
+    settings: Settings | None = None,
+) -> None:
+    exported = Exported(
+        at=datetime.now(UTC).isoformat(timespec="seconds"),
+        folder=folder,
+        fingerprint=fingerprint(dump),
+        e_tags=e_tags,
+    )
+    _write(dataset_id, "exported", exported, settings)
 
 
 def record(dataset_id: str, result: ExportResult, settings: Settings | None = None) -> None:

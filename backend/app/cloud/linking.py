@@ -10,6 +10,10 @@ from app.cloud.links import Link, create_link, get_link, set_dataset
 from app.cloud.remote_listing import remote_listing
 from app.core.config import Settings
 from app.datasets.db import transaction
+from app.datasets.exchange.cloud_export import current_e_tags
+from app.datasets.exchange.dump import dump_dataset
+from app.datasets.exchange.layout import EXPORT_DIR, find_export
+from app.datasets.exchange.targets import Target, record_bucket, set_target
 from app.datasets.intake.detect import Detection, scan
 from app.datasets.intake.importer import ImportResult, run_import
 from app.datasets.intake.walk import Listing
@@ -52,4 +56,16 @@ def import_link(
     set_dataset(link.id, result.dataset_id, settings)
     with transaction(settings) as db:
         db.execute("UPDATE datasets SET source = ? WHERE id = ?", (link.uri, result.dataset_id))
+    # After every write to the dataset: the baseline's fingerprint must be its final state.
+    _save_back_by_default(link, result.dataset_id, settings)
     return result
+
+
+def _save_back_by_default(link: Link, dataset_id: str, settings: Settings | None) -> None:
+    """Doc 150: a linked dataset saves back into its bucket; restored from an export there,
+    it starts from that export's ETags, so its first save-back is an update."""
+    set_target(dataset_id, Target(kind="data"), settings)
+    if find_export(link.cache_root) is not None:
+        folder = f"{link.uri}/{EXPORT_DIR}"
+        dump = dump_dataset(dataset_id, settings)
+        record_bucket(dataset_id, folder, current_e_tags(link, settings), dump, settings)

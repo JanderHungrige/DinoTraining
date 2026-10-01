@@ -70,6 +70,14 @@ describe('DatasetExport (doc 143)', () => {
     await waitFor(() => expect(readPersisted(LAST_FOLDER, '', isString)).toBe('/backups/chess'));
   });
 
+  it('saves a linked dataset back into its bucket, without offering to copy pictures (doc 150)', async () => {
+    api.get.mockResolvedValue({ ...IN_PLACE, kind: 'data', data_folder: 's3://photos/rail/dinotraining', linked: true });
+    render(<DatasetExport datasetId="d3" name="Rail cloud" exportedAt={null} onExported={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Export Rail cloud' }));
+    expect(await screen.findByRole('radio', { name: 'With the data (s3://photos/rail/dinotraining)' })).toBeChecked();
+    expect(screen.queryByRole('checkbox', { name: 'Copy the pictures too' })).toBeNull();
+  });
+
   it('says why an export was refused', async () => {
     api.get.mockResolvedValue(IN_PLACE);
     api.run.mockRejectedValue(new Error('Cannot write to /data/rail: read-only'));

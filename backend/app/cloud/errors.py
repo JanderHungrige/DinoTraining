@@ -14,6 +14,10 @@ class CloudError(ValueError):
     """A store refused or could not be reached; its message is safe to show."""
 
 
+class CloudConflict(CloudError):
+    """A conditional write found a newer version than the one expected (doc 150)."""
+
+
 def _clean(text: str) -> str:
     return _SECRET_LIKE.sub(r"\1=…", text.splitlines()[0] if text else "")[:300]
 
@@ -32,8 +36,8 @@ def explain(error: Exception, where: str) -> CloudError:
         code in str(error) for code in missing
     ):
         return CloudError(f"{where} does not exist, or this account cannot see it. ({detail})")
-    if isinstance(error, store_errors.PreconditionError):
-        return CloudError(f"{where} changed since it was last read. ({detail})")
+    if isinstance(error, (store_errors.PreconditionError, store_errors.AlreadyExistsError)):
+        return CloudConflict(f"{where} changed since it was last read. ({detail})")
     lowered = detail.lower()
     if any(
         word in lowered

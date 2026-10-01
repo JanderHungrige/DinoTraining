@@ -13,6 +13,8 @@ export interface ExportTarget {
   readonly exported_at: string | null;
   readonly exported_folder: string | null;
   readonly changed: boolean;
+  /** Doc 150: "with the data" is the dataset's bucket; pictures are never copied there. */
+  readonly linked?: boolean;
 }
 
 export interface ExportResult {
