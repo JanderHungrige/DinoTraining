@@ -29,6 +29,7 @@ from types import ModuleType
 from app.i18n import (
     de_audit,
     de_audit_task,
+    de_cloud,
     de_errors,
     de_jobs,
     de_parameters,
@@ -41,6 +42,7 @@ from app.i18n import (
 MODULES: tuple[ModuleType, ...] = (
     de_audit,
     de_audit_task,
+    de_cloud,
     de_errors,
     de_jobs,
     de_parameters,

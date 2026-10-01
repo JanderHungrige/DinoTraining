@@ -14,6 +14,14 @@ export const SAME_IN_BOTH = new Set<string>([
   'YOLO',
   'Pascal VOC',
   'OpenLABEL (OSDaR23)',
+  // Cloud providers and their products, and two words German shares (doc 147).
+  'AWS',
+  'Azure',
+  'Google Cloud',
+  'Azure Blob Storage',
+  'Google Cloud Storage',
+  'Name',
+  'Region',
   // Technical terms stay English in German too (Jan, 2026-09-30).
   'Experiment',
   'Token',

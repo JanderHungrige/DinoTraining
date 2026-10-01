@@ -9,6 +9,7 @@
 import { useCallback, useState, type JSX } from 'react';
 
 import { AutoExportSettings } from '../components/AutoExportSettings';
+import { CloudConnections } from '../components/CloudConnections';
 import { DatasetGuide } from '../components/DatasetGuide';
 import { DatasetImport } from '../components/DatasetImport';
 import { ExampleDataset } from '../components/ExampleDataset';
@@ -59,6 +60,7 @@ export function ModelsTab(): JSX.Element {
             <DatasetImport onImported={imported} />
             <ExampleDataset onImported={imported} />
             <DatasetGuide />
+            <CloudConnections />
             <AutoExportSettings onExported={imported} />
             <LibraryTab key={listVersion} kinds={['dataset']} headed={false} />
           </>

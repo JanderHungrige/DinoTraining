@@ -22,7 +22,7 @@ test_files:
   - apps/frontend/src/components/UninstallNotice.test.tsx
 data_flow: reads-existing
 last_synced: 2026-10-01
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [uninstall, export, backup, notice, nsis, windows, msix]
@@ -32,7 +32,8 @@ wave: dinotraining-wave-15-9
 wave_status: active
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "**The uninstaller's message box was not seen on a real Windows desktop.** The release dry run built the installer with the hook and removed it silently (the box is skipped there by design); the box itself needs one manual uninstall with 'Delete the application data' ticked."
 security_read_sites: []
 sister_projects: []
 ---
@@ -76,3 +77,39 @@ sister_projects: []
   - `model_folder` (doc 145's setting).
   - It fingerprints every dataset with a target, so it is asked when the notice is
     shown, not polled.
+
+## Found while building
+
+- **The EXE uninstaller removes the user's data only with "Delete the application data"
+  ticked** (doc 132). So:
+  - the message box appears only then;
+  - the in-app text says "**can** remove everything … (from the Windows installer when
+    you tick …)", not "removes everything".
+- **"Export everything now" can only export datasets that have a target.**
+  - With 16 datasets and no targets, the button would have done nothing.
+  - It now appears only for changes that can go. Datasets without a target are told how
+    to get one.
+- **The hooks file needed a UTF-8 BOM:** NSIS reads an included file without one as
+  ANSI, and the German umlauts would have been garbled.
+
+## Verified (2026-10-01)
+
+- **Backend (1951 tests, 2 new):**
+  - work without a target named;
+  - a picture with no save is no work;
+  - a change after an export named;
+  - the API's answer.
+- **Frontend (1175 tests, 4 new):**
+  - the lead;
+  - names with counts (one/many) and how to give a target;
+  - "Export everything now" re-reads to "All datasets are exported";
+  - no button when nothing can go;
+  - the warning survives an unavailable backend;
+  - German.
+- **Live (the real library):**
+  - the overview answered in 0.07 s for 16 datasets and 25 models;
+  - the notice named all 16, told how to give them a target, and showed no button.
+- **CI:**
+  - release dry run 36869568457 on the branch, green on all three platforms;
+  - the Windows installer built with the hook and the BOM;
+  - doc 131's silent uninstall still removed it.

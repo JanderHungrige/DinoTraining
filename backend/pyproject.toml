@@ -18,6 +18,9 @@ dependencies = [
     "mcp>=2.1,<3",
     # Doc 123's MLflow client. Declared, not inherited through mcp (doc 125).
     "httpx>=0.27",
+    # Doc 147: S3, Azure Blob and Google Cloud Storage through one Rust client; 5 MB
+    # against 23 MB for boto3 + azure-storage-blob + google-cloud-storage.
+    "obstore>=0.11,<0.12",
 
     # --- ML ---
     # torch / torchvision are chosen per machine: the `cpu`, `cu126` and `cu130` extras

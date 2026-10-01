@@ -3920,3 +3920,50 @@ body {
 .uninstall__state {
   color: var(--text-dim);
 }
+
+/* Cloud storage connections (doc 147) */
+.cloud__list {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.cloud__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cloud__name {
+  font-weight: 600;
+}
+
+.cloud__test,
+.cloud__buttons {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cloud__test p {
+  flex: 1 1 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cloud__ok {
+  color: var(--text-dim);
+}
+
+.cloud__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 34rem;
+  margin: 8px 0;
+}
