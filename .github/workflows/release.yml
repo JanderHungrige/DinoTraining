@@ -239,6 +239,27 @@ jobs:
           "Uninstall: runtime and app removed, user data kept, no longer under Apps." >> $env:GITHUB_STEP_SUMMARY
           Write-Host "Uninstall checks passed"
 
+      # Doc 153: the Store edition installed, started through its package identity, set up,
+      # started again and removed, like a user does it.
+      - name: Smoke test (MSIX)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $test = Join-Path $env:RUNNER_TEMP 'msix-test'
+          $msix = Get-ChildItem $test -Filter *_test.msix | Select-Object -First 1
+          pwsh scripts/smoke_msix.ps1 -Msix $msix.FullName -Cert (Join-Path $test 'DinoTraining_test.cer')
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Keep the MSIX app's logs of a failed smoke test
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: msix-smoke-logs
+          path: |
+            ~/AppData/Local/Packages/*/LocalCache/Local/com.dinotraining.app/logs/
+            ~/AppData/Local/com.dinotraining.app/logs/
+          if-no-files-found: ignore
+
       - name: Keep the app log of a failed smoke test
         if: failure()
         uses: actions/upload-artifact@v4

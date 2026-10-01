@@ -93,8 +93,25 @@ pub fn setup_status(app: tauri::AppHandle, state: tauri::State<'_, SetupState>) 
     let machine = state.machine();
     let update = runtime(&app).and_then(|runtime| outdated_variant(&runtime));
     let offered = |wanted: &String| machine.choices.iter().any(|choice| choice.variant == wanted);
-    let auto = std::env::var("DINO_SETUP_AUTO").ok().or_else(|| update.clone()).filter(offered);
+    let auto = setup_auto(
+        std::env::var("DINO_SETUP_AUTO").ok(),
+        crate::support_dir::app_support_root().map(|root| root.join(SETUP_AUTO_FILE)),
+    )
+    .or_else(|| update.clone())
+    .filter(offered);
     SetupStatus { needed: true, machine: Some(machine), auto, update }
+}
+
+/// Doc 153: the unattended variant, also from a file in the support folder. A Store (MSIX)
+/// app started like the Start menu does inherits no environment, so its smoke test writes
+/// the variant there instead of setting `DINO_SETUP_AUTO`.
+pub const SETUP_AUTO_FILE: &str = "setup-auto";
+
+pub(crate) fn setup_auto(env: Option<String>, file: Option<std::path::PathBuf>) -> Option<String> {
+    env.filter(|value| !value.trim().is_empty())
+        .or_else(|| file.and_then(|path| std::fs::read_to_string(path).ok()))
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 /// The setup screen's steps, into the app log: what a user sends when the first start
@@ -219,5 +236,24 @@ async fn sync(
             log::error!("Install failed: {error}");
             Err(SetupFailure::Failed { message: error.to_string() })
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn the_unattended_variant_comes_from_the_environment_or_the_file() {
+        let dir = std::env::temp_dir().join(format!("dino-setup-auto-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join(SETUP_AUTO_FILE);
+        std::fs::write(&file, "cpu\n").unwrap();
+        assert_eq!(setup_auto(Some("cu130".into()), Some(file.clone())), Some("cu130".into()));
+        assert_eq!(setup_auto(None, Some(file.clone())), Some("cpu".into()));
+        assert_eq!(setup_auto(Some("  ".into()), Some(file.clone())), Some("cpu".into()));
+        assert_eq!(setup_auto(None, Some(dir.join("missing"))), None);
+        assert_eq!(setup_auto(None, None), None);
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 }
