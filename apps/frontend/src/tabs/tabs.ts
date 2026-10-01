@@ -11,12 +11,12 @@ import { ENGLISH, type Translator } from '../i18n/translate';
 
 export const TAB_IDS = [
   'intro',
+  'inspect',
   'studio',
   'prepare',
   'trainer',
   'inference',
   'generator',
-  'inspect',
   'library',
   'admin',
   'api',
@@ -47,6 +47,14 @@ const ENTRIES: readonly TabEntry[] = [
     labelKey: 'app.tabs.introLabel',
     hintKey: 'app.tabs.introHint',
     wave: 7,
+  },
+  {
+    // Right after Start here (Jan, 2026-10-01): look at what you have before annotating
+    // more, and come back after every round of the loop.
+    id: 'inspect',
+    labelKey: 'app.tabs.inspectLabel',
+    hintKey: 'app.tabs.inspectHint',
+    wave: 9,
   },
   {
     id: 'studio',
@@ -82,13 +90,6 @@ const ENTRIES: readonly TabEntry[] = [
     labelKey: 'app.tabs.generatorLabel',
     hintKey: 'app.tabs.generatorHint',
     wave: 4,
-  },
-  {
-    // Beside the Generator, because that is where you come from: annotate, then watch it.
-    id: 'inspect',
-    labelKey: 'app.tabs.inspectLabel',
-    hintKey: 'app.tabs.inspectHint',
-    wave: 9,
   },
   {
     id: 'library',

@@ -13,6 +13,8 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    # Doc 133: a merge to main with a new version in tauri.conf.json is the release.
+    branches: [main]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -172,9 +174,35 @@ jobs:
           $dir = Join-Path $env:LOCALAPPDATA 'DinoTraining'
           if (-not (Test-Path $dir)) { Get-ChildItem $env:LOCALAPPDATA -Directory | Select-Object Name; throw "not installed at $dir" }
           $exe = Get-ChildItem $dir -Filter *.exe | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
-          python scripts/smoke_installed.py $exe.FullName --work "$env:RUNNER_TEMP/smoke"
+          # Doc 132: the runtime where the app puts it, so the uninstall check sees it.
+          $runtime = Join-Path $dir 'runtime'
+          python scripts/smoke_installed.py $exe.FullName --runtime $runtime --work "$env:RUNNER_TEMP/smoke"
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          # --- doc 132: uninstall removes Python/PyTorch, keeps the user's work ---------
+          $kept = Join-Path $dir 'data\keep-me.txt'
+          New-Item -ItemType File -Force -Path $kept | Out-Null
+          if (-not (Test-Path $runtime)) { throw "no runtime at $runtime before the uninstall" }
           Start-Process -FilePath (Join-Path $dir 'uninstall.exe') -ArgumentList '/S' -Wait
+          # NSIS's uninstaller hands off to a copy of itself in %TEMP% (Au_.exe/Un_*.exe), so
+          # -Wait returns early. Wait for that copy; deleting ~2 GB under Defender is slow.
+          $deadline = (Get-Date).AddMinutes(10)
+          do {
+            Start-Sleep -Seconds 3
+            $busy = Get-Process | Where-Object { $_.Name -like 'Au_*' -or $_.Name -like 'Un_*' }
+          } while ($busy -and (Get-Date) -lt $deadline)
+          if (Test-Path $runtime) {
+            $left = Get-ChildItem $runtime -Recurse -Force -File -ErrorAction SilentlyContinue
+            Write-Host "Left behind: $($left.Count) files, $(($left | Where-Object IsReadOnly).Count) read-only"
+            $left | Select-Object -First 10 | ForEach-Object { Write-Host "$($_.FullName.Length) $($_.FullName)" }
+            Write-Host "app exe still there: $(Test-Path $exe.FullName); uninstaller running: $([bool]$busy)"
+            throw "the uninstall left the runtime at $runtime"
+          }
+          if (Test-Path $exe.FullName) { throw "the uninstall left $($exe.FullName)" }
+          if (-not (Test-Path $kept)) { throw "the uninstall removed the user's data" }
+          if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\DinoTraining') { throw "still listed under Apps" }
+          "Uninstall: runtime and app removed, user data kept, no longer under Apps." >> $env:GITHUB_STEP_SUMMARY
+          Write-Host "Uninstall checks passed"
 
       - name: Keep the app log of a failed smoke test
         if: failure()
@@ -201,17 +229,58 @@ jobs:
     name: Publish
     needs: installer
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     steps:
+      - uses: actions/checkout@v4
+
+      # Doc 133. Only after all three installers were built and smoke-tested (`needs`).
+      # - push to main: publish v<version> from tauri.conf.json, unless a release for it
+      #   exists (a draft too): bump the version to release.
+      # - a v* tag: a draft, as before, for anything published by hand.
+      # - anything else (the dry run): decide and say, publish nothing.
+      - name: Decide
+        id: decide
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('apps/desktop/src-tauri/tauri.conf.json'))['version'])")
+          TAG="v$VERSION"
+          EXISTS=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || true)
+          MODE=none
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then MODE=draft; fi
+          if [[ "$GITHUB_REF" == refs/heads/main && "$GITHUB_EVENT_NAME" == push ]]; then
+            if [ -n "$EXISTS" ]; then MODE=exists; else MODE=publish; fi
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          case "$MODE" in
+            publish) NOTE="Publishing $TAG.";;
+            exists)  NOTE="$TAG already has a release: nothing published. Bump the version in tauri.conf.json to release.";;
+            draft)   NOTE="A draft release for $GITHUB_REF_NAME.";;
+            *)       if [ -n "$EXISTS" ]; then STATE="exists"; else STATE="does not exist yet"; fi
+                     NOTE="Not main and not a tag: nothing published (version $VERSION; a release for it $STATE)." ;;
+          esac
+          echo "$NOTE"
+          echo "### Release: $NOTE" >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/download-artifact@v4
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
         with:
           path: artifacts
 
-      # Draft, never live. macOS notarization and Windows signing are not wired up yet
-      # (Wave 8 feature 4), so an unsigned build reaching users would be Gatekeeper-blocked
-      # on macOS and SmartScreen-warned on Windows. A human decides when to publish.
+      # Unsigned (no paid certificates, Jan): Windows warns once (SmartScreen), and the
+      # Mac installs through the script or Homebrew, which Gatekeeper does not block (doc 130).
       - uses: softprops/action-gh-release@v2
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
         with:
-          draft: true
+          tag_name: ${{ steps.decide.outputs.mode == 'publish' && steps.decide.outputs.tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          draft: ${{ steps.decide.outputs.mode == 'draft' }}
+          make_latest: ${{ steps.decide.outputs.mode == 'publish' }}
           generate_release_notes: true
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.exe
+            artifacts/**/*.deb
+            artifacts/**/*.app.tar.gz
+            artifacts/**/*.sha256
+            artifacts/**/dinotraining.rb

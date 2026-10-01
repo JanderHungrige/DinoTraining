@@ -80,6 +80,26 @@ def test_a_second_start_that_reinstalls_fails(
         smoke_installed.run(fake_app, [sys.executable], tmp_path / "work", free_port())
 
 
+@POSIX_ONLY
+def test_the_default_runtime_is_left_to_the_app(
+    fake_app: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Doc 132: with --runtime, the app's own choice is used and inspected."""
+    pytest.importorskip("torch")
+    pytest.importorskip("onnxruntime")
+    monkeypatch.setenv("DINO_RUNTIME_DIR", str(tmp_path / "chosen-by-the-app"))
+    lines = smoke_installed.run(
+        fake_app,
+        [sys.executable],
+        tmp_path / "work",
+        free_port(),
+        tmp_path / "chosen-by-the-app",
+    )
+    assert (tmp_path / "chosen-by-the-app" / "current").is_file()
+    assert not (tmp_path / "work" / "runtime").exists()
+    assert lines
+
+
 def test_an_app_that_exits_fails_with_the_reason(tmp_path: Path) -> None:
     broken = tmp_path / "broken.py"
     broken.write_text("raise SystemExit(3)\n", encoding="utf-8")

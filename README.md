@@ -23,12 +23,12 @@ Everything runs on your own machine, and your pictures are never uploaded.
   - [First steps after starting](#first-steps-after-starting)
 - [Features](#features)
   - [Start here](#start-here)
+  - [Inspect datasets](#inspect-datasets)
   - [Annotation Studio](#annotation-studio)
   - [Prepare data](#prepare-data)
   - [Training](#training)
   - [Inference Viewer](#inference-viewer)
   - [Dataset Generator](#dataset-generator)
-  - [Inspect datasets](#inspect-datasets)
   - [Library](#library)
   - [Admin / Models](#admin--models)
   - [Connection (AI assistants and API)](#connection-ai-assistants-and-api)
@@ -99,6 +99,15 @@ SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
 - **Updates:** a new version brings its own package list; the app updates its packages
   on the first start, and keeps the previous ones until the new ones work.
 - **Model weights** are not in the installer; you download them in the app (see below).
+- **Uninstall:**
+  - **Windows:** *Settings → Apps → DinoTraining → Uninstall*. It also removes the
+    downloaded Python and PyTorch (1–6 GB). Your datasets, trained models and downloaded
+    weights stay in `%LOCALAPPDATA%\DinoTraining`, unless you tick *Delete the
+    application data*.
+  - **macOS:** delete `DinoTraining.app` (or `brew uninstall dinotraining`); everything
+    else, including your data, is in `~/Library/Application Support/DinoTraining`.
+  - **Linux:** `sudo apt remove dino-training`; everything else is in
+    `~/.local/share/DinoTraining`.
 
 ### Option B: from source
 
@@ -172,6 +181,12 @@ A plain-language introduction:
 - what a backbone, a head and fine-tuning are;
 - which model is good for what, with numbers measured in this app;
 - what the app cannot do yet.
+
+### Inspect datasets
+
+Play back a dataset (its videos, folders and loose pictures) with all stored annotations
+drawn on. Coloured bars under the player show where each class appears; click one and
+jump to its first, previous or next occurrence.
 
 ### Annotation Studio
 
@@ -309,12 +324,6 @@ proposes.
 - **Autoplay:** propose → a short pause to look → save → next, stoppable at any moment.
 - **Hidden mode:** runs without drawing, showing only progress.
 - **Ask when unclear:** stops on predictions whose score is in a band you set.
-
-### Inspect datasets
-
-Play back a dataset (its videos, folders and loose pictures) with all stored annotations
-drawn on. Coloured bars under the player show where each class appears; click one and
-jump to its first, previous or next occurrence.
 
 ### Library
 

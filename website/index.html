@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DinoTraining — Download</title>
+  <meta name="description" content="DinoTraining: annotate, train, infer and generate data with DINOv2/v3, Grounding DINO and SAM. Free desktop app for Windows, macOS and Linux.">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <!-- Doc 133: the app's particle loop (Pixabay #5192), as in the app's background. -->
+  <div class="bg" aria-hidden="true">
+    <video class="bg__video" autoplay muted loop playsinline preload="auto" poster="media/particles-poster.jpg">
+      <source src="media/particles-loop.mp4" type="video/mp4">
+    </video>
+    <div class="bg__scrim"></div>
+  </div>
+
+  <header class="top">
+    <span class="top__name">DinoTraining</span>
+    <nav class="top__links">
+      <a href="https://github.com/JanderHungrige/DinoTraining" data-i18n="nav.repo">Source code</a>
+      <button type="button" class="lang" id="lang" aria-label="Sprache / Language">DE</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1 data-i18n="hero.title">Teach a vision model with a few hundred pictures.</h1>
+      <p class="hero__lead" data-i18n="hero.lead">
+        DinoTraining is a free desktop app for the whole loop: annotate pictures with Grounding DINO and SAM,
+        train small heads on frozen DINOv2/DINOv3 backbones in minutes, run them, and let them annotate new data.
+      </p>
+      <p class="hero__version" id="version" data-i18n="release.loading">Looking up the latest version…</p>
+    </section>
+
+    <section class="downloads" aria-labelledby="dl-title">
+      <h2 id="dl-title" class="visually-hidden" data-i18n="dl.title">Download</h2>
+
+      <article class="card" id="card-windows">
+        <h3>Windows</h3>
+        <p class="card__meta" data-i18n="win.meta">Windows 10/11, 64-bit</p>
+        <a class="btn btn--primary" id="dl-windows" href="https://github.com/JanderHungrige/DinoTraining/releases" data-i18n="dl.soon">First release coming</a>
+        <p class="card__note" data-i18n="win.note">
+          The installer is not signed with a paid certificate, so Windows shows a SmartScreen warning once:
+          <em>More info → Run anyway</em>. No admin rights needed.
+        </p>
+      </article>
+
+      <article class="card" id="card-mac">
+        <h3>macOS</h3>
+        <p class="card__meta" data-i18n="mac.meta">Apple silicon (M1 and newer)</p>
+        <p class="card__step" data-i18n="mac.step">Open <em>Terminal</em> and paste:</p>
+        <div class="cmd">
+          <code id="mac-cmd">bash -c "$(curl -fsSL https://raw.githubusercontent.com/JanderHungrige/DinoTraining/main/scripts/install-mac.sh)"</code>
+          <button type="button" class="cmd__copy" data-copy="mac-cmd" data-i18n="cmd.copy">Copy</button>
+        </div>
+        <p class="card__note" data-i18n="mac.note">
+          Installs into your Applications folder, without admin rights and without a security warning.
+          Not in the browser: macOS blocks unsigned apps that a browser downloaded.
+          Run it again to update. Intel Macs are not supported (PyTorch no longer builds for them).
+        </p>
+      </article>
+
+      <article class="card" id="card-linux">
+        <h3>Linux</h3>
+        <p class="card__meta" data-i18n="linux.meta">Ubuntu / Debian, x86-64</p>
+        <a class="btn btn--primary" id="dl-linux" href="https://github.com/JanderHungrige/DinoTraining/releases" data-i18n="dl.soon">First release coming</a>
+        <p class="card__step" data-i18n="linux.step">Then, in the download folder:</p>
+        <div class="cmd">
+          <code id="linux-cmd">sudo apt install ./DinoTraining_*_amd64.deb</code>
+          <button type="button" class="cmd__copy" data-copy="linux-cmd" data-i18n="cmd.copy">Copy</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="facts">
+      <div class="fact">
+        <h3 data-i18n="fact.first.title">The first start</h3>
+        <p data-i18n="fact.first.text">
+          The installers are small (about 20 MB). On its first start the app downloads Python and PyTorch once,
+          from the official sources, in exactly the versions it was tested with: about 1 GB, or about 3.5 GB with
+          NVIDIA GPU support. After that it works offline.
+        </p>
+      </div>
+      <div class="fact">
+        <h3 data-i18n="fact.gpu.title">Your GPU</h3>
+        <p data-i18n="fact.gpu.text">
+          NVIDIA cards are detected and used through CUDA, Apple silicon through MPS. Without a GPU the app runs
+          on the CPU; you can switch later in the app.
+        </p>
+      </div>
+      <div class="fact">
+        <h3 data-i18n="fact.open.title">Open source</h3>
+        <p data-i18n="fact.open.text">
+          MIT licensed. Models are downloaded in the app from Hugging Face; your pictures and datasets never
+          leave your computer.
+        </p>
+      </div>
+    </section>
+
+    <p class="more">
+      <a id="all-releases" href="https://github.com/JanderHungrige/DinoTraining/releases" data-i18n="more.releases">All releases and checksums</a>
+      ·
+      <a href="https://github.com/JanderHungrige/DinoTraining" data-i18n="more.repo">The code on GitHub</a>
+      ·
+      <a href="https://github.com/JanderHungrige/DinoTraining#install-and-start" data-i18n="more.source">Uninstalling, and building from source</a>
+    </p>
+  </main>
+
+  <footer class="foot">
+    <p data-i18n="foot.video">Background: video by tommyvideo on Pixabay (Pixabay Content License).</p>
+  </footer>
+
+  <script src="site.js"></script>
+</body>
+</html>

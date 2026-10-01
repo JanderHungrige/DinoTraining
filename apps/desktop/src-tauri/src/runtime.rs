@@ -67,20 +67,6 @@ pub struct Runtime {
     pub root: PathBuf,
 }
 
-/// Where the app keeps its own files when nothing overrides it. Mirrors the Python side's
-/// data folder choice (`data/` lives beside `runtime/`).
-pub fn app_support_root() -> Option<PathBuf> {
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE"))?;
-    let home = PathBuf::from(home);
-    Some(if cfg!(target_os = "macos") {
-        home.join("Library").join("Application Support").join("DinoTraining")
-    } else if cfg!(windows) {
-        std::env::var_os("APPDATA").map(PathBuf::from).unwrap_or(home).join("DinoTraining")
-    } else {
-        home.join(".local").join("share").join("DinoTraining")
-    })
-}
-
 pub(crate) fn since_epoch() -> std::time::Duration {
     std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default()
 }
@@ -94,7 +80,7 @@ impl Runtime {
         }
         let root = std::env::var_os("DINO_RUNTIME_DIR")
             .map(PathBuf::from)
-            .or_else(|| app_support_root().map(|root| root.join("runtime")))?;
+            .or_else(|| crate::support_dir::app_support_root().map(|root| root.join("runtime")))?;
         Some(Self { bundled, root })
     }
 

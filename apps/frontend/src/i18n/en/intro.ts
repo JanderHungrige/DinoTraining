@@ -38,11 +38,11 @@ export const introEn = {
     'Run a trained head — or a text-prompted segmentation model — over new images, review what comes back, and save the result as a new dataset.',
   'intro.stage.generator.why':
     'This is the step that makes the loop a loop. The model you just trained does the first pass on the next batch, and you correct it instead of starting from nothing.',
-  'intro.stage.inspect.title': 'Watch what you annotated',
+  'intro.stage.inspect.title': 'Look at your data first',
   'intro.stage.inspect.what':
-    'Open a dataset and play its videos and image folders back with every stored box and mask drawn on, with a coloured bar per class showing where each one appears.',
+    'Open a dataset — one you imported, recorded, or annotated in an earlier round — and play its videos and image folders back with every stored box and mask drawn on, with a coloured bar per class showing where each one appears.',
   'intro.stage.inspect.why':
-    'A dataset is easier to trust once you have watched it. Gaps, drift and a class that only ever appears in one stretch of a ride show up in seconds on a timeline and take an afternoon to find image by image.',
+    'Before you annotate more or train, see what you already have. Gaps, drift and a class that only ever appears in one stretch of a ride show up in seconds on a timeline and take an afternoon to find image by image. Come back here after every round of the loop.',
   'intro.stage.library.title': 'Keep track of it all',
   'intro.stage.library.what':
     'Every dataset, trained head and fine-tuned model in one list, with what it holds, what it learned from, and a way to delete it.',

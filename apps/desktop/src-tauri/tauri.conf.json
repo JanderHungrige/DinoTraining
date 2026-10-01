@@ -44,6 +44,11 @@
     "resources": [],
     "externalBin": [],
     "longDescription": "Desktop app for the annotate -> train -> infer -> generate computer-vision loop, built on DINOv2/DINOv3 and Grounding DINO.",
-    "shortDescription": "Annotate, train, infer, generate."
+    "shortDescription": "Annotate, train, infer, generate.",
+    "windows": {
+      "nsis": {
+        "installerHooks": "windows/hooks.nsh"
+      }
+    }
   }
 }
