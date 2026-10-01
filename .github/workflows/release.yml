@@ -182,9 +182,20 @@ jobs:
           New-Item -ItemType File -Force -Path $kept | Out-Null
           if (-not (Test-Path $runtime)) { throw "no runtime at $runtime before the uninstall" }
           Start-Process -FilePath (Join-Path $dir 'uninstall.exe') -ArgumentList '/S' -Wait
-          # NSIS's uninstaller hands off to a copy of itself in %TEMP%: -Wait returns early.
-          for ($i = 0; $i -lt 60 -and ((Test-Path $exe.FullName) -or (Test-Path $runtime)); $i++) { Start-Sleep -Seconds 2 }
-          if (Test-Path $runtime) { throw "the uninstall left the runtime at $runtime" }
+          # NSIS's uninstaller hands off to a copy of itself in %TEMP% (Au_.exe/Un_*.exe), so
+          # -Wait returns early. Wait for that copy; deleting ~2 GB under Defender is slow.
+          $deadline = (Get-Date).AddMinutes(10)
+          do {
+            Start-Sleep -Seconds 3
+            $busy = Get-Process | Where-Object { $_.Name -like 'Au_*' -or $_.Name -like 'Un_*' }
+          } while ($busy -and (Get-Date) -lt $deadline)
+          if (Test-Path $runtime) {
+            $left = Get-ChildItem $runtime -Recurse -Force -File -ErrorAction SilentlyContinue
+            Write-Host "Left behind: $($left.Count) files, $(($left | Where-Object IsReadOnly).Count) read-only"
+            Get-ChildItem $runtime -Force | Select-Object Name, Attributes | Format-Table | Out-String | Write-Host
+            Write-Host "app exe still there: $(Test-Path $exe.FullName); uninstaller running: $([bool]$busy)"
+            throw "the uninstall left the runtime at $runtime"
+          }
           if (Test-Path $exe.FullName) { throw "the uninstall left $($exe.FullName)" }
           if (-not (Test-Path $kept)) { throw "the uninstall removed the user's data" }
           if (Test-Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\DinoTraining') { throw "still listed under Apps" }
