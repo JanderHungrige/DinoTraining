@@ -7,12 +7,18 @@
 ;
 ; Not while updating: an update reinstalls the app and keeps everything.
 
-; RMDir /r skips read-only files, and uv may leave some (its cache, managed Python):
-; clear the attribute first. nsExec runs attrib without a console window.
+; Removing a tree NSIS cannot remove alone. Found by doc 131's CI on the first two runs:
+; - RMDir /r stops at paths beyond MAX_PATH (260 characters), and uv's cache and
+;   PyTorch's site-packages go far deeper: 5 files stayed in cache\ and envs\.
+;   `rd` with the \\?\ prefix has no such limit;
+; - read-only files: attrib clears them first (best effort, short paths).
+; nsExec runs both without a console window. RMDir /r afterwards catches the rest.
 !macro DINO_REMOVE_TREE DIR
   ${If} ${FileExists} "${DIR}\*.*"
     DetailPrint "Removing ${DIR}"
     nsExec::Exec 'attrib -R "${DIR}\*" /S /D'
+    Pop $0
+    nsExec::Exec '"$SYSDIR\cmd.exe" /c rd /s /q "\\?\${DIR}"'
     Pop $0
     RMDir /r "${DIR}"
   ${EndIf}

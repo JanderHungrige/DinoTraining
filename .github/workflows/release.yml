@@ -192,7 +192,7 @@ jobs:
           if (Test-Path $runtime) {
             $left = Get-ChildItem $runtime -Recurse -Force -File -ErrorAction SilentlyContinue
             Write-Host "Left behind: $($left.Count) files, $(($left | Where-Object IsReadOnly).Count) read-only"
-            Get-ChildItem $runtime -Force | Select-Object Name, Attributes | Format-Table | Out-String | Write-Host
+            $left | Select-Object -First 10 | ForEach-Object { Write-Host "$($_.FullName.Length) $($_.FullName)" }
             Write-Host "app exe still there: $(Test-Path $exe.FullName); uninstaller running: $([bool]$busy)"
             throw "the uninstall left the runtime at $runtime"
           }
