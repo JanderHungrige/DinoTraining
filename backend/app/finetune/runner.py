@@ -16,6 +16,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 
+from app.cloud.pictures import prefetch
 from app.core.config import Settings, get_settings
 from app.finetune.adapter import FinetuneAdapter, FinetuneData, FinetuneSettings, TrainingState
 from app.finetune.adapters import get_adapter
@@ -141,6 +142,7 @@ class FoundationFinetuneRunner:
             spec, request.dataset_ids, request.recipe_id, request.settings.seed, self._settings
         )
         data.stop = job.cancel_requested
+        prefetch(sample.path for sample in [*data.train, *data.val, *data.test])  # doc 149
         job.held_out = "test" if data.test else "validation"
         if not data.test:
             job.notes.append(

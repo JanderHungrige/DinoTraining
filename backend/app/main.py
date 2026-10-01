@@ -74,11 +74,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 app = create_app()
 
 
+def _clean_up_cloud_links() -> None:
+    """Doc 149: links without a dataset go, with their cache folders. Never fatal."""
+    from app.cloud.cache import clean_up_links
+
+    try:
+        clean_up_links()
+    except Exception:  # noqa: BLE001 - a clean-up must not keep the backend from starting
+        logger.exception("Cleaning up cloud links failed")
+
+
 def main() -> None:
     """Start the sidecar. Binds loopback only — never expose this off-machine."""
     import uvicorn
 
     settings = get_settings()
+    _clean_up_cloud_links()
     logger.info(
         "Starting DinoTraining backend v%s on %s:%s%s",
         __version__,

@@ -89,4 +89,8 @@ ENTRIES: dict[str, str] = {
         "Der Download ist abgebrochen ({*error}). Versuch es noch einmal."
     ),
     "The download ended in the middle of the archive.": "Der Download endete mitten im Archiv.",
+    # Doc 149: a linked picture neither cached nor reachable
+    "{name} is not in the cache, and {bucket} could not be read: {*error}": (
+        "{name} liegt nicht im Cache, und {bucket} konnte nicht gelesen werden: {*error}"
+    ),
 }

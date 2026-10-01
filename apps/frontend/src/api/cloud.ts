@@ -84,3 +84,24 @@ export function detectLink(connectionId: string, bucket: string, prefix: string)
 export function startLink(linkId: string, name: string, description: string | null): Promise<ImportJob> {
   return apiFetch('/cloud/links', isJob, json('POST', { link_id: linkId, name, description }));
 }
+
+/** Doc 149: the linked pictures' cache. */
+export interface CacheState {
+  readonly bound_gb: number;
+  readonly used_bytes: number;
+  readonly datasets: readonly { readonly dataset_id: string; readonly uri: string; readonly pictures: number; readonly cached: number }[];
+}
+
+const isCache = (value: unknown): value is CacheState => isRecord(value) && typeof value['bound_gb'] === 'number';
+
+export function getCache(signal?: AbortSignal): Promise<CacheState> {
+  return apiFetch('/cloud/cache', isCache, signal ? { signal } : undefined);
+}
+
+export function setCacheBound(boundGb: number): Promise<CacheState> {
+  return apiFetch('/cloud/cache', isCache, json('PUT', { bound_gb: boundGb }));
+}
+
+export function clearCache(): Promise<CacheState> {
+  return apiFetch('/cloud/cache/clear', isCache, { method: 'POST' });
+}

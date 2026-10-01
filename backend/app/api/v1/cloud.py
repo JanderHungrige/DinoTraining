@@ -7,6 +7,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.cloud.cache import bound_bytes, clear, evict, per_dataset, used_bytes
 from app.cloud.connections import (
     Connection,
     ConnectionRequest,
@@ -17,7 +18,10 @@ from app.cloud.connections import (
     update_connection,
 )
 from app.cloud.errors import CloudError
+from app.cloud.links import forget_storages
 from app.cloud.storage import open_storage, probe_storage
+from app.core.config import get_settings
+from app.core.env_file import write_env_value
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -70,7 +74,9 @@ def add(request: ConnectionRequest) -> Connection:
 def change(connection_id: str, request: ConnectionRequest) -> Connection:
     _found(connection_id)
     try:
-        return update_connection(connection_id, request)
+        updated = update_connection(connection_id, request)
+        forget_storages(connection_id)  # doc 149: linked datasets use the new settings at once
+        return updated
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -79,6 +85,7 @@ def change(connection_id: str, request: ConnectionRequest) -> Connection:
 def remove(connection_id: str) -> dict[str, bool]:
     _found(connection_id)
     delete_connection(connection_id)
+    forget_storages(connection_id)
     return {"deleted": True}
 
 
@@ -98,3 +105,52 @@ def test(connection_id: str, request: TestRequest) -> TestResult:
     except Exception as error:  # noqa: BLE001 - a misconfigured store fails while being built
         logger.info("Cloud test of %s could not start: %s", connection.name, error)
         return TestResult(ok=False, message=f"The connection's settings were refused: {error}")
+
+
+class LinkedUse(BaseModel):
+    dataset_id: str
+    uri: str
+    pictures: int
+    cached: int
+
+
+class CacheState(BaseModel):
+    bound_gb: float
+    used_bytes: int
+    datasets: list[LinkedUse]
+
+
+class CacheBound(BaseModel):
+    bound_gb: float = Field(gt=0, le=10_000)
+
+
+def _cache_state() -> CacheState:
+    return CacheState(
+        bound_gb=get_settings().cloud_cache_gb,
+        used_bytes=used_bytes(),
+        datasets=[LinkedUse(**vars(entry)) for entry in per_dataset()],
+    )
+
+
+@router.get(
+    "/cloud/cache",
+    response_model=CacheState,
+    summary="The linked pictures' cache: its bound and use",
+)
+def cache() -> CacheState:
+    return _cache_state()
+
+
+@router.put("/cloud/cache", response_model=CacheState, summary="Change the cache's bound (.env)")
+def set_cache(request: CacheBound) -> CacheState:
+    write_env_value("DINO_CLOUD_CACHE_GB", f"{request.bound_gb:g}")
+    get_settings.cache_clear()
+    if used_bytes() > bound_bytes():
+        evict(int(bound_bytes() * 0.9))
+    return _cache_state()
+
+
+@router.post("/cloud/cache/clear", response_model=CacheState, summary="Remove every cached picture")
+def clear_cache() -> CacheState:
+    clear()
+    return _cache_state()

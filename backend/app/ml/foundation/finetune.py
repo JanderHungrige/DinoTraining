@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 import torch
 from PIL import Image
 
+from app.cloud.pictures import ensure_local
 from app.core.config import Settings, get_settings
 from app.datasets.store import DatasetStore
 from app.ml.foundation.build import build_foundation
@@ -189,7 +190,7 @@ def evaluate(model: RfDetrModel, samples: list[TrainingSample]) -> dict[str, flo
     targets: list[dict[str, torch.Tensor]] = []
 
     for sample in samples:
-        with Image.open(sample.path) as opened:
+        with Image.open(ensure_local(sample.path)) as opened:
             prediction = model.predict(opened.convert("RGB"), score_threshold=0.05)
         payload = prediction.payload
         outputs.append(

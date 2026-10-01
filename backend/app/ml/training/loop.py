@@ -15,6 +15,7 @@ import torch
 from PIL import Image
 from torch import Tensor, nn
 
+from app.cloud.pictures import ensure_local
 from app.ml.backbone import Backbone, BackboneFeatures, extract
 from app.ml.heads.registry import HeadTypeSpec
 from app.ml.preprocess import (
@@ -43,7 +44,7 @@ def load_image(path: str) -> Image.Image | None:
     logged and skipped.
     """
     try:
-        with Image.open(path) as handle:
+        with Image.open(ensure_local(path)) as handle:  # doc 149: a linked picture is fetched
             return handle.convert("RGB")
     except (OSError, ValueError) as exc:
         logger.warning("Skipping unreadable image %s: %s", path, exc)

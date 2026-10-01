@@ -139,6 +139,14 @@ def set_dataset(link_id: str, dataset_id: str, settings: Settings | None = None)
     _forget()
 
 
+def delete_link(link_id: str, settings: Settings | None = None) -> None:
+    with transaction(settings) as connection:
+        connection.execute("DELETE FROM cloud_links WHERE id = ?", (link_id,))
+    with _lock:
+        _storages.pop(link_id, None)
+    _forget()
+
+
 def find(path: Path, settings: Settings | None = None) -> tuple[Link, str] | None:
     """The link and bucket key behind a cache path, or None for an ordinary file."""
     resolved = path.expanduser()
@@ -166,3 +174,12 @@ def reset() -> None:
     with _lock:
         _known = None
         _storages.clear()
+
+
+def forget_storages(connection_id: str) -> None:
+    """A connection's endpoint or secrets changed: its links build their storage again."""
+    with _lock:
+        for link_id in [link.id for link in (_known or []) if link.connection_id == connection_id]:
+            _storages.pop(link_id, None)
+        if _known is None:
+            _storages.clear()  # nothing to tell them apart by: rebuild all, it is cheap

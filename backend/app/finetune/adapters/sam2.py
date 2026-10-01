@@ -28,6 +28,7 @@ import torch
 from PIL import Image
 from torch.nn import functional as F
 
+from app.cloud.pictures import ensure_local
 from app.core.config import Settings
 from app.core.paths import resolve_model_dir
 from app.datasets.rle import rle_decode
@@ -125,7 +126,7 @@ def _embeddings(
     state: Sam2State, sample: TrainingSample
 ) -> tuple[list[torch.Tensor], tuple[int, int]]:
     """The frozen encoder's output for a picture, cached while the budget lasts."""
-    with Image.open(sample.path) as opened:
+    with Image.open(ensure_local(sample.path)) as opened:
         image = opened.convert("RGB")
     size = (image.height, image.width)
     cached = state.cache.get(sample.path)

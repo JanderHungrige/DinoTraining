@@ -92,6 +92,8 @@ class Settings(BaseSettings):
     # Doc 144: exports of changed datasets on closing the app, and every n minutes (0: off).
     export_on_close: bool = Field(default=True, alias="DINO_EXPORT_ON_CLOSE")
     export_every_minutes: int = Field(default=0, ge=0, le=1440, alias="DINO_EXPORT_EVERY_MINUTES")
+    # Doc 149: the linked pictures' local cache, in GB (least recently used go first).
+    cloud_cache_gb: float = Field(default=5.0, gt=0, le=10_000, alias="DINO_CLOUD_CACHE_GB")
     # Doc 145: each trained model exported here when its training finishes; unset is off.
     model_export_folder: str | None = Field(default=None, alias="DINO_MODEL_EXPORT_FOLDER")
     mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")

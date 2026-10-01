@@ -13,6 +13,7 @@ import random
 from PIL import Image
 from pydantic import BaseModel
 
+from app.cloud.pictures import ensure_local
 from app.ml.augment import PRESETS, Variant, augment, meaning_guard
 from app.prep.input_preview import PreviewImage, colours_for, data_url, fit_and_draw, sample
 from app.prep.profiles import ModelProfile
@@ -112,7 +113,7 @@ def preview_augmentation(
         raise ValueError("The dataset has no images to preview.")
     image = chosen[0]
     boxes = [a for a in facts.positives() if a.image_id == image.id and a.kind == "box"]
-    with Image.open(image.path) as source:
+    with Image.open(ensure_local(image.path)) as source:
         picture = source.convert("RGB")
     original = Variant(picture, [(a.x, a.y, a.width, a.height) for a in boxes], [])
     rng = random.Random(seed)

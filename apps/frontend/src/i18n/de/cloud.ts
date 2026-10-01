@@ -47,4 +47,10 @@ export const cloudDe: Catalogue<typeof cloudEn> = {
   'cloud.link.check': 'Prüfen',
   'cloud.link.checking': 'Liste wird gelesen…',
   'cloud.link.link': 'Verknüpfen',
+  // Bild-Cache (doc 149)
+  'cloud.cached': '{cached} von {pictures} im Cache aus {bucket}',
+  'cloud.cache.title': 'Bild-Cache',
+  'cloud.cache.use': '{used} von {bound} GB belegt durch Bilder verknüpfter Datensätze. Ist er voll, gehen die am längsten nicht genutzten zuerst.',
+  'cloud.cache.bound': 'Größe in GB',
+  'cloud.cache.clear': 'Cache leeren',
 };

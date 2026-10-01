@@ -6,7 +6,8 @@ annotations, how many annotated, how many classes, which kinds of annotation.
 
 from __future__ import annotations
 
-from typing import Literal
+from pathlib import Path
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -43,6 +44,9 @@ class DatasetProfile(BaseModel):
     #: Doc 143: the last export, for the list ("exported 3 min ago").
     exported_at: str | None = None
     exported_folder: str | None = None
+    #: Doc 149: a linked dataset's bucket, and how many of its pictures are cached.
+    linked: str | None = None
+    cached: int | None = None
 
 
 def dataset_profile(dataset_id: str, settings: Settings | None = None) -> DatasetProfile:
@@ -93,6 +97,7 @@ def dataset_profile(dataset_id: str, settings: Settings | None = None) -> Datase
         annotation_types=types,
         exported_at=exported_at,
         exported_folder=exported_folder,
+        **_linked(dataset_id, settings),
     )
 
 
@@ -102,3 +107,16 @@ def _exported(dataset_id: str, settings: Settings | None) -> tuple[str | None, s
     from app.datasets.exchange.targets import exported_summary
 
     return exported_summary(dataset_id, settings)
+
+
+def _linked(dataset_id: str, settings: Settings | None) -> dict[str, Any]:
+    """Doc 149: for a linked dataset, its bucket and its cached pictures (what works offline)."""
+    from app.cloud.links import all_links
+
+    link = next((entry for entry in all_links(settings) if entry.dataset_id == dataset_id), None)
+    if link is None:
+        return {}
+    with transaction(settings) as connection:
+        rows = connection.execute("SELECT path FROM images WHERE dataset_id = ?", (dataset_id,))
+        paths = [row["path"] for row in rows]
+    return {"linked": link.uri, "cached": sum(1 for path in paths if Path(path).is_file())}

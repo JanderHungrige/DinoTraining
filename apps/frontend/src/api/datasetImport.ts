@@ -70,6 +70,9 @@ export interface DatasetProfile {
   /** Doc 143: the last export, for the list. */
   readonly exported_at?: string | null;
   readonly exported_folder?: string | null;
+  /** Doc 149: a linked dataset's bucket, and how many of its pictures are cached. */
+  readonly linked?: string | null;
+  readonly cached?: number | null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -46,4 +46,10 @@ export const cloudEn = {
   'cloud.link.check': 'Check',
   'cloud.link.checking': 'Reading the listing…',
   'cloud.link.link': 'Link',
+  // Picture cache (doc 149)
+  'cloud.cached': '{cached} of {pictures} cached from {bucket}',
+  'cloud.cache.title': 'Picture cache',
+  'cloud.cache.use': '{used} of {bound} GB used by pictures from linked datasets. The least recently used go first when it is full.',
+  'cloud.cache.bound': 'Size in GB',
+  'cloud.cache.clear': 'Empty the cache',
 } as const;

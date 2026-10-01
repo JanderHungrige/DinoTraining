@@ -31,6 +31,8 @@ function profileLine(profile: DatasetProfile, t: Translator['t'], tp: Translator
     tp('models.import.classes', profile.classes.length),
     annotationTypes(profile.annotation_types, t) || null,
     t(`models.profile.media.${profile.media}`),
+    // Doc 149: what a linked dataset has locally, which is what works offline.
+    profile.linked ? t('cloud.cached', { cached: String(profile.cached ?? 0), pictures: String(profile.pictures), bucket: profile.linked }) : null,
   ]
     .filter((part): part is string => Boolean(part))
     .join(' · ');

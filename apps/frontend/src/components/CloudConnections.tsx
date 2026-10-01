@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 import { ApiError } from '../api/client';
 import { deleteConnection, listConnections, testConnection, type CloudConnection, type CloudTestResult } from '../api/cloud';
 import { useT, type Key } from '../i18n';
+import { CloudCache } from './CloudCache';
 import { CloudConnectionForm } from './CloudConnectionForm';
 
 function message(error: unknown): string {
@@ -63,6 +64,7 @@ export function CloudConnections({ onChanged }: { readonly onChanged?: () => voi
         <button type="button" className="btn btn--small" onClick={() => setEditing('new')}>{t('cloud.add')}</button>
       )}
       {problem && <p className="dsimport__error" role="alert">{problem}</p>}
+      <CloudCache />
     </details>
   );
 }
