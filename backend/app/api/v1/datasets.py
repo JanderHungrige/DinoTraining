@@ -132,9 +132,7 @@ async def put_image(dataset_id: str, annotation: ImageAnnotation) -> DatasetCoun
     response_model=DatasetCounts,
     summary="Save one image's segmentation masks (replaces any existing set)",
 )
-async def put_image_masks(
-    dataset_id: str, annotation: ImageMaskAnnotation
-) -> DatasetCounts:
+async def put_image_masks(dataset_id: str, annotation: ImageMaskAnnotation) -> DatasetCounts:
     try:
         return MaskStore().replace_image_masks(dataset_id, annotation)
     except DatasetNotFoundError:
@@ -183,9 +181,7 @@ async def dataset_folder(dataset_id: str) -> DatasetFolder:
     else:
         folder = dataset_dir(dataset_id)
 
-    return DatasetFolder(
-        folder=str(folder), exists=folder.is_dir(), copies=info.copy_images
-    )
+    return DatasetFolder(folder=str(folder), exists=folder.is_dir(), copies=info.copy_images)
 
 
 @router.get(

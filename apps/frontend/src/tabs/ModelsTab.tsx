@@ -10,6 +10,7 @@ import { useCallback, useState, type JSX } from 'react';
 
 import { DatasetGuide } from '../components/DatasetGuide';
 import { DatasetImport } from '../components/DatasetImport';
+import { ExampleDataset } from '../components/ExampleDataset';
 import { SubTabBar, type SubTab } from '../components/SubTabBar';
 import { useT } from '../i18n';
 import { readPersisted, writePersisted } from '../lib/persisted';
@@ -52,6 +53,7 @@ export function ModelsTab(): JSX.Element {
             <h2 className="library__title">{t('models.datasets.title')}</h2>
             <p className="library__lead">{t('models.datasets.lead')}</p>
             <DatasetImport onImported={imported} />
+            <ExampleDataset onImported={imported} />
             <DatasetGuide />
             <LibraryTab key={listVersion} kinds={['dataset']} headed={false} />
           </>

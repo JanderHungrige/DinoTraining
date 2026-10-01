@@ -134,9 +134,7 @@ class DatasetStore:
     def exists(self, dataset_id: str) -> bool:
         with transaction(self._settings) as connection:
             return (
-                connection.execute(
-                    "SELECT 1 FROM datasets WHERE id = ?", (dataset_id,)
-                ).fetchone()
+                connection.execute("SELECT 1 FROM datasets WHERE id = ?", (dataset_id,)).fetchone()
                 is not None
             )
 

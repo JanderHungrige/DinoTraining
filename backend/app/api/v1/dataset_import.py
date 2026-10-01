@@ -36,6 +36,8 @@ class ImportJobView(BaseModel):
     job_id: str
     path: str
     state: Literal["running", "complete", "failed"]
+    #: An example downloads first (doc 138): `done`/`total` are bytes then, pictures after.
+    phase: Literal["download", "import"]
     done: int
     total: int
     current: str
@@ -43,11 +45,12 @@ class ImportJobView(BaseModel):
     error: str | None
 
 
-def _view(job: ImportJob) -> ImportJobView:
+def view_job(job: ImportJob) -> ImportJobView:
     return ImportJobView(
         job_id=job.job_id,
         path=job.path,
         state=job.state,
+        phase=job.phase,
         done=job.done,
         total=job.total,
         current=job.current,
@@ -81,7 +84,7 @@ async def start_import(request: ImportRequest) -> ImportJobView:
     if not path.exists():
         raise HTTPException(status_code=422, detail=f"Not found: {request.path}")
     job = get_import_jobs().submit(path, request.name, request.description, request.copy_images)
-    return _view(job)
+    return view_job(job)
 
 
 @router.get(
@@ -93,7 +96,7 @@ async def import_job(job_id: str) -> ImportJobView:
     job = get_import_jobs().get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail=f"No import job {job_id}")
-    return _view(job)
+    return view_job(job)
 
 
 class ProfileList(BaseModel):

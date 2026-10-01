@@ -95,9 +95,7 @@ async def probe_source(path: str = Query(min_length=1)) -> SequenceInfo:
 
 
 @router.get("/video/frame", summary="One frame of a folder or video")
-async def get_frame(
-    path: str = Query(min_length=1), index: int = Query(ge=0)
-) -> Response:
+async def get_frame(path: str = Query(min_length=1), index: int = Query(ge=0)) -> Response:
     """The webview cannot load file:// URLs, and a video frame has no file at all."""
     sequence = _open(path)
     if not 0 <= index < sequence.frames:

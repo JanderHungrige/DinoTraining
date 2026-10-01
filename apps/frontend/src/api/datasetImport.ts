@@ -1,4 +1,4 @@
-/** Dataset import and parameters (doc 136). Mirrors backend/app/api/v1/dataset_import.py. */
+/** Dataset import, parameters (doc 136) and example datasets (doc 138). Mirrors backend/app/api/v1/dataset_import.py. */
 
 import { apiFetch } from './client';
 
@@ -40,6 +40,8 @@ export interface ImportJob {
   readonly job_id: string;
   readonly path: string;
   readonly state: 'running' | 'complete' | 'failed';
+  /** An example downloads first (doc 138): `done`/`total` are bytes then, pictures after. */
+  readonly phase: 'download' | 'import';
   readonly done: number;
   readonly total: number;
   readonly current: string;
@@ -107,4 +109,38 @@ export function getImportJob(jobId: string, signal?: AbortSignal): Promise<Impor
 export async function listProfiles(signal?: AbortSignal): Promise<readonly DatasetProfile[]> {
   const body = await apiFetch('/datasets/profiles', isProfileList, signal ? { signal } : undefined);
   return body.profiles;
+}
+
+export type ExampleVariant = 'full' | 'rgb-center';
+
+export interface ExampleDataset {
+  readonly example_id: string;
+  readonly sequence: string;
+  readonly download_bytes: number;
+  readonly page: string;
+  readonly licence: string;
+  readonly licence_url: string;
+  readonly annotations_licence: string;
+  readonly attribution: string;
+  /** Variants already on disk: importing them again downloads nothing. */
+  readonly downloaded: readonly ExampleVariant[];
+  /** A download or import still running, which a page opened later follows. */
+  readonly running_job: string | null;
+}
+
+function isExampleList(value: unknown): value is { examples: ExampleDataset[] } {
+  return isRecord(value) && Array.isArray(value['examples']);
+}
+
+export async function listExamples(signal?: AbortSignal): Promise<readonly ExampleDataset[]> {
+  const body = await apiFetch('/datasets/examples', isExampleList, signal ? { signal } : undefined);
+  return body.examples;
+}
+
+export function importExample(exampleId: string, variant: ExampleVariant): Promise<ImportJob> {
+  return apiFetch(`/datasets/examples/${encodeURIComponent(exampleId)}/import`, isImportJob, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ variant }),
+  });
 }

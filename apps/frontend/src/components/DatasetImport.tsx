@@ -3,15 +3,14 @@
  * describe it, import it in the background with progress.
  */
 
-import { useEffect, useState, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 
 import { ApiError } from '../api/client';
-import { detectDataset, getImportJob, startImport, type Detection, type DetectionNote, type ImportJob } from '../api/datasetImport';
+import { detectDataset, startImport, type Detection, type DetectionNote, type ImportJob } from '../api/datasetImport';
+import { useImportJob } from '../hooks/useImportJob';
 import { useT, type Key } from '../i18n';
 import { hasNativeDialog, pickVideoFile } from '../lib/dialog';
 import { FolderField } from './FolderField';
-
-const POLL_MS = 700;
 
 /** `uncovered` is counted, and worded with its plural apart from these. */
 const NOTE_KEYS: Readonly<Record<Exclude<DetectionNote, 'uncovered'>, Key>> = {
@@ -34,7 +33,11 @@ const KIND_KEYS: Readonly<Record<Detection['kind'], Key>> = {
   openlabel: 'models.import.kind.openlabel',
 };
 
-function message(error: unknown): string {
+export function megabytes(bytes: number): string {
+  return String(Math.round(bytes / 1_000_000));
+}
+
+export function message(error: unknown): string {
   return error instanceof ApiError || error instanceof Error ? error.message : String(error);
 }
 
@@ -80,18 +83,7 @@ export function DatasetImport({ onImported }: { readonly onImported: () => void 
     }
   };
 
-  useEffect(() => {
-    if (job?.state !== 'running') return undefined;
-    const timer = window.setTimeout(() => {
-      void getImportJob(job.job_id)
-        .then((next) => {
-          setJob(next);
-          if (next.state === 'complete') onImported();
-        })
-        .catch((failure: unknown) => setError(message(failure)));
-    }, POLL_MS);
-    return () => window.clearTimeout(timer);
-  }, [job, onImported]);
+  useImportJob(job, setJob, onImported, (failure) => setError(message(failure)));
 
   const running = job?.state === 'running';
   return (
@@ -170,7 +162,8 @@ function DetectionSummary({ detection }: { readonly detection: Detection }): JSX
   );
 }
 
-function ImportProgress({ job }: { readonly job: ImportJob }): JSX.Element {
+/** An import's (or an example's download's) progress, failure or result. */
+export function ImportProgress({ job }: { readonly job: ImportJob }): JSX.Element {
   const { t, tp } = useT();
   if (job.state === 'failed') {
     return <p className="dsimport__error" role="alert">{t('models.import.failed', { error: job.error ?? '' })}</p>;
@@ -195,7 +188,11 @@ function ImportProgress({ job }: { readonly job: ImportJob }): JSX.Element {
       <div className="dsimport__bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={value}>
         <div className="dsimport__fill" style={{ width: `${value}%` }} />
       </div>
-      <p>{t('models.import.running', { done: String(job.done), total: String(job.total), current: job.current })}</p>
+      <p>
+        {job.phase === 'download'
+          ? t('models.example.downloading', { done: megabytes(job.done), total: megabytes(job.total), current: job.current })
+          : t('models.import.running', { done: String(job.done), total: String(job.total), current: job.current })}
+      </p>
     </div>
   );
 }

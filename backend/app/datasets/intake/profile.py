@@ -24,6 +24,7 @@ def pending_paths(dataset_id: str, settings: Settings | None = None) -> set[str]
         ).fetchall()
     return {str(row["path"]) for row in rows}
 
+
 Media = Literal["images", "video", "mixed", "empty"]
 
 

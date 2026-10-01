@@ -24,7 +24,7 @@ const YOLO: Detection = {
 };
 
 function job(over: Partial<ImportJob>): ImportJob {
-  return { job_id: 'j1', path: '/data/cars', state: 'running', done: 0, total: 3, current: '', result: null, error: null, ...over };
+  return { job_id: 'j1', path: '/data/cars', state: 'running', phase: 'import', done: 0, total: 3, current: '', result: null, error: null, ...over };
 }
 
 beforeEach(() => {

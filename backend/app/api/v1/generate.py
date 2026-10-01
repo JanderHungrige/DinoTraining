@@ -165,9 +165,7 @@ class MaskProposalResponse(BaseModel):
 async def propose_masks(request: MaskProposalRequest) -> MaskProposalResponse:
     spec = get_annotator(request.annotator_id)
     if spec is None:
-        raise HTTPException(
-            status_code=404, detail=f"Unknown annotator: {request.annotator_id}"
-        )
+        raise HTTPException(status_code=404, detail=f"Unknown annotator: {request.annotator_id}")
 
     try:
         image, path = image_io.read_image(request.image_path)

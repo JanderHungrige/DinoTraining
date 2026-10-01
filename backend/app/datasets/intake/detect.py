@@ -15,7 +15,12 @@ from pydantic import BaseModel
 
 from app.datasets.bbox_conventions import Convention
 from app.datasets.coco_import import normalise_class
-from app.datasets.intake.documents import Document, coco_documents, openlabel_documents
+from app.datasets.intake.documents import (
+    Document,
+    camera_pictures,
+    coco_documents,
+    openlabel_documents,
+)
 from app.datasets.intake.voc import is_voc, voc_documents
 from app.datasets.intake.walk import Listing, walk
 from app.datasets.intake.yolo import is_yolo, yolo_documents
@@ -56,6 +61,8 @@ def scan(path: Path) -> tuple[Detection, list[Document], Listing | None]:
     listing = walk(path)
     for documents, kind in _annotated(listing):
         if documents:
+            if kind == "openlabel":
+                listing = camera_pictures(listing)
             return _annotated_detection(path, kind, documents, listing), documents, listing
     if listing.pictures:
         detection = _plain(path, "images", listing)

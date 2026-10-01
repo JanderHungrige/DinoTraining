@@ -153,7 +153,9 @@ def test_never_annotated_pictures_stay_out_of_training_until_saved(tmp_path: Pat
             path=first[1],
             width=first[2],
             height=first[3],
-            boxes=[Box(label="positive", provenance="hand-drawn", x=1, y=1, w=5, h=5, prompt="cat")],
+            boxes=[
+                Box(label="positive", provenance="hand-drawn", x=1, y=1, w=5, h=5, prompt="cat")
+            ],
         ),
     )
     assert first[0] not in load_preparation(result.dataset_id).excluded

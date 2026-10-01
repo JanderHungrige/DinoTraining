@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
 from PIL import Image
 
 from app.datasets.coco_import import split_of
+from app.datasets.intake.walk import Listing
 from app.datasets.openlabel import camera_names, load_openlabel
 from app.datasets.openlabel_to_coco import convert
 
@@ -91,10 +92,26 @@ def openlabel_documents(json_files: list[Path]) -> list[Document]:
             if not camera.lower().startswith(_CAMERA_PREFIXES):
                 continue
             payload, _summary = convert(root, camera, exclude=OPENLABEL_EXCLUDED)
+            # A camera without one annotation is not annotated (doc 138): OSDaR23's side
+            # cameras carry none, and "annotated, empty" would train their people and
+            # signals as background. Their pictures arrive never saved instead.
+            if not payload["annotations"]:
+                continue
             fill_sizes(payload, path.parent)
             if payload["images"]:
                 documents.append(Document(payload, path.parent, path, None))
     return documents
+
+
+def camera_pictures(listing: Listing) -> Listing:
+    """An OpenLABEL folder's pictures are its cameras' frames only (doc 138): OSDaR23
+    ships its radar as PNG renderings, which would otherwise import as pictures."""
+
+    def from_camera(path: Path) -> bool:
+        folders = path.relative_to(listing.root).parts[:-1]
+        return any(folder.lower().startswith(_CAMERA_PREFIXES) for folder in folders)
+
+    return replace(listing, pictures=[path for path in listing.pictures if from_camera(path)])
 
 
 def _mentions_openlabel(path: Path) -> bool:

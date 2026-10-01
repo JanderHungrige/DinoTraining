@@ -93,9 +93,8 @@ sister_projects: []
 
 - **Licences:** each dataset has its own. Check it before training on it, or before
   sharing a model trained on it.
-  - **OSDaR23:** "published as Open Data under a Creative Commons licence" (DZSF,
-    2023). The exact version is on the portal, which this session could not read (bot
-    check), so the app names none.
+  - **OSDaR23:** **CC BY-SA 3.0 DE**, read from the portal's CKAN API while building
+    doc 138, which shows it with the example.
   - **COCO:** the annotations are CC BY 4.0; the pictures are under Flickr's terms.
 
 ## Links in the desktop app (found while building)
