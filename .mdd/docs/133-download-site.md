@@ -16,10 +16,10 @@ source_files:
 routes: []
 models: []
 test_files:
-  - website/deploy/test_update_site.sh
+  - (live) the updater run twice locally and once on the server; the decide step run for four cases
 data_flow: greenfield
 last_synced: 2026-10-01
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [website, download, release, deploy, nginx, cron, server]
@@ -29,7 +29,10 @@ wave: dinotraining-wave-15-7
 wave_status: active
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "dino.questenterprise.de: DNS points to 46.38.243.234, and NPM's proxy host 19 forwards to 172.17.0.1:8001 (not 8003) without a certificate. Jan fixes all three; the site already answers on 8003."
+  - "Until main carries scripts/install-mac.sh and a release is published, the Mac line and the download buttons cannot work; the page says 'first release coming'."
+  - "jan's crontab tracks the wave branch too until it is merged (SITE_BRANCHES); drop it from the line afterwards."
 security_read_sites: []
 sister_projects: [../3dmap, ../Battlefuel, ../NinaNatur, ../funding-tender-tracker]
 ---
@@ -95,3 +98,32 @@ nginx:alpine "dinotraining-site" serves current/ on 172.17.0.1:8002 and :8003
   web host), not to this server, whose NPM already knows the name. Jan points the
   record at `159.195.148.193`.
 - **NPM's certificates** for both names: Jan, in NPM, once DNS points here.
+- **NPM's proxy host for dino.questenterprise.de forwards to 8001**, not 8003 (read
+  from `/opt/npm/data/nginx/proxy_host/19.conf`). Jan sets it to 8003.
+
+## Verified (2026-10-01)
+
+- **The page, in the browser pane:**
+  - narrow and at 1280 px: three cards, no horizontal scroll;
+  - the video plays (currentTime 9.89 → 11.39 s);
+  - English by default, German by the switch: "Version 0.1.0 · 1. Oktober 2026",
+    "Für Windows laden (18 MB)";
+  - with no published release: "Die erste Version erscheint in Kürze", and the buttons
+    lead to the releases page;
+  - the Mac line wraps in full instead of scrolling (changed after the first look).
+- **The updater, locally:**
+  - main has no `website/` yet, so it fell back and deployed the branch at 5bfbedc:
+    `current → sites/<sha>`, the page, the video and the poster;
+  - `latest.json` with `version: null` (only a draft exists);
+  - a second run did nothing.
+- **The release decision,** run against the real repository for four cases:
+  - main push at 0.0.1: "already has a release, bump the version";
+  - a branch dispatch: nothing;
+  - a tag: a draft;
+  - main push at 0.2.0: "Publishing v0.2.0".
+- **On the server** (as jan, nothing as root):
+  - the updater started `dinotraining-site` on 172.17.0.1:8002 and :8003 (64 MB
+    limit): both 200, the video 200 (4.0 MB);
+  - **https://dino.w3rth.de: 200, the page live with its background video**;
+  - every other container unchanged ("Up 2 weeks", "healthy");
+  - jan's crontab gained the updater line; the NinaNatur backup line is untouched.

@@ -23,12 +23,12 @@ Everything runs on your own machine, and your pictures are never uploaded.
   - [First steps after starting](#first-steps-after-starting)
 - [Features](#features)
   - [Start here](#start-here)
+  - [Inspect datasets](#inspect-datasets)
   - [Annotation Studio](#annotation-studio)
   - [Prepare data](#prepare-data)
   - [Training](#training)
   - [Inference Viewer](#inference-viewer)
   - [Dataset Generator](#dataset-generator)
-  - [Inspect datasets](#inspect-datasets)
   - [Library](#library)
   - [Admin / Models](#admin--models)
   - [Connection (AI assistants and API)](#connection-ai-assistants-and-api)
@@ -182,6 +182,12 @@ A plain-language introduction:
 - which model is good for what, with numbers measured in this app;
 - what the app cannot do yet.
 
+### Inspect datasets
+
+Play back a dataset (its videos, folders and loose pictures) with all stored annotations
+drawn on. Coloured bars under the player show where each class appears; click one and
+jump to its first, previous or next occurrence.
+
 ### Annotation Studio
 
 Label a folder of pictures.
@@ -318,12 +324,6 @@ proposes.
 - **Autoplay:** propose → a short pause to look → save → next, stoppable at any moment.
 - **Hidden mode:** runs without drawing, showing only progress.
 - **Ask when unclear:** stops on predictions whose score is in a band you set.
-
-### Inspect datasets
-
-Play back a dataset (its videos, folders and loose pictures) with all stored annotations
-drawn on. Coloured bars under the player show where each class appears; click one and
-jump to its first, previous or next occurrence.
 
 ### Library
 

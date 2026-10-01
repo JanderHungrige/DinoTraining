@@ -36,11 +36,11 @@ export const introDe: Catalogue<typeof introEn> = {
     'Lass einen trainierten Head – oder ein Segmentation-Modell mit Text-Prompt – über neue Bilder laufen, prüf, was zurückkommt, und speichere das Ergebnis als neuen Datensatz.',
   'intro.stage.generator.why':
     'Dieser Schritt macht aus dem Ablauf einen Kreislauf. Das Modell, das du gerade trainiert hast, macht den ersten Durchgang über die nächsten Bilder, und du korrigierst es, statt bei null anzufangen.',
-  'intro.stage.inspect.title': 'Ansehen, was du annotiert hast',
+  'intro.stage.inspect.title': 'Erst die Daten ansehen',
   'intro.stage.inspect.what':
-    'Öffne einen Datensatz und spiel seine Videos und Bilderordner ab, mit jeder gespeicherten Box und jedem Umriss eingezeichnet und einem farbigen Balken pro Klasse, der zeigt, wo sie vorkommt.',
+    'Öffne einen Datensatz – importiert, aufgenommen oder in einer früheren Runde annotiert – und spiel seine Videos und Bilderordner ab, mit jeder gespeicherten Box und jedem Umriss eingezeichnet und einem farbigen Balken pro Klasse, der zeigt, wo sie vorkommt.',
   'intro.stage.inspect.why':
-    'Einem Datensatz vertraust du leichter, wenn du ihn dir angesehen hast. Lücken, schleichende Veränderungen und eine Klasse, die nur in einem Abschnitt einer Fahrt vorkommt, siehst du auf einer Zeitleiste in Sekunden – Bild für Bild suchst du danach einen Nachmittag lang.',
+    'Bevor du weiter annotierst oder trainierst, sieh dir an, was du schon hast. Lücken, schleichende Veränderungen und eine Klasse, die nur in einem Abschnitt einer Fahrt vorkommt, siehst du auf einer Zeitleiste in Sekunden – Bild für Bild suchst du danach einen Nachmittag lang. Komm nach jeder Runde des Kreislaufs hierher zurück.',
   'intro.stage.library.title': 'Den Überblick behalten',
   'intro.stage.library.what':
     'Jeder Datensatz, jeder trainierte Head und jedes fine-getunte Modell in einer Liste – mit dem, was darin steckt, womit es gelernt hat, und einer Möglichkeit, es zu löschen.',
