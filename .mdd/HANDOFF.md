@@ -11,9 +11,17 @@ do not read it for current state.
   `feat/dinotraining-wave-15-7`, not merged. Its status stays `in_progress` until Jan
   confirms the demo-state.
 
-**Next:** Jan's test of 15.7 (ideally the Windows PC with an NVIDIA card), the merge to
-`dev`, and the Homebrew tap (Jan creates `JanderHungrige/homebrew-tap`). Then Wave 16, the
-website, to be rethought.
+**Merged to `dev`:** 15.7 (`0057336`) and its follow-ups (`c1bb670`): doc 132 (Windows
+uninstall), doc 133 (download site), Inspect after Start here.
+
+**Next, Jan's:**
+- test on the Windows PC with an NVIDIA card;
+- a version bump (e.g. 0.1.0) and the merge to `main` → the first published release,
+  the download buttons and the Mac line on https://dino.w3rth.de start working;
+- `dino.questenterprise.de`: DNS → 159.195.148.193, NPM proxy host 19 → port 8003
+  (it says 8001), and its certificate;
+- the Homebrew tap (`JanderHungrige/homebrew-tap`).
+Then Wave 16, the website with accounts and compute, to be rethought.
 
 ---
 
@@ -30,6 +38,8 @@ Tauri app, offered via Homebrew.
 | 128 | **CPU ⇄ GPU** in Admin: builds the other variant while the backend runs, swaps, and points back if it does not start. |
 | 129 | **Updates:** each sync builds `runtime/envs/<id>`; `current` names the active one. A new lock updates by itself; a failed update leaves the old one and offers "Start with the previous packages". |
 | 130 | **Mac:** `scripts/install-mac.sh` (no admin, no Gatekeeper warning), Homebrew formula rendered per release, "Add to Applications" for Homebrew installs, README. |
+| 132 | **Uninstall (Windows):** removes Python/PyTorch (needed `rd \\?\` beyond MAX_PATH), keeps the user's data unless ticked; runtime moved out of the roaming profile. CI-verified. |
+| 133 | **Download site:** https://dino.w3rth.de, from `main` (dev until then) by jan's cron every 10 min, own container on 172.17.0.1:8002/8003; a merge to main with a new version publishes the release. |
 | 131 | **Smoke test** in the release workflow: silent install, unattended first start, `/health`, PyTorch in the installed env, second start without setup — on all three platforms. |
 
 - **Proof, live on the M1:**

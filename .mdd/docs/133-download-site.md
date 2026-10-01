@@ -32,7 +32,7 @@ satisfies_contracts: []
 known_issues:
   - "dino.questenterprise.de: DNS points to 46.38.243.234, and NPM's proxy host 19 forwards to 172.17.0.1:8001 (not 8003) without a certificate. Jan fixes all three; the site already answers on 8003."
   - "Until main carries scripts/install-mac.sh and a release is published, the Mac line and the download buttons cannot work; the page says 'first release coming'."
-  - "jan's crontab tracks the wave branch too until it is merged (SITE_BRANCHES); drop it from the line afterwards."
+  - "Resolved 2026-10-01: the crontab tracked the wave branch until the merge to dev (c1bb670); now the default, main else dev."
 security_read_sites: []
 sister_projects: [../3dmap, ../Battlefuel, ../NinaNatur, ../funding-tender-tracker]
 ---
@@ -127,3 +127,5 @@ nginx:alpine "dinotraining-site" serves current/ on 172.17.0.1:8002 and :8003
   - **https://dino.w3rth.de: 200, the page live with its background video**;
   - every other container unchanged ("Up 2 weeks", "healthy");
   - jan's crontab gained the updater line; the NinaNatur backup line is untouched.
+- **The cron itself** deployed at 08:30 on its own. After the merge to dev the line
+  went back to the default (main, else dev), and the site now comes from dev at c1bb670.
