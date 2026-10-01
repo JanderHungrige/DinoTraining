@@ -89,6 +89,9 @@ main,
 }
 
 .top__name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 700;
   font-size: 1.15rem;
   letter-spacing: 0.02em;
@@ -113,6 +116,12 @@ main,
 .hero {
   padding: 72px 0 40px;
   max-width: 760px;
+}
+
+.hero__emblem {
+  display: block;
+  margin-bottom: 22px;
+  filter: drop-shadow(0 6px 18px rgb(0 0 0 / 0.45));
 }
 
 .hero h1 {

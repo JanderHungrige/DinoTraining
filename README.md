@@ -1,3 +1,5 @@
+<p align="center"><img src="branding/emblem.svg" alt="" width="140"></p>
+
 # DinoTraining
 
 **Teach a computer to find things in your pictures, without being a data scientist.**

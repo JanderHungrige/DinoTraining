@@ -75,6 +75,17 @@ body {
   letter-spacing: 0.01em;
 }
 
+/* Doc 134: the emblem before the name. */
+.app__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app__emblem {
+  flex: none;
+}
+
 .app__panel {
   flex: 1;
   min-width: 0;

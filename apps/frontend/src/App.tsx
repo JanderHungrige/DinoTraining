@@ -86,7 +86,11 @@ export function App(): JSX.Element {
       <SetupGate>
       <div className="app">
         <header className="app__header">
-          <h1 className="app__title">DinoTraining</h1>
+          <h1 className="app__title">
+            {/* Doc 134: the emblem; decorative, the name beside it is the heading. */}
+            <img className="app__emblem" src="/emblem.svg" alt="" width={28} height={28} />
+            DinoTraining
+          </h1>
           <LanguageSwitch />
           <BackendStatus />
         </header>

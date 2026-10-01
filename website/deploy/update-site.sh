@@ -55,6 +55,7 @@ if [ "$(cat "$SITE_ROOT/deployed-sha" 2>/dev/null)" != "$SHA" ]; then
   rm -rf "$NEW"
   mkdir -p "$NEW/media"
   cp "$SRC"/website/*.html "$SRC"/website/*.css "$SRC"/website/*.js "$NEW/"
+  cp "$SRC"/website/*.svg "$NEW/" 2>/dev/null || true  # the emblem (doc 134)
   cp "$SRC"/apps/frontend/public/background/particles-loop.mp4 \
      "$SRC"/apps/frontend/public/background/particles-poster.jpg "$NEW/media/"
 
