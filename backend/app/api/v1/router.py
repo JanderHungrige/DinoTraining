@@ -17,6 +17,7 @@ from app.api.v1 import (
     dataset_classes,
     dataset_image_masks,
     dataset_images,
+    dataset_import,
     dataset_phrases,
     dataset_quality,
     datasets,
@@ -86,6 +87,7 @@ api_router.include_router(video.router, tags=["video"])
 api_router.include_router(video_extract.router, tags=["video"])
 api_router.include_router(prep_audit.router, tags=["prepare-data"])
 api_router.include_router(prep_intake.router, tags=["prepare-data"])
+api_router.include_router(dataset_import.router, tags=["datasets"])
 api_router.include_router(prep_fixes.router, tags=["prepare-data"])
 api_router.include_router(prep_split.router, tags=["prepare-data"])
 api_router.include_router(prep_input.router, tags=["prepare-data"])

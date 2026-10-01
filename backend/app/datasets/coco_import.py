@@ -195,13 +195,24 @@ def load_split(coco_path: Path, options: ImportOptions | None = None) -> LoadedS
         raise ValueError(f"{coco_path.name} is not valid JSON: {error}") from error
     if not isinstance(payload, dict):
         raise ValueError(f"{coco_path.name} is not a COCO object")
-
     options = options or ImportOptions()
     split = split_of(coco_path.parent.name) if options.keep_source_split else None
-    categories = _category_names(payload, coco_path)
-    images = _image_records(payload, coco_path)
-    grouped = _group_by_image(payload, coco_path)
-    root = coco_path.parent
+    return parse_split(payload, coco_path.parent, coco_path, split, options)
+
+
+def parse_split(
+    payload: dict[str, Any],
+    root: Path,
+    named: Path,
+    split: str | None,
+    options: ImportOptions,
+) -> LoadedSplit:
+    """A COCO document already in memory (doc 136: YOLO, VOC and OpenLABEL convert to
+    one). ``file_name`` resolves against ``root`` and may not leave it; ``named`` only
+    names the document in messages."""
+    categories = _category_names(payload, named)
+    images = _image_records(payload, named)
+    grouped = _group_by_image(payload, named)
 
     annotations: list[ImageAnnotation] = []
     skipped_images = 0

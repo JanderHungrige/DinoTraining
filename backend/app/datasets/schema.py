@@ -40,6 +40,8 @@ PROVENANCE_TABLES = ("boxes", "masks")
 #: CHECK constraint, SQLite *can* add a column in place, so these need no rebuild —
 #: a different kind of change, and cheaper.
 ADDED_COLUMNS: dict[str, dict[str, str]] = {
+    # Doc 136: what the user wrote about an imported dataset, and where it came from.
+    "datasets": {"description": "TEXT", "source": "TEXT"},
     "boxes": {"producer": "TEXT"},
     "masks": {"producer": "TEXT"},
     # Doc 73: which video (or folder) a frame came from, and where in it. NULL for a

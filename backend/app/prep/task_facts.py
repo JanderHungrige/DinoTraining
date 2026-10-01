@@ -23,7 +23,8 @@ MIN_PIECE_PX = 20
 #: Two outlines overlapping this much are one object marked twice.
 DUPLICATE_IOU = 0.8
 
-_INCLUDED = "COALESCE(i.excluded, 0) = 0"
+#: Doc 136: a picture imported without annotations ("" = never saved) is not in training.
+_INCLUDED = "COALESCE(i.excluded, 0) = 0 AND i.annotated_at != ''"
 
 
 @dataclass
