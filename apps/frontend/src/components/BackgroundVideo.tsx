@@ -1,23 +1,27 @@
 /**
- * The particle loop behind the whole app (docs 76, 77).
+ * The background loop behind the whole app (docs 76, 77; chosen in Settings, doc 165).
  *
  * Decorative and nothing more: hidden from assistive tech, never focusable, never in the
- * way of a click. Reduced motion and the Admin switch both show the still poster instead,
+ * way of a click. Reduced motion and the Settings switch both show the still poster instead,
  * and a hidden window pauses the video so a minimised app decodes nothing.
  */
 
 import { useEffect, useRef, type JSX } from 'react';
 
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { backgroundPoster, backgroundVideo, DEFAULT_BACKGROUND } from '../lib/backgrounds';
 import { useLook } from '../lib/look';
 
-/** Served from `public/`, so the same path works under Vite and in the packaged app. */
-export const LOOP_SRC = `${import.meta.env.BASE_URL}background/particles-loop.mp4`;
-export const POSTER_SRC = `${import.meta.env.BASE_URL}background/particles-poster.jpg`;
+/** The default background's files, served from `public/` (the same path under Vite and in
+ *  the packaged app). The chosen one comes from Settings (doc 165). */
+export const LOOP_SRC = backgroundVideo(DEFAULT_BACKGROUND);
+export const POSTER_SRC = backgroundPoster(DEFAULT_BACKGROUND);
 
 export function BackgroundVideo(): JSX.Element {
   const reduced = useReducedMotion();
-  const { animatedBackground } = useLook();
+  const { animatedBackground, background } = useLook();
+  const src = backgroundVideo(background);
+  const poster = backgroundPoster(background);
   const moving = animatedBackground && !reduced;
   const video = useRef<HTMLVideoElement | null>(null);
 
@@ -36,16 +40,17 @@ export function BackgroundVideo(): JSX.Element {
     sync();
     document.addEventListener('visibilitychange', sync);
     return () => document.removeEventListener('visibilitychange', sync);
-  }, [moving]);
+  }, [moving, src]);
 
   return (
     <div className="bgvideo" aria-hidden="true">
       {moving ? (
         <video
+          key={src}
           ref={video}
           className="bgvideo__media"
-          src={LOOP_SRC}
-          poster={POSTER_SRC}
+          src={src}
+          poster={poster}
           autoPlay
           muted
           loop
@@ -55,7 +60,7 @@ export function BackgroundVideo(): JSX.Element {
           tabIndex={-1}
         />
       ) : (
-        <img className="bgvideo__media" src={POSTER_SRC} alt="" />
+        <img className="bgvideo__media" src={poster} alt="" />
       )}
       <div className="bgvideo__scrim" />
     </div>

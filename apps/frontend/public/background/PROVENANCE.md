@@ -1,4 +1,27 @@
-# Background loop — provenance (doc 76; forest since doc 163)
+# Backgrounds — provenance (docs 76, 163, 165)
+
+Since doc 165 the user chooses the background in Settings. The files:
+
+| File | Background | What |
+|---|---|---|
+| `particles-loop.mp4`, `particles-poster.jpg` | **Forest** (default) | Jan's Pexels clip, 1080p, `gblur=sigma=2.5`, CRF 31, 3.4 MB; no scrim, no panel blur. The download site copies exactly these names. |
+| `forest-sharp.mp4`, `-poster.jpg` | Forest, sharp | the same clip, unchanged, 1080p, CRF 33, 7.5 MB; no scrim, no panel blur |
+| `forest-bright.mp4`, `-poster.jpg` | Forest, bright and calm | 720p, `curves` (highlights to 72 %), CRF 32, 3.5 MB; scrim 0.25/0.2, panel blur |
+| `forest-dim.mp4`, `-poster.jpg` | Forest, dim and soft | 720p, `gblur=sigma=3`, CRF 30, 1.3 MB; scrim 0.5/0.45, panel blur |
+| `original-particles.mp4`, `-poster.jpg` | Particles | the first loop (Pixabay #5192, below); scrim 0.5/0.45, panel blur |
+
+The default was made with:
+
+```
+ffmpeg -i forrestfordinoreverst.mp4 -an -frames:v 1611 -vf "gblur=sigma=2.5" \
+  -c:v libx264 -profile:v high -pix_fmt yuv420p -preset slow -crf 31 -tune film \
+  -movflags +faststart particles-loop.mp4
+ffmpeg -i particles-loop.mp4 -frames:v 1 -q:v 7 particles-poster.jpg
+```
+
+---
+
+## The forest clip
 
 `particles-loop.mp4` and `particles-poster.jpg` are a **forest** since 2026-10-02. The file
 names are kept on purpose: the download site's updater copies exactly these names, and a

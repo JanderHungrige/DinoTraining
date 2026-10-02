@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { renderInGerman } from '../i18n/testing';
+import { BackgroundVideo } from '../components/BackgroundVideo';
 import { LookProvider } from '../lib/look';
 import { BACKGROUND_SOURCE, SettingsTab } from './SettingsTab';
 
@@ -24,6 +25,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   listeners.clear();
   delete document.documentElement.dataset['theme'];
+  delete document.documentElement.dataset['background'];
 });
 
 const theme = (): string | undefined => document.documentElement.dataset['theme'];
@@ -75,5 +77,24 @@ describe('Settings (doc 164)', () => {
     expect(screen.getByRole('heading', { name: 'Einstellungen' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Wie das System' })).toBeChecked();
     expect(screen.getByText(/„Trees in the forest“, ein Video von Pexels/)).toBeInTheDocument();
+  });
+
+  it('switches the background, its treatment and the video at once (doc 165)', async () => {
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(
+      <LookProvider>
+        <BackgroundVideo />
+        <SettingsTab />
+      </LookProvider>,
+    );
+    expect(screen.getByRole('radio', { name: 'Forest' })).toBeChecked();
+    expect(document.documentElement.dataset['background']).toBe('forest');
+    expect(document.querySelector('.bgvideo video')).toHaveAttribute('src', expect.stringContaining('particles-loop.mp4'));
+
+    await user.click(screen.getByRole('radio', { name: 'Particles' }));
+    expect(document.documentElement.dataset['background']).toBe('particles');
+    expect(document.querySelector('.bgvideo video')).toHaveAttribute('src', expect.stringContaining('original-particles.mp4'));
+    expect(localStorage.getItem('dinotraining.v1.look.background')).toBe('"particles"');
   });
 });

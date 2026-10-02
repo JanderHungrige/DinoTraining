@@ -7,6 +7,10 @@ composites it exactly as the browser stacks the layers — video, scrim, translu
 surface — and reports each text colour's WCAG contrast against the result. Exits 1 if any
 falls below AA (4.5:1).
 
+**It measures the default background** (doc 165: the softened forest, no scrim): the
+other backgrounds bring their own scrim and are recorded in doc 165. Since doc 165 Jan
+chose looks over AA for the default, so this script may report below AA by design.
+
 **The constants below must match look.css / styles.css.** They are repeated here rather
 than parsed, because a CSS parser for three custom properties would be the larger risk;
 change them together, and rerun this whenever the loop, a surface or a token changes.
@@ -44,8 +48,8 @@ MODES = {
         bg="#14161a",
         raised="#1c1f26",
         scrim=(10, 11, 14),
-        scrim_top=0.25,
-        scrim_bottom=0.2,
+        scrim_top=0.0,
+        scrim_bottom=0.0,
         panel=0.6,
         header=0.78,
         tokens={
@@ -61,8 +65,8 @@ MODES = {
         bg="#f6f7f9",
         raised="#ffffff",
         scrim=(246, 247, 249),
-        scrim_top=0.25,
-        scrim_bottom=0.2,
+        scrim_top=0.0,
+        scrim_bottom=0.0,
         panel=0.75,
         header=0.85,
         tokens={
