@@ -137,7 +137,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
       <section className="studio">
         <h2 className="studio__title">Annotation Studio</h2>
         <p className="studio__lead">{t('studio.tab.lead')}</p>
-        <SessionSetup onStart={setConfig} />
+        <SessionSetup onStart={setConfig} active={active} />
       </section>
     );
   }

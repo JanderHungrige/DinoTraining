@@ -8,6 +8,7 @@ import { useState, type JSX } from 'react';
 import { ApiError } from '../api/client';
 import { detectDataset, startImport, type Detection, type DetectionNote, type ImportJob } from '../api/datasetImport';
 import { useImportJob } from '../hooks/useImportJob';
+import { DatasetWhere } from './DatasetWhere';
 import { useT, type Key } from '../i18n';
 import { hasNativeDialog, pickVideoFile } from '../lib/dialog';
 import { FolderField } from './FolderField';
@@ -185,6 +186,7 @@ export function ImportProgress({ job }: { readonly job: ImportJob }): JSX.Elemen
             ? ` · ${t('models.import.skipped', { pictures: String(result.skipped_pictures), objects: String(result.skipped_objects) })}`
             : ''}
         </p>
+        <DatasetWhere datasetId={result.dataset_id} name={result.name} />
       </div>
     );
   }

@@ -12,6 +12,22 @@ is genuinely unassigned.
 
 ## Unassigned
 
+### Import your own model (Jan, 2026-10-02)
+
+"One thing on the todo for later would be the possibility to import an own model. So if I
+trained a model somewhere, it would be great to include it into the tool."
+
+Questions for planning:
+- **Which kinds?** A head trained elsewhere on one of our backbones (fits the existing
+  head store), a whole detector or segmenter (RF-DETR, YOLO, a SAM fine-tune: needs a
+  runtime per architecture), or ONNX as the common format.
+- **What the app needs to know:** task, classes, input size and normalisation, and the
+  backbone, if any. A small manifest beside the weights, like the export's model card
+  (`dinotraining.model-card/1`), so an exported V-Rex model re-imports as the first case.
+- **Where it then works:** Inference Viewer, the Studio's "a head you trained", the
+  generator, MLflow.
+- **Safety:** weights only as safetensors/ONNX, never pickles (the download rule since Wave 4).
+
 ### Private Network Access — does a hosted GUI reach a local backend?
 
 Added 2026-08-25 from a design question: serve the SPA from a small central server while

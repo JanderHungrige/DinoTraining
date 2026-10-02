@@ -89,6 +89,7 @@ export const studio2En = {
   'studio.source.legend': 'Images from',
   'studio.source.folder': 'A folder',
   'studio.source.dataset': 'A dataset you already have',
+  'studio.source.folderHint': 'Imported or downloaded a dataset already? Choose “A dataset you already have” instead: no folder to find.',
   'studio.source.noneWithImages': 'none with images yet',
   'studio.source.video': 'A video file',
   'studio.picker.drop': 'Drop to load it',

@@ -35,6 +35,8 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.import.start': 'Importieren',
   'models.import.running': 'Wird importiert … {done} von {total} · {current}',
   'models.import.done': '„{name}“ importiert.',
+  'models.import.where': 'Die Bilder liegen in {path}.',
+  'models.import.next': 'Zum Annotieren: Annotation Studio → „Einem Datensatz, den du schon hast“ → „{name}“. Kein Ordner auszuwählen.',
   'models.import.failed': 'Der Import ist fehlgeschlagen: {error}',
   'models.import.skipped': 'übersprungen: {pictures} Bilder, {objects} Objekte',
   'models.profile.media.images': 'Bilder',

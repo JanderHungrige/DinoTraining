@@ -39,9 +39,12 @@ const BACKBONE_ID = 'dinov2-small';
 export interface SessionSetupProps {
   readonly onStart: (config: SessionConfig) => void;
   readonly disabled?: boolean;
+  /** The Studio stays mounted while hidden (App's `studioVisited`); the lists are read
+   *  again each time it is shown, so a dataset imported meanwhile is offered (2026-10-02). */
+  readonly active?: boolean;
 }
 
-export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): JSX.Element {
+export function SessionSetup({ onStart, disabled = false, active = true }: SessionSetupProps): JSX.Element {
   const tr = useT();
   const { t } = tr;
   // Doc 69: every entry is remembered across tab switches and restarts.
@@ -75,6 +78,7 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
   const datasetId = stillListed(datasetOverride, datasets.map((entry) => entry.id));
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    if (!active) return;
     void listDatasets()
       .then(setDatasets)
       .catch(() => setError(t('studio.setup.errorLoadDatasets')));
@@ -86,7 +90,9 @@ export function SessionSetup({ onStart, disabled = false }: SessionSetupProps): 
     void listFoundations()
       .then(setFoundations)
       .catch(() => setFoundations([]));
-  }, []);
+    // Read again when shown and when the language changes: the backend writes titles and
+    // descriptions in the request's language.
+  }, [active, tr.lang]);
 
   // Derived, never seeded into state — the fetch resolves after the first render.
   const annotatable = heads.filter(
