@@ -1,15 +1,31 @@
-# Background loop — provenance (doc 76)
+# Background loop — provenance (doc 76; forest since doc 163)
 
-`particles-loop.mp4` and `particles-poster.jpg` are derived from:
+`particles-loop.mp4` and `particles-poster.jpg` are a **forest** since 2026-10-02. The file
+names are kept on purpose: the download site's updater copies exactly these names, and a
+renamed file would stop its first deploy (doc 160's lesson).
 
-- **Octagon, Abstract, Lights, Particle** by *tommyvideo* on Pixabay (video #5192, 2016)
-  https://pixabay.com/videos/octagon-abstract-lights-particle-5192/
-- Source file: `https://cdn.pixabay.com/video/2016/09/13/5192-183786490_large.mp4`,
-  sha256 `233e123d9e5c25c1b7ca375ef0db6760be235ae4b5c135ea52b1a1f02de73349`
-- Licence: **Pixabay Content License** (https://pixabay.com/service/license-summary/) —
-  free to use in this application without attribution; the file may not be redistributed
-  on its own, outside the application.
+- **Source:** a forest clip from **Pexels**, found by Jan and made into a boomerang loop by
+  him (forwards, then backwards): `forrestfordinoreverst.mp4`, 1920×1080, 23.976 fps,
+  67.2 s, sha256 `2196660b8625c09402851d53e79e47daf032b8fa7f22755bad6e9e6c103eec09`.
+  - Pexels page: *to be added by Jan* (the original clip's link).
+- **Licence:** the **Pexels License** (https://www.pexels.com/license/): free to use and
+  modify, also commercially, no attribution required. Not to be sold or redistributed
+  unaltered on its own.
+- **Derived with ffmpeg** (the source is not committed):
 
-Derived by `scripts/build_background_video.py`: downscaled to 1280×720, mirror-stitched
-(forwards, then backwards without repeating the turn-around frames) into a seamless 58 s
-loop, H.264 Main. Rebuild from the same bytes with that script.
+  ```
+  ffmpeg -i forrestfordinoreverst.mp4 -an -frames:v 1611 \
+    -vf "scale=1280:720:flags=lanczos,gblur=sigma=3" \
+    -c:v libx264 -profile:v main -pix_fmt yuv420p -preset slow -crf 30 -tune film \
+    -movflags +faststart particles-loop.mp4
+  ffmpeg -i particles-loop.mp4 -frames:v 1 -q:v 4 particles-poster.jpg
+  ```
+
+  - `-frames:v 1611` drops the last frame, which nearly repeats the first (a stall at the
+    seam).
+  - `gblur=sigma=3`: a soft focus, chosen against sharp and sigma 6. The panels blur
+    again on top (10 px).
+  - The file is 1.3 MB; the sharp version would be 5.7 MB.
+
+Until 2026-10-02 the loop was *Octagon, Abstract, Lights, Particle* by tommyvideo on
+Pixabay (#5192), built by `scripts/build_background_video.py`.
