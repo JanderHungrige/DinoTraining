@@ -11,7 +11,20 @@ renamed file would stop its first deploy (doc 160's lesson).
 - **Licence:** the **Pexels License** (https://www.pexels.com/license/): free to use and
   modify, also commercially, no attribution required. Not to be sold or redistributed
   unaltered on its own.
-- **Derived with ffmpeg** (the source is not committed):
+- **Current: the plain video (experiment, Jan 2026-10-02):** only re-encoded, no blur, no
+  curves, full 1080p, and in the app no scrim and no panel blur:
+
+  ```
+  ffmpeg -i forrestfordinoreverst.mp4 -an -frames:v 1611 \
+    -c:v libx264 -profile:v high -pix_fmt yuv420p -preset slow -crf 33 -tune film \
+    -movflags +faststart particles-loop.mp4
+  ffmpeg -i particles-loop.mp4 -frames:v 1 -q:v 7 particles-poster.jpg
+  ```
+
+  7.5 MB (CRF 28 would be 17.6 MB; a 1:1 crop at CRF 33 is hard to tell from the source).
+  Text over the brightest frames is below AA here; doc 163 says why and what is kept.
+- **Earlier versions**, kept as git tags: `background-forest-blur3` (blurred) and
+  `background-forest-curve-a` (tone-mapped, 720p, thin scrim):
 
   ```
   ffmpeg -i forrestfordinoreverst.mp4 -an -frames:v 1611 \

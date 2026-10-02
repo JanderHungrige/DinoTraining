@@ -26,7 +26,9 @@ textarea {
   --surface-raised: color-mix(in srgb, var(--bg-raised) 78%, transparent);
   /* Doc 163: the forest's highlights are tone-mapped in the video (sky at ~72 %), so the
      scrim can be thin and the forest stays bright: 0.5/0.45 before. */
-  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.25), rgb(10 11 14 / 0.2));
+  /* Experiment (Jan, 2026-10-02): the plain video, no scrim and no blur on the panels.
+     Before: a 0.25/0.2 scrim and blur(10–14px). Below AA over the brightest frames. */
+  --scrim: none;
 }
 
 /* Doc 80: two colours failed AA over the loop's brightest frame (dim text 2.97:1, danger
@@ -55,7 +57,7 @@ textarea {
   --focus: #0369a1;
   --surface: color-mix(in srgb, var(--bg) 75%, transparent);
   --surface-raised: color-mix(in srgb, var(--bg-raised) 85%, transparent);
-  --scrim: linear-gradient(180deg, rgb(246 247 249 / 0.25), rgb(246 247 249 / 0.2));
+  --scrim: none;
 
   color-scheme: light;
 }
@@ -91,14 +93,10 @@ textarea {
 .app__header,
 .tabbar {
   background: var(--surface-raised);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
 }
 
 .app__panel {
   background: var(--surface);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 /* --- Admin › Appearance ------------------------------------------------------------ */

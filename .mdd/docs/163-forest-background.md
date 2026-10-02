@@ -87,3 +87,22 @@ sister_projects: []
 - **Size:** 3.5 MB (CRF 32, sharp).
 - **Contrast:** at least 4.64:1 over the brightest pixel; the script's constants follow
   the new scrim.
+
+## Third version (2026-10-02): the plain video, an experiment in dev
+
+- **Jan:** "Still very blurred and dark. No animation to be seen. Just put the video in as
+  it is, without blur or anything."
+- **What he saw:**
+  - **The blur** came from the panels, not the video: `backdrop-filter: blur(10px)` on
+    the page-wide panel, and 14 px on the header.
+  - **720p** stretched over a large screen looks soft by itself.
+  - Under blur and darkening, the camera's slow move through the forest did not read as
+    motion.
+- **Now:**
+  - the video only re-encoded, at **1080p** (CRF 33, 7.5 MB);
+  - **no scrim**, **no backdrop blur**;
+  - the panels keep only their tint (60 %), so text has something under it.
+  - Seen in the UI: the video plays (1920 px) and is sharp.
+- **Legibility:** over the brightest frames the dim text falls below AA (doc 163's numbers:
+  about 2.6:1 with no scrim). The contrast script now fails on purpose until Jan decides.
+- **Backups:** the tags `background-forest-blur3` and `background-forest-curve-a`.
