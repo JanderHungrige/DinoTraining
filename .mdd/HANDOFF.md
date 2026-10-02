@@ -6,9 +6,9 @@ do not read it for current state.
 
 **Last updated:** 2026-10-02: **the app is called V-Rex** (doc 159).
 - **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and docs 139–141.
-- **In `dev`** (`0a683f0`): 15.8, 15.9, 15.10 (the Store), 157 (look) and 158 (update
-  check). Not yet released.
-- **The rename** (doc 159) on `feat/rename-v-rex`, **not merged**:
+- **In `dev`** (`d2e1088`): 15.8, 15.9, 15.10 (the Store), 157 (look), 158 (update
+  check) and the rename (159). Not yet released.
+- **The rename** (doc 159), merged into `dev` 2026-10-02:
   - V-Rex everywhere a person reads it;
   - the machine keys keep "DinoTraining" (data folder, `com.dinotraining.app`, `DINO_*`,
     storage keys, MLflow tag keys);
@@ -18,8 +18,8 @@ do not read it for current state.
   - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- **The go to merge the rename into `dev`;** then a release (0.1.3) when he says so. Its
-  MSIX is the first Store upload (doc 155's checklist).
+- **A release (0.1.3)** when he says so: `dev` → `main` with the version bumped. Its MSIX
+  is the first Store upload (doc 155's checklist); the site then shows V-Rex.
 - **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
 - **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
   (now `v-rex`).
