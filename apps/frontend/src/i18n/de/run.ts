@@ -79,6 +79,7 @@ export const runDe: Catalogue<typeof runEn> = {
 
   // The sequence player
   'run.sequence.pickSource': 'Wähle oben einen Ordner mit Frames oder eine Videodatei.',
+  'run.sequence.openAsImage': 'Als Einzelbild öffnen',
   'run.sequence.notSequence':
     'Dieser Pfad ist keine Bildfolge. Wähle einen Ordner mit Frames oder eine Videodatei, um sie abzuspielen.',
   'run.player.startAt': 'Ab Frame',

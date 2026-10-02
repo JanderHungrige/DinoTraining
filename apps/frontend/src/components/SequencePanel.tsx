@@ -32,6 +32,9 @@ export interface SequencePanelProps {
   readonly instanceIds: readonly string[];
   readonly backboneId: string;
   readonly concept: string;
+  /** 2026-10-02: a single picture in this mode showed nothing at all; this opens it in the
+   *  single-image view instead. */
+  readonly onOpenAsImage?: () => void;
 }
 
 export function SequencePanel({
@@ -41,6 +44,7 @@ export function SequencePanel({
   instanceIds,
   backboneId,
   concept,
+  onOpenAsImage,
 }: SequencePanelProps): JSX.Element | null {
   const { t } = useT();
   // `null` until the path turns out to be something playable. A single image is not.
@@ -82,7 +86,12 @@ export function SequencePanel({
   if (!sequence || sequence.frames < 2) {
     return (
       <p role="status" className="player__hint">
-        {t('run.sequence.notSequence')}
+        {t('run.sequence.notSequence')}{' '}
+        {onOpenAsImage && (
+          <button type="button" className="btn btn--small" onClick={onOpenAsImage}>
+            {t('run.sequence.openAsImage')}
+          </button>
+        )}
       </p>
     );
   }
