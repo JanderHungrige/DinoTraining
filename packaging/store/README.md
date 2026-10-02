@@ -69,19 +69,9 @@ the emblem, is optional.
 
 ## runFullTrust (Submission → restricted capabilities)
 
-V-Rex is a desktop application (Tauri, Win32) for training and running computer-vision
-models on the user's own images. It needs full trust because:
+The field takes at most **500 characters** (found 2026-10-03: a longer text was cut). This
+one is 425:
 
-1. **It runs a local Python backend** (FastAPI + PyTorch) as a child process, listening on
-   127.0.0.1 only. All model inference and training happens in this process on the user's
-   machine.
-2. **On first start it installs that runtime**, Python and PyTorch (from GitHub, PyPI and
-   pytorch.org), into the app's own package data folder. If Microsoft's Visual C++
-   Redistributable is missing, it offers to install it, with the user's consent.
-3. **It reads image folders, videos and datasets the user chooses anywhere on disk**, and
-   writes exports to folders the user picks.
-4. **It uses the NVIDIA GPU through CUDA when available.**
-
-None of this works inside an AppContainer sandbox. The app sends no telemetry. Besides
-the downloads named above, it only contacts model hosts (Hugging Face) and cloud storage
-that the user explicitly connects.
+```
+Desktop app (Tauri/Win32) that trains and runs vision models on the user's own images. Full trust is needed to: run its local Python/PyTorch backend as a child process (127.0.0.1 only); install that runtime on first start into its package data folder (and, with consent, the VC++ Redistributable); read image folders the user picks anywhere on disk; use the NVIDIA GPU via CUDA. Not possible in an AppContainer. No telemetry.
+```
