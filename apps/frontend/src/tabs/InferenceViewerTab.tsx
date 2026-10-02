@@ -154,6 +154,7 @@ export function InferenceViewerTab(): JSX.Element {
           instanceIds={run.selected}
           backboneId={run.backboneId ?? ''}
           concept={run.concept}
+          onOpenAsImage={() => setMode('image')}
         />
       )}
 
@@ -178,7 +179,9 @@ export function InferenceViewerTab(): JSX.Element {
         state={run}
         onRun={() => current && void run.run(current.path)}
         disabled={source.loading}
-        runDisabled={!current}
+        // Single-image runs draw only in the single-image view; in this mode they ran and
+        // showed nothing (2026-10-02). The player analyses a sequence itself.
+        runDisabled={!current || mode === 'video'}
         imageWidth={imageWidth}
       />
 

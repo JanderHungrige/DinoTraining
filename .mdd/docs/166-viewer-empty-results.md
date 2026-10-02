@@ -12,6 +12,7 @@ source_files:
   - apps/frontend/src/hooks/useHeadRun.ts
   - apps/frontend/src/components/HeadRunPanel.tsx
   - apps/frontend/src/look.css
+  - apps/frontend/src/components/SequencePanel.tsx
   - apps/frontend/src/i18n/en/run.ts
   - apps/frontend/src/i18n/de/run.ts
 routes: []
@@ -20,6 +21,7 @@ test_files:
   - apps/frontend/src/lib/scoreFilter.test.ts
   - apps/frontend/src/components/ScoreThreshold.test.tsx
   - apps/frontend/src/hooks/useHeadRun.threshold.test.ts
+  - apps/frontend/src/tabs/InferenceViewerTab.mode.test.tsx
 data_flow: reads-existing
 last_synced: 2026-10-02
 status: complete
@@ -82,3 +84,24 @@ sister_projects: []
   - other kinds untouched;
   - the note in EN/DE;
   - the run asks with `score_threshold: 0`.
+
+## The actual cause (Jan: "not even the picture is shown")
+
+- **Jan's viewer was in "A video or a folder" with a single picture as the path**
+  (`~/Downloads/osdar23/…/000_….png`; the pane browser we share had it remembered).
+- **In that mode:**
+  - the viewer showed only "That path is not a sequence", and no picture;
+  - "Run models" was still enabled and ran the picture for real (hence "1 backbone
+    pass");
+  - but results are drawn only in the single-image view, so nothing appeared.
+- **Ruled out:** reading the picture from `~/Downloads` works (the backend's
+  `read_image`, 0.29 s).
+- **Fix:**
+  - **"Run models" is disabled in the video mode**; the player analyses a sequence itself;
+  - **a single picture there offers "Open it as a single image"** (EN/DE), which switches
+    the mode and shows it.
+- **Test:** `InferenceViewerTab.mode.test.tsx` replays Jan's state:
+  - in the video mode with a single picture, Run is disabled;
+  - "Open it as a single image" shows the picture and enables Run;
+  - it fails without the fix.
+- Frontend 1216 tests.

@@ -75,6 +75,7 @@ export const runEn = {
 
   // The sequence player
   'run.sequence.pickSource': 'Pick a folder of frames or a video file above.',
+  'run.sequence.openAsImage': 'Open it as a single image',
   'run.sequence.notSequence':
     'That path is not a sequence. Pick a folder of frames or a video file to play one.',
   'run.player.startAt': 'Start at frame',
