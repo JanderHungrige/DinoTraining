@@ -213,7 +213,9 @@ export function useHeadRun(currentPath: string | null): HeadRunState {
         const [composed, foundationResults] = await Promise.all([
           hasHeads && backboneId
             ? runHeads(
-                { imagePath, backboneId, instanceIds: selected, tiles },
+                // Every candidate (the backend caps at 50 per head); the viewer filters by
+                // the user's threshold, so a head that finds nothing can say why (2026-10-02).
+                { imagePath, backboneId, instanceIds: selected, tiles, scoreThreshold: 0 },
                 controller.signal,
               )
             : Promise.resolve(null),

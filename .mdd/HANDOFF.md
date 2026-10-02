@@ -4,10 +4,14 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-02: **V-Rex 0.1.3 is released** and live on dino.w3rth.de.
-- **`main` = `dev` = `cef3d8c`** (release 0.1.3): everything since 0.1.2. That is Waves
-  15.8–15.10, the look (157), the update check (158), the rename (159), the logo (160),
-  and the `dev.sh` and test-guard fixes.
+**Last updated:** 2026-10-02: **V-Rex 0.1.4 is released** and live on dino.w3rth.de.
+- **`main` = `dev` = `9b3dde3`** (release 0.1.4). Everything since 0.1.2 is in it:
+  15.8–15.10, 157–161, and doc 162 (Jan's 0.1.3 test findings: the Studio follows the
+  language and new datasets; an import says where it lives).
+- **0.1.4 published cleanly** (run 37020562139). Release notes written.
+- **The Admin page** (doc 161) still offers the 0.1.3 test MSIX (pre-release
+  `msix-test-0.1.3`); Jan's MSIX testing is done.
+- **Earlier, 0.1.3:**
 - **The release:**
   - CI built and smoke-tested all three installers;
   - the upload of the EXE broke off ("other side closed");
@@ -30,8 +34,10 @@ do not read it for current state.
   - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- **The first Store submission** with `V-Rex_0.1.3_x64.msix` from the v0.1.3 release (doc
-  155's checklist), after testing the MSIX on his PCs.
+- **The first Store submission** with `V-Rex_0.1.4_x64.msix` from the v0.1.4 release (doc
+  155's checklist): listing texts, screenshots (his), certification notes, and the
+  `runFullTrust` justification.
+- **Later:** "import your own model" is in `.mdd/BACKLOG.md`.
 - **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
 - **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
   (now `v-rex`).

@@ -1,7 +1,7 @@
 {
   "name": "@dinotraining/frontend",
   "private": true,
-  "version": "0.1.4",
+  "version": "1.0.0",
   "type": "module",
   "description": "React + TypeScript UI for V-Rex, hosted by the Tauri shell.",
   "scripts": {

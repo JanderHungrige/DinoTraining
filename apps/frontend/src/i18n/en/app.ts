@@ -58,7 +58,24 @@ export const appEn = {
     'Saves segmentation masks. The COCO export also carries a bounding box derived from each mask, so you get both.',
   'app.output.boxes': 'Saves bounding boxes.',
 
-  // Admin › Appearance.
+  // Settings (doc 164): appearance, credits.
+  'app.tabs.settingsLabel': 'Settings',
+  'app.tabs.settingsHint': 'Light or dark, the moving background, and where the background comes from.',
+  'settings.title': 'Settings',
+  'settings.lead': 'How V-Rex looks. The language is in the top bar.',
+  'app.appearance.theme': 'Colour scheme',
+  'app.appearance.theme.system': 'Like the system',
+  'app.appearance.theme.dark': 'Dark',
+  'app.appearance.theme.light': 'Light',
+  'app.appearance.background': 'Background',
+  'app.appearance.bg.forest': 'Forest',
+  'app.appearance.bg.forestSharp': 'Forest, sharp',
+  'app.appearance.bg.forestBright': 'Forest, bright and calm',
+  'app.appearance.bg.forestDim': 'Forest, dim and soft',
+  'app.appearance.bg.particles': 'Particles',
+  'settings.credits.title': 'Credits',
+  'settings.credits.background': 'Background: “Trees in the forest”, a video from Pexels (Pexels License).',
+  'settings.credits.link': 'Open on Pexels',
   'app.appearance.title': 'Appearance',
   'app.appearance.animated': 'Animated background',
   'app.appearance.reduced':

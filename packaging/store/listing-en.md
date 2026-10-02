@@ -8,7 +8,7 @@ V-Rex
 
 ## Short description
 
-V-Rex, Vision Representation & Experimentation: a free training pipeline for vision foundation models. Teach a vision model with a few hundred pictures: annotate with Grounding DINO and SAM, train small heads on frozen DINOv2/DINOv3 backbones in minutes, run them and let them annotate new data. The first start downloads Python and PyTorch (about 1–6 GB).
+V-Rex makes modern vision AI usable without being a data scientist. Explore your image datasets, try different vision models and see what each can do, and learn how they work along the way. Then fine-tune models to your own needs, and generate annotated datasets to train other vision models. The first start downloads Python and PyTorch (about 1–6 GB).
 
 ## Description
 
@@ -31,16 +31,16 @@ Release notes: https://github.com/JanderHungrige/DinoTraining/releases
 
 ## Product features
 
-- Annotate with text prompts: Grounding DINO boxes, SAM masks
-- Train classification, detection and segmentation heads on frozen DINOv2/DINOv3
-- Runs on CPU or NVIDIA GPU (CUDA), switchable in the app
-- Model-assisted labelling of new data
-- Cloud datasets: Amazon S3, Azure Blob Storage, Google Cloud Storage
-- Automatic export of annotations and models
-- Imports COCO, YOLO, Pascal VOC and OpenLABEL; exports COCO
-- MLflow tracking (optional)
-- English and German
-- No account, no telemetry, open source (MIT)
+- Explore your image datasets: browse pictures, annotations and classes, and see where the data is thin or unbalanced
+- Try modern vision models side by side: DINOv2/DINOv3, Grounding DINO, SAM 2 and SAM 3, RF-DETR
+- Annotate by describing what you look for: the models draw boxes and masks, you accept or correct them
+- Learn how the models work: plain explanations of every setting, metric and training step
+- Train your own model in minutes on a frozen foundation model, no coding needed
+- Fine-tune models to your specific needs, with guided data preparation and recipes
+- Generate annotated datasets with a trained model to train other vision models
+- Import COCO, YOLO, Pascal VOC and OpenLABEL, export COCO; work with datasets in Amazon S3, Azure or Google Cloud
+- Runs on your own computer, on CPU or NVIDIA GPU; your pictures never leave it unless you choose
+- English and German, free and open source (MIT)
 
 ## Search terms (max. 7)
 

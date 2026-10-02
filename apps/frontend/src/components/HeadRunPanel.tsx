@@ -256,7 +256,9 @@ export function HeadRunPanel({
         )}
         {state.result && (
           <span className="runpanel__cost">
-            {tp('run.heads.passes', state.result.passes)} ·{' '}
+            {/* Foundation models alone make no backbone pass; "0 backbone passes" read as
+                if nothing had run (2026-10-02). */}
+            {state.result.passes > 0 && <>{tp('run.heads.passes', state.result.passes)} · </>}
             {Math.round(state.result.elapsed_ms)} ms
           </span>
         )}

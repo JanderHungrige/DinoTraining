@@ -134,7 +134,8 @@ def test_the_shell_can_name_the_app_folder(monkeypatch: pytest.MonkeyPatch, tmp_
     """Doc 152: the Store edition's folder is the package's own, set by the shell."""
     from app.core.paths import default_data_dir
 
-    store = tmp_path / "Packages" / "JeanQuestEnterprise.V-Rex_f2f23w3rhp35p" / "LocalCache" / "Local" / "DinoTraining"
+    family = "JeanQuestEnterprise.V-Rex_f2f23w3rhp35p"
+    store = tmp_path / "Packages" / family / "LocalCache" / "Local" / "DinoTraining"
     monkeypatch.setenv("DINO_APP_DIR", str(store))
     assert default_data_dir() == store
     monkeypatch.setenv("DINO_APP_DIR", "  ")

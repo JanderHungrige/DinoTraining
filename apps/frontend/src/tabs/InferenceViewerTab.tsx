@@ -18,6 +18,8 @@ import { SideBySideViewer } from '../components/SideBySideViewer';
 import { AnnotationViewToggle } from '../components/AnnotationViewToggle';
 import { SequencePanel } from '../components/SequencePanel';
 import { renderOverlayFor } from '../components/overlays/registry';
+import { ScoreNote, ScoreSlider } from '../components/ScoreThreshold';
+import { aboveScore, DEFAULT_MIN_SCORE } from '../lib/scoreFilter';
 import { DEFAULT_VIEW, type AnnotationView } from '../types/annotationView';
 import { useHeadRun } from '../hooks/useHeadRun';
 import { useT } from '../i18n';
@@ -26,6 +28,7 @@ import { usePersistentState } from '../hooks/usePersistentState';
 import {
   isAnnotationView,
   isNullable,
+  isNumber,
   isOneOf,
   isString,
   stillListed,
@@ -99,6 +102,7 @@ export function InferenceViewerTab(): JSX.Element {
   const run = useHeadRun(current?.path ?? null);
 
   const predictions = run.result?.predictions ?? [];
+  const [minScore, setMinScore] = usePersistentState('viewer.minScore', DEFAULT_MIN_SCORE, isNumber);
 
   return (
     <section className="studio">
@@ -150,6 +154,7 @@ export function InferenceViewerTab(): JSX.Element {
           instanceIds={run.selected}
           backboneId={run.backboneId ?? ''}
           concept={run.concept}
+          onOpenAsImage={() => setMode('image')}
         />
       )}
 
@@ -174,7 +179,9 @@ export function InferenceViewerTab(): JSX.Element {
         state={run}
         onRun={() => current && void run.run(current.path)}
         disabled={source.loading}
-        runDisabled={!current}
+        // Single-image runs draw only in the single-image view; in this mode they ran and
+        // showed nothing (2026-10-02). The player analyses a sequence itself.
+        runDisabled={!current || mode === 'video'}
         imageWidth={imageWidth}
       />
 
@@ -211,6 +218,9 @@ export function InferenceViewerTab(): JSX.Element {
               disabled={run.running}
               groupName="viewer-view"
             />
+            {predictions.some((entry) => entry.render_hint === 'boxes') && (
+              <ScoreSlider value={minScore} onChange={setMinScore} />
+            )}
           </div>
 
           {/* Hidden probe, the same one the Studio uses: the viewer's own image lives
@@ -236,9 +246,10 @@ export function InferenceViewerTab(): JSX.Element {
                     label: prediction.head_name,
                     renderOverlay: (rendered) => (
                       <div className="overlay">
-                        {renderOverlayFor(prediction, rendered, view)}
+                        {renderOverlayFor(aboveScore(prediction, minScore), rendered, view)}
                       </div>
                     ),
+                    note: <ScoreNote prediction={prediction} minScore={minScore} />,
                   }))
                 : [
                     {

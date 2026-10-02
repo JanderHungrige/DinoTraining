@@ -24,7 +24,8 @@ path: UI/Look/Sketch
 initiative: dinotraining
 integration_contracts: []
 satisfies_contracts: []
-known_issues: []
+known_issues:
+  - "Until doc 164 the stylesheet checks in sketch.test.ts read empty strings (Vitest stubs .css, ?raw included) and passed vacuously; fixed in vite.config.ts (process .css?raw)."
 security_read_sites: []
 sister_projects: []
 ---

@@ -58,6 +58,9 @@ export const runDe: Catalogue<typeof runEn> = {
   'run.heads.clear': 'Leeren',
   'run.heads.conceptMissing':
     'Gib ein, wonach gesucht werden soll – ein Begriffsmodell segmentiert nur, was du benennst.',
+  'run.viewer.minScore': 'Boxen zeigen ab',
+  'run.viewer.noneAbove': 'Keine Box ab {threshold}. Beste Vermutung hier: {best}. Senke die Schwelle, um sie zu sehen.',
+  'run.viewer.noneAtAll': 'Dieses Modell hat in diesem Bild nichts gefunden.',
   'run.heads.passes_one': '{count} Backbone-Durchlauf',
   'run.heads.passes_other': '{count} Backbone-Durchläufe',
   'run.heads.runFailed': 'Diese Auswahl konnte nicht ausgeführt werden.',
@@ -76,6 +79,7 @@ export const runDe: Catalogue<typeof runEn> = {
 
   // The sequence player
   'run.sequence.pickSource': 'Wähle oben einen Ordner mit Frames oder eine Videodatei.',
+  'run.sequence.openAsImage': 'Als Einzelbild öffnen',
   'run.sequence.notSequence':
     'Dieser Pfad ist keine Bildfolge. Wähle einen Ordner mit Frames oder eine Videodatei, um sie abzuspielen.',
   'run.player.startAt': 'Ab Frame',

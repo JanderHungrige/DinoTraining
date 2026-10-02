@@ -24,7 +24,31 @@ textarea {
      brightest pixel anywhere in the loop, composited exactly as the browser stacks it. */
   --surface: color-mix(in srgb, var(--bg) 60%, transparent);
   --surface-raised: color-mix(in srgb, var(--bg-raised) 78%, transparent);
-  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.5), rgb(10 11 14 / 0.45));
+  /* Doc 165: the scrim and the panels' blur belong to the background chosen in Settings
+     (the blocks below). The default forest has neither. The scrim takes the theme's
+     colour: dark here, light under data-theme='light'. */
+  --scrim-rgb: 10 11 14;
+  --scrim-top: 0;
+  --scrim-bottom: 0;
+  --scrim: linear-gradient(180deg, rgb(var(--scrim-rgb) / var(--scrim-top)), rgb(var(--scrim-rgb) / var(--scrim-bottom)));
+  --panel-blur: none;
+  --header-blur: none;
+}
+
+/* Doc 165: each background as it was tried (doc 163's versions, and the particles). */
+:root[data-background='forest-bright'] {
+  --scrim-top: 0.25;
+  --scrim-bottom: 0.2;
+  --panel-blur: blur(10px);
+  --header-blur: blur(14px) saturate(1.1);
+}
+
+:root[data-background='forest-dim'],
+:root[data-background='particles'] {
+  --scrim-top: 0.5;
+  --scrim-bottom: 0.45;
+  --panel-blur: blur(10px);
+  --header-blur: blur(14px) saturate(1.1);
 }
 
 /* Doc 80: two colours failed AA over the loop's brightest frame (dim text 2.97:1, danger
@@ -33,6 +57,29 @@ textarea {
 :root {
   --text-dim: #b3bac6;
   --danger: #fca5a5;
+}
+
+/* Doc 164: the light theme, chosen in Settings (or "System"). Applied by lib/look.tsx as
+   data-theme="light" on <html>; this selector outranks the dark :root tokens wherever they
+   are. Measured over the forest loop's brightest and darkest pixel
+   (scripts/check_background_contrast.py): a light scrim, 75 % panels and the text colours
+   a shade darker than plain light-on-white keep every colour at AA (lowest 4.63:1) while
+   the forest still shows through. */
+:root[data-theme='light'] {
+  --bg: #f6f7f9;
+  --bg-raised: #ffffff;
+  --border: #d8dce3;
+  --text: #1a1d23;
+  --text-dim: #454c57;
+  --accent: #0f5f2c;
+  --danger: #991b1b;
+  --pending: #6e4205;
+  --focus: #0369a1;
+  --surface: color-mix(in srgb, var(--bg) 75%, transparent);
+  --surface-raised: color-mix(in srgb, var(--bg-raised) 85%, transparent);
+  --scrim-rgb: 246 247 249;
+
+  color-scheme: light;
 }
 
 .bgvideo {
@@ -66,14 +113,14 @@ textarea {
 .app__header,
 .tabbar {
   background: var(--surface-raised);
-  backdrop-filter: blur(14px) saturate(1.1);
-  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  backdrop-filter: var(--header-blur);
+  -webkit-backdrop-filter: var(--header-blur);
 }
 
 .app__panel {
   background: var(--surface);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
 }
 
 /* --- Admin › Appearance ------------------------------------------------------------ */
@@ -204,4 +251,38 @@ textarea {
 .updatenotice a.btn {
   display: inline-block;
   text-decoration: none;
+}
+
+/* Doc 164: the Settings tab */
+.settings__lead {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
+.appearance__themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: none;
+}
+
+.appearance__themes legend {
+  margin-bottom: 0.35rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+/* 2026-10-02: the Inference Viewer's threshold, and why a pane is empty */
+.viewer__threshold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+  font-size: 0.9rem;
+}
+
+.viewer__note {
+  margin: 0.4rem 0 0;
 }

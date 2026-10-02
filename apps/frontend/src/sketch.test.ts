@@ -7,7 +7,8 @@ const sheets = Object.keys(css).map((path) => path.slice(2));
 const read = (name: string): string => (name === 'main.tsx' ? mainSource : (css[`./${name}`] ?? ''));
 
 describe('the look (doc 157)', () => {
-  it('has one scheme: no light-mode overrides wash the background loop out', () => {
+  it('has a light scheme only by choice: one data-theme block, no OS media query (doc 164)', () => {
+    expect(read('look.css')).toMatch(/:root\[data-theme='light'\] \{/);
     expect(sheets).toContain('sketch.css');
     for (const name of sheets) {
       expect(read(name), name).not.toMatch(/prefers-color-scheme:\s*light/);
