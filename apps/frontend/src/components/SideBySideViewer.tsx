@@ -27,6 +27,8 @@ export interface ResultPane {
   readonly renderOverlay?: (rendered: RenderedImage) => ReactNode;
   /** Chrome, drawn outside the transform, so it does not zoom. */
   readonly placeholder?: ReactNode;
+  /** Chrome beside a result, e.g. why it is empty (2026-10-02). */
+  readonly note?: ReactNode;
 }
 
 export interface SideBySideViewerProps {
@@ -225,7 +227,7 @@ export function SideBySideViewer({
             result.key,
             result.label,
             result.renderOverlay ? result.renderOverlay(rendered) : null,
-            result.renderOverlay ? null : result.placeholder,
+            result.renderOverlay ? (result.note ?? null) : result.placeholder,
             false,
           ),
         )}

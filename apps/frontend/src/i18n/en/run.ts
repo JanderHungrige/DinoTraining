@@ -54,6 +54,9 @@ export const runEn = {
   'run.heads.clear': 'Clear',
   'run.heads.conceptMissing':
     'Type what to look for — a concept model segments only what you name.',
+  'run.viewer.minScore': 'Show boxes from',
+  'run.viewer.noneAbove': 'No box at {threshold} or above. Best guess here: {best}. Lower the threshold to see it.',
+  'run.viewer.noneAtAll': 'This model found nothing in this picture.',
   'run.heads.passes_one': '{count} backbone pass',
   'run.heads.passes_other': '{count} backbone passes',
   'run.heads.runFailed': 'Could not run that selection.',

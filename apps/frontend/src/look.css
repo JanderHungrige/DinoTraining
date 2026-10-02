@@ -273,3 +273,16 @@ textarea {
   color: var(--text-dim);
   font-size: 0.9rem;
 }
+
+/* 2026-10-02: the Inference Viewer's threshold, and why a pane is empty */
+.viewer__threshold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+  font-size: 0.9rem;
+}
+
+.viewer__note {
+  margin: 0.4rem 0 0;
+}
