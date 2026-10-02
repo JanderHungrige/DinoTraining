@@ -1,6 +1,6 @@
 [project]
 name = "dinotraining-backend"
-version = "0.1.4"
+version = "1.0.0"
 description = "FastAPI + PyTorch ML sidecar for V-Rex (annotate / train / infer / generate)."
 requires-python = ">=3.12,<3.13"  # the bundled Python (doc 126); tests run on it
 readme = "README.md"

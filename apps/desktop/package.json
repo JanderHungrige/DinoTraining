@@ -1,7 +1,7 @@
 {
   "name": "@dinotraining/desktop",
   "private": true,
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Tauri shell hosting the V-Rex UI and the FastAPI sidecar.",
   "scripts": {
     "dev": "tauri dev",
