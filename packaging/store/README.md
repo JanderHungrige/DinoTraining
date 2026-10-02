@@ -60,3 +60,28 @@ the emblem, is optional.
 > test machine is older than 14.40, the app asks to install Microsoft's signed redistributable
 > (one UAC prompt). No account or sign-in is needed. To test: start the app, choose "CPU" at the
 > first start, wait for the setup to finish, then open Models & Datasets.
+
+## Super hero art (Store listing → Store logos / art)
+
+- `super-hero-art-1920x1080.png`: a frame of the forest background with the logo, no text
+  (the Store must not show the product's title in it). A 3840×2160 version was made the
+  same way. Optional: required only for a trailer at the top of the listing.
+
+## runFullTrust (Submission → restricted capabilities)
+
+V-Rex is a desktop application (Tauri, Win32) for training and running computer-vision
+models on the user's own images. It needs full trust because:
+
+1. **It runs a local Python backend** (FastAPI + PyTorch) as a child process, listening on
+   127.0.0.1 only. All model inference and training happens in this process on the user's
+   machine.
+2. **On first start it installs that runtime**, Python and PyTorch (from GitHub, PyPI and
+   pytorch.org), into the app's own package data folder. If Microsoft's Visual C++
+   Redistributable is missing, it offers to install it, with the user's consent.
+3. **It reads image folders, videos and datasets the user chooses anywhere on disk**, and
+   writes exports to folders the user picks.
+4. **It uses the NVIDIA GPU through CUDA when available.**
+
+None of this works inside an AppContainer sandbox. The app sends no telemetry. Besides
+the downloads named above, it only contacts model hosts (Hugging Face) and cloud storage
+that the user explicitly connects.

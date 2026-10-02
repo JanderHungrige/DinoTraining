@@ -4,13 +4,24 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-02: **V-Rex 0.1.4 is released** and live on dino.w3rth.de.
-- **`main` = `dev` = `9b3dde3`** (release 0.1.4). Everything since 0.1.2 is in it:
-  15.8–15.10, 157–161, and doc 162 (Jan's 0.1.3 test findings: the Studio follows the
-  language and new datasets; an import says where it lives).
-- **0.1.4 published cleanly** (run 37020562139). Release notes written.
-- **The Admin page** (doc 161) still offers the 0.1.3 test MSIX (pre-release
-  `msix-test-0.1.3`); Jan's MSIX testing is done.
+**Last updated:** 2026-10-03: **V-Rex 1.0.0 is released** and live on dino.w3rth.de.
+- **`main` = `1cbe124`** (release 1.0.0); `dev` has it plus docs. Everything since 0.1.4:
+  - doc 163, the forest background;
+  - doc 164, the Settings tab with light/dark;
+  - doc 165, the background choice (five backgrounds; default: a softly blurred forest,
+    no scrim);
+  - doc 166, the Inference Viewer (threshold slider, why a result is empty, a single
+    picture in the video mode);
+  - the look tests now read real CSS.
+- **1.0.0 published cleanly** (run 37069562801). Release notes written.
+- **The site** shows 1.0.0 with the new forest; the logo and the Admin page are live.
+- **The installers grew** with the five backgrounds: EXE 36 MB, MSIX 42 MB, .deb 45 MB.
+- **Store:**
+  - Jan submits `V-Rex_1.0.0_x64.msix` (not yet submitted as of 2026-10-03);
+  - the super hero art is in `packaging/store/super-hero-art-1920x1080.png` (a 3840×2160
+    version went to Jan's Downloads);
+  - the `runFullTrust` justification text was given to Jan (below).
+- **Earlier, 0.1.4:**
 - **Earlier, 0.1.3:**
 - **The release:**
   - CI built and smoke-tested all three installers;
@@ -34,9 +45,14 @@ do not read it for current state.
   - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- **The first Store submission** with `V-Rex_0.1.4_x64.msix` from the v0.1.4 release (doc
-  155's checklist): listing texts, screenshots (his), certification notes, and the
-  `runFullTrust` justification.
+- **The first Store submission** with `V-Rex_1.0.0_x64.msix` from the v1.0.0 release (doc
+  155's checklist): listing texts, screenshots (his), the super hero art, the certification
+  notes and the `runFullTrust` justification:
+  - a local Python backend as a child process on 127.0.0.1;
+  - the first-start runtime install (and the VC++ redistributable, with consent);
+  - user-chosen folders anywhere on disk;
+  - CUDA;
+  - none of it is possible in an AppContainer.
 - **Later:** "import your own model" is in `.mdd/BACKLOG.md`.
 - **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
 - **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
