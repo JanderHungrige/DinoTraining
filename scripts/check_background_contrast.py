@@ -2,7 +2,7 @@
 
     backend/.venv/bin/python scripts/check_background_contrast.py
 
-Finds the brightest pixel anywhere in the loop (every 10th frame, at blur scale),
+Finds the brightest and the darkest pixel anywhere in the loop (every 10th frame, at blur scale),
 composites it exactly as the browser stacks the layers — video, scrim, translucent
 surface — and reports each text colour's WCAG contrast against the result. Exits 1 if any
 falls below AA (4.5:1).
@@ -56,22 +56,6 @@ MODES = {
             "pending": "#fbbf24",
         },
     ),
-    "light": Mode(
-        bg="#f6f7f9",
-        raised="#ffffff",
-        scrim=(246, 247, 249),
-        scrim_top=0.62,
-        scrim_bottom=0.5,
-        panel=0.6,
-        header=0.78,
-        tokens={
-            "text": "#1a1d23",
-            "text-dim": "#5c6470",
-            "accent": "#15803d",
-            "danger": "#b91c1c",
-            "pending": "#8f5708",
-        },
-    ),
 }
 
 
@@ -91,10 +75,12 @@ def contrast(a: np.ndarray, b: np.ndarray) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
-def brightest_pixel() -> np.ndarray:
+def extreme_pixels() -> tuple[np.ndarray, np.ndarray]:
+    """The brightest and the darkest pixel: dark text fails over the one, light over the other."""
     import av
 
     best, pixel = -1.0, np.zeros(3)
+    least, dark = 2.0, np.zeros(3)
     with av.open(str(LOOP)) as container:
         for index, frame in enumerate(container.decode(container.streams.video[0])):
             if index % 10:
@@ -108,31 +94,40 @@ def brightest_pixel() -> np.ndarray:
             at = np.unravel_index(lum.argmax(), lum.shape)
             if lum[at] > best:
                 best, pixel = float(lum[at]), small[at]
-    return pixel
+            low = np.unravel_index(lum.argmin(), lum.shape)
+            if lum[low] < least:
+                least, dark = float(lum[low]), small[low]
+    return pixel, dark
+
+
+def check(mode: str, m: Mode, pixel: np.ndarray) -> bool:
+    """Print each token's contrast over `pixel`; True if one falls below AA."""
+    scrim = np.array(m.scrim) / 255
+    panel = m.panel * rgb(m.bg) + (1 - m.panel) * (
+        m.scrim_bottom * scrim + (1 - m.scrim_bottom) * pixel
+    )
+    header = m.header * rgb(m.raised) + (1 - m.header) * (
+        m.scrim_top * scrim + (1 - m.scrim_top) * pixel
+    )
+    failed = False
+    for name, value in m.tokens.items():
+        on_panel, on_header = (
+            contrast(rgb(value), panel),
+            contrast(rgb(value), header),
+        )
+        flag = "" if min(on_panel, on_header) >= AA else "  <-- below AA"
+        failed |= bool(flag)
+        print(f"{mode:5s} {name:9s} panel {on_panel:5.2f}  header {on_header:5.2f}{flag}")
+    return failed
 
 
 def main() -> int:
-    pixel = brightest_pixel()
-    print(f"brightest pixel in the loop: {np.round(pixel * 255).astype(int).tolist()}")
+    bright, dark = extreme_pixels()
     failed = False
-    for mode, m in MODES.items():
-        scrim = np.array(m.scrim) / 255
-        panel = m.panel * rgb(m.bg) + (1 - m.panel) * (
-            m.scrim_bottom * scrim + (1 - m.scrim_bottom) * pixel
-        )
-        header = m.header * rgb(m.raised) + (1 - m.header) * (
-            m.scrim_top * scrim + (1 - m.scrim_top) * pixel
-        )
-        for name, value in m.tokens.items():
-            on_panel, on_header = (
-                contrast(rgb(value), panel),
-                contrast(rgb(value), header),
-            )
-            flag = "" if min(on_panel, on_header) >= AA else "  <-- below AA"
-            failed |= bool(flag)
-            print(
-                f"{mode:5s} {name:9s} panel {on_panel:5.2f}  header {on_header:5.2f}{flag}"
-            )
+    for label, pixel in (("brightest", bright), ("darkest", dark)):
+        print(f"{label} pixel in the loop: {np.round(pixel * 255).astype(int).tolist()}")
+        for mode, m in MODES.items():
+            failed |= check(mode, m, pixel)
     return 1 if failed else 0
 
 

@@ -1,6 +1,8 @@
 /* DinoTraining shell styles.
-   Dark-first, because the app sits next to image data all day and a bright chrome
-   skews how the user reads what they're annotating. */
+   Dark, because the app sits next to image data all day and a bright chrome skews how the
+   user reads what they're annotating. One look in both OS schemes since 2026-10-01: the
+   light scheme washed the background loop to a pale peach (Jan: "too bright, just use
+   the original"). */
 
 :root {
   --bg: #14161a;
@@ -14,22 +16,6 @@
   --focus: #7dd3fc;
 
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f7f9;
-    --bg-raised: #ffffff;
-    --border: #d8dce3;
-    --text: #1a1d23;
-    --text-dim: #5c6470;
-    --accent: #15803d;
-    --danger: #b91c1c;
-    --pending: #a16207;
-    --focus: #0369a1;
-
-    color-scheme: light;
-  }
 }
 
 * {
@@ -3196,8 +3182,9 @@ body {
    never an invented `--warning` — that mistake shipped a 1.9:1 contrast bug once. */
 
 .distnotice {
-  max-width: 72rem;
-  padding: 0.85rem 1rem;
+  /* As wide as the other Admin panels, with their spacing (it ended short before). */
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--pending);
   border-radius: 8px;
   background: var(--bg-raised);
@@ -3288,8 +3275,9 @@ body {
    Renders only when there is something to do, so it can afford to be prominent. */
 
 .gpupanel {
-  max-width: 72rem;
-  padding: 0.85rem 1rem;
+  /* As wide as the other Admin panels, with their spacing (it ended short before). */
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--focus);
   border-radius: 8px;
   background: var(--bg-raised);

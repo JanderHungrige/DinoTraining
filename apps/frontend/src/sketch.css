@@ -1,0 +1,181 @@
+/* Doc 157: Draft Sketch beyond the buttons.
+   Jan (2026-10-01): "a mix of sketch buttons and other element optics — make all (as
+   suitable) also sketch." Doc 79 drew the buttons; this draws the rest in the same hand:
+   the same ink (`--sk-ink`), line and offset shadow, with an edge sized for each shape.
+   - Fields: the button's edge, mirrored, so two controls side by side are not twins.
+   - Boxes: a gentler edge (a page-wide box with the button's 255px sweep reads as a
+     balloon), and their own border colour kept: it carries meaning (warning, GPU, starter).
+   - Still not drawn: anything over or around an image (canvas, player, the box and mask
+     buttons, review verdicts, timeline rows), code blocks and pictures. As doc 79 says, a
+     wobbly outline next to an annotation competes with the box it marks.
+   Loaded after look.css; equal specificity wins by order. */
+
+:root {
+  --sk-edge-field: 225px 12px 255px 10px / 10px 255px 12px 225px;
+  --sk-edge-box: 14px 4px 18px 6px / 6px 16px 4px 14px;
+  --sk-ink-soft: color-mix(in srgb, var(--text) 55%, transparent);
+  --sk-shadow-box: 2px 3px 0 color-mix(in srgb, var(--sk-ink) 18%, transparent);
+}
+
+/* --- Fields ------------------------------------------------------------------------- */
+
+.app input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']),
+.app select,
+.app textarea {
+  border: 1.5px solid var(--sk-ink-soft);
+  border-radius: var(--sk-edge-field);
+  box-shadow: inset 1px 1px 0 color-mix(in srgb, var(--sk-ink) 12%, transparent);
+}
+
+.app input:not([type='checkbox'], [type='radio'], [type='range'], [type='file'], [type='color']):hover:not(:disabled),
+.app select:hover:not(:disabled),
+.app textarea:hover:not(:disabled) {
+  border-color: var(--sk-ink);
+}
+
+/* A textarea is tall: the field edge would bend its whole side. */
+.app textarea {
+  border-radius: var(--sk-edge-box);
+}
+
+.app input[type='checkbox'],
+.app input[type='radio'],
+.app input[type='range'] {
+  accent-color: var(--accent);
+}
+
+/* --- Boxes -------------------------------------------------------------------------- */
+
+.ft-card,
+.addapps,
+.params,
+.param-help__box,
+.recipe-explainer,
+.phrasebar,
+.phrasebar__members,
+.newclass__ask,
+.prep-finding,
+.prep-option,
+.guideline,
+.sysinfo,
+.starter,
+.annot,
+.admin__error,
+.admin__notice,
+.modelcard,
+.finetune__progress,
+.unclearq,
+.setup,
+.counters,
+.modeswitch__option,
+.guide__entry,
+.trainer__group,
+.run,
+.heads__item,
+.headcard,
+.headimport,
+.runpanel__heads,
+.tokenpanel,
+.tokenpanel__licence,
+.genpanel,
+.headpick,
+.setup__modes,
+.genpanel__modes,
+.review,
+.formatinfo__panel,
+.library__section,
+.library__bulk,
+.prescan--open,
+.distnotice,
+.gpupanel,
+.conn__note,
+.dsimport,
+.dsguide__section,
+.dsexport__panel,
+.uninstall,
+.targetguide {
+  border-width: 1.5px;
+  border-radius: var(--sk-edge-box);
+  box-shadow: var(--sk-shadow-box);
+}
+
+/* --- Tabs ------------------------------------------------------------------------- */
+
+/* The open tab is drawn round, as a pressed button is; the others are only written. */
+.tabbar__tab {
+  border: 1.5px solid transparent;
+  border-radius: var(--sk-edge);
+  margin: 0.3rem 0;
+  padding: 0.35rem 0.9rem;
+  transition: transform 120ms ease;
+}
+
+.tabbar__tab:hover {
+  border-color: var(--sk-ink-soft);
+  transform: rotate(-0.6deg);
+}
+
+.tabbar__tab--active,
+.tabbar__tab--active:hover {
+  border: 2.5px solid var(--sk-ink);
+  background: var(--sk-go);
+  box-shadow: var(--sk-shadow);
+  transform: none;
+}
+
+.subtabs {
+  border-width: 1.5px;
+  border-radius: var(--sk-edge-box);
+  box-shadow: var(--sk-shadow-box);
+}
+
+.subtabs__tab {
+  border: 1.5px solid transparent;
+  border-radius: var(--sk-edge);
+}
+
+.subtabs__tab:hover {
+  border-color: var(--sk-ink-soft);
+}
+
+.subtabs__tab--active,
+.subtabs__tab--active:hover {
+  border-color: var(--sk-ink);
+  background: var(--sk-go);
+  color: var(--text);
+  box-shadow: var(--sk-shadow);
+}
+
+/* --- Small controls that are buttons to the eye ------------------------------------- */
+
+.phrasechip,
+.prep-nav__step,
+.classpicker__rename,
+.param-field__reset {
+  border: 1.5px solid var(--sk-ink-soft);
+  border-radius: var(--sk-edge);
+  box-shadow: var(--sk-shadow);
+}
+
+.phrasechip:hover:not(:disabled),
+.prep-nav__step:hover:not(:disabled),
+.classpicker__rename:hover:not(:disabled),
+.param-field__reset:hover:not(:disabled) {
+  border-color: var(--sk-ink);
+}
+
+/* The "?" stays round: a circle drawn by hand is still a circle. */
+.param-help__button {
+  border: 1.5px solid var(--sk-ink-soft);
+  box-shadow: var(--sk-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabbar__tab {
+    transition: none;
+  }
+
+  .tabbar__tab:hover {
+    transform: none;
+  }
+}
