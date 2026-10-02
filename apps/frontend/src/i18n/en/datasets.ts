@@ -34,6 +34,8 @@ export const datasetsEn = {
   'models.import.start': 'Import',
   'models.import.running': 'Importing… {done} of {total} · {current}',
   'models.import.done': '“{name}” imported.',
+  'models.import.where': 'Its pictures are in {path}.',
+  'models.import.next': 'To annotate it: Annotation Studio → “A dataset you already have” → “{name}”. No folder to pick.',
   'models.import.failed': 'The import failed: {error}',
   'models.import.skipped': 'skipped: {pictures} pictures, {objects} objects',
   'models.profile.media.images': 'pictures',
