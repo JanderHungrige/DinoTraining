@@ -1,4 +1,4 @@
-<p align="center"><img src="branding/emblem.svg" alt="" width="140"></p>
+<p align="center"><img src="branding/v-rex-logo.png" alt="" width="140"></p>
 
 # V-Rex
 
