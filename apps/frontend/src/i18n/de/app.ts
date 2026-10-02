@@ -62,6 +62,17 @@ export const appDe: Catalogue<typeof appEn> = {
     'Speichert Segmentation Masks. Der COCO-Export enthält außerdem zu jeder Mask eine daraus abgeleitete Box – du bekommst also beides.',
   'app.output.boxes': 'Speichert Boxen.',
 
+  'app.tabs.settingsLabel': 'Einstellungen',
+  'app.tabs.settingsHint': 'Hell oder dunkel, der bewegte Hintergrund und woher der Hintergrund stammt.',
+  'settings.title': 'Einstellungen',
+  'settings.lead': 'Wie V-Rex aussieht. Die Sprache steht oben in der Leiste.',
+  'app.appearance.theme': 'Farbschema',
+  'app.appearance.theme.system': 'Wie das System',
+  'app.appearance.theme.dark': 'Dunkel',
+  'app.appearance.theme.light': 'Hell',
+  'settings.credits.title': 'Nachweise',
+  'settings.credits.background': 'Hintergrund: „Trees in the forest“, ein Video von Pexels (Pexels-Lizenz).',
+  'settings.credits.link': 'Auf Pexels öffnen',
   'app.appearance.title': 'Darstellung',
   'app.appearance.animated': 'Animierter Hintergrund',
   'app.appearance.reduced':

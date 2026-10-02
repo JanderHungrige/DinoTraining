@@ -37,6 +37,29 @@ textarea {
   --danger: #fca5a5;
 }
 
+/* Doc 164: the light theme, chosen in Settings (or "System"). Applied by lib/look.tsx as
+   data-theme="light" on <html>; this selector outranks the dark :root tokens wherever they
+   are. Measured over the forest loop's brightest and darkest pixel
+   (scripts/check_background_contrast.py): a light scrim, 75 % panels and the text colours
+   a shade darker than plain light-on-white keep every colour at AA (lowest 4.63:1) while
+   the forest still shows through. */
+:root[data-theme='light'] {
+  --bg: #f6f7f9;
+  --bg-raised: #ffffff;
+  --border: #d8dce3;
+  --text: #1a1d23;
+  --text-dim: #454c57;
+  --accent: #0f5f2c;
+  --danger: #991b1b;
+  --pending: #6e4205;
+  --focus: #0369a1;
+  --surface: color-mix(in srgb, var(--bg) 75%, transparent);
+  --surface-raised: color-mix(in srgb, var(--bg-raised) 85%, transparent);
+  --scrim: linear-gradient(180deg, rgb(246 247 249 / 0.25), rgb(246 247 249 / 0.2));
+
+  color-scheme: light;
+}
+
 .bgvideo {
   position: fixed;
   inset: 0;
@@ -206,4 +229,25 @@ textarea {
 .updatenotice a.btn {
   display: inline-block;
   text-decoration: none;
+}
+
+/* Doc 164: the Settings tab */
+.settings__lead {
+  margin: 0 0 1rem;
+  color: var(--text-dim);
+}
+
+.appearance__themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  border: none;
+}
+
+.appearance__themes legend {
+  margin-bottom: 0.35rem;
+  color: var(--text-dim);
+  font-size: 0.9rem;
 }
