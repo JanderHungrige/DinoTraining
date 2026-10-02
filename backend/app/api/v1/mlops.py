@@ -29,7 +29,7 @@ class MlflowStatus(BaseModel):
 
 class MlflowSettingsRequest(BaseModel):
     uri: str = Field(min_length=1, max_length=500)
-    experiment: str = Field(default="DinoTraining", min_length=1, max_length=200)
+    experiment: str = Field(default="V-Rex", min_length=1, max_length=200)
     register_models: bool = True
     #: Left out: keep what is stored. An empty string: remove it.
     username: str | None = None

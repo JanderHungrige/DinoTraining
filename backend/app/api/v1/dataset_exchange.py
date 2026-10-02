@@ -25,9 +25,7 @@ router = APIRouter()
 
 
 class ExportRequest(BaseModel):
-    target: str = Field(
-        min_length=1, description="The folder; the export goes into its dinotraining/."
-    )
+    target: str = Field(min_length=1, description="The folder; the export goes into its v-rex/.")
     include_pictures: bool = Field(
         default=False, description="Copy the pictures into the export too."
     )
@@ -47,7 +45,7 @@ def _refused(dataset_id: str, error: Exception) -> HTTPException:
 @router.post(
     "/datasets/{dataset_id}/export",
     response_model=ExportResult,
-    summary="Export everything the dataset knows into <target>/dinotraining/ (import restores it)",
+    summary="Export everything the dataset knows into <target>/v-rex/ (import restores it)",
 )
 async def export(dataset_id: str, request: ExportRequest | None = None) -> ExportResult:
     """Without a body: to the stored target (doc 143). With one: there, and remembered."""

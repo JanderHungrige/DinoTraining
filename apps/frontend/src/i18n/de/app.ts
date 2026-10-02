@@ -2,7 +2,7 @@ import type { appEn } from '../en/app';
 import type { Catalogue } from '../types';
 
 export const appDe: Catalogue<typeof appEn> = {
-  'app.tabs.sections': 'DinoTraining-Bereiche',
+  'app.tabs.sections': 'V-Rex-Bereiche',
   'app.tabs.introLabel': 'Hier starten',
   'app.tabs.introHint':
     'Was diese App macht, was ein Backbone und ein Head sind und was sie noch nicht kann.',
@@ -31,11 +31,11 @@ export const appDe: Catalogue<typeof appEn> = {
     'Lass deinen eigenen KI-Assistenten die App steuern – über MCP oder mit einem Dokument.',
   'app.stub.arrives': 'Kommt mit Welle {wave}.',
 
-  'app.update.available': 'DinoTraining {latest} ist da. Du hast {current}.',
+  'app.update.available': 'V-Rex {latest} ist da. Du hast {current}.',
   'app.update.get': 'Holen',
   'app.update.notes': 'Was ist neu',
   'app.update.later': 'Später',
-  'app.addApps.question': 'DinoTraining zu deinem Programme-Ordner hinzufügen?',
+  'app.addApps.question': 'V-Rex zu deinem Programme-Ordner hinzufügen?',
   'app.addApps.add': 'Hinzufügen',
   'app.addApps.notNow': 'Jetzt nicht',
   'app.addApps.added': 'Hinzugefügt: {path}',
@@ -48,7 +48,7 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.backend.connecting': 'Verbindung zum Backend wird hergestellt …',
   'app.backend.unexpected': 'Unerwarteter Fehler bei der Verbindung zum Backend.',
   'app.client.unreachable':
-    'Das DinoTraining-Backend unter {url} ist nicht erreichbar. Läuft der Sidecar-Prozess?',
+    'Das V-Rex-Backend unter {url} ist nicht erreichbar. Läuft der Sidecar-Prozess?',
   'app.client.malformed':
     'Unerwartete Antwort von {path}. Backend und Frontend passen nicht mehr zusammen.',
 

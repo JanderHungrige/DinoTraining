@@ -82,8 +82,8 @@ mod tests {
     fn the_store_edition_lives_in_its_package_folder() {
         let local = PathBuf::from(r"C:\Users\jan\AppData\Local");
         assert_eq!(
-            package_root(&local, "DinoTraining_abc"),
-            local.join("Packages").join("DinoTraining_abc").join("LocalCache").join("Local").join("DinoTraining")
+            package_root(&local, "JeanQuestEnterprise.V-Rex_f2f23w3rhp35p"),
+            local.join("Packages").join("JeanQuestEnterprise.V-Rex_f2f23w3rhp35p").join("LocalCache").join("Local").join("DinoTraining")
         );
         if crate::edition::package_family().is_none() {
             assert_eq!(backend_app_dir(), None, "outside the Store the backend keeps its default");

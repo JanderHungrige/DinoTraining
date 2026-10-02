@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install DinoTraining on a Mac with Apple silicon (doc 130).
+# Install V-Rex on a Mac with Apple silicon (doc 130).
 #
 #   bash -c "$(curl -fsSL https://raw.githubusercontent.com/JanderHungrige/DinoTraining/main/scripts/install-mac.sh)"
 #
@@ -16,19 +16,19 @@ set -euo pipefail
 
 REPO="JanderHungrige/DinoTraining"
 INSTALL_DIR="${DINO_INSTALL_DIR:-$HOME/Applications}"
-APP_NAME="DinoTraining.app"
+APP_NAME="V-Rex.app"
 
 say() { printf '%s\n' "$*"; }
-fail() { printf 'DinoTraining install: %s\n' "$*" >&2; exit 1; }
+fail() { printf 'V-Rex install: %s\n' "$*" >&2; exit 1; }
 
 # --- the machine ---------------------------------------------------------------------
 [ "$(uname -s)" = "Darwin" ] || fail "this script is for macOS. Windows and Linux have installers on the releases page."
 # hw.optional.arm64 is 1 on Apple silicon, even for a shell running under Rosetta.
 if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" != "1" ]; then
-  fail "this Mac has an Intel processor. PyTorch, which DinoTraining needs, is no longer made for Intel Macs."
+  fail "this Mac has an Intel processor. PyTorch, which V-Rex needs, is no longer made for Intel Macs."
 fi
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/dinotraining-install.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/v-rex-install.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
 
 # --- the archive ---------------------------------------------------------------------
@@ -46,9 +46,9 @@ else
       | sed -n 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/p' | head -n 1)"
     [ -n "$VERSION" ] || fail "could not find the latest release. Set DINO_VERSION, or see https://github.com/$REPO/releases"
   fi
-  NAME="DinoTraining_${VERSION}_aarch64.app.tar.gz"
+  NAME="V-Rex_${VERSION}_aarch64.app.tar.gz"
   BASE="https://github.com/$REPO/releases/download/v$VERSION/$NAME"
-  say "Downloading DinoTraining $VERSION…"
+  say "Downloading V-Rex $VERSION…"
   ARCHIVE="$WORK/$NAME"
   curl -fL --progress-bar -o "$ARCHIVE" "$BASE" || fail "download failed: $BASE"
   EXPECTED="$(curl -fsSL "$BASE.sha256" | awk '{print $1}')" || fail "could not fetch the checksum"

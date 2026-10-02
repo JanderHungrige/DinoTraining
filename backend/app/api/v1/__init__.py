@@ -1,1 +1,1 @@
-"""Version 1 of the DinoTraining API."""
+"""Version 1 of the V-Rex API."""

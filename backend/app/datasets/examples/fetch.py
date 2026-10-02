@@ -22,7 +22,7 @@ from app.datasets.examples.zipstream import stream_unzip
 
 logger = logging.getLogger(__name__)
 
-USER_AGENT = f"DinoTraining/{__version__} (+https://github.com/JanderHungrige/DinoTraining)"
+USER_AGENT = f"V-Rex/{__version__} (+https://github.com/JanderHungrige/DinoTraining)"
 _SPARE = 1 << 30
 _CHUNK = 1 << 16
 #: Bytes read so far, of how many, and the member passing.

@@ -45,7 +45,7 @@ def test_an_export_is_remembered_and_any_change_shows(tmp_path: Path) -> None:
         export_to_target(dataset_id)
     set_target(dataset_id, Target(kind="data"))
     result = export_to_target(dataset_id)
-    assert result.folder == str(tmp_path / "rail" / "dinotraining")
+    assert result.folder == str(tmp_path / "rail" / "v-rex")
     after = view(dataset_id)
     assert after.kind == "data" and after.exported_folder == result.folder
     assert not after.changed  # exported just now; the bookkeeping itself is no change
@@ -73,13 +73,9 @@ def test_the_api_chooses_exports_and_lists_the_last_export(tmp_path: Path) -> No
     chosen = client.put(f"{base}/target", json={"kind": "folder", "folder": str(tmp_path / "out")})
     assert chosen.status_code == 200 and chosen.json()["folder"] == str(tmp_path / "out")
     written = client.post(base)
-    assert written.status_code == 200 and written.json()["folder"] == str(
-        tmp_path / "out/dinotraining"
-    )
+    assert written.status_code == 200 and written.json()["folder"] == str(tmp_path / "out/v-rex")
     profile = client.get(f"/api/v1/datasets/{dataset_id}/profile").json()
-    assert (
-        profile["exported_folder"] == str(tmp_path / "out/dinotraining") and profile["exported_at"]
-    )
+    assert profile["exported_folder"] == str(tmp_path / "out/v-rex") and profile["exported_at"]
 
     blocker = tmp_path / "file"
     blocker.write_text("not a folder")

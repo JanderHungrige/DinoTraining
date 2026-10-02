@@ -14,7 +14,7 @@ export const datasetsEn = {
   'models.import.kind.yolo': 'YOLO',
   'models.import.kind.voc': 'Pascal VOC',
   'models.import.kind.openlabel': 'OpenLABEL (OSDaR23)',
-  'models.import.kind.dinotraining': 'a DinoTraining export (restored completely)',
+  'models.import.kind.dinotraining': 'a V-Rex export (restored completely)',
   'models.import.pictures_one': '{count} picture',
   'models.import.pictures_other': '{count} pictures',
   'models.import.annotated_one': '{count} annotated',
@@ -98,9 +98,9 @@ export const datasetsEn = {
   'models.modelAuto.folder': 'Folder for trained models',
   // Uninstall notice (doc 146)
   'models.uninstall.lead':
-    'Uninstalling can remove everything inside DinoTraining (from the Windows installer when you tick “Delete the application data”). Exported annotations and models stay where you saved them.',
+    'Uninstalling can remove everything inside V-Rex (from the Windows installer when you tick “Delete the application data”). Exported annotations and models stay where you saved them.',
   'models.uninstall.leadStore':
-    'Uninstalling DinoTraining in Windows removes everything inside it, without asking. Exported annotations and models stay where you saved them.',
+    'Uninstalling V-Rex in Windows removes everything inside it, without asking. Exported annotations and models stay where you saved them.',
   'models.uninstall.allExported': 'All datasets are exported.',
   'models.uninstall.noTarget_one': '{count} dataset has no export yet: {names}. Choose where it goes with “Export…” on its row.',
   'models.uninstall.noTarget_other': '{count} datasets have no export yet: {names}. Choose where each goes with “Export…” on its row.',

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keep the DinoTraining download site current (doc 133). Runs from jan's crontab:
+# Keep the V-Rex download site current (doc 133). Runs from jan's crontab:
 #
 #   */10 * * * * $HOME/dinotraining-site/deploy/update-site.sh >> $HOME/dinotraining-site/update.log 2>&1
 #

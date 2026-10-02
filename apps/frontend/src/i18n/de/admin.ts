@@ -114,7 +114,7 @@ export const adminDe: Catalogue<typeof adminEn> = {
   'admin.token.saveFailed': 'Konnte den Token nicht speichern.',
   'admin.token.title': 'Zugang zu HuggingFace',
   'admin.token.introBefore':
-    'Manche Modelle sind von ihrem Herausgeber zugangsbeschränkt. DinoTraining lädt sie nie für dich herunter und liefert keinen Token mit — du nutzt deinen eigenen und startest jeden Download selbst. Alles, was die frei verfügbaren Modelle brauchen, einschließlich',
+    'Manche Modelle sind von ihrem Herausgeber zugangsbeschränkt. V-Rex lädt sie nie für dich herunter und liefert keinen Token mit — du nutzt deinen eigenen und startest jeden Download selbst. Alles, was die frei verfügbaren Modelle brauchen, einschließlich',
   'admin.token.introAfter': 'für Segmentation Masks, funktioniert ganz ohne das.',
   'admin.token.field': 'Dein HuggingFace-Zugangstoken',
   'admin.token.configured': 'Eingerichtet',

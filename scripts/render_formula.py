@@ -1,6 +1,6 @@
 """Render the Homebrew formula for one release (doc 130).
 
-    python scripts/render_formula.py <version> <sha256> > dinotraining.rb
+    python scripts/render_formula.py <version> <sha256> > v-rex.rb
 
 The release workflow runs this for the macOS archive it just built and attaches the
 result to the release; Jan copies it into the tap. Standard library only.
@@ -16,7 +16,7 @@ TEMPLATE = (
     Path(__file__).resolve().parents[1]
     / "packaging"
     / "homebrew"
-    / "dinotraining.rb.template"
+    / "v-rex.rb.template"
 )
 VERSION = re.compile(r"^\d+\.\d+\.\d+([-.][0-9A-Za-z.]+)?$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")

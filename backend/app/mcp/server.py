@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 #: Where the tool endpoint lives, and what the setup command points at.
 MCP_PATH = "/mcp"
 
-INSTRUCTIONS = """DinoTraining annotates images, trains models on them, and generates more
+INSTRUCTIONS = """V-Rex annotates images, trains models on them, and generates more
 annotated data with what it trained.
 
 Before training, prepare the data: `audit_dataset`, `split_dataset`, `plan_preparation`,
@@ -73,7 +73,7 @@ def _security(host: str, port: int) -> TransportSecuritySettings:
 
 def build() -> MCPServer:
     """The server with every tool attached."""
-    mcp = MCPServer("dinotraining", instructions=INSTRUCTIONS)
+    mcp = MCPServer("v-rex", instructions=INSTRUCTIONS)
     tools.register(mcp)
     prep_tools.register(mcp)
     dataset_import_tools.register(mcp)

@@ -33,7 +33,7 @@ def build(tmp_path: Path) -> dict[str, Path]:
         (icons / logo).write_bytes(b"png")
     identity = tmp_path / "identity.json"
     identity.write_text(json.dumps({
-        "identity_name": "JanWerth.DinoTraining", "publisher": "CN=Jan & Co",
+        "identity_name": "JanWerth.V-Rex", "publisher": "CN=Jan & Co",
         "publisher_display_name": "Jan Werth",
     }))
     return {"exe": exe, "runtime": runtime, "icons": icons, "identity": identity, "out": tmp_path / "msix"}
@@ -52,7 +52,7 @@ def test_the_package_holds_the_exe_the_runtime_the_logos_and_its_manifest(build:
         "Assets/Square150x150Logo.png",
         "Assets/Square44x44Logo.png",
         "Assets/StoreLogo.png",
-        "DinoTraining.exe",
+        "V-Rex.exe",
         "runtime/backend/app/main.py",
         "runtime/uv.exe",
     ]
@@ -64,11 +64,11 @@ def test_the_manifest_carries_identity_version_entry_point_and_capabilities(buil
     identity = root.find("m:Identity", NS)
     assert identity is not None
     assert identity.attrib == {
-        "Name": "JanWerth.DinoTraining", "Publisher": "CN=Jan & Co", "Version": "0.1.3.0", "ProcessorArchitecture": "x64",
+        "Name": "JanWerth.V-Rex", "Publisher": "CN=Jan & Co", "Version": "0.1.3.0", "ProcessorArchitecture": "x64",
     }
     application = root.find("m:Applications/m:Application", NS)
     assert application is not None
-    assert application.attrib["Executable"] == "DinoTraining.exe"
+    assert application.attrib["Executable"] == "V-Rex.exe"
     assert application.attrib["EntryPoint"] == "Windows.FullTrustApplication"
     capabilities = {c.attrib["Name"] for c in root.iter() if c.tag.endswith("Capability")}
     assert capabilities == {"internetClient", "runFullTrust"}
@@ -96,7 +96,9 @@ def test_an_identity_without_a_publisher_dn_is_refused(build: dict[str, Path]) -
         stage(build)
 
 
-def test_the_repository_identity_is_marked_as_a_placeholder() -> None:
+def test_the_repository_carries_the_reserved_identity() -> None:
     identity = stage_msix.read_identity()
-    assert identity["placeholder"] is True  # until Jan reserves the name (doc 151)
+    assert identity["placeholder"] is False  # Jan reserved V-Rex (doc 159)
+    assert identity["identity_name"] == "JeanQuestEnterprise.V-Rex"
+    assert identity["publisher"] == "CN=522F9C35-C376-4C5B-9538-6CD2068FA92D"
     ElementTree.fromstring(stage_msix.manifest("0.1.3", identity).encode())

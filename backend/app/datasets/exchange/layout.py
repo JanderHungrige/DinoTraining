@@ -1,7 +1,7 @@
 """Where an export's files go, and how picture paths travel (doc 142).
 
-An export is a folder `dinotraining/` inside its target: `dinotraining.json` (the whole
-dataset), `annotations.coco.json` (for other tools) and, optionally, `pictures/`.
+An export is a folder `v-rex/` inside its target: `v-rex.json` (the whole dataset),
+`annotations.coco.json` (for other tools) and, optionally, `pictures/`.
 Picture paths inside are relative to the pictures' folder: the common parent of every
 picture, so a moved folder or another machine still matches.
 """
@@ -12,12 +12,20 @@ import os
 import tempfile
 from pathlib import Path, PurePosixPath
 
-EXPORT_DIR = "dinotraining"
-DATA_FILE = "dinotraining.json"
+EXPORT_DIR = "v-rex"
+DATA_FILE = "v-rex.json"
 COCO_FILE = "annotations.coco.json"
 PICTURES_DIR = "pictures"
-FORMAT = "dinotraining-export"
+FORMAT = "v-rex-export"
 FORMAT_VERSION = 1
+
+# Doc 159: exports written before the rename to V-Rex are read as they are; new ones are
+# written under the new name only.
+LEGACY_EXPORT_DIR = "dinotraining"
+LEGACY_DATA_FILE = "dinotraining.json"
+LEGACY_FORMAT = "dinotraining-export"
+EXPORT_DIRS = frozenset({EXPORT_DIR, LEGACY_EXPORT_DIR})
+FORMATS = frozenset({FORMAT, LEGACY_FORMAT})
 
 
 def pictures_root(paths: list[str]) -> Path | None:
@@ -50,8 +58,13 @@ def export_folder(target: Path) -> Path:
 
 
 def find_export(path: Path) -> Path | None:
-    """The export's `dinotraining.json` in a folder (or in its `dinotraining/`)."""
-    for candidate in (path / EXPORT_DIR / DATA_FILE, path / DATA_FILE):
+    """The export's `v-rex.json` in a folder or its `v-rex/`, or one from before the rename."""
+    for candidate in (
+        path / EXPORT_DIR / DATA_FILE,
+        path / DATA_FILE,
+        path / LEGACY_EXPORT_DIR / LEGACY_DATA_FILE,
+        path / LEGACY_DATA_FILE,
+    ):
         if candidate.is_file():
             return candidate
     return None

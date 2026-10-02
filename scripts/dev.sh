@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Start DinoTraining for development.
+# Start V-Rex for development.
 #
 #   ./scripts/dev.sh              full desktop app (Tauri window + Vite + backend)
 #   ./scripts/dev.sh web          browser-only (Vite + backend, no Rust build)

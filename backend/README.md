@@ -1,4 +1,4 @@
-# DinoTraining backend
+# V-Rex backend
 
 FastAPI + PyTorch ML sidecar for the annotate → train → infer → generate loop.
 Spawned and health-checked by the Tauri shell (`apps/desktop`); see the root

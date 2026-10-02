@@ -15,7 +15,7 @@ afterEach(() => localStorage.clear());
 describe('the app shell in German', () => {
   it('names the tabs and their list in German', () => {
     renderInGerman(<TabBar activeTab="studio" onTabChange={vi.fn()} />);
-    expect(screen.getByRole('tablist', { name: 'DinoTraining-Bereiche' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'V-Rex-Bereiche' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Daten vorbereiten' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Modelle & Datensätze' })).toBeInTheDocument();
   });

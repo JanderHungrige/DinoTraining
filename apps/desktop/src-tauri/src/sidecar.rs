@@ -23,7 +23,7 @@ const DEFAULT_PORT: u16 = 8756;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SidecarError {
-    #[error("the app's bundled runtime is missing: reinstall DinoTraining")]
+    #[error("the app's bundled runtime is missing: reinstall V-Rex")]
     RuntimeMissing,
     #[error("could not locate the backend at {0}")]
     BackendMissing(PathBuf),
@@ -37,7 +37,7 @@ pub enum SidecarError {
     #[error("backend exited during startup ({status}).{output}")]
     BackendExited { status: std::process::ExitStatus, output: String },
     #[error(
-        "port {0} is already in use. Another DinoTraining backend is probably still \
+        "port {0} is already in use. Another V-Rex backend is probably still \
          running — stop it (lsof -ti:{0} | xargs kill) and relaunch."
     )]
     PortInUse(u16),

@@ -41,7 +41,7 @@ def test_only_what_changed_goes_and_datasets_without_a_target_are_named(tmp_path
     assert first is not None
     assert [entry.name for entry in first.exported] == ["Rail"]
     assert [entry.name for entry in first.no_target] == ["Cars"]
-    assert (tmp_path / "rail/dinotraining/dinotraining.json").is_file()
+    assert (tmp_path / "rail/v-rex/v-rex.json").is_file()
 
     second = run_exports("interval")
     assert second is not None and second.exported == [] and second.unchanged == 1

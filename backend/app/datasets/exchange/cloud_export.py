@@ -2,7 +2,7 @@
 
 Each file is written "only if it is still the version I wrote last" (its ETag), or "only
 if it does not exist" the first time. When the bucket holds a newer one, this export goes
-beside it into `dinotraining/conflicts/<time>/`, and the conflict is reported: nothing is
+beside it into `v-rex/conflicts/<time>/`, and the conflict is reported: nothing is
 overwritten and nothing is lost.
 """
 

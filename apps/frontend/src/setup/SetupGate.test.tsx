@@ -49,7 +49,7 @@ describe('SetupGate', () => {
     shellFlag.inside = true;
     status.mockResolvedValue({ needed: true, machine: MACHINE, auto: null, update: null });
     render(<SetupGate>app</SetupGate>);
-    expect(await screen.findByRole('heading', { name: 'Welcome to DinoTraining' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Welcome to V-Rex' })).toBeInTheDocument();
     expect(screen.queryByText('app')).not.toBeInTheDocument();
   });
 

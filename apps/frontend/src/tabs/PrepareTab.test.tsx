@@ -38,7 +38,7 @@ beforeEach(() => {
   vi.mocked(datasets.listDatasets).mockImplementation(
     (signal?: AbortSignal) =>
       new Promise((resolve, reject) => {
-        signal?.addEventListener('abort', () => reject(new ApiError(0, 'unreachable', 'Cannot reach the DinoTraining backend')));
+        signal?.addEventListener('abort', () => reject(new ApiError(0, 'unreachable', 'Cannot reach the V-Rex backend')));
         setTimeout(() => resolve([{ id: 'd1', name: 'Blood cells', counts: { images: 3, masks: 0 } } as never]), 0);
       }),
   );

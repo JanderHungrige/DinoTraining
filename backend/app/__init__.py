@@ -1,4 +1,4 @@
-"""DinoTraining FastAPI + PyTorch ML sidecar."""
+"""V-Rex FastAPI + PyTorch ML sidecar."""
 
 from __future__ import annotations
 

@@ -15,7 +15,7 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.import.kind.yolo': 'YOLO',
   'models.import.kind.voc': 'Pascal VOC',
   'models.import.kind.openlabel': 'OpenLABEL (OSDaR23)',
-  'models.import.kind.dinotraining': 'ein DinoTraining-Export (wird vollständig wiederhergestellt)',
+  'models.import.kind.dinotraining': 'ein V-Rex-Export (wird vollständig wiederhergestellt)',
   'models.import.pictures_one': '{count} Bild',
   'models.import.pictures_other': '{count} Bilder',
   'models.import.annotated_one': '{count} annotiert',
@@ -99,9 +99,9 @@ export const datasetsDe: Catalogue<typeof datasetsEn> = {
   'models.modelAuto.folder': 'Ordner für trainierte Modelle',
   // Hinweis zum Deinstallieren (doc 146)
   'models.uninstall.lead':
-    'Beim Deinstallieren kann alles entfernt werden, was in DinoTraining liegt (beim Windows-Installer, wenn du „Anwendungsdaten löschen“ anhakst). Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
+    'Beim Deinstallieren kann alles entfernt werden, was in V-Rex liegt (beim Windows-Installer, wenn du „Anwendungsdaten löschen“ anhakst). Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
   'models.uninstall.leadStore':
-    'Wenn du DinoTraining in Windows deinstallierst, wird alles darin ohne Rückfrage entfernt. Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
+    'Wenn du V-Rex in Windows deinstallierst, wird alles darin ohne Rückfrage entfernt. Exportierte Annotationen und Modelle bleiben, wo du sie gespeichert hast.',
   'models.uninstall.allExported': 'Alle Datensätze sind exportiert.',
   'models.uninstall.noTarget_one': '{count} Datensatz ist noch nicht exportiert: {names}. Leg mit „Exportieren…“ in seiner Zeile fest, wohin er geht.',
   'models.uninstall.noTarget_other': '{count} Datensätze sind noch nicht exportiert: {names}. Leg mit „Exportieren…“ in ihren Zeilen fest, wohin sie gehen.',

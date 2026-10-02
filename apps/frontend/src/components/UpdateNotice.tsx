@@ -1,5 +1,5 @@
 /**
- * "DinoTraining 0.1.3 is available" (doc 158).
+ * "V-Rex 0.1.3 is available" (doc 158).
  *
  * The shell asks once at start (`check_for_update`) and answers only for the installer
  * edition: the Store updates its own, a dev build is whatever is checked out. "Later" is

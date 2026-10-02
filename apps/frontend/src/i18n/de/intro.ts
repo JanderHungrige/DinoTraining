@@ -4,7 +4,7 @@ import type { Catalogue } from '../types';
 export const introDe: Catalogue<typeof introEn> = {
   'intro.title': 'Worum es hier geht',
   'intro.lead':
-    'DinoTraining macht aus einem Ordner voller Bilder ein Modell, das darin Dinge findet. Du annotierst einige Bilder, trainierst ein kleines Modell auf einem großen, vortrainierten Modell, schaust dir an, was es vorhersagt, und lässt es dir helfen, die nächsten Bilder schneller zu annotieren. Alles läuft auf diesem Rechner: Deine Bilder werden nirgendwohin hochgeladen.',
+    'V-Rex macht aus einem Ordner voller Bilder ein Modell, das darin Dinge findet. Du annotierst einige Bilder, trainierst ein kleines Modell auf einem großen, vortrainierten Modell, schaust dir an, was es vorhersagt, und lässt es dir helfen, die nächsten Bilder schneller zu annotieren. Alles läuft auf diesem Rechner: Deine Bilder werden nirgendwohin hochgeladen.',
   'intro.loop.heading': 'Der Kreislauf',
   'intro.loop.note':
     'Die Tabs stehen in der Reihenfolge, in der du sie benutzt. Du wirst die Runde mehr als einmal drehen – genau darum geht es, und es heißt nicht, dass du beim ersten Mal etwas falsch gemacht hast.',

@@ -3,8 +3,8 @@
     python scripts/stage_msix.py --exe <dinotraining.exe> --version 0.1.3 --out <dir>
 
 The release workflow packs the result with `makeappx pack /d <dir>`. The identity comes
-from packaging/msix/identity.json: placeholders until the name is reserved in Partner
-Center.
+from packaging/msix/identity.json: the identity Jan reserved for V-Rex in Partner
+Center (doc 159).
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ IDENTITY = REPO / "packaging" / "msix" / "identity.json"
 RUNTIME = REPO / "apps" / "desktop" / "src-tauri" / "runtime"
 ICONS = REPO / "apps" / "desktop" / "src-tauri" / "icons"
 LOGOS = ("Square44x44Logo.png", "Square150x150Logo.png", "StoreLogo.png")
-EXE_NAME = "DinoTraining.exe"
+EXE_NAME = "V-Rex.exe"
 
 
 class StageError(ValueError):

@@ -18,7 +18,7 @@ from app.datasets.exchange.cloud_export import ExportConflict
 from app.datasets.exchange.targets import export_to_target, view
 from tests import intake_fixtures as fx
 
-DATA = "dinotraining/dinotraining.json"
+DATA = "v-rex/v-rex.json"
 
 
 @pytest.fixture(autouse=True)
@@ -69,15 +69,13 @@ def test_a_linked_dataset_saves_back_into_its_bucket_by_default(bucket: Storage)
     target = view(dataset_id)
     assert (target.kind, target.data_folder, target.linked, target.include_pictures) == (
         "data",
-        "s3://photos/dinotraining",
+        "s3://photos/v-rex",
         True,
         False,
     )
     result = export_to_target(dataset_id)
-    assert result.folder == "s3://photos/dinotraining" and result.pictures_copied == 0
-    assert {"dinotraining/dinotraining.json", "dinotraining/annotations.coco.json"} <= set(
-        keys(bucket)
-    )
+    assert result.folder == "s3://photos/v-rex" and result.pictures_copied == 0
+    assert {"v-rex/v-rex.json", "v-rex/annotations.coco.json"} <= set(keys(bucket))
     saved = json.loads(bucket.get(DATA))
     assert sorted(image["path"] for image in saved["tables"]["images"]) == [
         "train/a.jpg",
@@ -101,18 +99,18 @@ def test_someone_elses_newer_save_is_never_overwritten(bucket: Storage) -> None:
 
     dataset_id = link_bucket()
     export_to_target(dataset_id)
-    theirs = b'{"format": "dinotraining-export", "saved by": "a colleague"}'
+    theirs = b'{"format": "v-rex-export", "saved by": "a colleague"}'
     bucket.put(DATA, theirs)  # another machine saved meanwhile
     change(dataset_id)
     with pytest.raises(
         ExportConflict,
-        match="Nothing was overwritten: yours is at s3://photos/dinotraining/conflicts/",
+        match="Nothing was overwritten: yours is at s3://photos/v-rex/conflicts/",
     ):
         export_to_target(dataset_id)
     assert bucket.get(DATA) == theirs
-    copies = [key for key in keys(bucket) if key.startswith("dinotraining/conflicts/")]
-    assert len(copies) == 2 and any(key.endswith("dinotraining.json") for key in copies)
-    mine = json.loads(bucket.get(next(key for key in copies if key.endswith("dinotraining.json"))))
+    copies = [key for key in keys(bucket) if key.startswith("v-rex/conflicts/")]
+    assert len(copies) == 2 and any(key.endswith("v-rex.json") for key in copies)
+    mine = json.loads(bucket.get(next(key for key in copies if key.endswith("v-rex.json"))))
     assert {image["split"] for image in mine["tables"]["images"] if image["annotated_at"]} == {
         "test"
     }
@@ -168,5 +166,5 @@ def test_a_german_reader_reads_the_conflict_in_german(bucket: Storage) -> None:
     )
     assert reply.status_code == 409
     assert reply.json()["error"]["message"].startswith(
-        "Jemand anderes hat seit deinem letzten Export Annotationen nach s3://photos/dinotraining"
+        "Jemand anderes hat seit deinem letzten Export Annotationen nach s3://photos/v-rex"
     )

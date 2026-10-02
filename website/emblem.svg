@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="DinoTraining">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="V-Rex">
   <!-- Doc 134: an own emblem — a coin, a T-rex skeleton facing right, yellow on black. -->
-  <title>DinoTraining</title>
+  <title>V-Rex</title>
   <g id="coin">
     <circle cx="256" cy="256" r="250" fill="#141414"/>
     <circle cx="256" cy="256" r="229" fill="none" stroke="#F5C518" stroke-width="12"/>

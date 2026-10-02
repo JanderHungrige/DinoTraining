@@ -29,7 +29,7 @@ function Wait-Healthy([int] $Seconds) {
 }
 
 function Stop-App {
-    Get-Process | Where-Object { $_.Name -in @('DinoTraining', 'python', 'uv') } | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-Process | Where-Object { $_.Name -in @('V-Rex', 'python', 'uv') } | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 5
 }
 
@@ -43,7 +43,7 @@ if (Test-Path $support) { Move-Item $support $aside -Force }
 
 Import-Certificate -FilePath $Cert -CertStoreLocation Cert:\LocalMachine\TrustedPeople | Out-Null
 Add-AppxPackage -Path $Msix
-$package = Get-AppxPackage | Where-Object { $_.Name -like '*DinoTraining*' } | Select-Object -First 1
+$package = Get-AppxPackage | Where-Object { $_.Name -like '*V-Rex*' } | Select-Object -First 1
 if (-not $package) { throw 'the package is not installed' }
 $family = $package.PackageFamilyName
 Write-Host "Installed $($package.PackageFullName) at $($package.InstallLocation)"
@@ -55,7 +55,7 @@ $packageDir = Join-Path $env:LOCALAPPDATA "Packages\$family\LocalCache\Local\Din
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 Set-Content -Path (Join-Path $packageDir 'setup-auto') -Value 'cpu' -NoNewline
 
-Start-Process "shell:AppsFolder\$family!DinoTraining"
+Start-Process "shell:AppsFolder\$family!VRex"
 $first, $answer = Wait-Healthy $FirstStartSeconds
 Write-Host "First start healthy after $first s: $($answer | ConvertTo-Json -Compress)"
 
@@ -69,7 +69,7 @@ if (Test-Path $support) { throw "The app wrote to the real $support, outside the
 $size = [math]::Round(((Get-ChildItem $packageDir -Recurse -File | Measure-Object Length -Sum).Sum) / 1GB, 2)
 
 Stop-App
-Start-Process "shell:AppsFolder\$family!DinoTraining"
+Start-Process "shell:AppsFolder\$family!VRex"
 $second, $_ = Wait-Healthy $SecondStartSeconds
 Write-Host "Second start healthy after $second s"
 Stop-App

@@ -9,7 +9,7 @@
 
 import { API_BASE_URL, API_PREFIX } from './client';
 
-export const GUIDE_FILENAME = 'dinotraining-api-guide.md';
+export const GUIDE_FILENAME = 'v-rex-api-guide.md';
 
 /** The backend answered, with an error status. Its own class so the UI can word it. */
 export class GuideLoadError extends Error {

@@ -1,7 +1,7 @@
 //! Where the bundled resources are (docs 126, 130).
 //!
 //! Tauri's `resource_dir` refuses on macOS when the app was started through a symbolic
-//! link: Homebrew's `opt/dinotraining` path, or the link "Add to Applications" makes. The
+//! link: Homebrew's `opt/v-rex` path, or the link "Add to Applications" makes. The
 //! refusal guards against relaunching through a planted link; reading resources from
 //! the *resolved* path reads them from the real bundle, which is the safe direction.
 //! Found live: without this, a Homebrew start found no runtime.
@@ -32,10 +32,10 @@ mod tests {
 
     #[test]
     fn the_resources_sit_beside_the_macos_folder() {
-        let exe = Path::new("/opt/homebrew/Cellar/dinotraining/0.2.0/DinoTraining.app/Contents/MacOS/dinotraining");
+        let exe = Path::new("/opt/homebrew/Cellar/v-rex/0.2.0/V-Rex.app/Contents/MacOS/dinotraining");
         assert_eq!(
             macos_resources(exe),
-            Some(PathBuf::from("/opt/homebrew/Cellar/dinotraining/0.2.0/DinoTraining.app/Contents/Resources"))
+            Some(PathBuf::from("/opt/homebrew/Cellar/v-rex/0.2.0/V-Rex.app/Contents/Resources"))
         );
     }
 

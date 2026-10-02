@@ -2,7 +2,7 @@
 
 export const appEn = {
   // The top-level tabs (tabs/tabs.ts).
-  'app.tabs.sections': 'DinoTraining sections',
+  'app.tabs.sections': 'V-Rex sections',
   'app.tabs.introLabel': 'Start here',
   'app.tabs.introHint': 'What this app does, what a backbone and a head are, and what it cannot do yet.',
   'app.tabs.studioLabel': 'Annotation Studio',
@@ -27,11 +27,11 @@ export const appEn = {
   'app.stub.arrives': 'Arrives in Wave {wave}.',
 
   // The backend badge and the API client's own messages.
-  'app.update.available': 'DinoTraining {latest} is available. You have {current}.',
+  'app.update.available': 'V-Rex {latest} is available. You have {current}.',
   'app.update.get': 'Get it',
   'app.update.notes': 'What’s new',
   'app.update.later': 'Later',
-  'app.addApps.question': 'Add DinoTraining to your Applications folder?',
+  'app.addApps.question': 'Add V-Rex to your Applications folder?',
   'app.addApps.add': 'Add',
   'app.addApps.notNow': 'Not now',
   'app.addApps.added': 'Added: {path}',
@@ -43,7 +43,7 @@ export const appEn = {
   'app.report.failed': 'Could not open the issue page: {reason}',
   'app.backend.connecting': 'Connecting to backend…',
   'app.backend.unexpected': 'Unexpected error contacting the backend.',
-  'app.client.unreachable': 'Cannot reach the DinoTraining backend at {url}. Is the sidecar running?',
+  'app.client.unreachable': 'Cannot reach the V-Rex backend at {url}. Is the sidecar running?',
   'app.client.malformed':
     'Unexpected response shape from {path}. Backend and frontend contracts have drifted.',
 
