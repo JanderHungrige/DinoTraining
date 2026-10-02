@@ -1,4 +1,7 @@
-"""Build the app's background loop from the Pixabay source clip (doc 76).
+"""Build the app's former background loop from the Pixabay source clip (doc 76).
+
+Since 2026-10-02 the background is a Pexels forest, built with the ffmpeg commands in
+``apps/frontend/public/background/PROVENANCE.md``; this script rebuilds the old loop only.
 
     backend/.venv/bin/python scripts/build_background_video.py [--source PATH]
 

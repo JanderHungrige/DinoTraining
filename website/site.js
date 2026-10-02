@@ -39,7 +39,7 @@
     'more.repo': 'Der Code auf GitHub',
     'more.source': 'Deinstallieren und aus dem Quellcode bauen',
     'more.privacy': 'Datenschutz',
-    'foot.video': 'Hintergrund: Video von tommyvideo auf Pixabay (Pixabay Content License).'
+    'foot.video': 'Hintergrund: Waldvideo von Pexels (Pexels-Lizenz).'
   };
 
   var EN = {
