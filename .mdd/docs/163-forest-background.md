@@ -25,8 +25,7 @@ path: UI/Look/Background
 initiative: dinotraining
 integration_contracts: []
 satisfies_contracts: []
-known_issues:
-  - "The Pexels page of the original clip is not recorded yet (PROVENANCE.md: to be added by Jan)."
+known_issues: []
 security_read_sites: []
 sister_projects: []
 ---
@@ -70,3 +69,21 @@ sister_projects: []
 
 - **Jan:** check it in the running app, in motion. Then: the link to the Pexels page for
   `PROVENANCE.md`.
+
+## Second version (2026-10-02): no blur, brighter
+
+- **Jan:** "Keep that as a backup. But it seems much darker than the original. Leave out
+  the blur too." The source is *Trees in the forest* on Pexels
+  (https://www.pexels.com/video/trees-in-the-forest-5121476/).
+- **Backup:** the git tag `background-forest-blur3` (the first version, 1.3 MB).
+- **Why it was dark:** the app's scrim (0.5/0.45 black) and the 60 % panels.
+- **Why the scrim could not just get thinner:** unblurred, the sky between the trees is
+  near-white (247, 245, 243). Over it, text fell below AA already at a 0.35 scrim.
+- **The fix:**
+  - the video's highlights are tone-mapped (`curves`, white to 72 %), the midtones lifted;
+  - then the scrim is 0.25/0.2;
+  - compared on one frame against the original, the blurred version and a gentler curve
+    (B, needing a 0.3 scrim): A is the brightest that passes.
+- **Size:** 3.5 MB (CRF 32, sharp).
+- **Contrast:** at least 4.64:1 over the brightest pixel; the script's constants follow
+  the new scrim.

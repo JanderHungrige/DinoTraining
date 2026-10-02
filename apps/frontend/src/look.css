@@ -24,7 +24,9 @@ textarea {
      brightest pixel anywhere in the loop, composited exactly as the browser stacks it. */
   --surface: color-mix(in srgb, var(--bg) 60%, transparent);
   --surface-raised: color-mix(in srgb, var(--bg-raised) 78%, transparent);
-  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.5), rgb(10 11 14 / 0.45));
+  /* Doc 163: the forest's highlights are tone-mapped in the video (sky at ~72 %), so the
+     scrim can be thin and the forest stays bright: 0.5/0.45 before. */
+  --scrim: linear-gradient(180deg, rgb(10 11 14 / 0.25), rgb(10 11 14 / 0.2));
 }
 
 /* Doc 80: two colours failed AA over the loop's brightest frame (dim text 2.97:1, danger

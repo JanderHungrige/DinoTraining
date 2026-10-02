@@ -7,7 +7,7 @@ renamed file would stop its first deploy (doc 160's lesson).
 - **Source:** a forest clip from **Pexels**, found by Jan and made into a boomerang loop by
   him (forwards, then backwards): `forrestfordinoreverst.mp4`, 1920×1080, 23.976 fps,
   67.2 s, sha256 `2196660b8625c09402851d53e79e47daf032b8fa7f22755bad6e9e6c103eec09`.
-  - Pexels page: *to be added by Jan* (the original clip's link).
+  - Pexels page: **Trees in the forest**, https://www.pexels.com/video/trees-in-the-forest-5121476/
 - **Licence:** the **Pexels License** (https://www.pexels.com/license/): free to use and
   modify, also commercially, no attribution required. Not to be sold or redistributed
   unaltered on its own.
@@ -15,17 +15,21 @@ renamed file would stop its first deploy (doc 160's lesson).
 
   ```
   ffmpeg -i forrestfordinoreverst.mp4 -an -frames:v 1611 \
-    -vf "scale=1280:720:flags=lanczos,gblur=sigma=3" \
-    -c:v libx264 -profile:v main -pix_fmt yuv420p -preset slow -crf 30 -tune film \
+    -vf "scale=1280:720:flags=lanczos,curves=all='0/0 0.25/0.30 0.5/0.55 1/0.72'" \
+    -c:v libx264 -profile:v main -pix_fmt yuv420p -preset slow -crf 32 -tune film \
     -movflags +faststart particles-loop.mp4
   ffmpeg -i particles-loop.mp4 -frames:v 1 -q:v 4 particles-poster.jpg
   ```
 
   - `-frames:v 1611` drops the last frame, which nearly repeats the first (a stall at the
     seam).
-  - `gblur=sigma=3`: a soft focus, chosen against sharp and sigma 6. The panels blur
-    again on top (10 px).
-  - The file is 1.3 MB; the sharp version would be 5.7 MB.
+  - **No blur** (Jan: the first, blurred version looked much darker than the original).
+    It is kept as the git tag `background-forest-blur3`.
+  - **`curves`:** the highlights are tone-mapped (the sky between the trees to ~72 %, the
+    brightest pixel 183) and the midtones lifted a little. The near-white sky made a thin
+    scrim illegible; tamed, the app's scrim drops from 0.5/0.45 to 0.25/0.2, so the forest
+    stays bright. `scripts/check_background_contrast.py` passes (lowest: 4.64:1).
+  - CRF 32: 3.5 MB.
 
 Until 2026-10-02 the loop was *Octagon, Abstract, Lights, Particle* by tommyvideo on
 Pixabay (#5192), built by `scripts/build_background_video.py`.
