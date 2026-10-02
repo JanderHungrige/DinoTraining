@@ -2,8 +2,8 @@
 id: 162-test-findings-0-1-3
 title: Findings From Jan's 0.1.3 Test — German Left After Switching, the Studio's Stale Dataset List, Where a Download Lives
 edition: DinoTraining
-depends_on: [111-language-switch, 138-example-dataset, 136-dataset-import]
-relates: [59-reveal-dataset-folder, 104-annotation-targets]
+depends_on: [111-i18n-framework, 138-osdar23-example, 136-dataset-import]
+relates: [59-reveal-dataset-folder, 104-annotation-target]
 source_files:
   - apps/frontend/src/hooks/useAnnotationTargetList.ts
   - apps/frontend/src/components/SessionSetup.tsx
