@@ -6,8 +6,13 @@ do not read it for current state.
 
 **Last updated:** 2026-10-02: **the app is called V-Rex** (doc 159).
 - **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and docs 139–141.
-- **In `dev`** (`d2e1088`): 15.8, 15.9, 15.10 (the Store), 157 (look), 158 (update
-  check) and the rename (159). Not yet released.
+- **In `dev`** (`7e9d9a2`): 15.8, 15.9, 15.10 (the Store), 157 (look), 158 (update
+  check), the rename (159), the logo (160), and two fixes. Not yet released.
+  - `dev.sh` syncs the backend venv after a lockfile change;
+  - frontend tests can no longer reach a live backend.
+- **The logo** (doc 160): Jan's T-Rex with sunglasses, in the icons, UI, website and
+  README. He chose it knowingly despite the Jurassic Park resemblance; doc 134's drawn
+  emblem is the fallback in git history.
 - **The rename** (doc 159), merged into `dev` 2026-10-02:
   - V-Rex everywhere a person reads it;
   - the machine keys keep "DinoTraining" (data folder, `com.dinotraining.app`, `DINO_*`,
