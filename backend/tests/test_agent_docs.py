@@ -48,7 +48,7 @@ class TestTheRoute:
     def test_it_names_the_file_it_would_be_saved_as(self, client: TestClient) -> None:
         response = client.get("/api/v1/docs/agent-guide")
 
-        assert "dinotraining-api-guide.md" in response.headers["content-disposition"]
+        assert "v-rex-api-guide.md" in response.headers["content-disposition"]
 
     def test_it_is_one_document(self, guide: str) -> None:
         """Not one per workflow. The caller is assembling a prompt, and five fetches to
@@ -125,9 +125,7 @@ class TestTheGeneratedHalf:
                             "summary": "Do it",
                             "tags": ["things"],
                             "requestBody": {
-                                "content": {
-                                    "application/json": {"schema": {"$ref": "#/x/Thing"}}
-                                }
+                                "content": {"application/json": {"schema": {"$ref": "#/x/Thing"}}}
                             },
                         }
                     }
@@ -160,7 +158,7 @@ class TestTheWrittenHalf:
         # Otherwise a fine-tune "returns immediately" and the agent reports success on a
         # job that has not started.
         assert "poll" in guide.lower()
-        assert 'state` is no longer `running' in guide or "state != " in guide
+        assert "state` is no longer `running" in guide or "state != " in guide
 
     def test_it_warns_that_the_class_field_is_prompt(self, guide: str) -> None:
         """Doc 31's bug, and the most expensive one to repeat: sending `text` has pydantic
@@ -174,10 +172,8 @@ class TestTheWrittenHalf:
         assert "Install a model" in guide
         assert "installed" in guide
 
-    def test_it_carries_the_measured_comparison_rather_than_an_opinion(
-        self, guide: str
-    ) -> None:
-        """"Fine-tuning is better" is an opinion an assistant may or may not act on. The
+    def test_it_carries_the_measured_comparison_rather_than_an_opinion(self, guide: str) -> None:
+        """ "Fine-tuning is better" is an opinion an assistant may or may not act on. The
         numbers are what make it choose, and they were measured in this app."""
         # Wave 12: measured on a leak-free split (the rail 0.96 came from a random one).
         assert "0.62 test mAP" in guide and "0.41" in guide

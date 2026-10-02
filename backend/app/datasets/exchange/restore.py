@@ -20,7 +20,7 @@ from app.cloud.pictures import picture_exists
 from app.core.config import Settings
 from app.datasets.db import transaction
 from app.datasets.exchange.dump import RECIPE_DIR, STATE_FILES, TABLES, Table
-from app.datasets.exchange.layout import EXPORT_DIR, FORMAT, FORMAT_VERSION, PICTURES_DIR, resolve
+from app.datasets.exchange.layout import EXPORT_DIRS, FORMAT_VERSION, FORMATS, PICTURES_DIR, resolve
 from app.datasets.store import MANIFEST_NAME, DatasetStore, dataset_dir
 
 logger = logging.getLogger(__name__)
@@ -44,11 +44,11 @@ def load(export_file: Path) -> dict[str, Any]:
         dump = json.loads(export_file.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise ValueError(f"{export_file} cannot be read: {error}") from error
-    if not isinstance(dump, dict) or dump.get("format") != FORMAT:
-        raise ValueError(f"{export_file} is not a DinoTraining export.")
+    if not isinstance(dump, dict) or dump.get("format") not in FORMATS:
+        raise ValueError(f"{export_file} is not a V-Rex export.")
     if int(dump.get("version", 0)) > FORMAT_VERSION:
         raise ValueError(
-            f"{export_file} was written by a newer DinoTraining ({dump.get('app_version')}). "
+            f"{export_file} was written by a newer V-Rex ({dump.get('app_version')}). "
             "Update the app to restore it."
         )
     return dump
@@ -62,7 +62,7 @@ def pictures_dir(export_file: Path, dump: dict[str, Any]) -> Path | None:
     """
     images = dump["tables"].get("images", [])
     folder = export_file.parent
-    beside = folder.parent if folder.name == EXPORT_DIR else folder
+    beside = folder.parent if folder.name in EXPORT_DIRS else folder
     original = dump.get("pictures_root")
     if original is None:  # absolute paths (pictures on two Windows drives)
         return Path("/") if not images or Path(images[0]["path"]).is_file() else None

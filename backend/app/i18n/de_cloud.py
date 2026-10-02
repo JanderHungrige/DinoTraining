@@ -68,7 +68,7 @@ ENTRIES: dict[str, str] = {
     "Choose a full folder path, not {path}.": (
         "Gib einen vollständigen Ordnerpfad an, nicht {path}."
     ),
-    "{file} is not a DinoTraining export.": "{file} ist kein DinoTraining-Export.",
+    "{file} is not a V-Rex export.": "{file} ist kein V-Rex-Export.",
     "The export names a picture outside its folder: {path}.": (
         "Der Export nennt ein Bild außerhalb seines Ordners: {path}."
     ),

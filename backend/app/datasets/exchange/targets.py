@@ -22,7 +22,7 @@ from app.datasets.db import data_root, transaction
 from app.datasets.exchange.cloud_export import export_to_bucket
 from app.datasets.exchange.dump import dump_dataset, fingerprint
 from app.datasets.exchange.export import ExportResult, export_dataset
-from app.datasets.exchange.layout import EXPORT_DIR, pictures_root
+from app.datasets.exchange.layout import DATA_FILE, EXPORT_DIR, pictures_root
 
 logger = logging.getLogger(__name__)
 
@@ -178,7 +178,7 @@ def record_bucket(
 
 def record(dataset_id: str, result: ExportResult, settings: Settings | None = None) -> None:
     """Remember an export: when, where, and what the content was."""
-    data = json.loads((Path(result.folder) / "dinotraining.json").read_text(encoding="utf-8"))
+    data = json.loads((Path(result.folder) / DATA_FILE).read_text(encoding="utf-8"))
     exported = Exported(
         at=datetime.now(UTC).isoformat(timespec="seconds"),
         folder=result.folder,

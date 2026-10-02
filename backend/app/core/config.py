@@ -97,7 +97,7 @@ class Settings(BaseSettings):
     # Doc 145: each trained model exported here when its training finishes; unset is off.
     model_export_folder: str | None = Field(default=None, alias="DINO_MODEL_EXPORT_FOLDER")
     mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")
-    mlflow_experiment: str = Field(default="DinoTraining", alias="DINO_MLFLOW_EXPERIMENT")
+    mlflow_experiment: str = Field(default="V-Rex", alias="DINO_MLFLOW_EXPERIMENT")
     mlflow_register: bool = Field(default=True, alias="DINO_MLFLOW_REGISTER")
     mlflow_username: str | None = Field(default=None, alias="MLFLOW_TRACKING_USERNAME")
     mlflow_password: SecretStr | None = Field(default=None, alias="MLFLOW_TRACKING_PASSWORD")

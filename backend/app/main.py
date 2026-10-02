@@ -39,7 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_logging(settings.log_level)
 
     app = FastAPI(
-        title="DinoTraining backend",
+        title="V-Rex backend",
         description="FastAPI + PyTorch sidecar for annotate → train → infer → generate.",
         version=__version__,
     )
@@ -91,7 +91,7 @@ def main() -> None:
     settings = get_settings()
     _clean_up_cloud_links()
     logger.info(
-        "Starting DinoTraining backend v%s on %s:%s%s",
+        "Starting V-Rex backend v%s on %s:%s%s",
         __version__,
         settings.api_host,
         settings.api_port,

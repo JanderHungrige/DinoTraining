@@ -200,7 +200,7 @@ def _video(path: Path, videos: list[Path], listing: Listing | None) -> Detection
 
 
 def _export_detection(path: Path, export: Path) -> Detection:
-    """Doc 142: a DinoTraining export, read from its own file; restored, not imported."""
+    """Doc 142: a V-Rex export, read from its own file; restored, not imported."""
     dump = load(export)
     tables = dump["tables"]
     images = tables.get("images", [])

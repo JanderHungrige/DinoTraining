@@ -99,9 +99,9 @@ def canonical(dump: dict[str, Any]) -> dict[str, Any]:
 def test_an_export_moved_elsewhere_restores_every_row_and_file(tmp_path: Path) -> None:
     original = rich_dataset(tmp_path / "rail")
     result = export_dataset(original, tmp_path / "rail")  # "with the data"
-    assert Path(result.folder) == tmp_path / "rail" / "dinotraining"
+    assert Path(result.folder) == tmp_path / "rail" / "v-rex"
     assert (result.pictures, result.annotated) == (4, 3)
-    coco = json.loads((tmp_path / "rail/dinotraining/annotations.coco.json").read_text())
+    coco = json.loads((tmp_path / "rail/v-rex/annotations.coco.json").read_text())
     assert sorted(image["file_name"] for image in coco["images"]) == [
         "train/a.jpg",
         "train/b.jpg",
@@ -114,7 +114,7 @@ def test_an_export_moved_elsewhere_restores_every_row_and_file(tmp_path: Path) -
     assert (detection.pictures, detection.annotated_pictures) == (4, 3)
     restored = run_import(tmp_path / "moved", "", "restored here", False)
 
-    before = json.loads((tmp_path / "moved/dinotraining/dinotraining.json").read_text())
+    before = json.loads((tmp_path / "moved/v-rex/v-rex.json").read_text())
     after = dump_dataset(restored.dataset_id)
     assert canonical(after) == canonical(before)
     assert after["pictures_root"] == str(tmp_path / "moved")
@@ -125,14 +125,32 @@ def test_an_export_moved_elsewhere_restores_every_row_and_file(tmp_path: Path) -
     assert restored.classes == ["person", "signal"]
 
 
+def test_an_export_from_before_the_rename_still_restores(tmp_path: Path) -> None:
+    """Doc 159: exports written as DinoTraining (`dinotraining/dinotraining.json`) restore."""
+    original = rich_dataset(tmp_path / "rail")
+    folder = Path(export_dataset(original, tmp_path / "rail").folder)
+    data = json.loads((folder / layout.DATA_FILE).read_text())
+    data["format"] = layout.LEGACY_FORMAT
+    legacy = folder.parent / layout.LEGACY_EXPORT_DIR
+    folder.rename(legacy)
+    (legacy / layout.DATA_FILE).unlink()
+    (legacy / layout.LEGACY_DATA_FILE).write_text(json.dumps(data))
+
+    detection, _, _ = scan(tmp_path / "rail")
+    assert detection.kind == "dinotraining" and detection.notes == []
+    restored = run_import(tmp_path / "rail", "", "", False)
+    assert canonical(dump_dataset(restored.dataset_id)) == canonical(data)
+    assert export_dataset(restored.dataset_id, tmp_path / "again").folder.endswith("v-rex")
+
+
 def test_copied_pictures_restore_without_the_originals(tmp_path: Path) -> None:
     original = rich_dataset(tmp_path / "rail")
     export_dataset(original, tmp_path / "backup", include_pictures=True)
     shutil.rmtree(tmp_path / "rail")
-    assert (tmp_path / "backup/dinotraining/pictures/train/a.jpg").is_file()
+    assert (tmp_path / "backup/v-rex/pictures/train/a.jpg").is_file()
     restored = run_import(tmp_path / "backup", "", None, False)
     dump = dump_dataset(restored.dataset_id)
-    assert dump["pictures_root"] == str(tmp_path / "backup/dinotraining/pictures")
+    assert dump["pictures_root"] == str(tmp_path / "backup/v-rex/pictures")
     assert all(
         Path(dump["pictures_root"], image["path"]).is_file() for image in dump["tables"]["images"]
     )
@@ -152,12 +170,12 @@ def test_missing_pictures_are_named_and_nothing_is_left(tmp_path: Path) -> None:
 def test_damaged_newer_and_escaping_exports_are_refused(tmp_path: Path) -> None:
     original = rich_dataset(tmp_path / "rail")
     export_dataset(original, tmp_path / "rail")
-    data = tmp_path / "rail/dinotraining/dinotraining.json"
+    data = tmp_path / "rail/v-rex/v-rex.json"
     dump = json.loads(data.read_text())
 
     newer = {**dump, "version": 99}
     data.write_text(json.dumps(newer))
-    with pytest.raises(ValueError, match="newer DinoTraining"):
+    with pytest.raises(ValueError, match="newer V-Rex"):
         scan(tmp_path / "rail")
 
     escaping = json.loads(json.dumps(dump))
@@ -200,7 +218,7 @@ def test_the_api_exports_and_says_why_not(tmp_path: Path) -> None:
         f"/api/v1/datasets/{original}/export", json={"target": str(tmp_path / "out")}
     )
     assert reply.status_code == 200 and reply.json()["objects"] > 0
-    assert (tmp_path / "out/dinotraining/dinotraining.json").is_file()
+    assert (tmp_path / "out/v-rex/v-rex.json").is_file()
     assert (
         client.post("/api/v1/datasets/nope/export", json={"target": str(tmp_path)}).status_code
         == 404

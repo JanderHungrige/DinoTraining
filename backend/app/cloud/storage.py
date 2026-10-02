@@ -22,7 +22,7 @@ if TYPE_CHECKING:  # obstore declares its config dicts for type checkers only
     from obstore.store import AzureConfig, ClientConfig, GCSConfig, RetryConfig, S3Config
 
 PAGE = 1000
-USER_AGENT = f"DinoTraining/{__version__}"
+USER_AGENT = f"V-Rex/{__version__}"
 
 
 @dataclass(frozen=True)

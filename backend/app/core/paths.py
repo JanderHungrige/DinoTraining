@@ -13,6 +13,8 @@ from pathlib import Path
 
 from app.core.config import Settings, get_settings
 
+# The data folder keeps the app's first name: a machine key, so nothing installed is
+# stranded (doc 159). The app itself is called V-Rex.
 APP_DIR_NAME = "DinoTraining"
 
 

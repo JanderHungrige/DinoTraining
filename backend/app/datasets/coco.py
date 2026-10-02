@@ -103,7 +103,7 @@ def build_coco(
             "description": dataset_name,
             "version": "1.0",
             "date_created": datetime.now(UTC).isoformat(timespec="seconds"),
-            "generator": "DinoTraining",
+            "generator": "V-Rex",
             **({"prompt": prompt} if prompt else {}),
         },
         "licenses": [],

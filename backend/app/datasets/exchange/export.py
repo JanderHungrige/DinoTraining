@@ -1,4 +1,4 @@
-"""Write a dataset's export into `<target>/dinotraining/` (doc 142)."""
+"""Write a dataset's export into `<target>/v-rex/` (doc 142)."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def coco_document(dataset_id: str, root: Path | None, settings: Settings | None)
         path = paths.get(image["id"])
         if path and root:
             image["file_name"] = relative(path, root)
-    coco["info"]["file_names"] = "relative to the folder that holds dinotraining/"
+    coco["info"]["file_names"] = "relative to the folder that holds v-rex/"
     return coco
 
 
@@ -72,7 +72,7 @@ def _copy_pictures(dump: dict[str, Any], root: Path, destination: Path) -> int:
 def export_dataset(
     dataset_id: str, target: Path, include_pictures: bool = False, settings: Settings | None = None
 ) -> ExportResult:
-    """Write `dinotraining.json` and `annotations.coco.json` (and the pictures, if asked)."""
+    """Write `v-rex.json` and `annotations.coco.json` (and the pictures, if asked)."""
     folder = export_folder(target.expanduser())
     try:
         folder.mkdir(parents=True, exist_ok=True)
