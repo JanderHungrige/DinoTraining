@@ -137,14 +137,18 @@ export function ImageSourceField({
           onChange={(path, range) => onChange({ kind: 'video', path, range })}
         />
       ) : value.kind === 'folder' ? (
-        <FolderField
-          id={id}
-          value={value.folder}
-          onChange={(folder) => onChange({ kind: 'folder', folder })}
-          {...(placeholder ? { placeholder } : {})}
-          disabled={disabled}
-          variant={variant}
-        />
+        <>
+          <FolderField
+            id={id}
+            value={value.folder}
+            onChange={(folder) => onChange({ kind: 'folder', folder })}
+            {...(placeholder ? { placeholder } : {})}
+            disabled={disabled}
+            variant={variant}
+          />
+          {/* Jan (2026-10-02) looked for the downloaded example with the folder button. */}
+          {usable.length > 0 && <p className="srcfield__hint">{t('studio.source.folderHint')}</p>}
+        </>
       ) : (
         <>
           <label

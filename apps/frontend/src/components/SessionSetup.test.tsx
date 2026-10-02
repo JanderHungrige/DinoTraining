@@ -192,3 +192,25 @@ describe('telling you which prompt you are looking at (doc 39)', () => {
     expect(await screen.findByText(/dog, person/)).toBeInTheDocument();
   });
 });
+
+describe('a dataset imported while the Studio is hidden (2026-10-02)', () => {
+  it('is offered when the Studio is shown again', async () => {
+    // Jan's sequence: open the Studio, download the OSDaR23 example in Models & Datasets,
+    // come back. The Studio stays mounted, so its first list was all it ever had.
+    const { routes, json, CREATED } = await import('./sessionSetup.testkit');
+    routes([]);
+    const view = render(<SessionSetup onStart={vi.fn()} active />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    expect(screen.queryByRole('option', { name: /OSDaR23/ })).not.toBeInTheDocument();
+
+    view.rerender(<SessionSetup onStart={vi.fn()} active={false} />);
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation((input, init) =>
+      String(input).includes('/datasets') && !init?.method
+        ? Promise.resolve(json({ datasets: [{ ...CREATED, id: 'osdar', name: 'OSDaR23 · 3_fire_site_3.4' }] }))
+        : base!(input, init),
+    );
+    view.rerender(<SessionSetup onStart={vi.fn()} active />);
+    expect(await screen.findByRole('option', { name: /OSDaR23/ })).toBeInTheDocument();
+  });
+});

@@ -92,6 +92,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.source.legend': 'Bilder aus',
   'studio.source.folder': 'Einem Ordner',
   'studio.source.dataset': 'Einem Datensatz, den du schon hast',
+  'studio.source.folderHint': 'Schon einen Datensatz importiert oder geladen? Wähle stattdessen „Einem Datensatz, den du schon hast“: kein Ordner zu suchen.',
   'studio.source.noneWithImages': 'noch keiner mit Bildern',
   'studio.source.video': 'Einer Videodatei',
   'studio.picker.drop': 'Loslassen, um es zu laden',

@@ -134,4 +134,14 @@ describe('reporting the choice', () => {
     );
     expect(onChange).toHaveBeenCalledWith({ kind: 'dataset', datasetId: 'd1' });
   });
+
+  it('points from the folder option to the datasets already there (2026-10-02)', () => {
+    renderField();
+    expect(screen.getByText(/Choose “A dataset you already have” instead/)).toBeInTheDocument();
+  });
+
+  it('says nothing of the kind when there is no dataset with pictures yet', () => {
+    render(<ImageSourceField id="src" value={{ kind: 'folder', folder: '' }} onChange={vi.fn()} datasets={[dataset('d2', 'Empty', 0)]} />);
+    expect(screen.queryByText(/A dataset you already have” instead/)).toBeNull();
+  });
 });

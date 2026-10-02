@@ -4,15 +4,22 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-02: **the app is called V-Rex** (doc 159).
-- **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and docs 139–141.
-- **In `dev`** (`7e9d9a2`): 15.8, 15.9, 15.10 (the Store), 157 (look), 158 (update
-  check), the rename (159), the logo (160), and two fixes. Not yet released.
-  - `dev.sh` syncs the backend venv after a lockfile change;
-  - frontend tests can no longer reach a live backend.
-- **The logo** (doc 160): Jan's T-Rex with sunglasses, in the icons, UI, website and
-  README. He chose it knowingly despite the Jurassic Park resemblance; doc 134's drawn
-  emblem is the fallback in git history.
+**Last updated:** 2026-10-02: **V-Rex 0.1.3 is released** and live on dino.w3rth.de.
+- **`main` = `dev` = `cef3d8c`** (release 0.1.3): everything since 0.1.2. That is Waves
+  15.8–15.10, the look (157), the update check (158), the rename (159), the logo (160),
+  and the `dev.sh` and test-guard fixes.
+- **The release:**
+  - CI built and smoke-tested all three installers;
+  - the upload of the EXE broke off ("other side closed");
+  - the rerun found the half-made draft and rightly published nothing;
+  - finished by hand with the EXE from the same run, then published as Latest;
+  - release notes written.
+- **The site:**
+  - The first deploy of 0.1.3 had no logo: the server's old `update-site.sh` did not copy
+    `*.svg` yet, then updated itself.
+  - Re-rendered once by hand (`deployed-sha` moved aside, the script run). The old marker
+    is left as `deployed-sha.before-rerun`.
+  - Containers unchanged.
 - **The rename** (doc 159), merged into `dev` 2026-10-02:
   - V-Rex everywhere a person reads it;
   - the machine keys keep "DinoTraining" (data folder, `com.dinotraining.app`, `DINO_*`,
@@ -23,8 +30,8 @@ do not read it for current state.
   - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- **A release (0.1.3)** when he says so: `dev` → `main` with the version bumped. Its MSIX
-  is the first Store upload (doc 155's checklist); the site then shows V-Rex.
+- **The first Store submission** with `V-Rex_0.1.3_x64.msix` from the v0.1.3 release (doc
+  155's checklist), after testing the MSIX on his PCs.
 - **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
 - **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
   (now `v-rex`).
