@@ -96,11 +96,11 @@ describe('DatasetImport (doc 136)', () => {
     expect(screen.getByRole('button', { name: 'Ordner prüfen' })).toBeInTheDocument();
   });
 
-  it('a DinoTraining export is restored, not copied, and refused while its pictures are missing (doc 142)', async () => {
+  it('a V-Rex export is restored, not copied, and refused while its pictures are missing (doc 142)', async () => {
     api.detect.mockResolvedValue({ ...YOLO, kind: 'dinotraining', notes: ['export-pictures-missing'], uncovered: 0 });
     render(<DatasetImport onImported={() => undefined} />);
     await detectCars();
-    expect(screen.getByText(/a DinoTraining export \(restored completely\)/)).toBeInTheDocument();
+    expect(screen.getByText(/a V-Rex export \(restored completely\)/)).toBeInTheDocument();
     expect(screen.getByText(/were not found: not copied into it, not beside it/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.getByRole('button', { name: 'Import' })).toBeDisabled();

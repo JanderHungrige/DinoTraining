@@ -42,7 +42,7 @@ export const SAME_IN_BOTH = new Set<string>([
   'm8 bolt, hex screw m8',
   'nail, rivet',
   'Deutsch',
-  'DinoTraining',
+  'V-Rex',
   'OK',
   'Grounding DINO',
   'Grounded SAM',

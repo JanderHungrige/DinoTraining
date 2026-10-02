@@ -6,10 +6,10 @@
 
 use std::path::{Component, Path, PathBuf};
 
-const FORMULA: &str = "dinotraining";
-const APP: &str = "DinoTraining.app";
+const FORMULA: &str = "v-rex";
+const APP: &str = "V-Rex.app";
 
-/// `<prefix>/Cellar/dinotraining/<v>/DinoTraining.app/…` → `<prefix>/opt/dinotraining/DinoTraining.app`.
+/// `<prefix>/Cellar/v-rex/<v>/V-Rex.app/…` → `<prefix>/opt/v-rex/V-Rex.app`.
 pub fn homebrew_app(exe: &Path) -> Option<PathBuf> {
     let parts: Vec<Component<'_>> = exe.components().collect();
     let cellar = parts.windows(2).position(|pair| {
@@ -19,8 +19,8 @@ pub fn homebrew_app(exe: &Path) -> Option<PathBuf> {
     Some(prefix.join("opt").join(FORMULA).join(APP))
 }
 
-/// The executable with symbolic links resolved. The `dinotraining` command starts the app
-/// through Homebrew's `opt/dinotraining` link, and only the resolved path shows the
+/// The executable with symbolic links resolved. The `v-rex` command starts the app
+/// through Homebrew's `opt/v-rex` link, and only the resolved path shows the
 /// Cellar (found live, doc 130).
 fn running_from() -> Option<PathBuf> {
     std::fs::canonicalize(std::env::current_exe().ok()?).ok()
@@ -69,20 +69,20 @@ mod tests {
     #[test]
     fn a_cellar_path_points_at_the_opt_path() {
         let exe = Path::new(
-            "/opt/homebrew/Cellar/dinotraining/0.2.0/DinoTraining.app/Contents/MacOS/dinotraining",
+            "/opt/homebrew/Cellar/v-rex/0.2.0/V-Rex.app/Contents/MacOS/dinotraining",
         );
         assert_eq!(
             homebrew_app(exe),
-            Some(PathBuf::from("/opt/homebrew/opt/dinotraining/DinoTraining.app"))
+            Some(PathBuf::from("/opt/homebrew/opt/v-rex/V-Rex.app"))
         );
     }
 
     #[test]
     fn a_custom_homebrew_prefix_works_too() {
-        let exe = Path::new("/Users/jan/brew/Cellar/dinotraining/1.0.0/DinoTraining.app/Contents/MacOS/x");
+        let exe = Path::new("/Users/jan/brew/Cellar/v-rex/1.0.0/V-Rex.app/Contents/MacOS/x");
         assert_eq!(
             homebrew_app(exe),
-            Some(PathBuf::from("/Users/jan/brew/opt/dinotraining/DinoTraining.app"))
+            Some(PathBuf::from("/Users/jan/brew/opt/v-rex/V-Rex.app"))
         );
     }
 
@@ -91,24 +91,24 @@ mod tests {
     fn a_start_through_the_opt_link_is_resolved_to_the_cellar() {
         let root = std::env::temp_dir().join(format!("dino-mac-apps-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
-        let macos = root.join("Cellar/dinotraining/0.2.0/DinoTraining.app/Contents/MacOS");
+        let macos = root.join("Cellar/v-rex/0.2.0/V-Rex.app/Contents/MacOS");
         std::fs::create_dir_all(&macos).unwrap();
         std::fs::write(macos.join("dinotraining"), "").unwrap();
         std::fs::create_dir_all(root.join("opt")).unwrap();
-        std::os::unix::fs::symlink("../Cellar/dinotraining/0.2.0", root.join("opt/dinotraining")).unwrap();
+        std::os::unix::fs::symlink("../Cellar/v-rex/0.2.0", root.join("opt/v-rex")).unwrap();
 
-        let through_opt = root.join("opt/dinotraining/DinoTraining.app/Contents/MacOS/dinotraining");
+        let through_opt = root.join("opt/v-rex/V-Rex.app/Contents/MacOS/dinotraining");
         assert_eq!(homebrew_app(&through_opt), None, "the unresolved path hides the Cellar");
         let resolved = std::fs::canonicalize(&through_opt).unwrap();
-        let expected = std::fs::canonicalize(&root).unwrap().join("opt/dinotraining/DinoTraining.app");
+        let expected = std::fs::canonicalize(&root).unwrap().join("opt/v-rex/V-Rex.app");
         assert_eq!(homebrew_app(&resolved), Some(expected));
     }
 
     #[test]
     fn anywhere_else_there_is_nothing_to_offer() {
         for exe in [
-            "/Users/jan/Applications/DinoTraining.app/Contents/MacOS/dinotraining",
-            "/opt/homebrew/Cellar/other/1.0/DinoTraining.app/Contents/MacOS/dinotraining",
+            "/Users/jan/Applications/V-Rex.app/Contents/MacOS/dinotraining",
+            "/opt/homebrew/Cellar/other/1.0/V-Rex.app/Contents/MacOS/dinotraining",
             "/Applications/Cellar.app/Contents/MacOS/dinotraining",
         ] {
             assert_eq!(homebrew_app(Path::new(exe)), None, "{exe}");

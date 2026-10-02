@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MlflowPanel } from './MlflowPanel';
 
-const OFF = { configured: false, uri: null, experiment: 'DinoTraining', register_models: true, auth: 'none' as const, username: null };
+const OFF = { configured: false, uri: null, experiment: 'V-Rex', register_models: true, auth: 'none' as const, username: null };
 const ON = { ...OFF, configured: true, uri: 'http://127.0.0.1:5055', auth: 'basic' as const, username: 'jan' };
 
 vi.mock('../api/mlops', () => ({
@@ -30,7 +30,7 @@ describe('MlflowPanel (doc 123)', () => {
     await user.type(screen.getByLabelText('Password'), 'pw');
     await user.click(screen.getByRole('button', { name: 'Save' }));
     expect(api.saveMlflowSettings).toHaveBeenCalledWith({
-      uri: 'http://127.0.0.1:5055', experiment: 'DinoTraining', register_models: true, username: 'jan', password: 'pw',
+      uri: 'http://127.0.0.1:5055', experiment: 'V-Rex', register_models: true, username: 'jan', password: 'pw',
     });
     expect(await screen.findByText(/On: http:\/\/127.0.0.1:5055/)).toHaveTextContent('user and password set');
     expect(screen.getByLabelText('Password')).toHaveValue('');

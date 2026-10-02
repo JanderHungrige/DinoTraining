@@ -32,7 +32,7 @@ describe('UpdateNotice (doc 158)', () => {
   it('says which version is out, with the download page and the notes', async () => {
     invoke.mockResolvedValue(UPDATE);
     render(<UpdateNotice />);
-    expect(await screen.findByText('DinoTraining 0.1.3 is available. You have 0.1.2.')).toBeInTheDocument();
+    expect(await screen.findByText('V-Rex 0.1.3 is available. You have 0.1.2.')).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('check_for_update');
     expect(screen.getByRole('link', { name: 'Get it' })).toHaveAttribute('href', 'https://dino.w3rth.de');
     expect(screen.getByRole('link', { name: 'What’s new' })).toHaveAttribute('href', UPDATE.notes);
@@ -52,7 +52,7 @@ describe('UpdateNotice (doc 158)', () => {
 
     invoke.mockResolvedValue({ ...UPDATE, latest: '0.1.4' });
     renderInGerman(<UpdateNotice />);
-    expect(await screen.findByText('DinoTraining 0.1.4 ist da. Du hast 0.1.2.')).toBeInTheDocument();
+    expect(await screen.findByText('V-Rex 0.1.4 ist da. Du hast 0.1.2.')).toBeInTheDocument();
   });
 
   it('shows nothing when the shell has no update, fails, or is absent', async () => {

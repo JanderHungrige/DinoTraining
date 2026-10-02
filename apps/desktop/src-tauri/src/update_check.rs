@@ -77,7 +77,7 @@ pub async fn check_for_update(app: tauri::AppHandle) -> Option<Update> {
     let current = app.package_info().version.to_string();
     let client = reqwest::Client::builder()
         .timeout(TIMEOUT)
-        .user_agent(format!("DinoTraining/{current}"))
+        .user_agent(format!("V-Rex/{current}"))
         .build()
         .map_err(|error| log::warn!("Update check: no HTTP client: {error}"))
         .ok()?;

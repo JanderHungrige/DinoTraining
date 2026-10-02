@@ -1,4 +1,4 @@
-//! DinoTraining desktop shell.
+//! V-Rex desktop shell (the crate keeps its first name, doc 159).
 //!
 //! Responsibilities stop at the window and the sidecar process. No ML, no business
 //! logic — that all lives behind `/api/v1` in the Python backend.
@@ -78,7 +78,7 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("failed to build the DinoTraining window")
+        .expect("failed to build the V-Rex window")
         .run(|app_handle, event| match event {
             // A quit by the user (no code): doc 144's exports first, once.
             RunEvent::ExitRequested { code: None, api, .. }

@@ -144,7 +144,7 @@ pub fn backend_hint(log_tail: &str) -> Option<String> {
     (torch_dll && load_error).then(|| {
         format!(
             "\n\nThis usually means Microsoft's Visual C++ runtime is missing or older than \
-             {}.{}. Install it from {DOWNLOAD_URL} and start DinoTraining again.",
+             {}.{}. Install it from {DOWNLOAD_URL} and start V-Rex again.",
             MINIMUM.0, MINIMUM.1
         )
     })

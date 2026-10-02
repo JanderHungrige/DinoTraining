@@ -111,7 +111,7 @@ export const adminEn = {
   'admin.token.saveFailed': 'Could not save the token.',
   'admin.token.title': 'HuggingFace access',
   'admin.token.introBefore':
-    'Some models are gated by their publisher. DinoTraining never downloads them for you and never ships a token — you provide your own, and you start every download yourself. Everything needed for the open models, including',
+    'Some models are gated by their publisher. V-Rex never downloads them for you and never ships a token — you provide your own, and you start every download yourself. Everything needed for the open models, including',
   'admin.token.introAfter': 'for segmentation masks, works without any of this.',
   'admin.token.field': 'Your HuggingFace access token',
   'admin.token.configured': 'Configured',

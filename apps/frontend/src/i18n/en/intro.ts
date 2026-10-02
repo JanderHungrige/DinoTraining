@@ -6,7 +6,7 @@
 export const introEn = {
   'intro.title': 'What this is',
   'intro.lead':
-    'DinoTraining turns a folder of images into a model that finds things in them. You label some images, train a small model on top of a large pretrained one, look at what it predicts, and use it to label the next batch faster. Everything runs on this machine: your images are never uploaded anywhere.',
+    'V-Rex turns a folder of images into a model that finds things in them. You label some images, train a small model on top of a large pretrained one, look at what it predicts, and use it to label the next batch faster. Everything runs on this machine: your images are never uploaded anywhere.',
   'intro.loop.heading': 'The loop',
   'intro.loop.note':
     'The tabs are in the order you use them. You will go round more than once — that is the point, not a sign you did it wrong the first time.',

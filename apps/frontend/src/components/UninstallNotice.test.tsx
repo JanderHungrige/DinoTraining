@@ -27,7 +27,7 @@ describe('UninstallNotice (doc 146)', () => {
   it('says what uninstalling removes, and what is not exported yet', async () => {
     api.overview.mockResolvedValue(PENDING);
     render(<UninstallNotice />);
-    expect(screen.getByText(/Uninstalling can remove everything inside DinoTraining .*Exported annotations and models stay/)).toBeInTheDocument();
+    expect(screen.getByText(/Uninstalling can remove everything inside V-Rex .*Exported annotations and models stay/)).toBeInTheDocument();
     expect(await screen.findByText(/2 datasets have no export yet: Cars, Chess\. Choose where each goes/)).toBeInTheDocument();
     expect(screen.getByText(/1 dataset changed since its export: Rail\./)).toBeInTheDocument();
     expect(screen.getByText(/2 trained models are only in the app/)).toBeInTheDocument();

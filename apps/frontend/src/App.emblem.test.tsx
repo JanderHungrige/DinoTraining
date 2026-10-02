@@ -10,7 +10,7 @@ import { App } from './App';
 describe('the emblem (doc 134)', () => {
   it('stands before the name, and the heading is still just the name', () => {
     render(<App />);
-    const heading = screen.getByRole('heading', { level: 1, name: 'DinoTraining' });
+    const heading = screen.getByRole('heading', { level: 1, name: 'V-Rex' });
     const emblem = heading.querySelector('img');
     expect(emblem).toHaveAttribute('src', '/emblem.svg');
     expect(emblem).toHaveAttribute('alt', '');

@@ -93,7 +93,7 @@ fn body(message: &str, report: &Report<'_>, log: &str) -> String {
     let log = if log.is_empty() { "(no backend log)" } else { log };
     format!(
         "**What happened**\n\n<!-- What did you do just before? -->\n\n**The error**\n\n```\n{message}\n```\n\n\
-         **DinoTraining** {} · {} {}\n\n**The backend log (last lines)**\n\n```\n{log}\n```\n",
+         **V-Rex** {} · {} {}\n\n**The backend log (last lines)**\n\n```\n{log}\n```\n",
         report.version, report.os, report.arch
     )
 }

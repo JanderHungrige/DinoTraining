@@ -109,7 +109,7 @@ describe('SetupScreen', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'play' }));
     await act(async () => finish());
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Open DinoTraining' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Open V-Rex' }));
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
@@ -165,7 +165,7 @@ describe('SetupScreen', () => {
   it('doc 129: an update runs without a question, under its own title', () => {
     shell.install.mockImplementation(() => new Promise(() => undefined));
     render(<SetupScreen machine={PC} auto="cu130" update="cu130" onDone={vi.fn()} />);
-    expect(screen.getByRole('heading', { name: "Updating DinoTraining's packages" })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: "Updating V-Rex's packages" })).toBeInTheDocument();
     expect(shell.install).toHaveBeenCalledWith('cu130');
   });
 
@@ -190,7 +190,7 @@ describe('SetupScreen', () => {
 
   it('speaks German', () => {
     renderInGerman(<SetupScreen machine={PC} onDone={() => undefined} />);
-    expect(screen.getByRole('heading', { name: 'Willkommen bei DinoTraining' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Willkommen bei V-Rex' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Nur CPU/ })).toBeInTheDocument();
     // Numbers in German, too.
     expect(screen.getByRole('button', { name: /etwa 3,5 GB Download/ })).toBeInTheDocument();
