@@ -8,7 +8,7 @@ V-Rex
 
 ## Kurzbeschreibung
 
-V-Rex, Vision Representation & Experimentation: eine kostenlose Trainings-Pipeline für Vision-Foundation-Models. Bring einem Bildmodell mit ein paar hundert Bildern etwas bei: mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, anwenden und neue Daten annotieren lassen. Der erste Start lädt Python und PyTorch (etwa 1–6 GB).
+V-Rex macht moderne Bild-KI nutzbar, ohne dass du Data Scientist sein musst. Erkunde deine Bilddatensätze, probiere verschiedene Bildmodelle aus, sieh, was jedes kann, und lerne dabei, wie sie funktionieren. Dann passt du Modelle an deine eigenen Aufgaben an und erzeugst annotierte Datensätze, um damit andere Bildmodelle zu trainieren. Der erste Start lädt Python und PyTorch (etwa 1–6 GB).
 
 ## Beschreibung
 
@@ -31,16 +31,16 @@ Versionshinweise: https://github.com/JanderHungrige/DinoTraining/releases
 
 ## Produktfeatures
 
-- Annotieren mit Text-Prompts: Boxen von Grounding DINO, Masken von SAM
-- Klassifikations-, Detektions- und Segmentierungs-Heads auf eingefrorenem DINOv2/DINOv3 trainieren
-- Läuft auf CPU oder NVIDIA-Grafikkarte (CUDA), in der App umschaltbar
-- Modellgestütztes Annotieren neuer Daten
-- Datensätze in der Cloud: Amazon S3, Azure Blob Storage, Google Cloud Storage
-- Automatischer Export von Annotationen und Modellen
-- Importiert COCO, YOLO, Pascal VOC und OpenLABEL; exportiert COCO
-- MLflow-Tracking (optional)
-- Deutsch und Englisch
-- Kein Konto, keine Telemetrie, Open Source (MIT)
+- Erkunde deine Bilddatensätze: Bilder, Annotationen und Klassen ansehen und erkennen, wo Daten fehlen oder unausgewogen sind
+- Moderne Bildmodelle im Vergleich ausprobieren: DINOv2/DINOv3, Grounding DINO, SAM 2 und SAM 3, RF-DETR
+- Annotieren, indem du beschreibst, was du suchst: Die Modelle zeichnen Boxen und Masken, du übernimmst oder korrigierst
+- Verstehen, wie die Modelle arbeiten: verständliche Erklärungen zu jeder Einstellung, Kennzahl und jedem Trainingsschritt
+- Eigenes Modell in Minuten auf einem eingefrorenen Foundation Model trainieren, ohne Programmieren
+- Modelle an deine Aufgaben anpassen, mit geführter Datenvorbereitung und Rezepten
+- Mit einem trainierten Modell annotierte Datensätze erzeugen, um andere Bildmodelle zu trainieren
+- COCO, YOLO, Pascal VOC und OpenLABEL importieren, COCO exportieren; Datensätze in Amazon S3, Azure oder Google Cloud nutzen
+- Läuft auf deinem eigenen Rechner, auf CPU oder NVIDIA-GPU; deine Bilder verlassen ihn nur, wenn du es willst
+- Deutsch und Englisch, kostenlos und Open Source (MIT)
 
 ## Suchbegriffe (max. 7)
 
