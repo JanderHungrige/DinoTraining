@@ -18,7 +18,6 @@ import { SwitchOverlay } from '../setup/SwitchOverlay';
 import { runtimeStatus, type RuntimeStatus, type Variant } from '../setup/shell';
 
 import { TokenPanel } from '../components/TokenPanel';
-import { AppearancePanel } from '../components/AppearancePanel';
 import { useModels } from '../hooks/useModels';
 import { useTrainerOptions } from '../hooks/useTrainerOptions';
 import { useT, type Key } from '../i18n';
@@ -137,7 +136,6 @@ export function AdminTab(): JSX.Element {
       <DistributionNotice models={models} />
 
       <TokenPanel />
-      <AppearancePanel />
 
       {error && (
         <p className="admin__error" role="alert">

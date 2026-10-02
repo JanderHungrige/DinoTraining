@@ -56,6 +56,23 @@ MODES = {
             "pending": "#fbbf24",
         },
     ),
+    # Doc 164: the light theme (Settings), look.css :root[data-theme='light'].
+    "light": Mode(
+        bg="#f6f7f9",
+        raised="#ffffff",
+        scrim=(246, 247, 249),
+        scrim_top=0.25,
+        scrim_bottom=0.2,
+        panel=0.75,
+        header=0.85,
+        tokens={
+            "text": "#1a1d23",
+            "text-dim": "#454c57",
+            "accent": "#0f5f2c",
+            "danger": "#991b1b",
+            "pending": "#6e4205",
+        },
+    ),
 }
 
 

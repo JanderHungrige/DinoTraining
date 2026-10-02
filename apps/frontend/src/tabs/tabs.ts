@@ -19,6 +19,7 @@ export const TAB_IDS = [
   'inference',
   'generator',
   'api',
+  'settings',
 ] as const;
 
 export type TabId = (typeof TAB_IDS)[number];
@@ -104,6 +105,13 @@ const ENTRIES: readonly TabEntry[] = [
     labelKey: 'app.tabs.apiLabel',
     hintKey: 'app.tabs.apiHint',
     wave: 9,
+  },
+  {
+    // Doc 164: after the loop, as settings are everywhere (Jan, 2026-10-02).
+    id: 'settings',
+    labelKey: 'app.tabs.settingsLabel',
+    hintKey: 'app.tabs.settingsHint',
+    wave: 16,
   },
 ];
 

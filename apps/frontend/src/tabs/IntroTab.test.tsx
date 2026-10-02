@@ -22,6 +22,9 @@ function renderIntro() {
   return { onNavigate, user: userEvent.setup() };
 }
 
+// Not steps of the loop: the intro itself, and Settings after it (doc 164).
+const NOT_STAGES: readonly string[] = ['intro', 'settings'];
+
 describe('staying in step with the app', () => {
   it('points every stage at a tab that exists', () => {
     for (const stage of INTRO_STAGES) {
@@ -34,7 +37,7 @@ describe('staying in step with the app', () => {
     // silently keeps describing six. Nothing else in the app would notice.
     const described = new Set(INTRO_STAGES.map((stage) => stage.tab));
     const missing = TABS.map((tab) => tab.id).filter(
-      (id) => id !== 'intro' && !described.has(id),
+      (id) => !NOT_STAGES.includes(id) && !described.has(id),
     );
     expect(missing).toEqual([]);
   });
@@ -53,7 +56,7 @@ describe('staying in step with the app', () => {
   it('lists the stages in the order the tabs are in', () => {
     // The intro's whole claim is "the tabs are in the order you use them". If the tab bar
     // is reordered and this is not, the claim becomes false rather than merely untidy.
-    const tabOrder = TABS.map((tab) => tab.id).filter((id) => id !== 'intro');
+    const tabOrder = TABS.map((tab) => tab.id).filter((id) => !NOT_STAGES.includes(id));
     expect(INTRO_STAGES.map((stage) => stage.tab)).toEqual(tabOrder);
   });
 });

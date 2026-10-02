@@ -17,6 +17,7 @@ import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
 import { ModelsTab } from './tabs/ModelsTab';
 import { PrepareTab } from './tabs/PrepareTab';
+import { SettingsTab } from './tabs/SettingsTab';
 import { SetupGate } from './setup/SetupGate';
 import { useAutoExport } from './hooks/useAutoExport';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
@@ -53,6 +54,8 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
       return <ApiTab />;
     case 'models':
       return <ModelsTab />;
+    case 'settings':
+      return <SettingsTab />;
     default:
       throw new Error(`Unhandled tab: ${tab satisfies never}`);
   }

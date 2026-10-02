@@ -34,5 +34,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test-setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Docs 157/164: the look tests read the stylesheets (`?raw`). Unprocessed, Vitest hands
+    // every .css over as an empty string, and those checks passed without seeing a rule.
+    css: { include: [/\.css\?raw$/] },
   },
 });
