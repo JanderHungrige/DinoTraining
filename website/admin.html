@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Doc 161: testers only. To remove: delete this file, the "Admin" links in index.html
+       and privacy.html, the .admin block in site.css, and the GitHub pre-release
+       msix-test-0.1.3. -->
+  <meta name="robots" content="noindex, nofollow">
+  <title>V-Rex — Admin</title>
+  <link rel="icon" type="image/svg+xml" href="emblem.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="top">
+    <a class="top__name" href="./"><img src="emblem.svg" alt="" width="30" height="30">V-Rex</a>
+    <nav class="top__links">
+      <a href="./">Download</a>
+      <a href="https://github.com/JanderHungrige/DinoTraining">Source code</a>
+    </nav>
+  </header>
+
+  <main class="privacy admin">
+    <h1>Admin: test the Store edition</h1>
+    <p class="admin__note"><strong>For testers, not for users.</strong> This is the Microsoft Store
+      version of V-Rex 0.1.3, signed with a test certificate instead of Microsoft's signature.
+      Regular users download V-Rex from the <a href="./">download page</a>.</p>
+
+    <h2>1. Download</h2>
+    <p class="admin__downloads">
+      <a class="btn btn--primary" href="https://github.com/JanderHungrige/DinoTraining/releases/download/msix-test-0.1.3/V-Rex_test.cer">Test certificate (V-Rex_test.cer)</a>
+      <a class="btn btn--primary" href="https://github.com/JanderHungrige/DinoTraining/releases/download/msix-test-0.1.3/V-Rex_0.1.3_x64_test.msix">Store edition (V-Rex_0.1.3_x64_test.msix, 26 MB)</a>
+    </p>
+    <p class="admin__small">Built and tested in the 0.1.3 release run. The certificate's private
+      key existed only during that run, so nothing else can be signed with it.<br>
+      SHA-256: msix <code>bc2e5666…4e243ec0</code>, cer <code>bd2249dc…00f052f2</code>.</p>
+
+    <h2>2. Trust the certificate (once per PC)</h2>
+    <ol>
+      <li>Double-click <code>V-Rex_test.cer</code> → <em>Install Certificate…</em></li>
+      <li>Choose <strong>Local Machine</strong> → <em>Next</em>, and say <em>Yes</em> to the admin prompt.</li>
+      <li><em>Place all certificates in the following store</em> → <em>Browse…</em> →
+        <strong>Trusted People</strong> (not "Trusted Root") → <em>OK</em> → <em>Next</em> → <em>Finish</em>.</li>
+    </ol>
+
+    <h2>3. Install and start</h2>
+    <ol>
+      <li>Double-click <code>V-Rex_0.1.3_x64_test.msix</code> → <em>Install</em> (tick <em>Launch when ready</em>).</li>
+      <li>Later: Start menu → <strong>V-Rex</strong>. The installed EXE edition (DinoTraining or V-Rex) can stay; they do not share data.</li>
+    </ol>
+
+    <h2>4. What to check</h2>
+    <table class="admin__checks">
+      <thead><tr><th>Check</th><th>Expected</th><th>OK?</th></tr></thead>
+      <tbody>
+        <tr><td>First start</td><td>The setup screen: choose CPU or GPU; Python and PyTorch download (1–6 GB).</td><td>☐</td></tr>
+        <tr><td><strong>PC with the old Visual C++ runtime (14.28)</strong></td><td>The setup asks once to install Microsoft's runtime (admin prompt). Yes, and the app starts. <strong>Most important.</strong></td><td>☐</td></tr>
+        <tr><td>GPU PC</td><td>Choose GPU; Admin → the GPU box says "GPU in use".</td><td>☐</td></tr>
+        <tr><td>Work normally</td><td>Import a dataset, annotate a little, export it.</td><td>☐</td></tr>
+        <tr><td>"Show in Explorer" on a dataset</td><td>Opens a folder under <code>…\AppData\Local\Packages\JeanQuestEnterprise.V-Rex_f2f23w3rhp35p\…</code></td><td>☐</td></tr>
+        <tr><td>Models &amp; Datasets → uninstall notice</td><td>Says Windows removes everything, without asking.</td><td>☐</td></tr>
+        <tr><td>Second start</td><td>No setup, straight into the app.</td><td>☐</td></tr>
+        <tr><td>No update bar</td><td>The Store edition never shows "a new version is available".</td><td>☐</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Uninstall</h2>
+    <ol>
+      <li>Start menu → right-click <strong>V-Rex</strong> → <em>Uninstall</em>.</li>
+      <li>Paste <code>%LOCALAPPDATA%\Packages\JeanQuestEnterprise.V-Rex_f2f23w3rhp35p</code> into the Explorer
+        address bar: it should no longer exist.</li>
+      <li>Optional, remove the test certificate: Start → <code>certlm.msc</code> → <em>Trusted People</em> →
+        <em>Certificates</em> → delete <code>522F9C35-…</code>.</li>
+    </ol>
+
+    <h2>If something goes wrong</h2>
+    <ul>
+      <li><strong>"The publisher certificate could not be verified"</strong>: the certificate went into the
+        wrong store; repeat step 2 with <em>Local Machine</em> and <em>Trusted People</em>.</li>
+      <li><strong>An error in the app</strong>: <em>Open the log</em> or <em>Report an issue</em> next to it,
+        or a photo of the screen.</li>
+      <li><strong>The installer refuses</strong>: a screenshot of its message.</li>
+    </ul>
+    <p>Report per PC which rows are OK.</p>
+  </main>
+</body>
+</html>
