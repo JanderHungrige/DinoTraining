@@ -24,11 +24,31 @@ textarea {
      brightest pixel anywhere in the loop, composited exactly as the browser stacks it. */
   --surface: color-mix(in srgb, var(--bg) 60%, transparent);
   --surface-raised: color-mix(in srgb, var(--bg-raised) 78%, transparent);
-  /* Doc 163: the forest's highlights are tone-mapped in the video (sky at ~72 %), so the
-     scrim can be thin and the forest stays bright: 0.5/0.45 before. */
-  /* Experiment (Jan, 2026-10-02): the plain video, no scrim and no blur on the panels.
-     Before: a 0.25/0.2 scrim and blur(10–14px). Below AA over the brightest frames. */
-  --scrim: none;
+  /* Doc 165: the scrim and the panels' blur belong to the background chosen in Settings
+     (the blocks below). The default forest has neither. The scrim takes the theme's
+     colour: dark here, light under data-theme='light'. */
+  --scrim-rgb: 10 11 14;
+  --scrim-top: 0;
+  --scrim-bottom: 0;
+  --scrim: linear-gradient(180deg, rgb(var(--scrim-rgb) / var(--scrim-top)), rgb(var(--scrim-rgb) / var(--scrim-bottom)));
+  --panel-blur: none;
+  --header-blur: none;
+}
+
+/* Doc 165: each background as it was tried (doc 163's versions, and the particles). */
+:root[data-background='forest-bright'] {
+  --scrim-top: 0.25;
+  --scrim-bottom: 0.2;
+  --panel-blur: blur(10px);
+  --header-blur: blur(14px) saturate(1.1);
+}
+
+:root[data-background='forest-dim'],
+:root[data-background='particles'] {
+  --scrim-top: 0.5;
+  --scrim-bottom: 0.45;
+  --panel-blur: blur(10px);
+  --header-blur: blur(14px) saturate(1.1);
 }
 
 /* Doc 80: two colours failed AA over the loop's brightest frame (dim text 2.97:1, danger
@@ -57,7 +77,7 @@ textarea {
   --focus: #0369a1;
   --surface: color-mix(in srgb, var(--bg) 75%, transparent);
   --surface-raised: color-mix(in srgb, var(--bg-raised) 85%, transparent);
-  --scrim: none;
+  --scrim-rgb: 246 247 249;
 
   color-scheme: light;
 }
@@ -93,10 +113,14 @@ textarea {
 .app__header,
 .tabbar {
   background: var(--surface-raised);
+  backdrop-filter: var(--header-blur);
+  -webkit-backdrop-filter: var(--header-blur);
 }
 
 .app__panel {
   background: var(--surface);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
 }
 
 /* --- Admin › Appearance ------------------------------------------------------------ */

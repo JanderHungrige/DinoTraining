@@ -14,6 +14,7 @@
 import { createContext, useContext, useEffect, useState, type JSX, type ReactNode } from 'react';
 
 import { usePersistentState } from '../hooks/usePersistentState';
+import { BACKGROUNDS, DEFAULT_BACKGROUND, type BackgroundId } from './backgrounds';
 import { isBoolean, isOneOf } from './persisted';
 
 export const THEMES = ['system', 'dark', 'light'] as const;
@@ -26,6 +27,9 @@ export interface Look {
   readonly setTheme: (theme: Theme) => void;
   /** What is shown: the theme, with "system" resolved. */
   readonly resolvedTheme: 'dark' | 'light';
+  /** Doc 165: which background, applied as `data-background` on `<html>`. */
+  readonly background: BackgroundId;
+  readonly setBackground: (background: BackgroundId) => void;
 }
 
 const LookContext = createContext<Look>({
@@ -34,6 +38,8 @@ const LookContext = createContext<Look>({
   theme: 'system',
   setTheme: () => undefined,
   resolvedTheme: 'dark',
+  background: DEFAULT_BACKGROUND,
+  setBackground: () => undefined,
 });
 
 const LIGHT_QUERY = '(prefers-color-scheme: light)';
@@ -61,15 +67,25 @@ export function LookProvider({ children }: { readonly children: ReactNode }): JS
     isBoolean,
   );
   const [theme, setTheme] = usePersistentState<Theme>('look.theme', 'system', isOneOf(THEMES));
+  const [background, setBackground] = usePersistentState<BackgroundId>(
+    'look.background',
+    DEFAULT_BACKGROUND,
+    isOneOf(BACKGROUNDS),
+  );
   const systemLight = useSystemPrefersLight();
   const resolvedTheme = theme === 'system' ? (systemLight ? 'light' : 'dark') : theme;
 
   useEffect(() => {
     document.documentElement.dataset['theme'] = resolvedTheme;
   }, [resolvedTheme]);
+  useEffect(() => {
+    document.documentElement.dataset['background'] = background;
+  }, [background]);
 
   return (
-    <LookContext.Provider value={{ animatedBackground, setAnimatedBackground, theme, setTheme, resolvedTheme }}>
+    <LookContext.Provider
+      value={{ animatedBackground, setAnimatedBackground, theme, setTheme, resolvedTheme, background, setBackground }}
+    >
       {children}
     </LookContext.Provider>
   );
