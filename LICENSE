@@ -22,7 +22,7 @@ SOFTWARE.
 
 ---
 
-NOTE: This license covers the DinoTraining application code only. Model weights
+NOTE: This license covers the V-Rex (formerly DinoTraining) application code only. Model weights
 (DINOv2, DINOv3, Grounding DINO) are downloaded separately and are governed by
 their own licenses. DINOv3 in particular is released by Meta under a gated,
 commercial license — review and accept its terms before use.

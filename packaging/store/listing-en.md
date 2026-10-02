@@ -4,17 +4,17 @@ Doc 154. Copy each section into Partner Center → Store listings → English (U
 
 ## Product name
 
-DinoTraining
+V-Rex
 
 ## Short description
 
-Free desktop app to teach a vision model with a few hundred pictures: annotate with Grounding DINO and SAM, train small heads on frozen DINOv2/DINOv3 backbones in minutes, run them and let them annotate new data. The first start downloads Python and PyTorch (about 1–6 GB).
+V-Rex, Vision Representation & Experimentation: a free training pipeline for vision foundation models. Teach a vision model with a few hundred pictures: annotate with Grounding DINO and SAM, train small heads on frozen DINOv2/DINOv3 backbones in minutes, run them and let them annotate new data. The first start downloads Python and PyTorch (about 1–6 GB).
 
 ## Description
 
 The first start downloads what the app runs on: Python and PyTorch from GitHub, PyPI and pytorch.org, about 1 GB for the CPU version and up to 6 GB for NVIDIA GPUs (CUDA). If Windows lacks a current Microsoft Visual C++ runtime, the app offers to install it from Microsoft. Models (DINOv2, DINOv3, Grounding DINO, SAM) download from Hugging Face when you choose them.
 
-DinoTraining covers the whole loop on your own computer:
+V-Rex (Vision Representation & Experimentation) is a training pipeline for vision foundation models. It covers the whole loop on your own computer:
 
 - Annotate: type what you are looking for and Grounding DINO and SAM draw the boxes and masks; you accept, correct or reject them.
 - Train: small heads (classification, detection, segmentation, depth) on a frozen DINOv2 or DINOv3 backbone, in minutes, on a CPU or an NVIDIA GPU.
@@ -52,6 +52,8 @@ computer vision; annotation; DINOv2; object detection; segmentation; machine lea
 - Recommended: 16 GB memory, an NVIDIA GPU with 6 GB or more
 
 ## Links
+
+- Store ID: 9PKPPDW39FCZ (https://apps.microsoft.com/detail/9PKPPDW39FCZ, live after certification)
 
 - Privacy policy: https://dino.w3rth.de/privacy.html
 - Website: https://dino.w3rth.de

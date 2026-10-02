@@ -33,7 +33,7 @@ def build(tmp_path: Path) -> dict[str, Path]:
         (icons / logo).write_bytes(b"png")
     identity = tmp_path / "identity.json"
     identity.write_text(json.dumps({
-        "identity_name": "JanWerth.DinoTraining", "publisher": "CN=Jan & Co",
+        "identity_name": "JanWerth.V-Rex", "publisher": "CN=Jan & Co",
         "publisher_display_name": "Jan Werth",
     }))
     return {"exe": exe, "runtime": runtime, "icons": icons, "identity": identity, "out": tmp_path / "msix"}
@@ -64,7 +64,7 @@ def test_the_manifest_carries_identity_version_entry_point_and_capabilities(buil
     identity = root.find("m:Identity", NS)
     assert identity is not None
     assert identity.attrib == {
-        "Name": "JanWerth.DinoTraining", "Publisher": "CN=Jan & Co", "Version": "0.1.3.0", "ProcessorArchitecture": "x64",
+        "Name": "JanWerth.V-Rex", "Publisher": "CN=Jan & Co", "Version": "0.1.3.0", "ProcessorArchitecture": "x64",
     }
     application = root.find("m:Applications/m:Application", NS)
     assert application is not None

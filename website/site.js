@@ -7,7 +7,7 @@
     'nav.repo': 'Quellcode',
     'hero.title': 'Ein Bildmodell anlernen, mit ein paar hundert Bildern.',
     'hero.lead':
-      'DinoTraining ist eine kostenlose Desktop-App für den ganzen Ablauf: Bilder mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, sie anwenden und neue Daten von ihnen annotieren lassen.',
+      'V-Rex (Vision Representation & Experimentation) ist eine kostenlose Desktop-App für den ganzen Ablauf: Bilder mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, sie anwenden und neue Daten von ihnen annotieren lassen.',
     'release.loading': 'Neueste Version wird gesucht…',
     'release.none': 'Die erste Version erscheint in Kürze',
     'release.version': 'Version {version} · {date}',

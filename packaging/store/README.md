@@ -54,7 +54,7 @@ the emblem, is optional.
 
 ## Notes for certification (Submission options → Notes for certification)
 
-> DinoTraining is a desktop app (full trust). Its first start downloads Python and PyTorch
+> V-Rex is a desktop app (full trust). Its first start downloads Python and PyTorch
 > (about 1 GB, CPU) from GitHub, PyPI and pytorch.org into the app's local data folder; this
 > takes a few minutes and is shown with progress. If the Microsoft Visual C++ runtime on the
 > test machine is older than 14.40, the app asks to install Microsoft's signed redistributable

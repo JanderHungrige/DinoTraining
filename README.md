@@ -1,10 +1,13 @@
 <p align="center"><img src="branding/emblem.svg" alt="" width="140"></p>
 
-# DinoTraining
+# V-Rex
+
+**V**ision **R**epresentation & **Ex**perimentation: an AI model training pipeline for
+vision foundation models. (Formerly DinoTraining; the repository keeps that name for now.)
 
 **Teach a computer to find things in your pictures, without being a data scientist.**
 
-DinoTraining is a desktop app for the whole loop of a computer-vision project:
+V-Rex is a desktop app for the whole loop of a computer-vision project:
 1. label pictures, with a model proposing the labels;
 2. prepare the data so that training can work;
 3. train a model;
@@ -81,7 +84,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/JanderHungrige/DinoTrain
 Homebrew, once the tap is published:
 
 ```bash
-brew install janderhungrige/tap/dinotraining
+brew install janderhungrige/tap/v-rex
 ```
 
 > **Why not a download in the browser?** The app is not signed with a paid Apple
@@ -101,13 +104,13 @@ SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
   on the first start, and keeps the previous ones until the new ones work.
 - **Model weights** are not in the installer; you download them in the app (see below).
 - **Uninstall:**
-  - **Windows:** *Settings → Apps → DinoTraining → Uninstall*. It also removes the
+  - **Windows:** *Settings → Apps → V-Rex → Uninstall*. It also removes the
     downloaded Python and PyTorch (1–6 GB). Your datasets, trained models and downloaded
-    weights stay in `%LOCALAPPDATA%\DinoTraining`, unless you tick *Delete the
+    weights stay in `%LOCALAPPDATA%\DinoTraining` (the data folder keeps the first name), unless you tick *Delete the
     application data*.
-  - **macOS:** delete `DinoTraining.app` (or `brew uninstall dinotraining`); everything
+  - **macOS:** delete `V-Rex.app` (or `brew uninstall v-rex`); everything
     else, including your data, is in `~/Library/Application Support/DinoTraining`.
-  - **Linux:** `sudo apt remove dino-training`; everything else is in
+  - **Linux:** `sudo apt remove v-rex`; everything else is in
     `~/.local/share/DinoTraining`.
 
 ### Option B: from source
@@ -358,7 +361,7 @@ proposes.
   and their descriptions carry the same explanations the UI shows. For Claude Code:
 
   ```bash
-  claude mcp add --transport http dinotraining http://127.0.0.1:8756/mcp
+  claude mcp add --transport http v-rex http://127.0.0.1:8756/mcp
   ```
 
 - **API guide:** a guide written for an AI assistant (the order of calls, and the traps),

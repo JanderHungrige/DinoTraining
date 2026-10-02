@@ -4,17 +4,17 @@ Doc 154. Jeden Abschnitt in Partner Center → Store-Einträge → Deutsch (Deut
 
 ## Produktname
 
-DinoTraining
+V-Rex
 
 ## Kurzbeschreibung
 
-Kostenlose Desktop-App, um einem Bildmodell mit ein paar hundert Bildern etwas beizubringen: mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, anwenden und neue Daten annotieren lassen. Der erste Start lädt Python und PyTorch (etwa 1–6 GB).
+V-Rex, Vision Representation & Experimentation: eine kostenlose Trainings-Pipeline für Vision-Foundation-Models. Bring einem Bildmodell mit ein paar hundert Bildern etwas bei: mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, anwenden und neue Daten annotieren lassen. Der erste Start lädt Python und PyTorch (etwa 1–6 GB).
 
 ## Beschreibung
 
 Der erste Start lädt, worauf die App läuft: Python und PyTorch von GitHub, PyPI und pytorch.org, etwa 1 GB für die CPU-Version und bis zu 6 GB für NVIDIA-Grafikkarten (CUDA). Fehlt Windows eine aktuelle Microsoft-Visual-C++-Laufzeit, bietet die App an, sie von Microsoft zu installieren. Modelle (DINOv2, DINOv3, Grounding DINO, SAM) kommen von Hugging Face, wenn du sie auswählst.
 
-DinoTraining deckt den ganzen Kreislauf auf deinem eigenen Rechner ab:
+V-Rex (Vision Representation & Experimentation) ist eine Trainings-Pipeline für Vision-Foundation-Models. Es deckt den ganzen Kreislauf auf deinem eigenen Rechner ab:
 
 - Annotieren: Schreib, wonach du suchst, und Grounding DINO und SAM zeichnen Boxen und Masken; du nimmst sie an, korrigierst oder verwirfst sie.
 - Trainieren: kleine Heads (Klassifikation, Detektion, Segmentierung, Tiefe) auf einem eingefrorenen DINOv2- oder DINOv3-Backbone, in Minuten, auf der CPU oder einer NVIDIA-Grafikkarte.

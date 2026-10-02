@@ -94,7 +94,7 @@ pub fn reveal_path(app: tauri::AppHandle, path: String) -> Result<String, String
 mod tests {
     use super::*;
 
-    const FAMILY: &str = "DinoTraining.Placeholder_abc123";
+    const FAMILY: &str = "JeanQuestEnterprise.V-Rex_f2f23w3rhp35p";
 
     fn local() -> PathBuf {
         PathBuf::from("/Users/jan/AppData/Local")
