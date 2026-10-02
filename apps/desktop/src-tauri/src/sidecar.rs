@@ -211,6 +211,10 @@ pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
         }
         None => (Stdio::inherit(), Stdio::inherit()),
     };
+    // Doc 152: the Store edition's folder is the package's own; the backend must use it too.
+    if let Some(dir) = crate::support_dir::backend_app_dir() {
+        command.env("DINO_APP_DIR", dir);
+    }
     let child = command
         .env("DINO_API_HOST", &config.host)
         .env("DINO_API_PORT", config.port.to_string())

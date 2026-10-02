@@ -8,11 +8,14 @@ import { useCallback, useEffect, useState, type JSX } from 'react';
 
 import { getExportOverview, runExports, type ExportOverview } from '../api/exports';
 import { useT } from '../i18n';
+import { useEdition } from '../lib/edition';
 
 export function UninstallNotice({ onExported }: { readonly onExported?: () => void }): JSX.Element | null {
   const { t, tp } = useT();
   const [overview, setOverview] = useState<ExportOverview | null>(null);
   const [busy, setBusy] = useState(false);
+  // Doc 156: the Store's uninstall has no page of ours and no box to tick.
+  const store = useEdition() === 'store';
 
   const read = useCallback((signal?: AbortSignal) => {
     getExportOverview(signal)
@@ -45,7 +48,7 @@ export function UninstallNotice({ onExported }: { readonly onExported?: () => vo
   const pending = overview ? overview.no_target.length + overview.unexported.length : 0;
   return (
     <aside className={`uninstall ${pending ? 'uninstall--pending' : ''}`} aria-labelledby="uninstall-title">
-      <p id="uninstall-title" className="uninstall__lead">{t('models.uninstall.lead')}</p>
+      <p id="uninstall-title" className="uninstall__lead">{t(store ? 'models.uninstall.leadStore' : 'models.uninstall.lead')}</p>
       {overview && (
         <p className="uninstall__state">
           {pending === 0 && overview.datasets > 0 && <span>{t('models.uninstall.allExported')} </span>}

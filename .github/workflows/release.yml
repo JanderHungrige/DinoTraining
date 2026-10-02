@@ -115,6 +115,41 @@ jobs:
           fi
           echo "No model weights in the bundle."
 
+      # --- doc 151: the Store edition, packed from this same build -------------------------
+      #
+      # Unsigned for the Store (Microsoft signs it after certification); a copy signed with
+      # a self-signed certificate whose subject is the manifest's Publisher, for doc 153's
+      # smoke test and for testing on real PCs. The test copy is never a release download.
+      - name: Pack the MSIX
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content apps/desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $out = "apps/desktop/src-tauri/target/release/bundle/msix"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          $stage = Join-Path $env:RUNNER_TEMP 'msix-stage'
+          python scripts/stage_msix.py --exe apps/desktop/src-tauri/target/release/dinotraining.exe --version $version --out $stage
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $makeappx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.*\x64\makeappx.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          $signtool = Join-Path $makeappx.DirectoryName 'signtool.exe'
+          Write-Host "Using $($makeappx.FullName)"
+          $msix = Join-Path $out "DinoTraining_${version}_x64.msix"
+          & $makeappx.FullName pack /o /d $stage /p $msix
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          $publisher = (Get-Content packaging/msix/identity.json -Raw | ConvertFrom-Json).publisher
+          $cert = New-SelfSignedCertificate -Type Custom -Subject $publisher -KeyUsage DigitalSignature `
+            -FriendlyName 'DinoTraining MSIX test' -CertStoreLocation 'Cert:\CurrentUser\My' `
+            -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+          $test = Join-Path $env:RUNNER_TEMP 'msix-test'
+          New-Item -ItemType Directory -Force -Path $test | Out-Null
+          $signed = Join-Path $test "DinoTraining_${version}_x64_test.msix"
+          Copy-Item $msix $signed
+          & $signtool sign /fd SHA256 /sha1 $cert.Thumbprint $signed
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Export-Certificate -Cert $cert -FilePath (Join-Path $test 'DinoTraining_test.cer') | Out-Null
+          "MSIX: $([math]::Round((Get-Item $msix).Length / 1MB, 1)) MB, unsigned for the Store; a test-signed copy is a workflow artifact" >> $env:GITHUB_STEP_SUMMARY
+
       # Doc 130: the Mac app as a tarball with its checksum, and the Homebrew formula for
       # exactly this archive. Jan copies the formula into the tap.
       - name: Pack the Mac app and render the formula
@@ -204,6 +239,27 @@ jobs:
           "Uninstall: runtime and app removed, user data kept, no longer under Apps." >> $env:GITHUB_STEP_SUMMARY
           Write-Host "Uninstall checks passed"
 
+      # Doc 153: the Store edition installed, started through its package identity, set up,
+      # started again and removed, like a user does it.
+      - name: Smoke test (MSIX)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $test = Join-Path $env:RUNNER_TEMP 'msix-test'
+          $msix = Get-ChildItem $test -Filter *_test.msix | Select-Object -First 1
+          pwsh scripts/smoke_msix.ps1 -Msix $msix.FullName -Cert (Join-Path $test 'DinoTraining_test.cer')
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Keep the MSIX app's logs of a failed smoke test
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: msix-smoke-logs
+          path: |
+            ~/AppData/Local/Packages/*/LocalCache/Local/com.dinotraining.app/logs/
+            ~/AppData/Local/com.dinotraining.app/logs/
+          if-no-files-found: ignore
+
       - name: Keep the app log of a failed smoke test
         if: failure()
         uses: actions/upload-artifact@v4
@@ -211,6 +267,14 @@ jobs:
           name: smoke-log-${{ matrix.os }}
           path: ${{ runner.temp }}/smoke/app.log
           if-no-files-found: ignore
+
+      # Doc 151: the test-signed MSIX and its certificate, for testing only (not released).
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: msix-test
+          path: ${{ runner.temp }}/msix-test/
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
@@ -221,6 +285,7 @@ jobs:
             apps/desktop/src-tauri/target/release/bundle/macos/dinotraining.rb
             apps/desktop/src-tauri/target/release/bundle/msi/*.msi
             apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+            apps/desktop/src-tauri/target/release/bundle/msix/*.msix
             apps/desktop/src-tauri/target/release/bundle/appimage/*.AppImage
             apps/desktop/src-tauri/target/release/bundle/deb/*.deb
           if-no-files-found: error
@@ -279,8 +344,24 @@ jobs:
           make_latest: ${{ steps.decide.outputs.mode == 'publish' }}
           generate_release_notes: true
           files: |
-            artifacts/**/*.exe
+            artifacts/installer-*/**/*.exe
+            artifacts/installer-*/**/*.msix
             artifacts/**/*.deb
             artifacts/**/*.app.tar.gz
             artifacts/**/*.sha256
             artifacts/**/dinotraining.rb
+
+      # Doc 155: the Store takes the release's MSIX by hand (no submission API for an
+      # individual Partner Center account). Certification does not hold up this release.
+      - name: Microsoft Store steps
+        if: steps.decide.outputs.mode == 'publish' || steps.decide.outputs.mode == 'draft'
+        shell: bash
+        run: |
+          TAG="${{ steps.decide.outputs.tag }}"
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('packaging/msix/identity.json')).get('placeholder') else 1)"; then
+            STEP="The MSIX carries the placeholder identity (packaging/msix/identity.json): not for the Store until the reserved name's identity is in."
+          else
+            STEP="Partner Center → DinoTraining → new submission → Packages: upload DinoTraining_${TAG#v}_x64.msix from the $TAG release, then Submit for certification (doc 155)."
+          fi
+          echo "### Microsoft Store" >> "$GITHUB_STEP_SUMMARY"
+          echo "$STEP" >> "$GITHUB_STEP_SUMMARY"

@@ -270,3 +270,22 @@ main,
     padding-top: 40px;
   }
 }
+
+/* Doc 154: the privacy page */
+.privacy {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem 16px 4rem;
+  line-height: 1.6;
+}
+
+.privacy section + section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid currentColor;
+}
+
+.privacy h2 {
+  margin-top: 1.6rem;
+  font-size: 1.15rem;
+}

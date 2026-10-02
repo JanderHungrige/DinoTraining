@@ -9,6 +9,8 @@ const api = vi.hoisted(() => ({
   run: vi.fn<(reason: string, wait: boolean) => Promise<RunResponse>>(),
 }));
 vi.mock('../api/exports', () => ({ getExportOverview: api.overview, runExports: api.run }));
+const edition = vi.hoisted(() => ({ current: 'installer' as string | null }));
+vi.mock('../lib/edition', () => ({ useEdition: () => edition.current }));
 
 import { UninstallNotice } from './UninstallNotice';
 
@@ -18,6 +20,7 @@ const DONE: ExportOverview = { ...PENDING, no_target: [], unexported: [], models
 beforeEach(() => {
   api.overview.mockReset();
   api.run.mockReset().mockResolvedValue({ outcome: 'done', report: null });
+  edition.current = 'installer';
 });
 
 describe('UninstallNotice (doc 146)', () => {
@@ -55,5 +58,14 @@ describe('UninstallNotice (doc 146)', () => {
     expect(screen.getByText(/Beim Deinstallieren kann alles entfernt werden/)).toBeInTheDocument();
     await waitFor(() => expect(api.overview).toHaveBeenCalled());
     expect(screen.queryByRole('button')).toBeNull();
+  });
+
+  it('under the Store, says Windows removes it all without asking (doc 156)', async () => {
+    edition.current = 'store';
+    api.overview.mockResolvedValue(DONE);
+    renderInGerman(<UninstallNotice />);
+    expect(screen.getByText(/in Windows deinstallierst, wird alles darin ohne Rückfrage entfernt/)).toBeInTheDocument();
+    expect(screen.queryByText(/Anwendungsdaten löschen/)).toBeNull();
+    await waitFor(() => expect(api.overview).toHaveBeenCalled());
   });
 });

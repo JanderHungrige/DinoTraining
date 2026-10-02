@@ -1,0 +1,7 @@
+{
+  "_comment": "Doc 151: placeholders until the name is reserved in Partner Center; then copy 'Package/Identity/Name' and 'Package/Identity/Publisher' from Partner Center > Product identity, and the publisher display name.",
+  "identity_name": "DinoTraining.Placeholder",
+  "publisher": "CN=DinoTraining Placeholder",
+  "publisher_display_name": "DinoTraining",
+  "placeholder": true
+}

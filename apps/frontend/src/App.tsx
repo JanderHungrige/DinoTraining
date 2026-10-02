@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { AddToApplications } from './components/AddToApplications';
+import { UpdateNotice } from './components/UpdateNotice';
 import { BackendStatus } from './components/BackendStatus';
 import { LanguageSwitch } from './components/LanguageSwitch';
 import { LanguageProvider } from './i18n';
@@ -95,6 +96,7 @@ export function App(): JSX.Element {
           <BackendStatus />
         </header>
         <AddToApplications />
+        <UpdateNotice />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 

@@ -31,6 +31,10 @@ export const appDe: Catalogue<typeof appEn> = {
     'Lass deinen eigenen KI-Assistenten die App steuern – über MCP oder mit einem Dokument.',
   'app.stub.arrives': 'Kommt mit Welle {wave}.',
 
+  'app.update.available': 'DinoTraining {latest} ist da. Du hast {current}.',
+  'app.update.get': 'Holen',
+  'app.update.notes': 'Was ist neu',
+  'app.update.later': 'Später',
   'app.addApps.question': 'DinoTraining zu deinem Programme-Ordner hinzufügen?',
   'app.addApps.add': 'Hinzufügen',
   'app.addApps.notNow': 'Jetzt nicht',

@@ -99,6 +99,8 @@ export const datasetsEn = {
   // Uninstall notice (doc 146)
   'models.uninstall.lead':
     'Uninstalling can remove everything inside DinoTraining (from the Windows installer when you tick “Delete the application data”). Exported annotations and models stay where you saved them.',
+  'models.uninstall.leadStore':
+    'Uninstalling DinoTraining in Windows removes everything inside it, without asking. Exported annotations and models stay where you saved them.',
   'models.uninstall.allExported': 'All datasets are exported.',
   'models.uninstall.noTarget_one': '{count} dataset has no export yet: {names}. Choose where it goes with “Export…” on its row.',
   'models.uninstall.noTarget_other': '{count} datasets have no export yet: {names}. Choose where each goes with “Export…” on its row.',
