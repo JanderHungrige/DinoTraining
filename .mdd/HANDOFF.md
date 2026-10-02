@@ -4,30 +4,25 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-02, at the end of the **Wave 15.10 build** (with placeholders)
-and two side tasks Jan asked for overnight.
-- **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and the Windows fixes (docs
-  139–141).
-- **In `dev`** (`b4035a6`): additionally Waves 15.8 and 15.9. Not yet released.
-- **Wave 15.10 (the Microsoft Store, docs 151–156):** built on
-  `feat/dinotraining-wave-15-10`, **not merged**. The MSIX packs, installs, sets up and
-  is removed cleanly in CI; the identity is a placeholder until Jan reserves the name.
-- **Side task, look (doc 157):** `feat/ui-sketch-polish` (from `dev`), **not merged**.
-- **Side task, update check (doc 158):** `feat/update-checker` (from the 15.10 branch: it
-  needs the edition), **not merged**.
+**Last updated:** 2026-10-02: **the app is called V-Rex** (doc 159).
+- **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and docs 139–141.
+- **In `dev`** (`0a683f0`): 15.8, 15.9, 15.10 (the Store), 157 (look) and 158 (update
+  check). Not yet released.
+- **The rename** (doc 159) on `feat/rename-v-rex`, **not merged**:
+  - V-Rex everywhere a person reads it;
+  - the machine keys keep "DinoTraining" (data folder, `com.dinotraining.app`, `DINO_*`,
+    storage keys, MLflow tag keys);
+  - exports go to `v-rex/`, old `dinotraining/` exports still restore;
+  - the MSIX carries the reserved identity `JeanQuestEnterprise.V-Rex`, Store ID
+    `9PKPPDW39FCZ`;
+  - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- **Look at doc 157's decision:** the app now has one, dark look in both OS schemes (the
-  light scheme can only be bright over the original background). Say if a light theme is
-  wanted back.
-- **D0** (individual or company account), **reserve "DinoTraining"**, send `Identity
-  Name` / `Publisher` / `PublisherDisplayName` (doc 155's checklist).
-- **Test the test-signed MSIX** on both Windows PCs (the `msix-test` artifact of run
-  36933854791: trust `DinoTraining_test.cer` in "Trusted People", open the `.msix`).
-- **The merges:** 15.10, then the update check (it sits on 15.10), and the look, into
-  `dev`; a release when he says so. The privacy page goes live with the next site update.
-- **Still open:** `dino.questenterprise.de` (DNS, NPM), the Homebrew tap, 0.1.2 on the
-  second Windows PC.
+- **The go to merge the rename into `dev`;** then a release (0.1.3) when he says so. Its
+  MSIX is the first Store upload (doc 155's checklist).
+- **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
+- **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
+  (now `v-rex`).
 
 ---
 

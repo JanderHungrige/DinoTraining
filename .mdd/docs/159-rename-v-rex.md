@@ -11,10 +11,14 @@ source_files:
   - backend/app/datasets/exchange/layout.py
 routes: []
 models: []
-test_files: []
+test_files:
+  - backend/tests/test_exchange.py
+  - scripts/test_stage_msix.py
+  - scripts/test_render_formula.py
+  - scripts/test_install_mac.sh
 data_flow: mixed
 last_synced: 2026-10-02
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [rename, branding, v-rex, microsoft-store, installer, website]
@@ -57,7 +61,7 @@ sister_projects: []
 
 ## Checklist: renamed
 
-- [ ] **Desktop shell:**
+- [x] **Desktop shell:**
   - `productName` and the window title → `V-Rex`, with the descriptions;
   - the Cargo description;
   - user-facing errors (sidecar, VC runtime);
@@ -65,19 +69,19 @@ sister_projects: []
   - Consequences:
     - the installers become `V-Rex_<v>_x64-setup.exe`, `V-Rex.app`, `v-rex_<v>_amd64.deb`;
     - Windows installs to `%LOCALAPPDATA%\V-Rex` and lists "V-Rex" under Apps.
-- [ ] **Mac:**
+- [x] **Mac:**
   - `mac_apps.rs` (`V-Rex.app`, the formula `v-rex`);
   - `install-mac.sh`;
   - the Homebrew template (`v-rex.rb`, class `VRex`, command `v-rex`);
   - `render_formula.py` and their tests.
-- [ ] **Windows installer:** the NSIS uninstall message.
-- [ ] **Release workflow:**
+- [x] **Windows installer:** the NSIS uninstall message.
+- [x] **Release workflow:**
   - Mac archive name and `.app`;
   - the formula file;
   - Windows smoke: the app at `%LOCALAPPDATA%\V-Rex`, its runtime and data still in
     `%LOCALAPPDATA%\DinoTraining`, the uninstall key `…\Uninstall\V-Rex`;
   - MSIX file names, certificate, the Store step's wording.
-- [ ] **MSIX:**
+- [x] **MSIX:**
   - `identity.json` with Jan's identity (`placeholder: false`);
   - `DisplayName` V-Rex;
   - `Executable` `V-Rex.exe`;
@@ -85,12 +89,12 @@ sister_projects: []
   - `stage_msix.py`;
   - `smoke_msix.ps1` (`!VRex`, the package name);
   - the test certificate's subject is the real Publisher.
-- [ ] **Frontend:**
+- [x] **Frontend:**
   - `<title>`, the header;
   - every UI text in English and German naming the app;
   - the MLflow panel's default experiment;
   - comments that name the product.
-- [ ] **Backend:**
+- [x] **Backend:**
   - the API title;
   - the start log;
   - MCP server name `v-rex` and its instructions;
@@ -100,18 +104,18 @@ sister_projects: []
   - user agents;
   - restore messages and their German;
   - the MLflow default experiment `V-Rex`.
-- [ ] **The export folder:**
+- [x] **The export folder:**
   - `<target>/v-rex/v-rex.json`, format `v-rex-export`;
   - **read both:** `find_export`, restore and cloud linking accept the old
     `dinotraining/` name and format, so Jan's test exports still restore;
   - writes and save-back use the new name.
-- [ ] **Website:**
+- [x] **Website:**
   - title, texts, download labels, privacy page (EN/DE), emblem title;
   - the Store link once live.
-- [ ] **Store listing** (`packaging/store/`):
+- [x] **Store listing** (`packaging/store/`):
   - name V-Rex, the expansion and tagline in EN/DE;
   - certification notes.
-- [ ] **Docs:**
+- [x] **Docs:**
   - `README.md`, `backend/README.md`, `project-docs/ARCHITECTURE.md`, `CLAUDE.md`'s
     "What this is";
   - `.mdd/HANDOFF.md` and `.startup.md` headers.
@@ -144,3 +148,23 @@ sister_projects: []
 - A release dry run: the three installers under their new names, both Windows smoke tests
   with the split folders, the MSIX under the real identity.
 - The running app: the window, header, setup screen and an export folder.
+
+## Verified (2026-10-02)
+
+- **Suites:** frontend 1195, Rust 56, backend 1984 (with an export written as
+  `dinotraining/dinotraining.json` restoring), script tests 17, the Mac install test.
+- **The grep** outside `.mdd` leaves only the kept list: data-folder paths, the GitHub URLs,
+  `APP_DIR_NAME`, the NSIS runtime paths, the "formerly DinoTraining" notes.
+- **Release dry run 36975411786, all green:**
+  - installers built as `V-Rex_0.1.2_x64-setup.exe`, `V-Rex_0.1.2_amd64.deb` (package
+    `v-rex`) and the Mac `V-Rex.app` archive;
+  - the Windows smoke test passes with the app in `%LOCALAPPDATA%\V-Rex` and the runtime and
+    data in `%LOCALAPPDATA%\DinoTraining`; "Uninstall checks passed";
+  - **the MSIX under Jan's identity:** installed as
+    `JeanQuestEnterprise.V-Rex_0.1.2.0_x64__f2f23w3rhp35p`, the family Partner Center shows;
+    first start set up in 65 s, `torch 2.13.0+cpu`, second start 7 s, removed cleanly.
+- **The running app:** the title and header say V-Rex, and no page text says DinoTraining.
+  The download site's title and hero carry the name and its expansion.
+- **Note for doc 155:** the publisher "JeanQuestEnterprise" reads as a company account
+  (D0). The submission API is then available, should one manual upload per release become
+  a chore.
