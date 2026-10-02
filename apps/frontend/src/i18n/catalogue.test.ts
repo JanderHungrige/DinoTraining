@@ -10,6 +10,18 @@ import { de, en } from './catalogue';
 /** Values that are the same in both languages on purpose: names, units, symbols. */
 export const SAME_IN_BOTH = new Set<string>([
   'English',
+  // Format names (doc 136).
+  'YOLO',
+  'Pascal VOC',
+  'OpenLABEL (OSDaR23)',
+  // Cloud providers and their products, and two words German shares (doc 147).
+  'AWS',
+  'Azure',
+  'Google Cloud',
+  'Azure Blob Storage',
+  'Google Cloud Storage',
+  'Name',
+  'Region',
   // Technical terms stay English in German too (Jan, 2026-09-30).
   'Experiment',
   'Token',
@@ -30,7 +42,7 @@ export const SAME_IN_BOTH = new Set<string>([
   'm8 bolt, hex screw m8',
   'nail, rivet',
   'Deutsch',
-  'DinoTraining',
+  'V-Rex',
   'OK',
   'Grounding DINO',
   'Grounded SAM',

@@ -34,7 +34,7 @@ export const runEn = {
   // The head panel
   'run.heads.loading': 'Loading heads…',
   'run.heads.nothingToRun':
-    'Nothing to run yet. Install a foundation model or a ready-made head from the Admin tab, or train a head in the Training tab.',
+    'Nothing to run yet. Install a foundation model or a ready-made head in Models & Datasets, or train a head in the Training tab.',
   'run.heads.task': 'Task',
   'run.heads.allTasks': 'All tasks',
   'run.heads.trainedOn': 'Trained on',

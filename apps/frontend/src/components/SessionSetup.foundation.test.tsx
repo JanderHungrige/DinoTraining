@@ -75,7 +75,7 @@ describe('proposing with a general detector (doc 42)', () => {
     await user.click(screen.getByRole('button', { name: /Start annotating/ }));
 
     expect(onStart).not.toHaveBeenCalled();
-    expect(await screen.findByRole('alert')).toHaveTextContent(/Admin/);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Models & Datasets/);
   });
 
   it('hides the prompt field, as head mode does', async () => {

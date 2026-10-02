@@ -89,8 +89,15 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
 
     # --- MLflow (doc 123) --- MLflow's own names, so an existing setup carries over.
+    # Doc 144: exports of changed datasets on closing the app, and every n minutes (0: off).
+    export_on_close: bool = Field(default=True, alias="DINO_EXPORT_ON_CLOSE")
+    export_every_minutes: int = Field(default=0, ge=0, le=1440, alias="DINO_EXPORT_EVERY_MINUTES")
+    # Doc 149: the linked pictures' local cache, in GB (least recently used go first).
+    cloud_cache_gb: float = Field(default=5.0, gt=0, le=10_000, alias="DINO_CLOUD_CACHE_GB")
+    # Doc 145: each trained model exported here when its training finishes; unset is off.
+    model_export_folder: str | None = Field(default=None, alias="DINO_MODEL_EXPORT_FOLDER")
     mlflow_uri: str | None = Field(default=None, alias="MLFLOW_TRACKING_URI")
-    mlflow_experiment: str = Field(default="DinoTraining", alias="DINO_MLFLOW_EXPERIMENT")
+    mlflow_experiment: str = Field(default="V-Rex", alias="DINO_MLFLOW_EXPERIMENT")
     mlflow_register: bool = Field(default=True, alias="DINO_MLFLOW_REGISTER")
     mlflow_username: str | None = Field(default=None, alias="MLFLOW_TRACKING_USERNAME")
     mlflow_password: SecretStr | None = Field(default=None, alias="MLFLOW_TRACKING_PASSWORD")
@@ -98,6 +105,7 @@ class Settings(BaseSettings):
 
     @field_validator(
         "mlflow_uri",
+        "model_export_folder",
         "mlflow_username",
         "mlflow_password",
         "mlflow_token",

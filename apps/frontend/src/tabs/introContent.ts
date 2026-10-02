@@ -35,14 +35,13 @@ export function introLead({ t }: Translator): string {
 
 /** The loop, in the order the tabs run — which is the order they appear. */
 const STAGE_TABS = [
+  'models',
   'inspect',
   'studio',
   'prepare',
   'trainer',
   'inference',
   'generator',
-  'library',
-  'admin',
   'api',
 ] as const satisfies readonly TabId[];
 

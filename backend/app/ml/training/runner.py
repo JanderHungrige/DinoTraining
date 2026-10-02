@@ -12,6 +12,7 @@ import threading
 import uuid
 from collections.abc import Callable
 
+from app.cloud.pictures import prefetch
 from app.datasets.store import DatasetStore
 from app.ml.backbone import BackboneCapabilities, load_backbone, read_capabilities
 from app.ml.heads.builders import build_head
@@ -133,6 +134,8 @@ class LocalJobRunner:
         plan = plan_preprocessing(capabilities, spec)
 
         sample_set = build_samples(self._store, config.dataset_ids)
+        # Doc 149: a linked dataset's pictures come down while the run starts using them.
+        prefetch(sample.path for sample in sample_set.samples)
         # **The vocabulary the head is built against, which is not always the dataset's.**
         # Segmentation prepends a background class, because every pixel belongs to
         # something and most belong to none of the annotated classes. Derived once and used

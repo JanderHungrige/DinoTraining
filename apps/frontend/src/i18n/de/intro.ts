@@ -4,7 +4,7 @@ import type { Catalogue } from '../types';
 export const introDe: Catalogue<typeof introEn> = {
   'intro.title': 'Worum es hier geht',
   'intro.lead':
-    'DinoTraining macht aus einem Ordner voller Bilder ein Modell, das darin Dinge findet. Du annotierst einige Bilder, trainierst ein kleines Modell auf einem großen, vortrainierten Modell, schaust dir an, was es vorhersagt, und lässt es dir helfen, die nächsten Bilder schneller zu annotieren. Alles läuft auf diesem Rechner: Deine Bilder werden nirgendwohin hochgeladen.',
+    'V-Rex macht aus einem Ordner voller Bilder ein Modell, das darin Dinge findet. Du annotierst einige Bilder, trainierst ein kleines Modell auf einem großen, vortrainierten Modell, schaust dir an, was es vorhersagt, und lässt es dir helfen, die nächsten Bilder schneller zu annotieren. Alles läuft auf diesem Rechner: Deine Bilder werden nirgendwohin hochgeladen.',
   'intro.loop.heading': 'Der Kreislauf',
   'intro.loop.note':
     'Die Tabs stehen in der Reihenfolge, in der du sie benutzt. Du wirst die Runde mehr als einmal drehen – genau darum geht es, und es heißt nicht, dass du beim ersten Mal etwas falsch gemacht hast.',
@@ -36,21 +36,16 @@ export const introDe: Catalogue<typeof introEn> = {
     'Lass einen trainierten Head – oder ein Segmentation-Modell mit Text-Prompt – über neue Bilder laufen, prüf, was zurückkommt, und speichere das Ergebnis als neuen Datensatz.',
   'intro.stage.generator.why':
     'Dieser Schritt macht aus dem Ablauf einen Kreislauf. Das Modell, das du gerade trainiert hast, macht den ersten Durchgang über die nächsten Bilder, und du korrigierst es, statt bei null anzufangen.',
+  'intro.stage.models.title': 'Modelle und Daten holen',
+  'intro.stage.models.what':
+    'Lade die Modelle, mit denen die App arbeitet, importiere einen heruntergeladenen oder aufgenommenen Datensatz (mit oder ohne Annotationen) und finde alles, was du trainiert hast. Offizielle Modelle, deine Datensätze und deine eigenen Modelle sind seine drei Teile.',
+  'intro.stage.models.why':
+    'Alles andere beginnt hier: Kein Tab kann annotieren, trainieren oder etwas ausführen, solange kein Modell installiert ist und kein Datensatz existiert. Modelle werden einmal geladen; danach funktioniert die App offline.',
   'intro.stage.inspect.title': 'Erst die Daten ansehen',
   'intro.stage.inspect.what':
     'Öffne einen Datensatz – importiert, aufgenommen oder in einer früheren Runde annotiert – und spiel seine Videos und Bilderordner ab, mit jeder gespeicherten Box und jedem Umriss eingezeichnet und einem farbigen Balken pro Klasse, der zeigt, wo sie vorkommt.',
   'intro.stage.inspect.why':
     'Bevor du weiter annotierst oder trainierst, sieh dir an, was du schon hast. Lücken, schleichende Veränderungen und eine Klasse, die nur in einem Abschnitt einer Fahrt vorkommt, siehst du auf einer Zeitleiste in Sekunden – Bild für Bild suchst du danach einen Nachmittag lang. Komm nach jeder Runde des Kreislaufs hierher zurück.',
-  'intro.stage.library.title': 'Den Überblick behalten',
-  'intro.stage.library.what':
-    'Jeder Datensatz, jeder trainierte Head und jedes fine-getunte Modell in einer Liste – mit dem, was darin steckt, womit es gelernt hat, und einer Möglichkeit, es zu löschen.',
-  'intro.stage.library.why':
-    'Der Kreislauf oben erzeugt schnell neue Dinge, und die meisten davon sind Experimente. Hier siehst du, was du tatsächlich hast, und wirfst weg, was du nicht brauchst.',
-  'intro.stage.admin.title': 'Modelle und Einstellungen',
-  'intro.stage.admin.what':
-    'Lade Modell-Weights herunter, entferne sie, hinterlege deinen HuggingFace-Token und sieh nach, wo der Cache liegt. Jeder Eintrag nennt seine Lizenz, bevor du ihn herunterlädst.',
-  'intro.stage.admin.why':
-    'Mit der App werden keine Weights ausgeliefert – das Installationsprogramm wäre Gigabytes groß, und die meisten davon würdest du nie benutzen. Du lädst genau das herunter, was du brauchst.',
   'intro.stage.api.title': 'Oder lass deine eigene KI alles erledigen',
   'intro.stage.api.what':
     'Alles oben läuft über eine lokale API, und der Tab Verbindung gibt dir ein Dokument, das sie beschreibt. Füg es in ChatGPT, Claude oder etwas anderes ein und sag, was du willst – „lade diesen Datensatz herunter, fine-tune RF-DETR darauf und annotiere dann meine Bilder“ – und die KI kann den ganzen Kreislauf für dich erledigen.',

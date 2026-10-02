@@ -23,7 +23,9 @@ def test_missing_streams_are_replaced_and_present_ones_kept(
     monkeypatch.setattr(sys, "stdout", None)
     assert ensure_streams() == ["stdout"]
     assert sys.stdout is not None
-    assert sys.stdout.isatty() is False
+    # What uvicorn needs is that asking does not fail. The answer differs: Windows' NUL is a
+    # character device and reports a TTY (found by the Windows CI, 2026-10-01).
+    assert isinstance(sys.stdout.isatty(), bool)
     print("goes nowhere, fails nothing")
     assert sys.stderr is kept
 

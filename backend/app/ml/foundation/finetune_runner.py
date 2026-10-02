@@ -19,6 +19,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
+from app.cloud.pictures import ensure_local, prefetch
 from app.core.config import Settings, get_settings
 from app.datasets.store import DatasetStore
 from app.ml.foundation.finetune import (
@@ -109,6 +110,7 @@ class FinetuneRunner:
     def _train(self, job: FinetuneJob) -> None:
         config = job.config
         train, validation, class_names = load_samples(DatasetStore(self._settings), config)
+        prefetch(sample.path for sample in [*train, *validation])  # doc 149
         job.class_names = class_names
 
         model = prepared_model(config.foundation_id, len(class_names), class_names, self._settings)
@@ -176,7 +178,7 @@ class FinetuneRunner:
         total = 0.0
 
         for sample in samples:
-            with Image.open(sample.path) as opened:
+            with Image.open(ensure_local(sample.path)) as opened:
                 image = opened.convert("RGB")
             inputs = processor(images=image, return_tensors="pt")
             inputs = {k: v.to(device) for k, v in inputs.items()}

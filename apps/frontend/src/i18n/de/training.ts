@@ -20,7 +20,7 @@ export const trainingDe: Catalogue<typeof trainingEn> = {
   'training.tab.trainedHeads': 'Trainierte Heads',
 
   // The head form
-  'training.form.noBackbone': 'Kein Backbone installiert — lade zuerst eins unter Verwaltung / Modelle herunter.',
+  'training.form.noBackbone': 'Kein Backbone installiert — lade zuerst eins unter Modelle & Datensätze herunter.',
   'training.form.chooseBackbone': 'Wähle ein Backbone.',
   'training.form.chooseDataset': 'Wähle mindestens einen Datensatz.',
   'training.form.chooseHeadType': 'Wähle einen Head-Typ.',

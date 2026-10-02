@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from app.datasets.bbox_conventions import Convention
 from app.datasets.coco import build_coco, write_coco
 from app.datasets.coco_import import ImportOptions, import_coco_dataset
+from app.datasets.intake.profile import pending_paths
 from app.datasets.masks import MaskStore
 from app.datasets.models import (
     DatasetCounts,
@@ -247,8 +248,10 @@ async def export_coco(dataset_id: str) -> ExportResponse:
     info = _require(dataset_id)
     store = _store()
 
-    images = store.image_annotations(dataset_id)
-    masks = MaskStore().image_masks(dataset_id)
+    # Doc 136: pictures nobody annotated yet are not exported as "nothing here".
+    pending = pending_paths(dataset_id)
+    images = [row for row in store.image_annotations(dataset_id) if row[1] not in pending]
+    masks = [row for row in MaskStore().image_masks(dataset_id) if row[1] not in pending]
     coco = build_coco(info.name, images, info.prompt, masks=masks)
     # Doc 109: the conventions travel with the annotations they describe (the guideline's
     # own file, guideline.md, already sits beside the export).

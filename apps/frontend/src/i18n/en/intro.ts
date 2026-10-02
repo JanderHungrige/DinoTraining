@@ -6,7 +6,7 @@
 export const introEn = {
   'intro.title': 'What this is',
   'intro.lead':
-    'DinoTraining turns a folder of images into a model that finds things in them. You label some images, train a small model on top of a large pretrained one, look at what it predicts, and use it to label the next batch faster. Everything runs on this machine: your images are never uploaded anywhere.',
+    'V-Rex turns a folder of images into a model that finds things in them. You label some images, train a small model on top of a large pretrained one, look at what it predicts, and use it to label the next batch faster. Everything runs on this machine: your images are never uploaded anywhere.',
   'intro.loop.heading': 'The loop',
   'intro.loop.note':
     'The tabs are in the order you use them. You will go round more than once — that is the point, not a sign you did it wrong the first time.',
@@ -38,21 +38,16 @@ export const introEn = {
     'Run a trained head — or a text-prompted segmentation model — over new images, review what comes back, and save the result as a new dataset.',
   'intro.stage.generator.why':
     'This is the step that makes the loop a loop. The model you just trained does the first pass on the next batch, and you correct it instead of starting from nothing.',
+  'intro.stage.models.title': 'Get models and data',
+  'intro.stage.models.what':
+    'Download the models the app runs on, import a dataset you downloaded or recorded (with or without annotations), and find everything you have trained. Official models, your datasets and your own models are its three parts.',
+  'intro.stage.models.why':
+    'Everything else starts from here: no tab can annotate, train or run anything until a model is installed and a dataset exists. Models are downloaded once; after that the app works offline.',
   'intro.stage.inspect.title': 'Look at your data first',
   'intro.stage.inspect.what':
     'Open a dataset — one you imported, recorded, or annotated in an earlier round — and play its videos and image folders back with every stored box and mask drawn on, with a coloured bar per class showing where each one appears.',
   'intro.stage.inspect.why':
     'Before you annotate more or train, see what you already have. Gaps, drift and a class that only ever appears in one stretch of a ride show up in seconds on a timeline and take an afternoon to find image by image. Come back here after every round of the loop.',
-  'intro.stage.library.title': 'Keep track of it all',
-  'intro.stage.library.what':
-    'Every dataset, trained head and fine-tuned model in one list, with what it holds, what it learned from, and a way to delete it.',
-  'intro.stage.library.why':
-    'The loop above makes things quickly, and most of them are experiments. This is where you see what you actually have, and throw away what you do not.',
-  'intro.stage.admin.title': 'Models and settings',
-  'intro.stage.admin.what':
-    'Download model weights, remove them, set your HuggingFace token, and see where the cache lives. Every entry states its licence before you download it.',
-  'intro.stage.admin.why':
-    'No weights ship with the app — the installer would be gigabytes and most of them would be ones you never use. You download exactly what you need.',
   'intro.stage.api.title': 'Or let your own AI do all of it',
   'intro.stage.api.what':
     'Everything above happens through a local API, and the API tab hands you one document describing it. Paste that into ChatGPT, Claude or anything else and say what you want — "download this dataset, fine-tune RF-DETR on it, then annotate my images" — and it can carry out the whole loop for you.',

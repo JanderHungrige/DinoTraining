@@ -17,7 +17,7 @@ vi.mock('./tabs/AnnotationStudioTab', () => ({
 }));
 vi.mock('./components/BackendStatus', () => ({ BackendStatus: () => null }));
 vi.mock('./components/BackgroundVideo', () => ({ BackgroundVideo: () => null }));
-vi.mock('./tabs/LibraryTab', () => ({ LibraryTab: () => <p>library</p> }));
+vi.mock('./tabs/ModelsTab', () => ({ ModelsTab: () => <p>models</p> }));
 
 import { App } from './App';
 
@@ -27,7 +27,7 @@ describe('App keeps the Studio session', () => {
     render(<App />);
     await user.click(screen.getByRole('tab', { name: 'Annotation Studio' }));
     await user.click(screen.getByRole('button', { name: 'studio state 0' }));
-    await user.click(screen.getByRole('tab', { name: 'Library' }));
+    await user.click(screen.getByRole('tab', { name: 'Models & Datasets' }));
     const hidden = screen.getByText('studio state 1', { selector: 'button' });
     expect(hidden.closest('[hidden]')).not.toBeNull();
     expect(hidden).toHaveAttribute('data-active', 'false');

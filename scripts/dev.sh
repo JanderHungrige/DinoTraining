@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Start DinoTraining for development.
+# Start V-Rex for development.
 #
 #   ./scripts/dev.sh              full desktop app (Tauri window + Vite + backend)
 #   ./scripts/dev.sh web          browser-only (Vite + backend, no Rust build)
@@ -41,6 +41,24 @@ sync_deps() {
   fi
 }
 
+# The same for the backend: Wave 15.9 added `obstore`, and a venv from before the pull
+# started a backend that died on its first import, which the UI only shows as "Cannot
+# reach the backend" (found on Jan's Mac, 2026-10-02). `.venv/.dev-synced` stamps the last
+# sync; a `uv.lock` newer than it is synced first.
+sync_backend() {
+  local stamp="$BACKEND_DIR/.venv/.dev-synced"
+  [ -f "$stamp" ] && [ ! "$BACKEND_DIR/uv.lock" -nt "$stamp" ] && return 0
+  log "Backend dependencies changed since the last sync — syncing."
+  if command -v uv >/dev/null 2>&1; then
+    (cd "$BACKEND_DIR" && uv sync --extra cpu --extra dev --extra export) \
+      || fail "uv sync failed in $BACKEND_DIR."
+  else
+    "$VENV_PYTHON" -m pip install -e "$BACKEND_DIR[cpu,dev,export]" \
+      || fail "pip install failed in $BACKEND_DIR."
+  fi
+  touch "$stamp"
+}
+
 preflight() {
   [ -x "$VENV_PYTHON" ] || fail "No backend venv. Run:
        cd '$BACKEND_DIR' && uv sync --extra cpu --extra dev --extra export
@@ -49,6 +67,7 @@ preflight() {
   [ -d "$FRONTEND_DIR/node_modules" ] || fail "Frontend deps missing. Run:
        npm install --prefix '$FRONTEND_DIR' --legacy-peer-deps"
   sync_deps "$FRONTEND_DIR" --legacy-peer-deps
+  sync_backend
   [ -f "$REPO_ROOT/.env" ] || log "WARNING: no .env at the repo root — copy .env.example and fill it in."
 }
 

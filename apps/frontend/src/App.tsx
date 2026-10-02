@@ -1,13 +1,13 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 
 import { AddToApplications } from './components/AddToApplications';
+import { UpdateNotice } from './components/UpdateNotice';
 import { BackendStatus } from './components/BackendStatus';
 import { LanguageSwitch } from './components/LanguageSwitch';
 import { LanguageProvider } from './i18n';
 import { BackgroundVideo } from './components/BackgroundVideo';
 import { LookProvider } from './lib/look';
 import { TabBar } from './components/TabBar';
-import { AdminTab } from './tabs/AdminTab';
 import { ApiTab } from './tabs/ApiTab';
 import { AnnotationStudioTab } from './tabs/AnnotationStudioTab';
 import { DatasetGeneratorTab } from './tabs/DatasetGeneratorTab';
@@ -15,9 +15,10 @@ import { HeadTrainerTab } from './tabs/HeadTrainerTab';
 import { InferenceViewerTab } from './tabs/InferenceViewerTab';
 import { InspectTab } from './tabs/InspectTab';
 import { IntroTab } from './tabs/IntroTab';
-import { LibraryTab } from './tabs/LibraryTab';
+import { ModelsTab } from './tabs/ModelsTab';
 import { PrepareTab } from './tabs/PrepareTab';
 import { SetupGate } from './setup/SetupGate';
+import { useAutoExport } from './hooks/useAutoExport';
 import { DEFAULT_TAB, type TabId } from './tabs/tabs';
 import type { InspectRequest, TrainRequest } from './types/navigation';
 
@@ -48,18 +49,18 @@ function renderTab(tab: TabId, nav: Navigation): JSX.Element {
       return <DatasetGeneratorTab onInspect={nav.onInspect} />;
     case 'inspect':
       return <InspectTab request={nav.inspectRequest} />;
-    case 'library':
-      return <LibraryTab />;
     case 'api':
       return <ApiTab />;
-    case 'admin':
-      return <AdminTab />;
+    case 'models':
+      return <ModelsTab />;
     default:
       throw new Error(`Unhandled tab: ${tab satisfies never}`);
   }
 }
 
 export function App(): JSX.Element {
+  // Doc 144: exports every n minutes while the app is open, when that is switched on.
+  useAutoExport();
   const [activeTab, setActiveTab] = useState<TabId>(DEFAULT_TAB);
   const [inspectRequest, setInspectRequest] = useState<InspectRequest | null>(null);
   const [trainRequest, setTrainRequest] = useState<TrainRequest | null>(null);
@@ -86,11 +87,16 @@ export function App(): JSX.Element {
       <SetupGate>
       <div className="app">
         <header className="app__header">
-          <h1 className="app__title">DinoTraining</h1>
+          <h1 className="app__title">
+            {/* Doc 134: the emblem; decorative, the name beside it is the heading. */}
+            <img className="app__emblem" src="/emblem.png" alt="" width={28} height={28} />
+            V-Rex
+          </h1>
           <LanguageSwitch />
           <BackendStatus />
         </header>
         <AddToApplications />
+        <UpdateNotice />
 
         <TabBar activeTab={activeTab} onTabChange={setActiveTab} />
 

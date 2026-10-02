@@ -2,20 +2,20 @@ import type { setupEn } from '../en/setup';
 import type { Catalogue } from '../types';
 
 export const setupDe: Catalogue<typeof setupEn> = {
-  'setup.title': 'Willkommen bei DinoTraining',
+  'setup.title': 'Willkommen bei V-Rex',
   'setup.intro':
-    'Ein Schritt vor dem ersten Start: DinoTraining rechnet seine Modelle mit PyTorch, und das wird jetzt einmal von den offiziellen Servern geladen. Danach funktioniert die App offline.',
+    'Ein Schritt vor dem ersten Start: V-Rex rechnet seine Modelle mit PyTorch, und das wird jetzt einmal von den offiziellen Servern geladen. Danach funktioniert die App offline.',
 
   'setup.found.appleSilicon': 'Gefunden: ein Mac mit Apple Silicon. Seine GPU wird über MPS genutzt.',
   'setup.found.nvidia': 'Gefunden: {name}, Treiber {driver}.',
   'setup.found.cpu':
-    'Keine NVIDIA-Grafikkarte gefunden, deshalb rechnet DinoTraining auf der CPU. Alles funktioniert; Training und Prescans dauern länger.',
+    'Keine NVIDIA-Grafikkarte gefunden, deshalb rechnet V-Rex auf der CPU. Alles funktioniert; Training und Prescans dauern länger.',
   'setup.note.driverTooOld':
-    'Dein NVIDIA-Treiber ({driver}) ist zu alt für die GPU-Version von PyTorch; sie braucht {needed} oder neuer. Aktualisiere den Treiber und starte DinoTraining neu, um die GPU zu nutzen. Bis dahin läuft es auf der CPU.',
+    'Dein NVIDIA-Treiber ({driver}) ist zu alt für die GPU-Version von PyTorch; sie braucht {needed} oder neuer. Aktualisiere den Treiber und starte V-Rex neu, um die GPU zu nutzen. Bis dahin läuft es auf der CPU.',
   'setup.note.intelMac':
-    'Dieser Mac hat einen Intel-Prozessor. PyTorch, das DinoTraining braucht, gibt es für Intel-Macs nicht mehr, deshalb kann DinoTraining hier nicht laufen.',
+    'Dieser Mac hat einen Intel-Prozessor. PyTorch, das V-Rex braucht, gibt es für Intel-Macs nicht mehr, deshalb kann V-Rex hier nicht laufen.',
   'setup.note.unsupported':
-    'DinoTraining läuft auf Macs mit Apple Silicon und auf 64-Bit-PCs mit Intel oder AMD unter Windows oder Linux. Dieser Rechner ist {os} auf {arch}.',
+    'V-Rex läuft auf Macs mit Apple Silicon und auf 64-Bit-PCs mit Intel oder AMD unter Windows oder Linux. Dieser Rechner ist {os} auf {arch}.',
 
   'setup.choice.install': 'Installieren (etwa {gb} GB Download)',
   'setup.choice.gpu': 'Mit GPU-Unterstützung installieren (CUDA {cuda}, etwa {gb} GB Download)',
@@ -29,13 +29,13 @@ export const setupDe: Catalogue<typeof setupEn> = {
   'setup.progress.starting': 'Die KI-Engine startet…',
   'setup.progress.ready': 'Fertig.',
   'setup.progress.current': '{name} geladen',
-  'setup.open': 'DinoTraining öffnen',
+  'setup.open': 'V-Rex öffnen',
 
   'setup.fail.offline':
-    'Keine Internetverbindung. Beim ersten Start werden Python und PyTorch einmal geladen; danach funktioniert DinoTraining offline.',
+    'Keine Internetverbindung. Beim ersten Start werden Python und PyTorch einmal geladen; danach funktioniert V-Rex offline.',
   'setup.fail.disk':
     'Dafür braucht es etwa {needed} GB freien Platz auf {path}, frei sind {free} GB. Schaffe etwas Platz und versuche es dann noch einmal.',
-  'setup.fail.unsupported': 'Auf diesem Rechner kann DinoTraining nicht laufen (siehe oben).',
+  'setup.fail.unsupported': 'Auf diesem Rechner kann V-Rex nicht laufen (siehe oben).',
   'setup.fail.failed': 'Die Installation wurde abgebrochen: {message}',
   'setup.fail.vcRuntime':
     'PyTorch braucht die Microsoft-Visual-C++-Laufzeit {minimum} oder neuer, dieser PC hat {found}. {reason} Installiere sie von {url} und versuche es dann noch einmal.',
@@ -54,13 +54,13 @@ export const setupDe: Catalogue<typeof setupEn> = {
     'PyTorch wird ausgetauscht. Das Backend ist so lange gestoppt; deine Datensätze und Modelle bleiben, wie sie sind.',
   'setup.fail.rolledBack': 'Der Wechsel hat nicht geklappt: {reason} Du bist wieder auf {to}, wie vorher.',
   'setup.back': 'Zurück zur App',
-  'setup.update.title': 'DinoTrainings Pakete werden aktualisiert',
+  'setup.update.title': 'Die Pakete von V-Rex werden aktualisiert',
   'setup.update.intro':
-    'Diese Version von DinoTraining wurde mit neueren Paketen getestet. Geladen wird nur, was sich geändert hat; deine Datensätze und Modelle bleiben, wie sie sind.',
+    'Diese Version von V-Rex wurde mit neueren Paketen getestet. Geladen wird nur, was sich geändert hat; deine Datensätze und Modelle bleiben, wie sie sind.',
   'setup.update.previous': 'Mit den bisherigen Paketen starten (das Update wird beim nächsten Mal wieder versucht)',
   'setup.retry': 'Noch einmal versuchen',
 
-  'setup.game.label': 'Dino Run: ein kleines Spiel, während DinoTraining installiert. Leertaste oder Klick zum Springen.',
+  'setup.game.label': 'Dino Run: ein kleines Spiel, während V-Rex installiert. Leertaste oder Klick zum Springen.',
   'setup.game.hint': 'Leertaste oder Klick: über die Steine springen, während du wartest',
   'setup.game.playing': 'Leertaste oder Klick: springen',
   'setup.game.over': 'Autsch. Springen für eine neue Runde',
@@ -79,6 +79,6 @@ export const setupDe: Catalogue<typeof setupEn> = {
   'setup.tip.generator':
     'Der Dataset Generator annotiert neue Bilder mit einem Head, den du trainiert hast. Du prüfst nur noch seine Vorschläge.',
   'setup.tip.export':
-    'Ein trainiertes Modell lässt sich als Zip mit kleiner Runtime und als ONNX exportieren, um es außerhalb von DinoTraining zu nutzen.',
-  'setup.tip.offline': 'Modelle werden einmal im Admin-Tab geladen. Danach braucht DinoTraining kein Internet mehr.',
+    'Ein trainiertes Modell lässt sich als Zip mit kleiner Runtime und als ONNX exportieren, um es außerhalb von V-Rex zu nutzen.',
+  'setup.tip.offline': 'Modelle werden einmal unter Modelle & Datensätze geladen. Danach braucht V-Rex kein Internet mehr.',
 };

@@ -1,7 +1,7 @@
 [project]
 name = "dinotraining-backend"
-version = "0.1.2"
-description = "FastAPI + PyTorch ML sidecar for DinoTraining (annotate / train / infer / generate)."
+version = "0.1.3"
+description = "FastAPI + PyTorch ML sidecar for V-Rex (annotate / train / infer / generate)."
 requires-python = ">=3.12,<3.13"  # the bundled Python (doc 126); tests run on it
 readme = "README.md"
 license = { text = "MIT" }
@@ -18,6 +18,9 @@ dependencies = [
     "mcp>=2.1,<3",
     # Doc 123's MLflow client. Declared, not inherited through mcp (doc 125).
     "httpx>=0.27",
+    # Doc 147: S3, Azure Blob and Google Cloud Storage through one Rust client; 5 MB
+    # against 23 MB for boto3 + azure-storage-blob + google-cloud-storage.
+    "obstore>=0.11,<0.12",
 
     # --- ML ---
     # torch / torchvision are chosen per machine: the `cpu`, `cu126` and `cu130` extras

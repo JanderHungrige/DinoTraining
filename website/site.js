@@ -7,7 +7,7 @@
     'nav.repo': 'Quellcode',
     'hero.title': 'Ein Bildmodell anlernen, mit ein paar hundert Bildern.',
     'hero.lead':
-      'DinoTraining ist eine kostenlose Desktop-App für den ganzen Ablauf: Bilder mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, sie anwenden und neue Daten von ihnen annotieren lassen.',
+      'V-Rex (Vision Representation & Experimentation) ist eine kostenlose Desktop-App für den ganzen Ablauf: Bilder mit Grounding DINO und SAM annotieren, kleine Heads auf eingefrorenen DINOv2/DINOv3-Backbones in Minuten trainieren, sie anwenden und neue Daten von ihnen annotieren lassen.',
     'release.loading': 'Neueste Version wird gesucht…',
     'release.none': 'Die erste Version erscheint in Kürze',
     'release.version': 'Version {version} · {date}',
@@ -34,10 +34,11 @@
       'NVIDIA-Karten werden erkannt und über CUDA genutzt, Apple Silicon über MPS. Ohne GPU läuft die App auf der CPU; umschalten kannst du später in der App.',
     'fact.open.title': 'Open Source',
     'fact.open.text':
-      'MIT-lizenziert. Modelle lädt die App von Hugging Face; deine Bilder und Datensätze verlassen deinen Rechner nie.',
+      'MIT-lizenziert. Modelle lädt die App von Hugging Face; deine Bilder und Datensätze bleiben auf deinem Rechner oder in dem Cloud-Speicher, den du selbst verbindest. Keine Telemetrie.',
     'more.releases': 'Alle Versionen und Prüfsummen',
     'more.repo': 'Der Code auf GitHub',
     'more.source': 'Deinstallieren und aus dem Quellcode bauen',
+    'more.privacy': 'Datenschutz',
     'foot.video': 'Hintergrund: Video von tommyvideo auf Pixabay (Pixabay Content License).'
   };
 

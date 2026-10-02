@@ -1,6 +1,8 @@
-/* DinoTraining shell styles.
-   Dark-first, because the app sits next to image data all day and a bright chrome
-   skews how the user reads what they're annotating. */
+/* V-Rex shell styles.
+   Dark, because the app sits next to image data all day and a bright chrome skews how the
+   user reads what they're annotating. One look in both OS schemes since 2026-10-01: the
+   light scheme washed the background loop to a pale peach (Jan: "too bright, just use
+   the original"). */
 
 :root {
   --bg: #14161a;
@@ -14,22 +16,6 @@
   --focus: #7dd3fc;
 
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f6f7f9;
-    --bg-raised: #ffffff;
-    --border: #d8dce3;
-    --text: #1a1d23;
-    --text-dim: #5c6470;
-    --accent: #15803d;
-    --danger: #b91c1c;
-    --pending: #a16207;
-    --focus: #0369a1;
-
-    color-scheme: light;
-  }
 }
 
 * {
@@ -73,6 +59,17 @@ body {
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+/* Doc 134: the emblem before the name. */
+.app__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.app__emblem {
+  flex: none;
 }
 
 .app__panel {
@@ -2979,7 +2976,8 @@ body {
 
 .library__row {
   display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto;
+  /* pick, name, parameters, date, actions (export, show — empty for some lists), delete */
+  grid-template-columns: auto minmax(8rem, 1fr) minmax(0, 2fr) auto auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.4rem 0.5rem;
@@ -3184,8 +3182,9 @@ body {
    never an invented `--warning` — that mistake shipped a 1.9:1 contrast bug once. */
 
 .distnotice {
-  max-width: 72rem;
-  padding: 0.85rem 1rem;
+  /* As wide as the other Admin panels, with their spacing (it ended short before). */
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--pending);
   border-radius: 8px;
   background: var(--bg-raised);
@@ -3276,8 +3275,9 @@ body {
    Renders only when there is something to do, so it can afford to be prominent. */
 
 .gpupanel {
-  max-width: 72rem;
-  padding: 0.85rem 1rem;
+  /* As wide as the other Admin panels, with their spacing (it ended short before). */
+  margin: 0 0 1.5rem;
+  padding: 1rem 1.25rem;
   border: 1px solid var(--focus);
   border-radius: 8px;
   background: var(--bg-raised);
@@ -3584,4 +3584,374 @@ body {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+}
+
+/* --- Doc 135: sub-tabs (Models & Datasets) --- */
+
+.subtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+  width: fit-content;
+  max-width: 100%;
+}
+
+.subtabs__tab {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.subtabs__tab:hover {
+  color: var(--text);
+}
+
+.subtabs__tab--active {
+  background: var(--accent);
+  /* The theme's background on its accent: dark on the dark theme's light green, light on
+     the light theme's dark green; both clear 4.5:1. */
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* --- Doc 136: importing a dataset --- */
+
+.dsimport {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+}
+
+.dsimport__title {
+  margin: 0 0 4px;
+}
+
+.dsimport__lead,
+.dsimport__note,
+.dsimport__classes {
+  margin: 0 0 10px;
+  color: var(--text-dim);
+}
+
+.dsimport__pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.dsimport__found,
+.dsimport__done {
+  margin: 14px 0 0;
+}
+
+.dsimport__found p,
+.dsimport__done p {
+  margin: 0 0 6px;
+}
+
+.dsimport__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dsimport__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: min(560px, 100%);
+}
+
+.dsimport__check {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.dsimport__error {
+  color: var(--danger);
+}
+
+.dsimport__progress {
+  margin-top: 12px;
+}
+
+.dsimport__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text-dim) 25%, transparent);
+  overflow: hidden;
+}
+
+.dsimport__fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s ease-out;
+}
+
+.library__note {
+  display: block;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* Dataset guide (doc 137) */
+.dsguide {
+  margin: 0 0 24px;
+}
+
+.dsguide__section {
+  margin: 0 0 8px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised, var(--bg-raised));
+}
+
+.dsguide__section > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dsguide__lead {
+  color: var(--text-dim);
+}
+
+.dsguide__format h4 {
+  margin: 14px 0 4px;
+}
+
+.dsguide__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 18rem);
+  gap: 12px;
+  align-items: start;
+}
+
+.dsguide__body p {
+  margin: 0;
+}
+
+.dsguide__tree {
+  margin: 0;
+  padding: 8px 10px;
+  overflow-x: auto;
+  border-radius: 6px;
+  background: var(--surface-sunken, rgba(127, 127, 127, 0.1));
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.dsguide__sites li {
+  margin: 0 0 6px;
+}
+
+@media (max-width: 720px) {
+  .dsguide__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Example dataset (doc 138) */
+.dsexample__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.dsexample__choice {
+  display: flex;
+  flex: 1 1 14rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.dsexample__choice span {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+/* --- Doc 140: "Open the log" / "Report an issue" beside an error --- */
+
+.erroractions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.erroractions__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.status__text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+/* Export targets (doc 143): a popover under the row's "Export…" */
+.dsexport {
+  position: relative;
+}
+
+.dsexport__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(30rem, 86vw);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  /* Opaque: the translucent surface lets the rows beneath show through a popover. */
+  background: var(--bg-raised);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+.dsexport__choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.dsexport__choice input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.dsexport__hint,
+.dsexport__done {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.dsexport__panel > .btn {
+  align-self: flex-start;
+}
+
+/* Automatic export (doc 144) */
+.autoexport__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.autoexport__minutes {
+  width: 4.5rem;
+}
+
+.autoexport__last p {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+}
+
+.autoexport__folder {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+/* Uninstall notice (doc 146) */
+.uninstall {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-dim);
+  border-radius: 8px;
+  background: var(--bg-raised);
+  font-size: 0.9rem;
+}
+
+.uninstall--pending {
+  border-left-color: #d9a400;
+}
+
+.uninstall__lead,
+.uninstall__state {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.uninstall__state {
+  color: var(--text-dim);
+}
+
+/* Cloud storage connections (doc 147) */
+.cloud__list {
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.cloud__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.cloud__name {
+  font-weight: 600;
+}
+
+.cloud__test,
+.cloud__buttons {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cloud__test p {
+  flex: 1 1 100%;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.cloud__ok {
+  color: var(--text-dim);
+}
+
+.cloud__form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 34rem;
+  margin: 8px 0;
 }

@@ -14,12 +14,18 @@ from app.api.v1 import (
     annotation_targets,
     annotators,
     backbones,
+    cloud,
+    cloud_links,
     dataset_classes,
+    dataset_examples,
+    dataset_exchange,
     dataset_image_masks,
     dataset_images,
+    dataset_import,
     dataset_phrases,
     dataset_quality,
     datasets,
+    exports,
     finetune_jobs,
     finetune_requirements,
     foundation,
@@ -71,6 +77,14 @@ api_router.include_router(training.router, tags=["training"])
 api_router.include_router(training_parameters.router, tags=["training"])
 api_router.include_router(system.router, tags=["system"])
 api_router.include_router(settings.router, tags=["settings"])
+# Doc 136: before `datasets`, whose GET /datasets/{dataset_id} would take /datasets/profiles.
+api_router.include_router(dataset_import.router, tags=["datasets"])
+# Before datasets.router too: /datasets/examples is not a dataset id (doc 138).
+api_router.include_router(dataset_examples.router, tags=["datasets"])
+api_router.include_router(dataset_exchange.router, tags=["datasets"])
+api_router.include_router(exports.router, tags=["datasets"])
+api_router.include_router(cloud.router, tags=["cloud"])
+api_router.include_router(cloud_links.router, tags=["cloud"])
 api_router.include_router(datasets.router, tags=["datasets"])
 api_router.include_router(dataset_classes.router, tags=["datasets"])
 api_router.include_router(dataset_image_masks.router, tags=["datasets"])

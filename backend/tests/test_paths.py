@@ -19,9 +19,10 @@ from app.core.paths import (
 
 class TestEnsureWithin:
     def test_allows_a_direct_child(self, tmp_path: Path) -> None:
-        assert ensure_within(tmp_path, tmp_path / "dinov2-base") == (
-            tmp_path / "dinov2-base"
-        ).resolve()
+        assert (
+            ensure_within(tmp_path, tmp_path / "dinov2-base")
+            == (tmp_path / "dinov2-base").resolve()
+        )
 
     def test_allows_a_nested_descendant(self, tmp_path: Path) -> None:
         target = tmp_path / "a" / "b" / "c"
@@ -77,9 +78,10 @@ class TestResolveModelDir:
 
     def test_honours_the_configured_cache_dir(self, tmp_path: Path) -> None:
         settings = Settings(_env_file=None, model_cache_dir=tmp_path / "weights")
-        assert resolve_model_dir("dinov2-small", settings) == (
-            tmp_path / "weights" / "dinov2-small"
-        ).resolve()
+        assert (
+            resolve_model_dir("dinov2-small", settings)
+            == (tmp_path / "weights" / "dinov2-small").resolve()
+        )
 
 
 class TestDirectoryInspection:
@@ -126,3 +128,15 @@ class TestDirectoryInspection:
     def test_the_hf_cache_subdir_alone_is_not_installed(self, tmp_path: Path) -> None:
         (tmp_path / ".cache").mkdir()
         assert is_installed(tmp_path) is False
+
+
+def test_the_shell_can_name_the_app_folder(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Doc 152: the Store edition's folder is the package's own, set by the shell."""
+    from app.core.paths import default_data_dir
+
+    store = tmp_path / "Packages" / "JeanQuestEnterprise.V-Rex_f2f23w3rhp35p" / "LocalCache" / "Local" / "DinoTraining"
+    monkeypatch.setenv("DINO_APP_DIR", str(store))
+    assert default_data_dir() == store
+    monkeypatch.setenv("DINO_APP_DIR", "  ")
+    assert default_data_dir() != store
+    assert default_data_dir().name == "DinoTraining"

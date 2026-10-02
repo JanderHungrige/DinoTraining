@@ -2,7 +2,7 @@ import type { appEn } from '../en/app';
 import type { Catalogue } from '../types';
 
 export const appDe: Catalogue<typeof appEn> = {
-  'app.tabs.sections': 'DinoTraining-Bereiche',
+  'app.tabs.sections': 'V-Rex-Bereiche',
   'app.tabs.introLabel': 'Hier starten',
   'app.tabs.introHint':
     'Was diese App macht, was ein Backbone und ein Head sind und was sie noch nicht kann.',
@@ -24,26 +24,31 @@ export const appDe: Catalogue<typeof appEn> = {
   'app.tabs.inspectLabel': 'Datensätze ansehen',
   'app.tabs.inspectHint':
     'Spiel einen Datensatz ab – seine Videos und Bilder – mit den Annotationen, die er enthält.',
-  'app.tabs.libraryLabel': 'Bibliothek',
-  'app.tabs.libraryHint':
-    'Alles, was du erstellt hast – Datensätze, trainierte Heads und Modelle aus dem Fine-Tuning.',
-  'app.tabs.adminLabel': 'Verwaltung / Modelle',
-  'app.tabs.adminHint':
-    'Lade Modelle herunter oder entferne sie, verwalte HF-Token, Cache-Ordner und Gerät.',
+  'app.tabs.modelsLabel': 'Modelle & Datensätze',
+  'app.tabs.modelsHint': 'Der Einstieg: Modelle laden, Datensätze importieren oder öffnen und finden, was du trainiert hast.',
   'app.tabs.apiLabel': 'Verbindung',
   'app.tabs.apiHint':
     'Lass deinen eigenen KI-Assistenten die App steuern – über MCP oder mit einem Dokument.',
   'app.stub.arrives': 'Kommt mit Welle {wave}.',
 
-  'app.addApps.question': 'DinoTraining zu deinem Programme-Ordner hinzufügen?',
+  'app.update.available': 'V-Rex {latest} ist da. Du hast {current}.',
+  'app.update.get': 'Holen',
+  'app.update.notes': 'Was ist neu',
+  'app.update.later': 'Später',
+  'app.addApps.question': 'V-Rex zu deinem Programme-Ordner hinzufügen?',
   'app.addApps.add': 'Hinzufügen',
   'app.addApps.notNow': 'Jetzt nicht',
   'app.addApps.added': 'Hinzugefügt: {path}',
   'app.addApps.failed': 'Konnte nicht hinzugefügt werden: {message}',
+  // Doc 140: beside an error
+  'app.report.openLog': 'Log öffnen',
+  'app.report.issue': 'Problem melden',
+  'app.report.issueHint': 'Öffnet ein neues GitHub-Issue mit Fehler, Version und den letzten Zeilen des Logs. Du liest es und schickst es mit deinem GitHub-Konto ab; dein Benutzername wird durch ~ ersetzt.',
+  'app.report.failed': 'Die Issue-Seite ließ sich nicht öffnen: {reason}',
   'app.backend.connecting': 'Verbindung zum Backend wird hergestellt …',
   'app.backend.unexpected': 'Unerwarteter Fehler bei der Verbindung zum Backend.',
   'app.client.unreachable':
-    'Das DinoTraining-Backend unter {url} ist nicht erreichbar. Läuft der Sidecar-Prozess?',
+    'Das V-Rex-Backend unter {url} ist nicht erreichbar. Läuft der Sidecar-Prozess?',
   'app.client.malformed':
     'Unerwartete Antwort von {path}. Backend und Frontend passen nicht mehr zusammen.',
 

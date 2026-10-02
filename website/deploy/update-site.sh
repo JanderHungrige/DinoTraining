@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Keep the DinoTraining download site current (doc 133). Runs from jan's crontab:
+# Keep the V-Rex download site current (doc 133). Runs from jan's crontab:
 #
 #   */10 * * * * $HOME/dinotraining-site/deploy/update-site.sh >> $HOME/dinotraining-site/update.log 2>&1
 #
@@ -55,6 +55,7 @@ if [ "$(cat "$SITE_ROOT/deployed-sha" 2>/dev/null)" != "$SHA" ]; then
   rm -rf "$NEW"
   mkdir -p "$NEW/media"
   cp "$SRC"/website/*.html "$SRC"/website/*.css "$SRC"/website/*.js "$NEW/"
+  cp "$SRC"/website/*.svg "$NEW/" 2>/dev/null || true  # the emblem (doc 134; doc 160: the logo, embedded in emblem.svg)
   cp "$SRC"/apps/frontend/public/background/particles-loop.mp4 \
      "$SRC"/apps/frontend/public/background/particles-poster.jpg "$NEW/media/"
 

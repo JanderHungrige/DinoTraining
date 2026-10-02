@@ -14,6 +14,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
+from app.cloud.pictures import ensure_local
 from app.core.config import Settings
 from app.finetune.adapter import FinetuneData, FinetuneSettings, TrainingState, param
 from app.ml.foundation.detect import RfDetrModel
@@ -69,7 +70,7 @@ class RfDetrAdapter:
         for sample in data.train:
             if data.stopped:
                 break
-            with Image.open(sample.path) as opened:
+            with Image.open(ensure_local(sample.path)) as opened:
                 image = opened.convert("RGB")
             inputs = processor(images=image, return_tensors="pt")  # type: ignore[operator]
             inputs = {k: v.to(state.model.device) for k, v in inputs.items()}

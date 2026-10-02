@@ -1,5 +1,5 @@
 /**
- * "Add DinoTraining to your Applications folder?" (doc 130).
+ * "Add V-Rex to your Applications folder?" (doc 130).
  *
  * Only for a Homebrew install: a formula cannot write outside its prefix, so the app
  * offers the link itself. The shell decides whether there is anything to offer; "Not

@@ -35,7 +35,10 @@ def _looks_like_image(path: Path) -> bool:
 
 def read_image(path_str: str) -> tuple[Image.Image, Path]:
     """Open an image as RGB. Raises ImageReadError for anything that is not one."""
-    path = Path(path_str).expanduser()
+    from app.cloud.pictures import ensure_local  # lazily: the cloud cache imports this module
+
+    # Doc 149: a linked picture is fetched into its cache first; an ordinary path returns as is.
+    path = ensure_local(Path(path_str).expanduser())
 
     if not path.is_file():
         raise FileNotFoundError(f"No such image: {path_str}")

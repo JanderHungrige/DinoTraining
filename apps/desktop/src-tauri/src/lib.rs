@@ -1,9 +1,12 @@
-//! DinoTraining desktop shell.
+//! V-Rex desktop shell (the crate keeps its first name, doc 159).
 //!
 //! Responsibilities stop at the window and the sidecar process. No ML, no business
 //! logic — that all lives behind `/api/v1` in the Python backend.
 
+pub mod auto_export;
 pub mod backend_log;
+pub mod edition;
+pub mod error_report;
 pub mod mac_apps;
 pub mod progress;
 pub mod resources;
@@ -13,6 +16,7 @@ pub mod setup_flow;
 pub mod sidecar;
 pub mod support_dir;
 pub mod switch;
+pub mod update_check;
 pub mod uv_sync;
 pub mod vc_runtime;
 
@@ -46,6 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(SidecarHandle::default())
+        .manage(auto_export::Closing::default())
         .manage(SetupState::default())
         .invoke_handler(tauri::generate_handler![
             backend_url,
@@ -56,7 +61,12 @@ pub fn run() {
             switch::runtime_status,
             switch::switch_variant,
             mac_apps::applications_offer,
-            mac_apps::add_to_applications
+            mac_apps::add_to_applications,
+            error_report::open_backend_log,
+            error_report::report_issue,
+            edition::app_edition,
+            edition::reveal_path,
+            update_check::check_for_update
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -68,12 +78,29 @@ pub fn run() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("failed to build the DinoTraining window")
-        .run(|app_handle, event| {
+        .expect("failed to build the V-Rex window")
+        .run(|app_handle, event| match event {
+            // A quit by the user (no code): doc 144's exports first, once.
+            RunEvent::ExitRequested { code: None, api, .. }
+                if app_handle.state::<SidecarHandle>().is_running()
+                    && app_handle.state::<auto_export::Closing>().begin() =>
+            {
+                api.prevent_exit();
+                let handle = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    match auto_export::run_before_exit(&backend_url(handle.clone())).await {
+                        Ok(summary) => log::info!("{summary}"),
+                        Err(error) => log::warn!("Exports on closing did not answer: {error}"),
+                    }
+                    handle.state::<SidecarHandle>().shutdown();
+                    handle.exit(0);
+                });
+            }
             // Covers both the last-window-closed path and an explicit quit.
-            if matches!(event, RunEvent::ExitRequested { .. } | RunEvent::Exit) {
+            RunEvent::ExitRequested { .. } | RunEvent::Exit => {
                 app_handle.state::<SidecarHandle>().shutdown();
             }
+            _ => {}
         });
 }
 

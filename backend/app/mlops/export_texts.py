@@ -108,7 +108,7 @@ def head_readme(card: dict[str, Any], runnable: bool) -> str:
     return (
         f"# {card['model']['name']}\n\n"
         f"A {card['task']} head ({card['head']['title']}) on the frozen backbone "
-        f"`{card['base'].get('repo_id')}`, exported from DinoTraining "
+        f"`{card['base'].get('repo_id')}`, exported from V-Rex "
         f"{card['model']['app_version']}.\n\n"
         f"**Classes** (output index order): {classes}\n\n"
         f"## Run it\n\n{run}\n"
@@ -131,10 +131,10 @@ def finetuned_readme(card: dict[str, Any]) -> str:
     return (
         f"# {card['model']['name']}\n\n"
         f"A fine-tuned `{card['base'].get('repo_id')}` ({card['weights_kind']}), exported from "
-        f"DinoTraining {card['model']['app_version']}.\n\n"
+        f"V-Rex {card['model']['app_version']}.\n\n"
         f"**Files:** `model.json` (the card) and {files}.\n\n"
         "These weights replace the matching part of the base model "
-        f"(`{card['weights_kind']}`). They run in DinoTraining; to use them elsewhere, load "
+        f"(`{card['weights_kind']}`). They run in V-Rex; to use them elsewhere, load "
         "the base model with `transformers` and load these weights into that part. "
         "`model.json` lists the classes, metrics (with the base model's `baseline` on the same "
         "pictures), training data and settings.\n\n"

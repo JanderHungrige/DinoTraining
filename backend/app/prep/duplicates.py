@@ -27,6 +27,8 @@ from collections.abc import Iterable
 import numpy as np
 from PIL import Image
 
+from app.cloud.pictures import ensure_local
+
 logger = logging.getLogger(__name__)
 
 #: Hash side: 16×16 gradient signs = 256 bits. 8×8 chained all but five of 289 chess
@@ -42,7 +44,7 @@ _POPCOUNT = np.array([bin(value).count("1") for value in range(256)], dtype=np.u
 def dhash(path: str) -> bytes | None:
     """The 256-bit difference hash of an image, or None when it cannot be read."""
     try:
-        with Image.open(path) as image:
+        with Image.open(ensure_local(path)) as image:
             image.draft("L", (128, 128))  # JPEG: decode at reduced size, much faster
             small = image.convert("L").resize((HASH_SIDE + 1, HASH_SIDE), Image.Resampling.LANCZOS)
             pixels = np.asarray(small, dtype=np.int16)

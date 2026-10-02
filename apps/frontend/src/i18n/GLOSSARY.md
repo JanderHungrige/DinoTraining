@@ -57,8 +57,9 @@ for non-experts as the English ones; do not shorten them into jargon.
 | download | herunterladen |
 | Start analysis | Analyse starten |
 | Auto-propose / Auto-save / Run hidden | Automatisch vorschlagen / Automatisch speichern / Im Hintergrund |
-| Library | Bibliothek |
-| Admin / Models | Verwaltung / Modelle |
+| Models & Datasets (tab) | Modelle & Datensätze |
+| Official Models / My Models (sub-tabs) | Offizielle Modelle / Meine Modelle |
+| Library (the list of what you made) | Bibliothek |
 | Connection | Verbindung |
 | Start here | Hier starten |
 | Annotation Studio | Annotation Studio (proper name, keep) |

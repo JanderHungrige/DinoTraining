@@ -149,6 +149,6 @@ describe('proposing with a general detector (doc 42)', () => {
 
     await user.click(await screen.findByRole('radio', { name: /general detector/ }));
 
-    expect(await screen.findByRole('status')).toHaveTextContent(/Admin \/ Models/);
+    expect(await screen.findByRole('status')).toHaveTextContent(/Models & Datasets/);
   });
 });

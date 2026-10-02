@@ -8,11 +8,12 @@ import '@fontsource/lato/latin-400-italic.css';
 import '@fontsource/lato/latin-700.css';
 import './styles.css';
 import './look.css';
+import './sketch.css';
 
 const container = document.getElementById('root');
 if (!container) {
   // index.html is ours; a missing #root means the bundle was loaded by something else.
-  throw new Error('Root element #root not found — cannot mount DinoTraining.');
+  throw new Error('Root element #root not found — cannot mount V-Rex.');
 }
 
 createRoot(container).render(

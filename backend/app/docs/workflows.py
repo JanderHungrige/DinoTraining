@@ -21,7 +21,7 @@ from app.docs.workflows_prepare import PREPARE
 
 BASE_URL = "http://127.0.0.1:8756/api/v1"
 
-INTRO = f"""# DinoTraining API — a guide for an AI assistant
+INTRO = f"""# V-Rex API — a guide for an AI assistant
 
 This app annotates images, trains models on them, and generates more annotated data with
 what it trained. Everything the desktop app does, it does through this API, so anything a

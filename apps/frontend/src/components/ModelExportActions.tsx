@@ -11,6 +11,11 @@ import { useState, type JSX } from 'react';
 import { downloadModelExport, exportModelTo, modelLocation, type ExportKind } from '../api/modelExports';
 import { useT } from '../i18n';
 import { hasNativeDialog, pickFolder, revealFolder } from '../lib/dialog';
+import { readPersisted, writePersisted } from '../lib/persisted';
+
+/** Doc 145: where a model was last exported to; the dialog opens there. */
+export const MODEL_LAST_FOLDER = 'models.export.lastFolder';
+const isString = (value: unknown): value is string => typeof value === 'string';
 
 export interface ModelExportActionsProps {
   readonly kind: ExportKind;
@@ -53,9 +58,10 @@ export function ModelExportActions({ kind, instanceId, name }: ModelExportAction
         saveBlob(file, blob);
         return t('admin.export.downloaded', { file });
       }
-      const folder = await pickFolder();
+      const folder = await pickFolder(readPersisted(MODEL_LAST_FOLDER, '', isString) || undefined);
       if (!folder) return '';
       const { path } = await exportModelTo(kind, instanceId, folder);
+      writePersisted(MODEL_LAST_FOLDER, folder);
       return t('admin.export.written', { path });
     });
 

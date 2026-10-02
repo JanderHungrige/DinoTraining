@@ -147,7 +147,7 @@ class TestAnnotate:
         assert response.status_code == 400
         assert "hf_supersecret" not in response.text
 
-    async def test_uninstalled_model_is_404_pointing_at_the_admin_tab(
+    async def test_uninstalled_model_is_404_pointing_at_models_and_datasets(
         self, client: AsyncClient, image: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         def not_installed(model_id: str) -> Any:
@@ -160,7 +160,7 @@ class TestAnnotate:
         )
 
         assert response.status_code == 404
-        assert "Admin tab" in response.json()["error"]["message"]
+        assert "Models & Datasets" in response.json()["error"]["message"]
 
     async def test_blank_prompt_is_422(
         self, client: AsyncClient, image: Path, monkeypatch: pytest.MonkeyPatch

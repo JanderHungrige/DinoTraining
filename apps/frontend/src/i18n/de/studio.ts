@@ -15,7 +15,7 @@ export const studioDe: Catalogue<typeof studioEn> = {
   // Session setup
   'studio.setup.errorLoadDatasets': 'Die Datensätze ließen sich nicht laden.',
   'studio.setup.errorNoHead': 'Noch kann kein Head Boxen vorschlagen — trainiere zuerst einen Detection-Head.',
-  'studio.setup.errorNoDetector': 'Es ist kein allgemeiner Detektor installiert — hol dir einen unter Verwaltung / Modelle.',
+  'studio.setup.errorNoDetector': 'Es ist kein allgemeiner Detektor installiert — hol dir einen unter Modelle & Datensätze.',
   'studio.setup.errorNoConcept': 'Nenne, was du suchst — dieses Modell findet nur, wonach du fragst.',
   'studio.setup.errorNoFolder': 'Wähle einen Ordner mit Bildern oder einen Datensatz, den du schon hast.',
   'studio.setup.errorNoDataset': 'Wähle einen vorhandenen Datensatz oder gib einem neuen einen Namen.',

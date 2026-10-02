@@ -69,7 +69,7 @@ def _model_checks(spec: FinetuneRequirements, settings: Settings) -> list[Check]
             detail="Installed." if installed else "Not downloaded yet.",
             fix=""
             if installed
-            else "Download it in Admin / Models"
+            else "Download it in Models & Datasets"
             + (" (it is gated: set a HuggingFace token first)." if gated else "."),
         )
     )

@@ -57,7 +57,7 @@ class TestItRefusesWhatItCannotDo:
             client, image_path=_image(tmp_path), foundation_id="rf-detr-nano"
         )
         assert response.status_code == 409  # type: ignore[attr-defined]
-        assert "Admin" in response.text  # type: ignore[attr-defined]
+        assert "Models & Datasets" in response.text  # type: ignore[attr-defined]
 
     async def test_a_depth_model_cannot_annotate_and_says_where_it_can_run(
         self, client: AsyncClient, tmp_path: Path

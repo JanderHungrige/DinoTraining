@@ -52,21 +52,22 @@ ENTRIES: dict[str, str] = {
     "{model} is not installed — download the backbone first.": (
         "{model} ist nicht installiert – lade zuerst das Backbone herunter."
     ),
-    "{model} is not installed — download it in Admin / Models first.": (
-        "{model} ist nicht installiert – lade es zuerst unter Verwaltung / Modelle herunter."
+    "{model} is not installed — download it in Models & Datasets first.": (
+        "{model} ist nicht installiert – lade es zuerst unter Modelle & Datensätze herunter."
     ),
     "{model} is not installed — download it first.": (
         "{model} ist nicht installiert – lade es zuerst herunter."
     ),
-    "{model} is not installed. Download it in Admin / Models first.": (
-        "{model} ist nicht installiert. Lade es zuerst unter Verwaltung / Modelle herunter."
+    "{model} is not installed. Download it in Models & Datasets first.": (
+        "{model} ist nicht installiert. Lade es zuerst unter Modelle & Datensätze herunter."
     ),
-    "{model} is not installed. Download it in the Admin tab before annotating.": (
-        "{model} ist nicht installiert. Lade es vor dem Annotieren unter Verwaltung herunter."
+    "{model} is not installed. Download it in Models & Datasets before annotating.": (
+        "{model} ist nicht installiert. Lade es vor dem Annotieren unter "
+        "Modelle & Datensätze herunter."
     ),
-    "{model} is not installed. Download it from the Admin tab — {name} needs {models}.": (
-        "{model} ist nicht installiert. Lade es unter Verwaltung herunter – {name} braucht "
-        "{models}."
+    "{model} is not installed. Download it in Models & Datasets — {name} needs {models}.": (
+        "{model} ist nicht installiert. Lade es unter Modelle & Datensätze herunter – "
+        "{name} braucht {models}."
     ),
     "{model} is already installed": "{model} ist schon installiert",
     "Download in progress for {model}": "{model} wird gerade heruntergeladen",

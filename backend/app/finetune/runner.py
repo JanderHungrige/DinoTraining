@@ -16,6 +16,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 
+from app.cloud.pictures import prefetch
 from app.core.config import Settings, get_settings
 from app.finetune.adapter import FinetuneAdapter, FinetuneData, FinetuneSettings, TrainingState
 from app.finetune.adapters import get_adapter
@@ -24,6 +25,7 @@ from app.finetune.preflight import preflight, refusal
 from app.finetune.requirements import get_requirements
 from app.ml.foundation.instances import FoundationInstanceStore
 from app.ml.training.job import JobState
+from app.mlops.auto_export import export_after_training
 from app.mlops.tracking import MlflowTracker, NullTracker
 from app.mlops.tracking_hooks import finetune_tracker
 
@@ -127,6 +129,7 @@ class FoundationFinetuneRunner:
         final: JobState = job.state
         if final == "complete" and job.instance_id:
             tracker.saved("finetuned", job.instance_id)
+            export_after_training("finetuned", job.instance_id, job.notes.append)  # doc 145
         else:
             tracker.finished(final)
 
@@ -139,6 +142,7 @@ class FoundationFinetuneRunner:
             spec, request.dataset_ids, request.recipe_id, request.settings.seed, self._settings
         )
         data.stop = job.cancel_requested
+        prefetch(sample.path for sample in [*data.train, *data.val, *data.test])  # doc 149
         job.held_out = "test" if data.test else "validation"
         if not data.test:
             job.notes.append(

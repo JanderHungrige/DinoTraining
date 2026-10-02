@@ -26,6 +26,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from pydantic import BaseModel
 
+from app.cloud.pictures import ensure_local
 from app.datasets.class_names import normalise_class_name
 from app.datasets.masks import MaskStore
 from app.datasets.rle import rle_decode
@@ -191,7 +192,7 @@ def render(
     if tile is not None:
         # Objects in the other tiles are not lost: training sees them there.
         annotations = [a for a in annotations if _inside(a, tile)]
-    with Image.open(image.path) as source:
+    with Image.open(ensure_local(image.path)) as source:
         picture = source.convert("RGB")
     offset = (0, 0)
     if tile is not None:

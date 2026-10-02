@@ -35,6 +35,7 @@ import numpy as np
 import torch
 from PIL import Image
 
+from app.cloud.pictures import ensure_local
 from app.core.config import Settings
 from app.core.paths import resolve_model_dir
 from app.datasets.rle import rle_decode
@@ -103,7 +104,7 @@ def _vision(state: Sam3State, sample: TrainingSample) -> tuple[Any, tuple[int, i
     """The frozen encoder's features (cached) wrapped as the model expects them."""
     from transformers.models.sam3.modeling_sam3 import Sam3VisionEncoderOutput
 
-    with Image.open(sample.path) as opened:
+    with Image.open(ensure_local(sample.path)) as opened:
         image = opened.convert("RGB")
     size = (image.height, image.width)
     hidden = state.cache.get(sample.path)

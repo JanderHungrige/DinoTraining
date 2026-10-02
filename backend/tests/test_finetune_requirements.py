@@ -58,7 +58,7 @@ def test_a_box_dataset_is_refused_for_sam_with_the_reason_and_the_fix(client: Te
     assert checks["annotation-kind"]["passed"] is False
     assert "outline" in checks["annotation-kind"]["fix"]  # the data format, as the fix
     assert checks["recipe"]["passed"] is False and "Prepare data" in checks["recipe"]["fix"]
-    assert checks["installed"]["fix"].startswith("Download it in Admin")
+    assert checks["installed"]["fix"].startswith("Download it in Models & Datasets")
 
 
 def test_the_same_boxes_meet_rf_detr_except_for_the_install(client: TestClient) -> None:

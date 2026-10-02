@@ -33,6 +33,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from app.mcp import (
     annotation_tools,
     client,
+    dataset_import_tools,
     finetune_tools,
     model_tools,
     prep_tools,
@@ -45,7 +46,7 @@ logger = logging.getLogger(__name__)
 #: Where the tool endpoint lives, and what the setup command points at.
 MCP_PATH = "/mcp"
 
-INSTRUCTIONS = """DinoTraining annotates images, trains models on them, and generates more
+INSTRUCTIONS = """V-Rex annotates images, trains models on them, and generates more
 annotated data with what it trained.
 
 Before training, prepare the data: `audit_dataset`, `split_dataset`, `plan_preparation`,
@@ -72,9 +73,10 @@ def _security(host: str, port: int) -> TransportSecuritySettings:
 
 def build() -> MCPServer:
     """The server with every tool attached."""
-    mcp = MCPServer("dinotraining", instructions=INSTRUCTIONS)
+    mcp = MCPServer("v-rex", instructions=INSTRUCTIONS)
     tools.register(mcp)
     prep_tools.register(mcp)
+    dataset_import_tools.register(mcp)
     finetune_tools.register(mcp)
     training_tools.register(mcp)
     annotation_tools.register(mcp)

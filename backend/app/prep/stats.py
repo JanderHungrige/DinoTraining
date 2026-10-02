@@ -97,7 +97,8 @@ class DatasetFacts:
         return {image.id: image for image in self.images}
 
 
-_INCLUDED = "COALESCE(i.excluded, 0) = 0"
+#: Doc 136: a picture imported without annotations ("" = never saved) is not in training.
+_INCLUDED = "COALESCE(i.excluded, 0) = 0 AND i.annotated_at != ''"
 
 _ANNOTATIONS = f"""
 SELECT b.image_id, 'box' AS kind, b.label, b.prompt, b.x, b.y, b.w, b.h

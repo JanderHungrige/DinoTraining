@@ -94,8 +94,8 @@ class DatasetStore:
     def list_all(self) -> list[DatasetInfo]:
         with transaction(self._settings) as connection:
             rows = connection.execute(
-                "SELECT id, name, created_at, prompt, copy_images FROM datasets"
-                " ORDER BY created_at DESC"
+                "SELECT id, name, created_at, prompt, copy_images, description, source"
+                " FROM datasets ORDER BY created_at DESC"
             ).fetchall()
         return [
             DatasetInfo(
@@ -105,6 +105,8 @@ class DatasetStore:
                 prompt=row["prompt"],
                 copy_images=bool(row["copy_images"]),
                 counts=self.counts(row["id"]),
+                description=row["description"],
+                source=row["source"],
             )
             for row in rows
         ]
@@ -112,7 +114,8 @@ class DatasetStore:
     def get(self, dataset_id: str) -> DatasetInfo:
         with transaction(self._settings) as connection:
             row = connection.execute(
-                "SELECT id, name, created_at, prompt, copy_images FROM datasets WHERE id = ?",
+                "SELECT id, name, created_at, prompt, copy_images, description, source"
+                " FROM datasets WHERE id = ?",
                 (dataset_id,),
             ).fetchone()
         if row is None:
@@ -124,6 +127,8 @@ class DatasetStore:
             prompt=row["prompt"],
             copy_images=bool(row["copy_images"]),
             counts=self.counts(dataset_id),
+            description=row["description"],
+            source=row["source"],
         )
 
     def exists(self, dataset_id: str) -> bool:

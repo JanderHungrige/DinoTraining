@@ -65,7 +65,9 @@ def unknown_pictures(
     return [
         (int(row["id"]), str(row["path"]))
         for row in connection.execute(
+            # Doc 136: never-saved pictures ("") were not saved before the class: not here.
             "SELECT i.id, i.path FROM images i WHERE i.dataset_id = ? AND i.annotated_at < ?"
+            " AND i.annotated_at != ''"
             " AND COALESCE(i.excluded, 0) = 0 AND NOT EXISTS (SELECT 1 FROM image_phrase_status s"
             "   JOIN phrases p ON p.id = s.phrase_id WHERE s.image_id = i.id AND p.text = ?)"
             " ORDER BY i.path",

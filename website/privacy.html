@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>V-Rex — Privacy</title>
+  <meta name="description" content="What the V-Rex app sends where: only the downloads it needs and the storage you connect. No telemetry.">
+  <link rel="icon" type="image/svg+xml" href="emblem.svg">
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <!-- Doc 154: the privacy policy the Microsoft Store requires, in English and German. -->
+  <header class="top">
+    <a class="top__name" href="./"><img src="emblem.svg" alt="" width="30" height="30">V-Rex</a>
+    <nav class="top__links">
+      <a href="#de">Deutsch</a>
+      <a href="https://github.com/JanderHungrige/DinoTraining">Source code</a>
+    </nav>
+  </header>
+
+  <main class="privacy">
+    <section lang="en" aria-labelledby="en-title">
+      <h1 id="en-title">Privacy</h1>
+      <p><strong>V-Rex collects nothing about you.</strong> It has no account, no telemetry,
+        no analytics and no advertising. Your pictures, annotations, datasets and models stay on your
+        computer, or in the storage you connect yourself.</p>
+
+      <h2>What the app downloads, and from where</h2>
+      <ul>
+        <li><strong>Python and PyTorch</strong>, once, at the first start: from GitHub
+          (python-build-standalone), PyPI (pypi.org) and pytorch.org. On Windows, if needed,
+          Microsoft's Visual C++ runtime from aka.ms / microsoft.com.</li>
+        <li><strong>Models</strong> you choose to download: from Hugging Face (huggingface.co). Gated models
+          use the access token you enter; it is kept on your computer only.</li>
+        <li><strong>The OSDaR23 example dataset</strong>, only if you click it: from the FID move portal
+          (data.fid-move.de).</li>
+        <li><strong>Whether a new version is out</strong>, once at each start, for the version from this
+          site (not the Microsoft Store's, which the Store updates): dino.w3rth.de/latest.json, or GitHub
+          if that does not answer. Only the app's version goes along, as part of the request. Turn it off
+          with <code>DINO_UPDATE_CHECK=0</code>.</li>
+      </ul>
+      <p>These servers see your IP address and the files requested, as any download does; their own
+        privacy policies apply.</p>
+
+      <h2>What goes only where you send it</h2>
+      <ul>
+        <li><strong>Cloud storage</strong> (Amazon S3, Azure Blob Storage, Google Cloud Storage or compatible)
+          that you connect: the app reads your datasets there and writes your annotations back. Keys and
+          secrets are stored on your computer only and never sent anywhere else.</li>
+        <li><strong>MLflow</strong>, if you set up a tracking server: training runs are sent to that server.</li>
+        <li><strong>"Report an issue"</strong> opens a pre-filled page on GitHub in your browser. Nothing is
+          sent until you submit it there yourself; review the log lines it contains first.</li>
+      </ul>
+
+      <h2>Removing the app</h2>
+      <p>Uninstalling can remove everything stored inside the app. Exports you saved to your own folders
+        or cloud storage are not touched.</p>
+
+      <p>Contact: <a href="https://github.com/JanderHungrige/DinoTraining/issues">GitHub issues</a>.
+        Last updated: 2026-10-01.</p>
+    </section>
+
+    <section lang="de" id="de" aria-labelledby="de-title">
+      <h1 id="de-title">Datenschutz</h1>
+      <p><strong>V-Rex erhebt nichts über dich.</strong> Es gibt kein Konto, keine Telemetrie,
+        keine Analyse und keine Werbung. Deine Bilder, Annotationen, Datensätze und Modelle bleiben auf
+        deinem Rechner oder in dem Speicher, den du selbst verbindest.</p>
+
+      <h2>Was die App lädt, und woher</h2>
+      <ul>
+        <li><strong>Python und PyTorch</strong>, einmal beim ersten Start: von GitHub
+          (python-build-standalone), PyPI (pypi.org) und pytorch.org. Unter Windows, falls nötig, die
+          Microsoft-Visual-C++-Laufzeit von aka.ms / microsoft.com.</li>
+        <li><strong>Modelle</strong>, die du herunterlädst: von Hugging Face (huggingface.co). Geschützte
+          Modelle nutzen das Zugangstoken, das du eingibst; es bleibt nur auf deinem Rechner.</li>
+        <li><strong>Der OSDaR23-Beispieldatensatz</strong>, nur wenn du ihn anklickst: vom FID-move-Portal
+          (data.fid-move.de).</li>
+        <li><strong>Ob es eine neue Version gibt</strong>, einmal bei jedem Start, für die Version von
+          dieser Seite (nicht die aus dem Microsoft Store, die der Store aktualisiert):
+          dino.w3rth.de/latest.json, oder GitHub, wenn die nicht antwortet. Mit geht nur die Version der
+          App, als Teil der Anfrage. Abschalten mit <code>DINO_UPDATE_CHECK=0</code>.</li>
+      </ul>
+      <p>Diese Server sehen deine IP-Adresse und die angefragten Dateien, wie bei jedem Download; es
+        gelten ihre eigenen Datenschutzerklärungen.</p>
+
+      <h2>Was nur dorthin geht, wohin du es schickst</h2>
+      <ul>
+        <li><strong>Cloud-Speicher</strong> (Amazon S3, Azure Blob Storage, Google Cloud Storage oder
+          kompatibel), den du verbindest: Die App liest dort deine Datensätze und schreibt deine
+          Annotationen zurück. Schlüssel und Secrets liegen nur auf deinem Rechner und gehen nirgendwo
+          anders hin.</li>
+        <li><strong>MLflow</strong>, wenn du einen Tracking-Server einrichtest: Trainingsläufe gehen an
+          diesen Server.</li>
+        <li><strong>„Problem melden“</strong> öffnet eine vorausgefüllte Seite auf GitHub in deinem Browser.
+          Es wird nichts gesendet, bis du sie dort selbst abschickst; prüf vorher die enthaltenen
+          Log-Zeilen.</li>
+      </ul>
+
+      <h2>Die App entfernen</h2>
+      <p>Beim Deinstallieren kann alles entfernt werden, was in der App liegt. Exporte in deinen eigenen
+        Ordnern oder deinem Cloud-Speicher bleiben unberührt.</p>
+
+      <p>Kontakt: <a href="https://github.com/JanderHungrige/DinoTraining/issues">GitHub Issues</a>.
+        Stand: 2026-10-01.</p>
+    </section>
+  </main>
+</body>
+</html>

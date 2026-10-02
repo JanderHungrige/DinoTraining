@@ -101,7 +101,7 @@ class TestRunning:
             json={"image_path": _image(tmp_path), "foundation_id": "depth-anything-v2-small"},
         )
         assert response.status_code == 409
-        assert "Admin" in response.text
+        assert "Models & Datasets" in response.text
 
     async def test_an_unknown_model_is_a_404(
         self, client: AsyncClient, tmp_path: Path

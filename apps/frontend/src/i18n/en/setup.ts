@@ -1,20 +1,20 @@
 /** `setup` texts: the first-run setup screen (doc 127). */
 
 export const setupEn = {
-  'setup.title': 'Welcome to DinoTraining',
+  'setup.title': 'Welcome to V-Rex',
   'setup.intro':
-    'One step before the first start: DinoTraining runs its models with PyTorch, and it is downloaded now, once, from the official servers. After that the app works offline.',
+    'One step before the first start: V-Rex runs its models with PyTorch, and it is downloaded now, once, from the official servers. After that the app works offline.',
 
   'setup.found.appleSilicon': 'Found: a Mac with Apple silicon. Its GPU is used through MPS.',
   'setup.found.nvidia': 'Found: {name}, driver {driver}.',
   'setup.found.cpu':
-    'No NVIDIA graphics card found, so DinoTraining uses the CPU. Everything works; training and prescans take longer.',
+    'No NVIDIA graphics card found, so V-Rex uses the CPU. Everything works; training and prescans take longer.',
   'setup.note.driverTooOld':
-    'Your NVIDIA driver ({driver}) is too old for the GPU version of PyTorch, which needs {needed} or newer. Update the driver and restart DinoTraining to use the GPU. Until then it runs on the CPU.',
+    'Your NVIDIA driver ({driver}) is too old for the GPU version of PyTorch, which needs {needed} or newer. Update the driver and restart V-Rex to use the GPU. Until then it runs on the CPU.',
   'setup.note.intelMac':
-    'This Mac has an Intel processor. PyTorch, which DinoTraining needs, is no longer made for Intel Macs, so DinoTraining cannot run here.',
+    'This Mac has an Intel processor. PyTorch, which V-Rex needs, is no longer made for Intel Macs, so V-Rex cannot run here.',
   'setup.note.unsupported':
-    'DinoTraining runs on Macs with Apple silicon and on 64-bit Intel or AMD PCs with Windows or Linux. This machine is {os} on {arch}.',
+    'V-Rex runs on Macs with Apple silicon and on 64-bit Intel or AMD PCs with Windows or Linux. This machine is {os} on {arch}.',
 
   'setup.choice.install': 'Install (about {gb} GB download)',
   'setup.choice.gpu': 'Install with GPU support (CUDA {cuda}, about {gb} GB download)',
@@ -28,12 +28,12 @@ export const setupEn = {
   'setup.progress.starting': 'Starting the AI engine…',
   'setup.progress.ready': 'Ready.',
   'setup.progress.current': '{name} downloaded',
-  'setup.open': 'Open DinoTraining',
+  'setup.open': 'Open V-Rex',
 
   'setup.fail.offline':
-    'No internet connection. The first start downloads Python and PyTorch once; after that DinoTraining works offline.',
+    'No internet connection. The first start downloads Python and PyTorch once; after that V-Rex works offline.',
   'setup.fail.disk': 'This needs about {needed} GB free on {path}, and {free} GB are free. Free up some space, then try again.',
-  'setup.fail.unsupported': 'This machine cannot run DinoTraining (see above).',
+  'setup.fail.unsupported': 'This machine cannot run V-Rex (see above).',
   'setup.fail.failed': 'The install stopped: {message}',
   'setup.fail.vcRuntime':
     'PyTorch needs the Microsoft Visual C++ runtime {minimum} or newer, and this PC has {found}. {reason} Install it from {url}, then try again.',
@@ -52,13 +52,13 @@ export const setupEn = {
     'PyTorch is being exchanged. The backend is stopped meanwhile; your datasets and models stay as they are.',
   'setup.fail.rolledBack': 'Switching did not work: {reason} You are back on {to}, as before.',
   'setup.back': 'Back to the app',
-  'setup.update.title': "Updating DinoTraining's packages",
+  'setup.update.title': "Updating V-Rex's packages",
   'setup.update.intro':
-    'This version of DinoTraining was tested with newer packages. Only what changed is downloaded; your datasets and models stay as they are.',
+    'This version of V-Rex was tested with newer packages. Only what changed is downloaded; your datasets and models stay as they are.',
   'setup.update.previous': 'Start with the previous packages (the update is tried again next time)',
   'setup.retry': 'Try again',
 
-  'setup.game.label': 'Dino Run: a small game while DinoTraining installs. Press Space or click to jump.',
+  'setup.game.label': 'Dino Run: a small game while V-Rex installs. Press Space or click to jump.',
   'setup.game.hint': 'Space or click: jump over the rocks while you wait',
   'setup.game.playing': 'Space or click: jump',
   'setup.game.over': 'Ouch. Jump to run again',
@@ -73,6 +73,6 @@ export const setupEn = {
     'Phrases tell Grounding DINO what to look for. Several phrases can find one class, and a look-alike phrase keeps the mistakes out.',
   'setup.tip.saved': 'A saved picture counts as complete: everything of its classes that is not marked is taught as background.',
   'setup.tip.generator': 'The Dataset Generator annotates new pictures with a head you trained. You only check what it proposes.',
-  'setup.tip.export': 'A trained model can be exported as a zip with a small runtime, and as ONNX, to run it outside DinoTraining.',
-  'setup.tip.offline': 'Models are downloaded once in the Admin tab. After that, DinoTraining needs no internet at all.',
+  'setup.tip.export': 'A trained model can be exported as a zip with a small runtime, and as ONNX, to run it outside V-Rex.',
+  'setup.tip.offline': 'Models are downloaded once in Models & Datasets. After that, V-Rex needs no internet at all.',
 } as const;

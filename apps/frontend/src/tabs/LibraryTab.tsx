@@ -9,14 +9,43 @@
  * and a rule about what a rename does to provenance already recorded inside trained heads.
  */
 
-import { useState, type JSX } from 'react';
+import { useCallback, useState, type JSX } from 'react';
 
 import { BULK, useLibrary, type LibraryKind, type LibraryTarget } from '../hooks/useLibrary';
+import { DatasetExport } from '../components/DatasetExport';
+import { useDatasetProfiles } from '../hooks/useDatasetProfiles';
+import { annotationTypes } from '../components/DatasetImport';
+import type { DatasetProfile } from '../api/datasetImport';
+import type { Translator } from '../i18n';
 import { useT } from '../i18n';
 import { Section, type Row } from '../components/LibrarySection';
 import { ModelExportActions } from '../components/ModelExportActions';
 
-export function LibraryTab(): JSX.Element {
+const ALL_KINDS: readonly LibraryKind[] = ['dataset', 'head', 'finetune'];
+
+/** Doc 136: "1 284 pictures · 1 102 annotated · 3 classes · boxes, masks · video". */
+function profileLine(profile: DatasetProfile, t: Translator['t'], tp: Translator['tp']): string {
+  return [
+    tp('models.import.pictures', profile.pictures),
+    tp('models.import.annotated', profile.annotated_pictures),
+    tp('models.import.classes', profile.classes.length),
+    annotationTypes(profile.annotation_types, t) || null,
+    t(`models.profile.media.${profile.media}`),
+    // Doc 149: what a linked dataset has locally, which is what works offline.
+    profile.linked ? t('cloud.cached', { cached: String(profile.cached ?? 0), pictures: String(profile.pictures), bucket: profile.linked }) : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+}
+
+interface LibraryTabProps {
+  /** Doc 135: the Models & Datasets sub-tabs each show their part (default: all). */
+  readonly kinds?: readonly LibraryKind[];
+  /** Doc 135: inside a sub-tab, the sub-tab names the list; no heading of its own. */
+  readonly headed?: boolean;
+}
+
+export function LibraryTab({ kinds = ALL_KINDS, headed = true }: LibraryTabProps): JSX.Element {
   const library = useLibrary();
   const { t, tp } = useT();
   const [confirming, setConfirming] = useState<string | null>(null);
@@ -39,15 +68,25 @@ export function LibraryTab(): JSX.Element {
     setConfirmingBulk(false);
   };
 
-  const datasetRows: Row[] = library.datasets.map((entry) => ({
-    id: entry.id,
-    name: entry.name,
-    detail: `${tp('admin.library.images', entry.counts.images)} · ${tp(
-      'admin.library.boxes',
-      entry.counts.positive + entry.counts.negative + entry.counts.unclear,
-    )}`,
-    meta: new Date(entry.created_at).toLocaleDateString(),
-  }));
+  // Doc 143: an export changes a row's line, so the profiles are read again after one.
+  const [exports, setExports] = useState(0);
+  const exported = useCallback(() => setExports((count) => count + 1), []);
+  const profiles = useDatasetProfiles(kinds.includes('dataset'), `${library.datasets.map((d) => d.id).join()}#${exports}`);
+  const datasetRows: Row[] = library.datasets.map((entry) => {
+    const profile = profiles.get(entry.id);
+    return {
+      id: entry.id,
+      name: entry.name,
+      detail: profile
+        ? profileLine(profile, t, tp)
+        : `${tp('admin.library.images', entry.counts.images)} · ${tp(
+            'admin.library.boxes',
+            entry.counts.positive + entry.counts.negative + entry.counts.unclear,
+          )}`,
+      meta: new Date(entry.created_at).toLocaleDateString(),
+      note: profile?.description ?? null,
+    };
+  });
 
   const headRows: Row[] = library.heads.map((entry) => ({
     id: entry.id,
@@ -68,16 +107,21 @@ export function LibraryTab(): JSX.Element {
     meta: entry.licence,
   }));
 
+  const shows = (kind: LibraryKind): boolean => kinds.includes(kind);
   const targets: LibraryTarget[] = [
     ...datasetRows.map((row) => ({ kind: 'dataset' as const, id: row.id, name: row.name })),
     ...headRows.map((row) => ({ kind: 'head' as const, id: row.id, name: row.name })),
     ...finetuneRows.map((row) => ({ kind: 'finetune' as const, id: row.id, name: row.name })),
-  ].filter((target) => selected.has(`${target.kind}:${target.id}`));
+  ].filter((target) => shows(target.kind) && selected.has(`${target.kind}:${target.id}`));
 
   return (
     <section className="library">
-      <h2 className="library__title">{t('admin.library.title')}</h2>
-      <p className="library__lead">{t('admin.library.lead')}</p>
+      {headed && (
+        <>
+          <h2 className="library__title">{t('admin.library.title')}</h2>
+          <p className="library__lead">{t('admin.library.lead')}</p>
+        </>
+      )}
 
       {library.error && (
         <p className="admin__error" role="alert">
@@ -141,19 +185,22 @@ export function LibraryTab(): JSX.Element {
         <p role="status">{t('admin.library.loading')}</p>
       ) : (
         <>
-          <Section
+          {shows('dataset') && <Section
             title={t('admin.library.datasets')}
             empty={t('admin.library.datasetsEmpty')}
             rows={datasetRows}
             kind="dataset"
+            actions={(row) => (
+              <DatasetExport datasetId={row.id} name={row.name} exportedAt={profiles.get(row.id)?.exported_at ?? null} onExported={exported} />
+            )}
             selected={selected}
             onToggle={toggle}
             confirming={confirming}
             onConfirm={setConfirming}
             busyId={library.busyId}
             onDelete={library.remove}
-          />
-          <Section
+          />}
+          {shows('head') && <Section
             title={t('admin.library.heads')}
             empty={t('admin.library.headsEmpty')}
             rows={headRows}
@@ -165,8 +212,8 @@ export function LibraryTab(): JSX.Element {
             busyId={library.busyId}
             onDelete={library.remove}
             actions={(row) => <ModelExportActions kind="heads" instanceId={row.id} name={row.name} />}
-          />
-          <Section
+          />}
+          {shows('finetune') && <Section
             title={t('admin.library.finetunes')}
             empty={t('admin.library.finetunesEmpty')}
             rows={finetuneRows}
@@ -178,7 +225,7 @@ export function LibraryTab(): JSX.Element {
             busyId={library.busyId}
             onDelete={library.remove}
             actions={(row) => <ModelExportActions kind="finetuned" instanceId={row.id} name={row.name} />}
-          />
+          />}
         </>
       )}
     </section>

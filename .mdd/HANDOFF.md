@@ -4,26 +4,140 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-01, at the end of the **Wave 15.7 build**.
-- **Waves 1–12:** in `dev` and `main`.
-- **Waves 13, 14, 15, 15.5 and 15.6** (docs 99–124): in `dev`, waiting for Jan's test.
-- **Wave 15.7** (docs 125–131, the installer): built and pushed on
-  `feat/dinotraining-wave-15-7`, not merged. Its status stays `in_progress` until Jan
-  confirms the demo-state.
-
-**Merged to `dev`:** 15.7 (`0057336`) and its follow-ups (`c1bb670`): doc 132 (Windows
-uninstall), doc 133 (download site), Inspect after Start here.
+**Last updated:** 2026-10-02: **the app is called V-Rex** (doc 159).
+- **In `main`, released as 0.1.2** (`c048ff3`): Waves 1–15.7 and docs 139–141.
+- **In `dev`** (`7e9d9a2`): 15.8, 15.9, 15.10 (the Store), 157 (look), 158 (update
+  check), the rename (159), the logo (160), and two fixes. Not yet released.
+  - `dev.sh` syncs the backend venv after a lockfile change;
+  - frontend tests can no longer reach a live backend.
+- **The logo** (doc 160): Jan's T-Rex with sunglasses, in the icons, UI, website and
+  README. He chose it knowingly despite the Jurassic Park resemblance; doc 134's drawn
+  emblem is the fallback in git history.
+- **The rename** (doc 159), merged into `dev` 2026-10-02:
+  - V-Rex everywhere a person reads it;
+  - the machine keys keep "DinoTraining" (data folder, `com.dinotraining.app`, `DINO_*`,
+    storage keys, MLflow tag keys);
+  - exports go to `v-rex/`, old `dinotraining/` exports still restore;
+  - the MSIX carries the reserved identity `JeanQuestEnterprise.V-Rex`, Store ID
+    `9PKPPDW39FCZ`;
+  - all green in release dry run 36975411786.
 
 **Next, Jan's:**
-- test on the Windows PC with an NVIDIA card;
-- a version bump (e.g. 0.1.0) and the merge to `main` → the first published release,
-  the download buttons and the Mac line on https://dino.w3rth.de start working;
-- `dino.questenterprise.de`: DNS → 159.195.148.193, NPM proxy host 19 → port 8003
-  (it says 8001), and its certificate;
-- the Homebrew tap (`JanderHungrige/homebrew-tap`).
-Then Wave 16, the website with accounts and compute, to be rethought.
+- **A release (0.1.3)** when he says so: `dev` → `main` with the version bumped. Its MSIX
+  is the first Store upload (doc 155's checklist); the site then shows V-Rex.
+- **Test the test-signed MSIX** from run 36975411786's `msix-test` artifact on both PCs.
+- **Still open:** the dino.questenterprise.de DNS/proxy (Jan's), and the Homebrew tap
+  (now `v-rex`).
 
 ---
+
+## Side tasks (2026-10-01/02, Jan: "if the current task is done, start with two sidetasks")
+
+| | |
+|---|---|
+| 157 | **Sketch everywhere** (`feat/ui-sketch-polish`): fields, boxes, tabs, chips in the buttons' Draft Sketch hand (`sketch.css`); things over images stay plain. **One look in both schemes:** the light scheme washed the loop out, and the contrast script (now checking the brightest *and* darkest pixel) showed it failing AA over the dark frames anyway. **The GPU panel and distribution notice** lost their `max-width: 72rem` and now span the Admin column like the others. |
+| 158 | **Update check** (`feat/update-checker`): the installer edition asks `dino.w3rth.de/latest.json` (GitHub as fallback) once at start; a bar "DinoTraining 0.1.3 is available" with Get it / What's new / Later (remembered per version). Never for the Store or dev builds; silent when offline; `DINO_UPDATE_CHECK=0` turns it off; the privacy page says so. The shell's `reqwest` gained TLS (rustls, OS root store). |
+
+## Wave 15.10 — The Microsoft Store (2026-10-01/02)
+
+| | |
+|---|---|
+| 151 | **MSIX** staged by `scripts/stage_msix.py` (exe, `runtime/`, logos, manifest from a template + `packaging/msix/identity.json`), packed by makeappx beside the EXE; a test-signed copy for CI; the unsigned one rides in the release. |
+| 152 | **Under package identity, measured:** Windows does not redirect into an existing AppData folder, and through the redirection uv's Python link fails. The Store edition writes to `Packages\<family>\LocalCache\Local\DinoTraining` by its real path and tells the backend (`DINO_APP_DIR`). Open: R1 WebView2 on Windows 10, R2/R3 the VC++ runtime, Jan's PCs. |
+| 153 | **CI smoke test:** clean AppData, install, unattended setup, `/health`, PyTorch in the package folder, second start, removal, folder gone. Green in run 36933854791 (66 s / 7 s). |
+| 154 | **Listing** (`packaging/store/`): EN/DE texts naming the 1–6 GB first-start download first, properties, IARC answers, screenshot list, certification notes; **privacy page** `website/privacy.html`. |
+| 155 | **Submission:** no API for an individual account (it needs an Entra app on the Users page), so one manual upload per release; Jan's checklist; the release summary says what to upload. |
+| 156 | **Store-aware app:** edition `store`/`installer`/`dev`; "Show in Explorer" and "Open the log" go through the shell; Store wording in the uninstall notice. |
+
+## Wave 15.9 — Keep your work, and cloud datasets (2026-10-01)
+
+Jan: annotations stay in the database and export to a remembered place (with the data or a
+folder) on a button, on closing and every n minutes; models likewise; a warning about
+uninstalling; datasets in S3, Azure or Google Cloud linked, fetched in batches, saved back.
+
+| | |
+|---|---|
+| 142 | **Export / restore:** `dinotraining/dinotraining.json` holds every row of the dataset's tables (`SELECT *`) with picture paths relative to its folder, plus its state files; `annotations.coco.json` beside it; pictures optionally. Importing the folder restores it completely (ids remapped, one transaction). |
+| 143 | **Targets:** per dataset "with the data" (offered only outside the app) or a folder; the dialog opens at the last folder; the list says "Exported 3 min ago"; a content fingerprint answers "changed since?". |
+| 144 | **Auto-export:** on closing (default on: the shell holds the quit up to 25 s) and every n minutes (default off); only what changed; the last run's report names failures and datasets without a target. |
+| 145 | **Models:** the Export dialog remembers its folder; "export each trained model when its training finishes" (off by default) hooks into head training and fine-tuning. |
+| 146 | **Uninstall notice:** in the app (what is not exported yet, "Export everything now"); the EXE uninstaller asks once when "delete the application data" is ticked. |
+| 147 | **Cloud connections:** S3-compatible, Azure Blob, Google Cloud Storage through `obstore` (5 MB); secrets in `.env`, never returned or logged; "Test" words what failed. |
+| 148 | **Linking:** a bucket's dataset detected and imported from its listing and annotation files; picture sizes from the first 64 KB; no picture downloaded. |
+| 149 | **Fetch and cache:** every reader calls `ensure_local` first; one download per picture; the Studio prefetches the next 8, training its whole list; a 5 GB LRU cache; offline from the cache with a clear reason for what is missing; orphan links cleaned at start. |
+| 150 | **Save-back:** "with the data" for a linked dataset is its bucket (its default target); writes are conditional on this app's last ETag; a newer save is never overwritten — ours goes into `conflicts/<time>/`, the export answers 409. |
+
+- **Proof, live (German UI, the real backend):**
+  - **Export/restore:** OSDaR23 exported with its pictures and restored, identical row
+    for row.
+  - **Auto-export:**
+    - "Export all now";
+    - the shell's closing request answered by the backend;
+    - the interval written to a scratch `.env` (Jan's untouched).
+  - **Models:** a real trained head exported by the hook's function (81 MB with ONNX,
+    6 s).
+  - **The uninstall notice** on the real library (16 datasets, 25 models).
+  - **The cloud against the real S3 protocol** (S3Mock in Docker; MinIO's images now
+    need a login):
+    - OSDaR23 linked in 1.4 s with 0 pictures downloaded;
+    - the Studio's route fetched one picture and prefetched 8;
+    - offline, the cache served and the uncached picture said why;
+    - a save-back, then a colleague's save kept and ours beside it, the conflict in
+      German.
+  - **CI:** release dry run 36869568457 green on all three platforms with the new NSIS
+    hook.
+- **Tests:** backend 1982, frontend 1185, Rust 46. ruff, mypy, tsc and clippy clean.
+- **Found while building and fixed (beyond each doc's own list):**
+  - **The dataset list's columns were off** since docs 121/136.
+  - **Every `target="_blank"` link** was dead in the desktop app (fixed in 15.8, doc
+    137).
+  - **YOLO and VOC looked up pictures with `is_file()`.**
+  - **OpenLABEL's detection over-counted** (90 for 10).
+  - **The Studio's picture route was `async`:** a download would have stopped the
+    backend.
+  - **A link kept a changed connection's old settings.**
+  - **The MLflow hook test caught the model-export hook** attaching to every job.
+- **Not seen on real hardware:**
+  - the desktop window's quit (not drivable here);
+  - the Windows uninstaller's message box;
+  - a real AWS, Azure or Google account.
+
+## Wave 15.8 — Models & Datasets, any dataset in, an own emblem (2026-10-01)
+
+Jan: "a tab to use a downloaded dataset and make it a dataset for the tool … this is the
+actual entry point".
+
+| | |
+|---|---|
+| 134 | **Emblem:** a coin with a mirrored T-rex skeleton, yellow on black, no text (`branding/emblem.svg`); every Tauri icon, the app header, favicon, download site and README. |
+| 135 | **Models & Datasets**, second tab: sub-tabs Official Models (the Admin page as it was), Datasets, My Models; the Library tab is folded in. New order: Start here, Models & Datasets, Inspect, Studio, Prepare, Training, Inference, Generator, Connection. |
+| 136 | **Import any folder or video:** pictures, video, COCO (boxes, polygon and RLE masks), YOLO (boxes, polygons), Pascal VOC, OpenLABEL; detected first, named and described, imported as a background job; parameters in the list (pictures, annotated, classes, boxes/masks, media). Unannotated pictures arrive *never saved* and stay out of training and export until saved. |
+| 137 | **Guide:** how each format must be laid out (with a folder tree each), and dataset sites (Hugging Face, Roboflow, Kaggle, Open Images, COCO, OSDaR23). |
+| 138 | **OSDaR23 example:** one click, (A) all sensors or (B) the RGB centre camera only; the 764 MB archive is unpacked while it streams, never stored; imported with authors and licences (pictures CC BY-SA 3.0 DE, annotations CC0 1.0). |
+
+- **Proof, live in the running app (German):**
+  - a COCO folder imported with its description;
+  - YOLO and a video through the API;
+  - OSDaR23 B from the real portal: 764 MB streamed, 61 MB kept, "10 Bilder · 10
+    annotiert · 6 Klassen";
+  - OSDaR23 A: 865 MB kept, "90 Bilder · 90 annotiert · 7 Klassen";
+  - leaving the sub-tab mid-download and coming back resumes the progress.
+- **Tests:** backend 1925, frontend 1150, all green; ruff, mypy and tsc clean.
+- **Found while building and fixed:**
+  - `GET /datasets/profiles` was answered by `/datasets/{id}` (router order);
+  - imported pictures without annotations would have trained as "nothing here";
+  - every `target="_blank"` link was dead in the desktop app: the opener capability
+    never granted `open_url`. It now grants https only, which also fixes the licence
+    links on the model cards and in the token panel. **This was not clicked in the real
+    desktop window** (this session cannot drive one), so it is worth one click there;
+  - OSDaR23's radar PNGs imported as pictures; a camera without one annotation was
+    imported as annotated-empty;
+  - the OSDaR23 licence is two licences; the portal names only one.
+- **Worth knowing:**
+  - the OSDaR23 sequence Jan linked has **10 frames**: enough to show the loop, not to
+    train a useful detector;
+  - B still transfers the whole archive (the server ignores Range requests); it saves
+    disk, not bandwidth.
 
 ## Wave 15.7 — The installer: bundled uv, PyTorch from the source (2026-10-01)
 

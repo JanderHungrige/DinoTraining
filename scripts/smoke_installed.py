@@ -1,4 +1,4 @@
-"""Smoke-test an installed DinoTraining (doc 131).
+"""Smoke-test an installed V-Rex (doc 131).
 
     python scripts/smoke_installed.py <executable> [--wrap "xvfb-run -a"]
 

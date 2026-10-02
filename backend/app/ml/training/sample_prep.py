@@ -22,6 +22,7 @@ from typing import TypeVar
 from app.core.config import Settings
 from app.datasets.class_names import normalise_class_name
 from app.datasets.db import transaction
+from app.datasets.images import NEVER_SAVED
 from app.datasets.models import Box, Mask
 from app.prep.state import load_state
 
@@ -39,11 +40,15 @@ class Preparation:
 def load_preparation(dataset_id: str, settings: Settings | None = None) -> Preparation:
     with transaction(settings) as connection:
         rows = connection.execute(
-            "SELECT id, COALESCE(excluded, 0) AS excluded, split FROM images WHERE dataset_id = ?",
+            "SELECT id, COALESCE(excluded, 0) AS excluded, split, annotated_at"
+            " FROM images WHERE dataset_id = ?",
             (dataset_id,),
         ).fetchall()
     return Preparation(
-        excluded=frozenset(int(r["id"]) for r in rows if r["excluded"]),
+        # Doc 136: a picture nobody has annotated yet is not background; leave it out.
+        excluded=frozenset(
+            int(r["id"]) for r in rows if r["excluded"] or r["annotated_at"] == NEVER_SAVED
+        ),
         split={int(r["id"]): str(r["split"]) for r in rows if r["split"]},
         class_map=load_state(dataset_id, settings).class_map,
     )

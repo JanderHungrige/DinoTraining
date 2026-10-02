@@ -48,7 +48,7 @@ export const adminEn = {
   'admin.library.deleteFailed': 'Could not delete that. The list below is what is really there.',
 
   // Admin / Models: the tab and the system panel
-  'admin.models.title': 'Admin / Models',
+  'admin.models.title': 'Models & Datasets',
   'admin.models.loading': 'Loading model catalogue…',
   'admin.system.device': 'Compute device',
   'admin.system.freeDisk': 'Free disk',
@@ -111,7 +111,7 @@ export const adminEn = {
   'admin.token.saveFailed': 'Could not save the token.',
   'admin.token.title': 'HuggingFace access',
   'admin.token.introBefore':
-    'Some models are gated by their publisher. DinoTraining never downloads them for you and never ships a token — you provide your own, and you start every download yourself. Everything needed for the open models, including',
+    'Some models are gated by their publisher. V-Rex never downloads them for you and never ships a token — you provide your own, and you start every download yourself. Everything needed for the open models, including',
   'admin.token.introAfter': 'for segmentation masks, works without any of this.',
   'admin.token.field': 'Your HuggingFace access token',
   'admin.token.configured': 'Configured',
@@ -257,4 +257,13 @@ export const adminEn = {
   'admin.mcp.noteBody':
     'The server is bound to loopback, so an assistant running here can reach it and one running anywhere else cannot. That is deliberate: there is no authentication, and the tools can read any file path they are given.',
   'admin.mcp.reading': 'Reading the connection details…',
+  // Models & Datasets (doc 135)
+  'models.sub.label': 'Models & Datasets sections',
+  'models.sub.official': 'Official Models',
+  'models.sub.datasets': 'Datasets',
+  'models.sub.mine': 'My Models',
+  'models.datasets.title': 'Datasets',
+  'models.datasets.lead': 'Every dataset in the app: what you annotated, generated or imported. Select some to delete them together.',
+  'models.mine.title': 'My Models',
+  'models.mine.lead': 'The heads you trained and the models you fine-tuned, with what they learned from. Export one to run it outside the app, or delete what you no longer need.',
 } as const;

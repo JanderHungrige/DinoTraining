@@ -15,15 +15,15 @@ afterEach(() => localStorage.clear());
 describe('the app shell in German', () => {
   it('names the tabs and their list in German', () => {
     renderInGerman(<TabBar activeTab="studio" onTabChange={vi.fn()} />);
-    expect(screen.getByRole('tablist', { name: 'DinoTraining-Bereiche' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'V-Rex-Bereiche' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Daten vorbereiten' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Verwaltung / Modelle' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Modelle & Datensätze' })).toBeInTheDocument();
   });
 
   it('says in German which wave fills a stub', () => {
-    renderInGerman(<StubPanel tabId="library" />);
-    expect(screen.getByRole('heading', { name: 'Bibliothek' })).toBeInTheDocument();
-    expect(screen.getByText('Kommt mit Welle 7.')).toBeInTheDocument();
+    renderInGerman(<StubPanel tabId="inspect" />);
+    expect(screen.getByRole('heading', { name: 'Datensätze ansehen' })).toBeInTheDocument();
+    expect(screen.getByText('Kommt mit Welle 9.')).toBeInTheDocument();
   });
 
   it('words verdicts and model output in German through the translator', () => {

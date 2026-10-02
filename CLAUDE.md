@@ -1,11 +1,14 @@
-# CLAUDE.md — DinoTraining
+# CLAUDE.md — V-Rex (repository: DinoTraining)
 
 Project instructions for Claude Code. These extend the global `~/.claude/CLAUDE.md`
 (security gatekeeper & standards) and adapt them for this **Python-ML + Tauri/React hybrid**.
 
 ## What this is
 
-A sharable, installable desktop app (Tauri + React + FastAPI/PyTorch sidecar) for the
+**V-Rex** (Vision Representation & Experimentation; renamed from DinoTraining on
+2026-10-02, doc 159). Only the visible name changed: the data folder `DinoTraining`,
+`com.dinotraining.app`, `DINO_*`, storage keys, MLflow tag keys and the `.mdd` ids keep
+the first name on purpose. A sharable, installable desktop app (Tauri + React + FastAPI/PyTorch sidecar) for the
 annotate → train → infer → generate-data loop with DINOv2/v3 + Grounding DINO.
 Full plan lives in `.mdd/` (initiative `dinotraining`, waves 1–6).
 

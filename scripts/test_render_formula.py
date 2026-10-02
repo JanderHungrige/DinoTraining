@@ -17,7 +17,7 @@ def test_the_release_url_and_checksum_are_filled_in() -> None:
     formula = render_formula.render("0.2.0", SHA)
     assert (
         'url "https://github.com/JanderHungrige/DinoTraining/releases/download/'
-        'v0.2.0/DinoTraining_0.2.0_aarch64.app.tar.gz"'
+        'v0.2.0/V-Rex_0.2.0_aarch64.app.tar.gz"'
     ) in formula
     assert f'sha256 "{SHA}"' in formula
     assert "{{" not in formula
@@ -30,7 +30,7 @@ def test_a_tag_with_v_is_accepted() -> None:
 def test_it_is_a_formula_not_a_cask() -> None:
     # A cask would quarantine the download, and the unsigned app would be blocked.
     formula = render_formula.render("0.2.0", SHA)
-    assert "class Dinotraining < Formula" in formula
+    assert "class VRex < Formula" in formula  # Homebrew's class for "v-rex"
     assert "depends_on arch: :arm64" in formula
 
 

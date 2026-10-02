@@ -41,13 +41,14 @@ logger = logging.getLogger(__name__)
 #: v3 added masks and the expert-head/sam3 provenances; v4 added grounded-sam;
 #: v5 added the producer column; v6 added the imported provenance; v7 added
 #: foundation-model; v8 added images.sequence and images.frame_index (doc 73); v9 added
-#: images.split and images.excluded (docs 83, 84).
+#: images.split and images.excluded (docs 83, 84); v10 added datasets.description and
+#: datasets.source (doc 136).
 #:
 #: Bumping this is **not** bookkeeping. `run_migrations` returns early once the stored
 #: version reaches it, so widening PROVENANCE_VALUES without moving this number rebuilds
 #: the CHECK on fresh databases only — every test passes and the real install raises
 #: IntegrityError on first write. The rebuild itself needs no new code; the gate does.
-LATEST_VERSION = 9
+LATEST_VERSION = 11
 
 # Columns carried across a rebuild, per table, in a fixed order so the INSERT..SELECT cannot
 # silently transpose two same-typed columns if a schema is ever reordered.

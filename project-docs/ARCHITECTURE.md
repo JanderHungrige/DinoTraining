@@ -1,4 +1,4 @@
-# DinoTraining — Architecture
+# V-Rex (formerly DinoTraining) — Architecture
 
 > Living document. Started at project kickoff (2026-08-14). Full build plan in `.mdd/`.
 

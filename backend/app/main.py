@@ -18,6 +18,7 @@ from app.core.errors import register_exception_handlers
 from app.core.logging import configure_logging
 from app.i18n.middleware import GermanTextMiddleware
 from app.mcp.server import mount_mcp
+from app.mlops import auto_export as model_auto_export
 from app.mlops import tracking_hooks
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     configure_logging(settings.log_level)
 
     app = FastAPI(
-        title="DinoTraining backend",
+        title="V-Rex backend",
         description="FastAPI + PyTorch sidecar for annotate → train → infer → generate.",
         version=__version__,
     )
@@ -59,6 +60,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_exception_handlers(app)
     # Doc 123: training runs go to MLflow when it is set up; a no-op otherwise.
     tracking_hooks.install()
+    # Doc 145: trained models exported when their training finishes, if switched on.
+    model_auto_export.install()
     app.include_router(api_router, prefix=settings.api_prefix)
 
     # Last, and after the router: the MCP mount composes itself into the app's lifespan,
@@ -71,13 +74,24 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 app = create_app()
 
 
+def _clean_up_cloud_links() -> None:
+    """Doc 149: links without a dataset go, with their cache folders. Never fatal."""
+    from app.cloud.cache import clean_up_links
+
+    try:
+        clean_up_links()
+    except Exception:  # noqa: BLE001 - a clean-up must not keep the backend from starting
+        logger.exception("Cleaning up cloud links failed")
+
+
 def main() -> None:
     """Start the sidecar. Binds loopback only — never expose this off-machine."""
     import uvicorn
 
     settings = get_settings()
+    _clean_up_cloud_links()
     logger.info(
-        "Starting DinoTraining backend v%s on %s:%s%s",
+        "Starting V-Rex backend v%s on %s:%s%s",
         __version__,
         settings.api_host,
         settings.api_port,

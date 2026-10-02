@@ -8,7 +8,7 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke }));
 
 import { AddToApplications } from './AddToApplications';
 
-const FOLDER = '/Users/jan/Applications/DinoTraining.app';
+const FOLDER = '/Users/jan/Applications/V-Rex.app';
 
 beforeEach(() => {
   Object.defineProperty(window, '__TAURI_INTERNALS__', { value: {}, configurable: true });
@@ -29,7 +29,7 @@ describe('AddToApplications (doc 130)', () => {
     invoke.mockImplementation((command) => Promise.resolve(command === 'applications_offer' ? FOLDER : FOLDER));
     render(<AddToApplications />);
     await flush();
-    expect(screen.getByText('Add DinoTraining to your Applications folder?')).toBeInTheDocument();
+    expect(screen.getByText('Add V-Rex to your Applications folder?')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     await flush();
     expect(invoke).toHaveBeenLastCalledWith('add_to_applications');

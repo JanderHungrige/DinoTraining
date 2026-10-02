@@ -223,7 +223,7 @@ class TestErrors:
             json={"image_path": image, "concept": "a bolt", "annotator_id": "sam3"},
         )
         assert response.status_code == 409
-        assert "Admin tab" in response.json()["error"]["message"]
+        assert "Models & Datasets" in response.json()["error"]["message"]
 
     def test_a_missing_model_is_409_with_what_to_download(
         self, client: TestClient, tmp_path: Path
@@ -235,7 +235,7 @@ class TestErrors:
         )
         assert response.status_code == 409
         message = response.json()["error"]["message"]
-        assert "Admin tab" in message
+        assert "Models & Datasets" in message
         assert "grounding-dino-tiny" in message
 
     def test_a_missing_image_is_404(self, client: TestClient) -> None:

@@ -122,7 +122,7 @@ async def propose_with_foundation(
     except ModelNotInstalledError as exc:
         raise HTTPException(
             status_code=409,
-            detail=f"{exc} is not installed — download it in Admin / Models first.",
+            detail=f"{exc} is not installed — download it in Models & Datasets first.",
         ) from None
     except FoundationUnavailableError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from None

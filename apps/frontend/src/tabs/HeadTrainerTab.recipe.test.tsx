@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as foundation from '../api/foundation';
 import * as heads from '../api/headInstances';
+import * as paramsApi from '../api/parameters';
 import * as prepPlan from '../api/prepPlan';
 import * as training from '../api/training';
 import * as trainerOptions from '../hooks/useTrainerOptions';
@@ -17,6 +18,12 @@ import { HeadTrainerTab } from './HeadTrainerTab';
 
 vi.mock('../api/foundation');
 vi.mock('../api/headInstances');
+// The run's settings come from the backend's parameter catalogue. Unmocked, this test
+// reached a live backend on :8756 and failed whenever none was running.
+vi.mock('../api/parameters', async () => {
+  const actual = await vi.importActual<typeof import('../api/parameters')>('../api/parameters');
+  return { ...actual, getParameters: vi.fn() };
+});
 vi.mock('../api/prepPlan', async () => {
   const actual = await vi.importActual<typeof import('../api/prepPlan')>('../api/prepPlan');
   return { ...actual, listRecipes: vi.fn() };
@@ -37,6 +44,7 @@ beforeEach(() => {
   localStorage.clear();
   vi.mocked(heads.listHeadInstances).mockResolvedValue([]);
   vi.mocked(foundation.listFoundations).mockResolvedValue([]);
+  vi.mocked(paramsApi.getParameters).mockResolvedValue({ family: 'head', title: 'Head', covers: '', parameters: [] });
   vi.mocked(prepPlan.listRecipes).mockResolvedValue([recipe('r1', 1), recipe('r2', 2), recipe('r3', 3, ['The split changed.'])]);
   vi.mocked(training.startTraining).mockResolvedValue({
     job_id: 'j', state: 'pending', epoch: 0, total_epochs: 1, history: [], class_names: [],

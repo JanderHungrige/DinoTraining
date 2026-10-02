@@ -126,9 +126,9 @@ ENTRIES: dict[str, str] = {
     "{+label} is installed": "{+label} ist installiert",
     "Installed.": "Installiert.",
     "Not downloaded yet.": "Noch nicht heruntergeladen.",
-    "Download it in Admin / Models.": "Lade es unter Verwaltung / Modelle herunter.",
-    "Download it in Admin / Models (it is gated: set a HuggingFace token first).": (
-        "Lade es unter Verwaltung / Modelle herunter (es ist zugangsbeschränkt: hinterlege "
+    "Download it in Models & Datasets.": "Lade es unter Modelle & Datensätze herunter.",
+    "Download it in Models & Datasets (it is gated: set a HuggingFace token first).": (
+        "Lade es unter Modelle & Datensätze herunter (es ist zugangsbeschränkt: hinterlege "
         "zuerst ein HuggingFace-Token)."
     ),
     # preflight.py — the data

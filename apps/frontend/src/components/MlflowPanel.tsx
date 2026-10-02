@@ -32,7 +32,7 @@ export function MlflowPanel(): JSX.Element {
 
   // Only the user's edits are state; the shown values follow what is stored (CLAUDE.md).
   const shownUri = uri ?? status?.uri ?? '';
-  const shownExperiment = experiment ?? status?.experiment ?? 'DinoTraining';
+  const shownExperiment = experiment ?? status?.experiment ?? 'V-Rex';
   const shownRegister = register ?? status?.register_models ?? true;
 
   const attempt = async (work: () => Promise<string>): Promise<void> => {

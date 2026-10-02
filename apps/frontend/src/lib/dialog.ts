@@ -30,8 +30,9 @@ async function open(options: Record<string, unknown>): Promise<string | null> {
   }
 }
 
-export function pickFolder(): Promise<string | null> {
-  return open({ directory: true, multiple: false });
+/** `defaultPath`: where the dialog opens (doc 143 remembers the last export folder). */
+export function pickFolder(defaultPath?: string): Promise<string | null> {
+  return open({ directory: true, multiple: false, ...(defaultPath ? { defaultPath } : {}) });
 }
 
 /** Doc 73: the containers the backend decodes. */
@@ -58,12 +59,13 @@ export function pickImageFile(): Promise<string | null> {
  *  Tauri webview, so every caller must stay usable without it — the button disappears,
  *  nothing else changes.
  *
- *  `revealItemInDir` rather than `openPath`: revealing selects the item in a *new* file
- *  manager window, while opening a directory can reuse an existing window the user was
- *  looking at something else in.
+ *  Revealing rather than opening: revealing selects the item in a *new* file manager
+ *  window, while opening a directory can reuse an existing window the user was looking at
+ *  something else in. Through the shell's `reveal_path` (doc 156), which shows the Store
+ *  edition's redirected folder where Windows really put it.
  */
 export async function revealFolder(path: string): Promise<void> {
   if (!hasNativeDialog()) return;
-  const { revealItemInDir } = await import('@tauri-apps/plugin-opener');
-  await revealItemInDir(path);
+  const { invoke } = await import('@tauri-apps/api/core');
+  await invoke('reveal_path', { path });
 }

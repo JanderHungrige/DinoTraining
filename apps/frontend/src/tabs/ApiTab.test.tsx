@@ -25,7 +25,7 @@ vi.mock('../api/agentGuide', async (original) => ({
 }));
 vi.mock('../api/mcpInfo');
 
-const GUIDE = '# DinoTraining API\n\nCall `GET /models` first.\n\n## 1. Install a model\n';
+const GUIDE = '# V-Rex API\n\nCall `GET /models` first.\n\n## 1. Install a model\n';
 
 beforeEach(() => {
   vi.mocked(agentGuide.fetchAgentGuide).mockResolvedValue(GUIDE);
@@ -75,7 +75,7 @@ describe('where the document comes from', () => {
 
     // Real headings, because this markup is also the print source and a PDF's outline
     // comes from them.
-    expect(screen.getByRole('heading', { name: 'DinoTraining API' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'V-Rex API' })).toBeInTheDocument();
   });
 
   it('says so when the backend cannot be reached', async () => {

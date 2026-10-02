@@ -37,7 +37,7 @@ export const runDe: Catalogue<typeof runEn> = {
   // The head panel
   'run.heads.loading': 'Heads werden geladen …',
   'run.heads.nothingToRun':
-    'Noch nichts zum Ausführen da. Installiere ein Foundation Model oder einen fertigen Head im Tab Verwaltung, oder trainiere einen Head im Tab Training.',
+    'Noch nichts zum Ausführen da. Installiere ein Foundation Model oder einen fertigen Head unter Modelle & Datensätze, oder trainiere einen Head im Tab Training.',
   'run.heads.task': 'Aufgabe',
   'run.heads.allTasks': 'Alle Aufgaben',
   'run.heads.trainedOn': 'Trainiert auf',

@@ -1,9 +1,9 @@
 {
   "name": "@dinotraining/frontend",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
-  "description": "React + TypeScript UI for DinoTraining, hosted by the Tauri shell.",
+  "description": "React + TypeScript UI for V-Rex, hosted by the Tauri shell.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

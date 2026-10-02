@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from app.cloud.pictures import PictureUnavailableError, prefetch_following
 from app.datasets.models import Box
 from app.ml import images as image_io
 from app.ml.detector import (
@@ -68,7 +69,7 @@ async def annotate(request: AnnotateRequest) -> AnnotateResponse:
             status_code=404,
             detail=(
                 f"{request.model_id} is not installed. "
-                "Download it in the Admin tab before annotating."
+                "Download it in Models & Datasets before annotating."
             ),
         ) from None
     except LookupError:
@@ -119,13 +120,20 @@ async def list_folder(path: str = Query(min_length=1)) -> FolderListing:
 
 
 @router.get("/annotate/image", summary="Stream a local image for the canvas")
-async def get_image(path: str = Query(min_length=1)) -> FileResponse:
-    """The webview cannot load file:// URLs, so the backend serves the bytes."""
+def get_image(path: str = Query(min_length=1)) -> FileResponse:
+    """The webview cannot load file:// URLs, so the backend serves the bytes.
+
+    Not `async`: a linked picture may be downloaded here (doc 149), which must not hold
+    the event loop; FastAPI runs a plain function in its thread pool.
+    """
     try:
         _, resolved = image_io.read_image(path)
+    except PictureUnavailableError as error:  # doc 149: linked, not cached, bucket unreachable
+        raise HTTPException(status_code=404, detail=str(error)) from None
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Image not found") from None
     except image_io.ImageReadError as error:
         raise HTTPException(status_code=400, detail=str(error)) from None
 
+    prefetch_following(resolved)  # doc 149: the Studio's next pictures, while this one shows
     return FileResponse(resolved)

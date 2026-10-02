@@ -192,3 +192,6 @@ class DatasetInfo(BaseModel):
     prompt: str | None
     copy_images: bool
     counts: DatasetCounts
+    #: Doc 136: written at import; None for datasets made in the app.
+    description: str | None = None
+    source: str | None = None

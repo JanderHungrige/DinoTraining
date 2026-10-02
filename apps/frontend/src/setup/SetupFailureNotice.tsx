@@ -5,6 +5,7 @@ import type { JSX } from 'react';
 import { useT, type Key, type Language, type Translator } from '../i18n';
 import { formatGb } from './MachineSummary';
 import { CUDA_VERSION, VC_RUNTIME, type SetupFailure, type Variant, type VcRuntimeReason } from './shell';
+import { ErrorActions } from '../components/ErrorActions';
 
 /** "CPU" or "GPU (CUDA 13.0)". */
 export function variantName(t: Translator['t'], variant: Variant): string {
@@ -58,9 +59,11 @@ interface Props {
 
 export function SetupFailureNotice({ failure, onRetry, secondary }: Props): JSX.Element {
   const { t, lang } = useT();
+  const text = message(t, lang, failure);
   return (
     <div className="firstrun__failure" role="alert">
-      <p>{message(t, lang, failure)}</p>
+      <p>{text}</p>
+      <ErrorActions message={text} />
       {failure.kind !== 'unsupported' && (
         <>
           <p className="firstrun__hint">{t('setup.fail.resume')}</p>

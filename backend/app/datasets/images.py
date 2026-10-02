@@ -24,6 +24,13 @@ def now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+#: Doc 136: `annotated_at` of a picture imported without annotations. Nobody has looked
+#: at it yet. The column is NOT NULL, and "" sorts before every timestamp, so doc 117 reads
+#: it as unknown for every class. Training, export and the preparation counts leave it
+#: out, like an excluded picture; saving it in the Studio gives it a real time.
+NEVER_SAVED = ""
+
+
 def upsert_image(
     connection: sqlite3.Connection,
     dataset_id: str,

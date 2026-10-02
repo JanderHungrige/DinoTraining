@@ -63,7 +63,7 @@ export const studio2En = {
   'studio.foundation.none': 'No foundation model in the catalogue proposes boxes.',
   'studio.foundation.notDownloaded_one': '{count} general detector is available but not downloaded. Get one in',
   'studio.foundation.notDownloaded_other': '{count} general detectors are available but not downloaded. Get one in',
-  'studio.foundation.adminModels': 'Admin / Models',
+  'studio.foundation.adminModels': 'Models & Datasets',
   'studio.foundation.noTraining': '— RF-DETR needs no training and no prompt.',
   'studio.foundation.nonCommercial': 'non-commercial',
   'studio.foundation.whatToFind': 'What to find',

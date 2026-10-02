@@ -58,7 +58,7 @@ async def agent_guide(
         content=document,
         media_type="text/markdown; charset=utf-8",
         # Named so a browser "save as" and the app's download button agree on the filename.
-        headers={"Content-Disposition": 'inline; filename="dinotraining-api-guide.md"'},
+        headers={"Content-Disposition": 'inline; filename="v-rex-api-guide.md"'},
     )
 
 
@@ -112,7 +112,7 @@ async def mcp_info() -> McpInfo:
 
     return McpInfo(
         url=url,
-        command=f"claude mcp add --transport http dinotraining {url}",
+        command=f"claude mcp add --transport http v-rex {url}",
         tools=[
             McpTool(name=tool.name, summary=_first_line(tool.description or ""))
             for tool in sorted(tools, key=lambda entry: entry.name)

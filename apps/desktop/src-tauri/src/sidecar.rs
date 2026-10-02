@@ -23,7 +23,7 @@ const DEFAULT_PORT: u16 = 8756;
 
 #[derive(Debug, thiserror::Error)]
 pub enum SidecarError {
-    #[error("the app's bundled runtime is missing: reinstall DinoTraining")]
+    #[error("the app's bundled runtime is missing: reinstall V-Rex")]
     RuntimeMissing,
     #[error("could not locate the backend at {0}")]
     BackendMissing(PathBuf),
@@ -37,7 +37,7 @@ pub enum SidecarError {
     #[error("backend exited during startup ({status}).{output}")]
     BackendExited { status: std::process::ExitStatus, output: String },
     #[error(
-        "port {0} is already in use. Another DinoTraining backend is probably still \
+        "port {0} is already in use. Another V-Rex backend is probably still \
          running — stop it (lsof -ti:{0} | xargs kill) and relaunch."
     )]
     PortInUse(u16),
@@ -211,6 +211,10 @@ pub fn spawn(config: &SidecarConfig) -> Result<Child, SidecarError> {
         }
         None => (Stdio::inherit(), Stdio::inherit()),
     };
+    // Doc 152: the Store edition's folder is the package's own; the backend must use it too.
+    if let Some(dir) = crate::support_dir::backend_app_dir() {
+        command.env("DINO_APP_DIR", dir);
+    }
     let child = command
         .env("DINO_API_HOST", &config.host)
         .env("DINO_API_PORT", config.port.to_string())
@@ -267,6 +271,14 @@ pub struct SidecarHandle {
 }
 
 impl SidecarHandle {
+    /// A backend this shell started and that has not exited (doc 144 asks it to export).
+    pub fn is_running(&self) -> bool {
+        self.child
+            .lock()
+            .map(|mut slot| slot.as_mut().is_some_and(|child| matches!(child.try_wait(), Ok(None))))
+            .unwrap_or(false)
+    }
+
     pub fn store(&self, child: Child) {
         if let Ok(mut slot) = self.child.lock() {
             *slot = Some(child);

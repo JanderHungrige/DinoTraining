@@ -30,9 +30,9 @@ describe('TabBar', () => {
   });
 
   it('marks only the active tab as selected', () => {
-    renderTabBar('admin');
+    renderTabBar('models');
 
-    expect(screen.getByRole('tab', { name: 'Admin / Models' })).toHaveAttribute(
+    expect(screen.getByRole('tab', { name: 'Models & Datasets' })).toHaveAttribute(
       'aria-selected',
       'true',
     );
