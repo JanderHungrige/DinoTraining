@@ -89,7 +89,7 @@ export function App(): JSX.Element {
         <header className="app__header">
           <h1 className="app__title">
             {/* Doc 134: the emblem; decorative, the name beside it is the heading. */}
-            <img className="app__emblem" src="/emblem.svg" alt="" width={28} height={28} />
+            <img className="app__emblem" src="/emblem.png" alt="" width={28} height={28} />
             V-Rex
           </h1>
           <LanguageSwitch />
