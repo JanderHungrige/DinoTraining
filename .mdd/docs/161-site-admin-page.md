@@ -14,7 +14,7 @@ models: []
 test_files: []
 data_flow: greenfield
 last_synced: 2026-10-02
-status: complete
+status: deprecated
 phase: all
 mdd_version: 11
 tags: [website, msix, testing, admin]
@@ -67,3 +67,8 @@ sister_projects: []
   - the downloads and the steps read as intended;
   - no sideways scrolling at 456 px.
 - **GitHub's latest release** is still v0.1.3.
+
+## Removed (2026-10-03)
+
+- Jan's MSIX testing was done and 1.0.0 is released: the page, its links, its styles
+  and the pre-release `msix-test-0.1.3` were removed, as "To remove it" describes.
