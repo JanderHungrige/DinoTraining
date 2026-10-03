@@ -60,3 +60,18 @@ the emblem, is optional.
 > test machine is older than 14.40, the app asks to install Microsoft's signed redistributable
 > (one UAC prompt). No account or sign-in is needed. To test: start the app, choose "CPU" at the
 > first start, wait for the setup to finish, then open Models & Datasets.
+
+## Super hero art (Store listing → Store logos / art)
+
+- `super-hero-art-1920x1080.png`: a frame of the forest background with the logo, no text
+  (the Store must not show the product's title in it). A 3840×2160 version was made the
+  same way. Optional: required only for a trailer at the top of the listing.
+
+## runFullTrust (Submission → restricted capabilities)
+
+The field takes at most **500 characters** (found 2026-10-03: a longer text was cut). This
+one is 425:
+
+```
+Desktop app (Tauri/Win32) that trains and runs vision models on the user's own images. Full trust is needed to: run its local Python/PyTorch backend as a child process (127.0.0.1 only); install that runtime on first start into its package data folder (and, with consent, the VC++ Redistributable); read image folders the user picks anywhere on disk; use the NVIDIA GPU via CUDA. Not possible in an AppContainer. No telemetry.
+```
