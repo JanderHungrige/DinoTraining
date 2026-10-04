@@ -16,6 +16,9 @@
     'dl.windows': 'Für Windows laden ({size})',
     'dl.linux': '.deb laden ({size})',
     'win.meta': 'Windows 10/11, 64 Bit',
+    'win.store': 'Im Microsoft Store holen',
+    'win.storeNote': 'Von Microsoft signiert, ohne Warnung, und es aktualisiert sich selbst.',
+    'win.or': 'Oder direkt der Installer:',
     'win.note':
       'Der Installer ist nicht mit einem kostenpflichtigen Zertifikat signiert, deshalb warnt Windows einmal mit SmartScreen: <em>Weitere Informationen → Trotzdem ausführen</em>. Keine Admin-Rechte nötig.',
     'mac.meta': 'Apple Silicon (M1 und neuer)',
@@ -28,7 +31,7 @@
     'cmd.copied': 'Kopiert',
     'fact.first.title': 'Der erste Start',
     'fact.first.text':
-      'Die Installer sind klein (etwa 20 MB). Beim ersten Start lädt die App einmal Python und PyTorch von den offiziellen Quellen, genau in den getesteten Versionen: etwa 1 GB, mit NVIDIA-GPU-Unterstützung etwa 3,5 GB. Danach funktioniert sie offline.',
+      'Die Installer sind klein (etwa 35–45 MB, das meiste davon die bewegten Hintergründe). Beim ersten Start lädt die App einmal Python und PyTorch von den offiziellen Quellen, genau in den getesteten Versionen: etwa 1 GB, mit NVIDIA-GPU-Unterstützung etwa 3,5 GB. Danach funktioniert sie offline.',
     'fact.gpu.title': 'Deine GPU',
     'fact.gpu.text':
       'NVIDIA-Karten werden erkannt und über CUDA genutzt, Apple Silicon über MPS. Ohne GPU läuft die App auf der CPU; umschalten kannst du später in der App.',
