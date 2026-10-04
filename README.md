@@ -94,9 +94,11 @@ brew install janderhungrige/tap/v-rex
 > Privacy & Security → Open Anyway*. Intel Macs are not supported: PyTorch no longer
 > makes builds for them.
 
-**Windows** (`.exe`, NSIS) and **Linux** (`.deb`) installers are on the
-[releases page](https://github.com/JanderHungrige/DinoTraining/releases). Windows shows a
-SmartScreen warning for the unsigned installer: *More info* → *Run anyway*.
+**Windows:** from the **[Microsoft Store](https://apps.microsoft.com/detail/9pkppdw39fcz)**
+(signed by Microsoft, no warning, updates itself), or the `.exe` (NSIS) from the
+[releases page](https://github.com/JanderHungrige/DinoTraining/releases), for which Windows
+shows a SmartScreen warning once: *More info* → *Run anyway*. **Linux:** the `.deb` from
+the same page.
 
 - **GPU:** the setup screen picks CUDA 13.0 (driver ≥ 580) or CUDA 12.6 (driver ≥ 560)
   when it finds an NVIDIA card; *Models & Datasets* switches between GPU and CPU later.

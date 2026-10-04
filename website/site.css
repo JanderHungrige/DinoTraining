@@ -177,6 +177,12 @@ main,
   margin: 14px 0 6px;
 }
 
+/* Doc 168: "Or the installer directly:" between the Store and the EXE */
+.card__or {
+  margin: 18px 0 6px;
+  font-size: 0.92rem;
+}
+
 .card__note {
   margin: 14px 0 0;
   font-size: 0.92rem;

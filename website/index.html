@@ -42,7 +42,11 @@
       <article class="card" id="card-windows">
         <h3>Windows</h3>
         <p class="card__meta" data-i18n="win.meta">Windows 10/11, 64-bit</p>
-        <a class="btn btn--primary" id="dl-windows" href="https://github.com/JanderHungrige/DinoTraining/releases" data-i18n="dl.soon">First release coming</a>
+        <!-- Doc 168: the Store edition first: signed by Microsoft, no SmartScreen, updates itself. -->
+        <a class="btn btn--primary" id="store-windows" href="https://apps.microsoft.com/detail/9pkppdw39fcz" data-i18n="win.store">Get it from the Microsoft Store</a>
+        <p class="card__note" data-i18n="win.storeNote">Signed by Microsoft, no warning, and it updates itself.</p>
+        <p class="card__or" data-i18n="win.or">Or the installer directly:</p>
+        <a class="btn" id="dl-windows" href="https://github.com/JanderHungrige/DinoTraining/releases" data-i18n="dl.soon">First release coming</a>
         <p class="card__note" data-i18n="win.note">
           The installer is not signed with a paid certificate, so Windows shows a SmartScreen warning once:
           <em>More info → Run anyway</em>. No admin rights needed.
@@ -80,7 +84,7 @@
       <div class="fact">
         <h3 data-i18n="fact.first.title">The first start</h3>
         <p data-i18n="fact.first.text">
-          The installers are small (about 20 MB). On its first start the app downloads Python and PyTorch once,
+          The installers are small (about 35–45 MB, most of it the moving backgrounds). On its first start the app downloads Python and PyTorch once,
           from the official sources, in exactly the versions it was tested with: about 1 GB, or about 3.5 GB with
           NVIDIA GPU support. After that it works offline.
         </p>
