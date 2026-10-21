@@ -5,7 +5,7 @@ import { isHealthResponse, type HealthResponse } from './types';
 
 const VALID_HEALTH: HealthResponse = {
   status: 'ok',
-  version: '1.0.0',
+  version: '1.0.1',
   device: 'mps',
   api_prefix: '/api/v1',
 };

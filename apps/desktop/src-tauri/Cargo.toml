@@ -1,6 +1,6 @@
 [package]
 name = "dinotraining"
-version = "1.0.0"
+version = "1.0.1"
 description = "V-Rex — Vision Representation & Experimentation."
 authors = ["V-Rex contributors"]
 license = "MIT"
