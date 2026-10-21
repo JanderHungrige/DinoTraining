@@ -4,7 +4,20 @@
 wave rather than appended to. `HANDOFF-wave-2.md` is an older per-wave one kept as history;
 do not read it for current state.
 
-**Last updated:** 2026-10-03: **V-Rex 1.0.0 is released** and live on dino.w3rth.de.
+**Last updated:** 2026-10-21: **V-Rex 1.0.1 is released** (main `68dfdce`, run
+39600554464, published cleanly as Latest, notes written). New since 1.0.0:
+  - doc 166 addenda: one Run button in the Inference Viewer; the video/folder mode shows
+    one pane per model side by side again;
+  - doc 169: umbrella terms over box-only classes, the phrase list after saving, no
+    scroll jump between Studio pictures;
+  - doc 170: "Carry my corrections to the next picture" in the Studio (same model class,
+    IoU >= 0.6, one to one);
+  - doc 171: Settings › Feedback, "Report an issue or suggest an idea".
+- **Store:** 1.0.1 has its own `V-Rex_1.0.1_x64.msix` for a Store update.
+- **Live Studio checks** move between pictures, which saves: use a throwaway dataset
+  (create and delete via `/api/v1/datasets`), never Jan's.
+
+**Earlier, 2026-10-03: V-Rex 1.0.0 released** and live on dino.w3rth.de.
 - **`main` = `1cbe124`** (release 1.0.0); `dev` has it plus docs. Everything since 0.1.4:
   - doc 163, the forest background;
   - doc 164, the Settings tab with light/dark;
