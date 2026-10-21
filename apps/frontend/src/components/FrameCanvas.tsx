@@ -46,8 +46,12 @@ export interface FrameCanvasProps {
   /** Changes when the pixels held are no longer the right ones — a new run, say. */
   readonly generation: string;
   readonly label: string;
-  /** Draws over the picture, in the geometry this component measured. */
-  readonly renderOverlay: (rendered: RenderedImage) => JSX.Element | null;
+  /** Draws over the picture, in the geometry this component measured; with `panes`, once
+   *  per pane, given that pane's key. */
+  readonly renderOverlay: (rendered: RenderedImage, paneKey: string) => JSX.Element | null;
+  /** 2026-10-21 (Jan): one pane per model, side by side, the same frame in each. The
+   *  decoded frames are shared, so N panes fetch each frame once. */
+  readonly panes?: readonly { readonly key: string; readonly label: string }[];
   /** Where frame N's pixels are (doc 74: a dataset's stored files). Defaults to decoding
    *  `source` through the video route, which is what playback of a run needs. */
   readonly urlFor?: (frame: number) => string;
@@ -64,10 +68,11 @@ export function FrameCanvas({
   label,
   renderOverlay,
   urlFor,
+  panes,
 }: FrameCanvasProps): JSX.Element {
   const stageRef = useRef<HTMLDivElement | null>(null);
   const observerRef = useRef<ResizeObserver | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvases = useRef<Map<string, HTMLCanvasElement>>(new Map());
   //: Decoded frames, by index within the run. Held rather than refetched, so scrubbing
   //: backwards is instant.
   const cache = useRef<Map<number, HTMLImageElement>>(new Map());
@@ -136,24 +141,50 @@ export function FrameCanvas({
     }
   }, [index, frames, runStart, source, urlFor]);
 
-  // Paint the current frame, whenever it or its pixels arrive.
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const image = cache.current.get(index);
-    if (!canvas || !image || !image.complete || image.naturalWidth === 0) return;
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    // Setting either dimension clears the canvas, so this happens immediately before the
-    // draw and never on its own.
-    canvas.width = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    context.drawImage(image, 0, 0);
-  }, [index, decoded]);
+  const shown = panes && panes.length > 1 ? panes : [{ key: '', label: '' }];
+  const paneKeys = shown.map((pane) => pane.key).join('|');
 
+  // Paint the current frame into every pane, whenever it or its pixels arrive.
+  useEffect(() => {
+    const image = cache.current.get(index);
+    if (!image || !image.complete || image.naturalWidth === 0) return;
+    for (const canvas of canvases.current.values()) {
+      const context = canvas.getContext('2d');
+      if (!context) continue;
+      // Setting either dimension clears the canvas, so this happens immediately before the
+      // draw and never on its own.
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      context.drawImage(image, 0, 0);
+    }
+  }, [index, decoded, paneKeys]);
+
+  const stage = (key: string, first: boolean): JSX.Element => (
+    // Every pane is the same size (one grid track each), so the first one's measurement
+    // is every pane's geometry.
+    <div className="player__stage" ref={first ? attachStage : undefined}>
+      <canvas
+        className="player__frame"
+        ref={(node) => {
+          if (node) canvases.current.set(key, node);
+          else canvases.current.delete(key);
+        }}
+        role="img"
+        aria-label={label}
+      />
+      <div className="overlay">{renderOverlay(rendered, key)}</div>
+    </div>
+  );
+
+  if (shown.length === 1) return stage(shown[0]?.key ?? '', true);
   return (
-    <div className="player__stage" ref={attachStage}>
-      <canvas className="player__frame" ref={canvasRef} role="img" aria-label={label} />
-      <div className="overlay">{renderOverlay(rendered)}</div>
+    <div className="player__panes">
+      {shown.map((pane, position) => (
+        <figure className="player__pane" key={pane.key}>
+          <figcaption className="viewer__label">{pane.label}</figcaption>
+          {stage(pane.key, position === 0)}
+        </figure>
+      ))}
     </div>
   );
 }
