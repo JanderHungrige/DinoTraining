@@ -13,6 +13,7 @@ source_files:
   - apps/frontend/src/components/HeadRunPanel.tsx
   - apps/frontend/src/look.css
   - apps/frontend/src/components/SequencePanel.tsx
+  - apps/frontend/src/components/VideoPlayer.tsx
   - apps/frontend/src/i18n/en/run.ts
   - apps/frontend/src/i18n/de/run.ts
 routes: []
@@ -23,7 +24,7 @@ test_files:
   - apps/frontend/src/hooks/useHeadRun.threshold.test.ts
   - apps/frontend/src/tabs/InferenceViewerTab.mode.test.tsx
 data_flow: reads-existing
-last_synced: 2026-10-02
+last_synced: 2026-10-21
 status: complete
 phase: all
 mdd_version: 11
@@ -105,3 +106,25 @@ sister_projects: []
   - "Open it as a single image" shows the picture and enables Run;
   - it fails without the fix.
 - Frontend 1216 tests.
+
+## One Run button (Jan, 2026-10-21)
+
+- **Jan:**
+  - "You need to first choose a head or foundation model before being able to hit the
+    analysis start button. As the button is above, this is confusing."
+  - "We have the Run models button below; they both do the same. Let's just keep the Run
+    models button."
+- **Now:**
+  - the player has no Analyse button; it keeps the range, the estimate, the progress, and
+    Stop while a run goes;
+  - **"Run models" starts the analysis in the video mode.** It asks the player
+    (`runRequest`), and is enabled when the player reports a sequence to analyse and no
+    run going (`onReadyChange`) and a model is chosen;
+  - the old button's texts are gone (EN/DE).
+- **Tests:**
+  - the player has no button of its own;
+  - in the viewer, Run is disabled with no model, enabled after choosing one, and starts
+    `POST /video/runs`; this test fails without the wiring;
+  - frontend 1219.
+- **In the running app:** a folder of 10 OSDaR23 frames with RF-DETR. No Analyse button,
+  "Run 1 model" enabled, "Ready — 10 of 10 frames analysed" with the boxes drawn.

@@ -8,7 +8,6 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { SequenceInfo, SequenceRun } from '../api/video';
@@ -56,7 +55,6 @@ function stateOf(over: Partial<SequenceRunState> = {}): SequenceRunState {
 }
 
 function renderPlayer(over: Partial<SequenceRunState> = {}, props: Record<string, unknown> = {}) {
-  const onRun = vi.fn();
   const state = stateOf(over);
   render(
     <VideoPlayer
@@ -68,14 +66,13 @@ function renderPlayer(over: Partial<SequenceRunState> = {}, props: Record<string
       onStartChange={vi.fn()}
       onCountChange={vi.fn()}
       onFpsChange={vi.fn()}
-      onRun={onRun}
       foundationIds={['rf-detr-nano']}
       headCount={0}
       renderOverlay={() => <div data-testid="overlay" />}
       {...props}
     />,
   );
-  return { onRun, state };
+  return { state };
 }
 
 describe('before the run', () => {
@@ -99,24 +96,13 @@ describe('before the run', () => {
     // over-state the wait by ten times.
     renderPlayer(undefined, { start: 250, count: 500 });
 
-    expect(screen.getByRole('button', { name: /Analyse 50 frames/ })).toBeInTheDocument();
+    expect(screen.getByText('50', { selector: 'strong' })).toBeInTheDocument();
   });
 
-  it('refuses to start with nothing selected', () => {
-    // An empty run finishes instantly and reports success over nothing.
-    renderPlayer(undefined, { foundationIds: [], headCount: 0 });
+  it('has no Run button of its own: the viewer\'s "Run models" starts it (2026-10-21)', () => {
+    renderPlayer();
 
-    expect(screen.getByRole('button', { name: /Analyse/ })).toBeDisabled();
-    expect(screen.getByText(/Pick at least one head/)).toBeInTheDocument();
-  });
-
-  it('starts the run when asked', async () => {
-    const user = userEvent.setup();
-    const { onRun } = renderPlayer();
-
-    await user.click(screen.getByRole('button', { name: /Analyse/ }));
-
-    expect(onRun).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /Analyse/ })).toBeNull();
   });
 
   it('shows no player until there is a run', () => {
