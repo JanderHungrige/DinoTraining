@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'rea
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
+import { KeepHeight } from '../components/KeepHeight';
 import { CounterBar } from '../components/CounterBar';
 import { BoxReviewList } from '../components/BoxReviewList';
 import { PrescanPanel } from '../components/PrescanPanel';
@@ -70,7 +71,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   const prescan = usePrescan();
   // Doc 104: what this dataset is annotated for, and what this picture still lacks.
   const target = useAnnotationTargetList().find((entry) => entry.id === (config?.target ?? 'open'));
-  const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage);
+  const pictures = usePicturePhrases(config?.datasetId ?? null, session.currentImage, session.dirty);
   const maskEditing = useMaskEditing(session.currentImage, session.boxes, session.setBoxes, selectedId);
   const selectedBox = session.boxes.find((box) => box.id === selectedId) ?? null;
   // Doc 109: a second look reuses the prescan's picture filter.
@@ -228,7 +229,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
             disabled={session.busy || !active}
           />
 
-          {imageSize ? (
+          <KeepHeight holding={!imageSize}>{imageSize ? (
             <div className="studio__review">
               <AnnotationCanvas
                 imageUrl={imageUrl(currentImage)}
@@ -272,7 +273,7 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
             </div>
           ) : (
             <p role="status">{t('studio.tab.loadingImage')}</p>
-          )}
+          )}</KeepHeight>
 
           <StudioViewBar
             view={view}
