@@ -173,4 +173,7 @@ export const studio2De: Catalogue<typeof studio2En> = {
   'studio.back.saveAndGo': 'Speichern und zurück',
   'studio.back.discard': 'Ohne Speichern zurück',
   'studio.back.stay': 'Bleiben',
+  'studio.carry.label': 'Meine Korrekturen aufs nächste Bild übernehmen',
+  'studio.carry.hint': 'Für Videobilder. Schlägt das Modell dasselbe Objekt wieder vor (gleiche Klasse, fast dieselbe Stelle), bekommt es, was du auf dem vorigen Bild gemacht hast: deine Klasse, dein Urteil oder entfernt. Alles andere bleibt ein normaler Vorschlag.',
+  'studio.carry.done': 'Vom vorigen Bild übernommen: umbenannt {renamed} · Urteil geändert {verdicts} · entfernt {removed}',
 };

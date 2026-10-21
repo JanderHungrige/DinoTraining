@@ -71,13 +71,15 @@ pub fn issue_url(report: &Report<'_>) -> String {
     let message = redact(report.message);
     let first_line = message.lines().next().unwrap_or("").chars().take(80).collect::<String>();
     let title = format!("[{} {}] {}", report.os, report.version, first_line);
+    // Doc 171: from Settings there is no error; it may be an idea, so no `bug` label.
+    let label = if message.trim().is_empty() { None } else { Some(("labels", "bug")) };
     let log = redact(report.log);
     let mut lines: Vec<&str> = log.lines().collect();
     loop {
         let body = body(&message, report, &lines.join("\n"));
         let url = reqwest::Url::parse_with_params(
             NEW_ISSUE,
-            [("title", title.as_str()), ("body", body.as_str()), ("labels", "bug")],
+            [("title", title.as_str()), ("body", body.as_str())].into_iter().chain(label),
         )
         .map(String::from)
         .unwrap_or_else(|_| NEW_ISSUE.to_string());
@@ -91,8 +93,13 @@ pub fn issue_url(report: &Report<'_>) -> String {
 
 fn body(message: &str, report: &Report<'_>, log: &str) -> String {
     let log = if log.is_empty() { "(no backend log)" } else { log };
+    let error = if message.trim().is_empty() {
+        String::new()
+    } else {
+        format!("**The error**\n\n```\n{message}\n```\n\n")
+    };
     format!(
-        "**What happened**\n\n<!-- What did you do just before? -->\n\n**The error**\n\n```\n{message}\n```\n\n\
+        "**What happened**\n\n<!-- What did you do just before? An idea is welcome too. -->\n\n{error}\
          **V-Rex** {} · {} {}\n\n**The backend log (last lines)**\n\n```\n{log}\n```\n",
         report.version, report.os, report.arch
     )
@@ -126,6 +133,14 @@ mod tests {
         assert!(text.contains("title=[windows 0.1.1] backend exited during startup (exit code: 1)"));
         assert!(text.contains("ValueError: boom"));
         assert!(text.contains("labels=bug"));
+    }
+
+    #[test]
+    fn a_report_without_an_error_has_no_error_section_and_no_bug_label() {
+        let text = decoded(&issue_url(&report("", "INFO started")));
+        assert!(!text.contains("The error"), "{text}");
+        assert!(!text.contains("labels=bug"), "{text}");
+        assert!(text.contains("V-Rex** 0.1.1"), "{text}");
     }
 
     #[test]

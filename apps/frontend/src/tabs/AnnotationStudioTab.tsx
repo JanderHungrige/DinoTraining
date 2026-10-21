@@ -1,6 +1,6 @@
 /** Wave 1 — Annotation Studio: the wave's demo-state, assembled. */
 
-import { useCallback, useEffect, useMemo, useRef, useState, type JSX } from 'react';
+import { useCallback, useMemo, useRef, useState, type JSX } from 'react';
 
 import { imageUrl } from '../api/annotate';
 import { AnnotationCanvas } from '../components/AnnotationCanvas';
@@ -16,7 +16,12 @@ import { SecondLook } from '../components/SecondLook';
 import { useSecondLook } from '../hooks/useSecondLook';
 import { useAnnotationTargetList } from '../hooks/useAnnotationTargetList';
 import { usePicturePhrases } from '../hooks/usePicturePhrases';
-import { hiddenByThreshold, numbered } from '../lib/boxReview';
+import { numbered } from '../lib/boxReview';
+import { isBoolean } from '../lib/persisted';
+import { usePersistentState } from '../hooks/usePersistentState';
+import { useCarryCorrections } from '../hooks/useCarryCorrections';
+import { useConcealed } from '../hooks/useConcealed';
+import { CarryCorrections } from '../components/CarryCorrections';
 import { usePrescan } from '../hooks/usePrescan';
 import { useBoxEditing } from '../hooks/useBoxEditing';
 import { useDatasetClasses } from '../hooks/useDatasetClasses';
@@ -55,15 +60,6 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   // but never "box alone", which is the view for checking extents against a detector.
   // A preference, not per-image state — it survives moving to the next image.
   const [view, setView] = useState<AnnotationView>(DEFAULT_VIEW);
-  /**
-   * Ids hidden by hand, so the image is clear enough to draw on.
-   *
-   * A **snapshot of what was there when it was pressed**, not a live predicate: a box
-   * drawn afterwards is the whole point of pressing it, and a rule like "hide everything
-   * not hand-drawn" would hide the new one the moment it was saved and reloaded. Null
-   * means nothing is concealed.
-   */
-  const [concealed, setConcealed] = useState<ReadonlySet<string> | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const session = useAnnotationSession(config);
   usePromptClasses(config);
@@ -80,21 +76,12 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
   const { boxes, setBoxes } = session;
   const items = useMemo(() => numbered(boxes), [boxes]);
 
-  // Two reasons a box is not drawn, kept apart on purpose. `belowCutoff` is what the
-  // slider is filtering and what `Remove N below` discards; `hidden` is everything not on
-  // screen. Folding them together would make the remove button delete boxes the user only
-  // asked to get out of the way — the worst thing this screen can do.
-  const belowCutoff = useMemo(() => hiddenByThreshold(boxes, threshold), [boxes, threshold]);
-  const hidden = useMemo(() => {
-    if (concealed === null) return belowCutoff;
-    const all = new Set(belowCutoff);
-    for (const id of concealed) all.add(id);
-    return all;
-  }, [belowCutoff, concealed]);
-
-  // Concealment is about the picture in front of you, so it does not survive moving to
-  // the next one — and the ids would be stale anyway.
-  useEffect(() => setConcealed(null), [session.currentImage]);
+  const conceal = useConcealed(boxes, threshold, session.currentImage);
+  const { belowCutoff, hidden, concealed } = conceal;
+  // Doc 170: video frames barely change, so what was corrected on one picture is offered
+  // for the same object on the next.
+  const [carry, setCarry] = usePersistentState('studio.carryCorrections', false, isBoolean);
+  const carried = useCarryCorrections(session, carry);
 
   // Classes on the canvas right now, offered alongside the stored vocabulary (doc 60).
   // A proposal run's classes are on screen and unsaved; a picker that could not offer
@@ -127,11 +114,6 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
     },
     [config, prescan, session.allImages],
   );
-
-  /** Get everything currently on screen out of the way, or bring it all back. */
-  const toggleConceal = useCallback((): void => {
-    setConcealed((current) => (current === null ? new Set(boxes.map((box) => box.id)) : null));
-  }, [boxes]);
 
   if (!config) {
     return (
@@ -281,9 +263,11 @@ export function AnnotationStudioTab({ active = true }: AnnotationStudioTabProps)
             hasMasks={anySegmented}
             boxCount={boxes.length}
             concealed={concealed?.size ?? null}
-            onToggleConceal={toggleConceal}
+            onToggleConceal={conceal.toggle}
             disabled={session.busy}
           />
+
+          <CarryCorrections enabled={carry} onEnabled={setCarry} carried={carried} />
 
           <MaskEditBar
             editing={maskEditing}
