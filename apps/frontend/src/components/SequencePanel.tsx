@@ -9,7 +9,7 @@
  * This component owns the probe, so the tab never has to ask what a path turns out to be.
  */
 
-import { useEffect, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { isNumber } from '../lib/persisted';
@@ -21,6 +21,7 @@ import { VideoPlayer } from './VideoPlayer';
 import { useT } from '../i18n';
 import type { AnnotationView } from '../types/annotationView';
 import type { RenderedImage } from '../lib/geometry';
+import type { Prediction } from '../api/inference';
 
 /** Doc 68's default range: enough to see motion, short enough to wait for. */
 const DEFAULT_COUNT = 60;
@@ -62,6 +63,7 @@ export function SequencePanel({
   const [fps, setFps] = useState(DEFAULT_FPS);
   const playback = useSequenceRun(fps);
   const planned = sequence ? Math.max(0, Math.min(count, sequence.frames - start)) : 0;
+  const panes = useMemo(() => modelPanes(playback.byFrame), [playback.byFrame]);
   const ready = Boolean(sequence && sequence.frames >= 2 && planned >= 1 && playback.run?.state !== 'running');
   useEffect(() => onReadyChange?.(ready), [ready, onReadyChange]);
   const analyse = (): void => {
@@ -137,14 +139,17 @@ export function SequencePanel({
       onFpsChange={setFps}
       foundationIds={foundationIds}
       headCount={instanceIds.length}
-      renderOverlay={(index: number, rendered: RenderedImage) => {
+      panes={panes}
+      renderOverlay={(index: number, rendered: RenderedImage, paneKey: string) => {
         const frame = playback.byFrame.get(index);
         if (!frame || frame.length === 0) return null;
-        // Every prediction for the frame, stacked — the same thing the single-image panes
-        // show side by side, which is what keeps the two surfaces agreeing.
+        // One pane per model, side by side like the single-image view (2026-10-21, Jan:
+        // stacked on one frame they could not be compared). An empty key is the single
+        // pane, which shows every prediction.
+        const shown = paneKey === '' ? frame : frame.filter((p) => p.instance_id === paneKey);
         return (
           <>
-            {frame.map((prediction) => (
+            {shown.map((prediction) => (
               <div key={prediction.instance_id} className="overlay">
                 {renderOverlayFor(prediction, rendered, view)}
               </div>
@@ -154,4 +159,17 @@ export function SequencePanel({
       }}
     />
   );
+}
+
+/** The models in a run, in the order they first answer: each one a pane. */
+export function modelPanes(
+  byFrame: ReadonlyMap<number, readonly Prediction[]>,
+): readonly { readonly key: string; readonly label: string }[] {
+  const seen = new Map<string, string>();
+  for (const frame of byFrame.values()) {
+    for (const prediction of frame) {
+      if (!seen.has(prediction.instance_id)) seen.set(prediction.instance_id, prediction.head_name);
+    }
+  }
+  return [...seen].map(([key, label]) => ({ key, label }));
 }
