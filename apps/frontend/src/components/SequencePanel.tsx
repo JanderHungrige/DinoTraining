@@ -9,7 +9,7 @@
  * This component owns the probe, so the tab never has to ask what a path turns out to be.
  */
 
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useRef, useState, type JSX } from 'react';
 
 import { usePersistentState } from '../hooks/usePersistentState';
 import { isNumber } from '../lib/persisted';
@@ -35,6 +35,10 @@ export interface SequencePanelProps {
   /** 2026-10-02: a single picture in this mode showed nothing at all; this opens it in the
    *  single-image view instead. */
   readonly onOpenAsImage?: () => void;
+  /** 2026-10-21 (Jan): one Run button, the viewer's "Run models". Each increment starts an
+   *  analysis here; `onReadyChange` says whether one can start. */
+  readonly runRequest?: number;
+  readonly onReadyChange?: (ready: boolean) => void;
 }
 
 export function SequencePanel({
@@ -45,6 +49,8 @@ export function SequencePanel({
   backboneId,
   concept,
   onOpenAsImage,
+  runRequest = 0,
+  onReadyChange,
 }: SequencePanelProps): JSX.Element | null {
   const { t } = useT();
   // `null` until the path turns out to be something playable. A single image is not.
@@ -55,6 +61,29 @@ export function SequencePanel({
   const [count, setCount] = usePersistentState('viewer.sequence.count', DEFAULT_COUNT, isNumber);
   const [fps, setFps] = useState(DEFAULT_FPS);
   const playback = useSequenceRun(fps);
+  const planned = sequence ? Math.max(0, Math.min(count, sequence.frames - start)) : 0;
+  const ready = Boolean(sequence && sequence.frames >= 2 && planned >= 1 && playback.run?.state !== 'running');
+  useEffect(() => onReadyChange?.(ready), [ready, onReadyChange]);
+  const analyse = (): void => {
+    if (!sequence) return;
+    void playback.start({
+      source: sequence.source,
+      start,
+      count,
+      backboneId,
+      instanceIds,
+      foundationIds,
+      concept,
+      scoreThreshold: 0.3,
+    });
+  };
+  // Only a new request starts a run: not the first render, not a re-render.
+  const handled = useRef(runRequest);
+  useEffect(() => {
+    if (runRequest === handled.current) return;
+    handled.current = runRequest;
+    if (ready) analyse();
+  }, [runRequest]);
 
   useEffect(() => {
     if (!path) {
@@ -108,18 +137,6 @@ export function SequencePanel({
       onFpsChange={setFps}
       foundationIds={foundationIds}
       headCount={instanceIds.length}
-      onRun={() =>
-        void playback.start({
-          source: sequence.source,
-          start,
-          count,
-          backboneId,
-          instanceIds,
-          foundationIds,
-          concept,
-          scoreThreshold: 0.3,
-        })
-      }
       renderOverlay={(index: number, rendered: RenderedImage) => {
         const frame = playback.byFrame.get(index);
         if (!frame || frame.length === 0) return null;

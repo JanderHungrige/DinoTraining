@@ -29,7 +29,6 @@ export interface VideoPlayerProps {
   readonly onStartChange: (start: number) => void;
   readonly onCountChange: (count: number) => void;
   readonly onFpsChange: (fps: number) => void;
-  readonly onRun: () => void;
   readonly foundationIds: readonly string[];
   readonly headCount: number;
   /** Draws the overlays for the frame on screen. Owned by the tab, which knows the view.
@@ -70,7 +69,6 @@ export function VideoPlayer({
   onStartChange,
   onCountChange,
   onFpsChange,
-  onRun,
   foundationIds,
   headCount,
   renderOverlay,
@@ -100,7 +98,6 @@ export function VideoPlayer({
   );
 
   const absolute = runStart + index;
-  const nothingSelected = foundationIds.length === 0 && headCount === 0;
 
   return (
     <section className="player">
@@ -157,28 +154,16 @@ export function VideoPlayer({
         )}
       </p>
 
-      <div className="player__actions">
-        <button
-          type="button"
-          className="btn btn--primary"
-          disabled={run?.state === 'running' || planned < 1 || nothingSelected}
-          onClick={onRun}
-        >
-          {run?.state === 'running'
-            ? t('run.player.analysingButton')
-            : tp('run.player.analyse', planned)}
-        </button>
-
-        {run?.state === 'running' && (
+      {/* Started by the viewer's "Run models" below (2026-10-21, Jan: one Run button);
+          a running analysis can be stopped here. */}
+      {run?.state === 'running' && (
+        <div className="player__actions">
+          <span className="player__hint">{t('run.player.analysingButton')}</span>
           <button type="button" className="btn btn--small" onClick={() => void state.stop()}>
             {t('run.player.stop')}
           </button>
-        )}
-
-        {nothingSelected && (
-          <span className="player__hint">{t('run.player.pickModel')}</span>
-        )}
-      </div>
+        </div>
+      )}
 
       {state.error && <p role="alert" className="player__error">{state.error}</p>}
 
