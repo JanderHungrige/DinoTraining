@@ -712,6 +712,21 @@ body {
   pointer-events: none;
 }
 
+/* One pane per model, side by side (2026-10-21): the same frame in each, so they compare. */
+.player__panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0.6rem;
+}
+
+.player__pane {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
 .player__transport {
   display: flex;
   align-items: center;

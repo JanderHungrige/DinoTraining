@@ -37,7 +37,9 @@ export interface VideoPlayerProps {
    *  into whatever space the stage has, and overlays placed in natural coordinates over a
    *  CSS-scaled image are wrong by the scale factor and offset by the letterbox — every box
    *  in the wrong place, which reads as a broken model rather than a layout bug. */
-  readonly renderOverlay: (index: number, rendered: RenderedImage) => JSX.Element | null;
+  readonly renderOverlay: (index: number, rendered: RenderedImage, paneKey: string) => JSX.Element | null;
+  /** One pane per model, side by side (2026-10-21); one model or none = one pane. */
+  readonly panes?: readonly { readonly key: string; readonly label: string }[];
 }
 
 /** The estimate in words — `describeEstimate`'s thresholds, in the viewer's language. */
@@ -72,6 +74,7 @@ export function VideoPlayer({
   foundationIds,
   headCount,
   renderOverlay,
+  panes,
 }: VideoPlayerProps): JSX.Element {
   const { t, tp } = useT();
   const { run, byFrame, index, playing } = state;
@@ -188,7 +191,8 @@ export function VideoPlayer({
             naturalHeight={info.height}
             generation={run.job_id}
             label={t('run.player.frameLabel', { index: absolute })}
-            renderOverlay={(geometry) => renderOverlay(index, geometry)}
+            renderOverlay={(geometry, paneKey) => renderOverlay(index, geometry, paneKey)}
+            {...(panes ? { panes } : {})}
           />
 
           <div className="player__transport">

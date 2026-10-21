@@ -19,6 +19,7 @@ source_files:
 routes: []
 models: []
 test_files:
+  - apps/frontend/src/components/VideoPlayer.panes.test.tsx
   - apps/frontend/src/lib/scoreFilter.test.ts
   - apps/frontend/src/components/ScoreThreshold.test.tsx
   - apps/frontend/src/hooks/useHeadRun.threshold.test.ts
@@ -128,3 +129,19 @@ sister_projects: []
   - frontend 1219.
 - **In the running app:** a folder of 10 OSDaR23 frames with RF-DETR. No Analyse button,
   "Run 1 model" enabled, "Ready — 10 of 10 frames analysed" with the boxes drawn.
+
+## Side by side in the video mode (Jan, 2026-10-21)
+
+- **Jan:** "now all videos are on top of each other, I wanted them side by side for
+  comparison." The video mode had always drawn every model on one frame (doc 68); only the
+  single-image mode had one pane per model.
+- **Now:** one pane per model, side by side (a grid, at least 280 px each), each labelled
+  with the model's name and showing only that model's predictions. One transport plays
+  them all. One model keeps one full-width frame.
+- **How:** `FrameCanvas` takes `panes` and paints the same decoded frame into one canvas
+  per pane, so N models still fetch each frame once. `SequencePanel.modelPanes` finds the
+  models from the run's predictions, in the order they first answer.
+- **Tests:** `VideoPlayer.panes.test.tsx` (two labelled frames with their own overlays;
+  one model = one frame; the pane order). Frontend 1222.
+- **In the running app:** 6 OSDaR23 fire-site frames with a person head and RF-DETR: two
+  panes side by side, both painted, 6 and 10 overlay elements.
