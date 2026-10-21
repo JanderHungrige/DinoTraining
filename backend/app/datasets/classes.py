@@ -80,7 +80,7 @@ class ClassStore:
                     "SELECT name FROM dataset_classes WHERE dataset_id = ?", (dataset_id,)
                 )
             ]
-            counts = _box_counts(connection, dataset_id)
+            counts = box_counts(connection, dataset_id)
 
         # Case-insensitive keys, first spelling wins — the same rule `create` enforces,
         # so a stored `Pedestrian` and a box's `pedestrian` are one entry, not two.
@@ -143,7 +143,7 @@ class ClassStore:
         return removed
 
 
-def _box_counts(connection: sqlite3.Connection, dataset_id: str) -> dict[str, int]:
+def box_counts(connection: sqlite3.Connection, dataset_id: str) -> dict[str, int]:
     """Distinct non-empty `boxes.prompt` in a dataset, with how many carry each.
 
     `prompt` is nullable and Wave 1 wrote empty strings for an unnamed box, so both are
@@ -160,4 +160,4 @@ def _box_counts(connection: sqlite3.Connection, dataset_id: str) -> dict[str, in
     return {str(row["name"]): int(row["n"]) for row in rows}
 
 
-__all__ = ["MAX_CLASS_NAME", "ClassInfo", "ClassStore", "normalise"]
+__all__ = ["MAX_CLASS_NAME", "ClassInfo", "ClassStore", "box_counts", "normalise"]

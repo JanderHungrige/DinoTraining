@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from app.core.config import Settings
 from app.datasets.class_names import normalise_class_name
+from app.datasets.classes import box_counts
 from app.datasets.db import transaction
 from app.datasets.phrase_links import check_variants, ensure_phrase, phrase_key, split_input
 from app.datasets.umbrella import add_umbrella, members_of, set_members
@@ -98,6 +99,10 @@ class PhraseStore:
                     "SELECT name FROM dataset_classes WHERE dataset_id = ?", (dataset_id,)
                 )
             }
+            # Classes that so far only label boxes are classes too: the annotation list
+            # shows them, and "+ Umbrella term" refused them as "needs two classes" (Jan,
+            # 2026-10-21). The same source as the class picker (ClassStore.list_for).
+            classes |= set(box_counts(connection, dataset_id))
             umbrellas = members_of(connection, dataset_id)
         listed = {str(row["text"]): _info(row, counts, umbrellas) for row in rows}
         for name in classes:

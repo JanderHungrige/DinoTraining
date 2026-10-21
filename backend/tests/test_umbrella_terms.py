@@ -39,6 +39,37 @@ async def _screws(client: AsyncClient) -> str:
     return str(dataset["id"])
 
 
+async def _boxes_only(client: AsyncClient) -> str:
+    """Two classes that so far only label boxes: no outline, no stored class."""
+    dataset = await make_dataset(client)
+    box = {"label": "positive", "provenance": "hand-drawn", "x": 1, "y": 1, "w": 5, "h": 5}
+    body = {
+        "path": "/images/a.jpg",
+        "width": 100,
+        "height": 100,
+        "boxes": [{**box, "prompt": "m8"}, {**box, "prompt": "m9"}],
+    }
+    response = await client.put(f"/api/v1/datasets/{dataset['id']}/images", json=body)
+    assert response.status_code == 200, response.text
+    return str(dataset["id"])
+
+
+class TestBoxOnlyClasses:
+    """Jan (2026-10-21): two classes in the picture, and still "needs two classes"."""
+
+    async def test_classes_that_only_label_boxes_are_listed_and_take_an_umbrella(
+        self, client: AsyncClient
+    ) -> None:
+        dataset_id = await _boxes_only(client)
+        url = f"/api/v1/datasets/{dataset_id}/phrases"
+        listed = {p["text"]: p for p in (await client.get(url)).json()}
+        assert {"m8", "m9"} <= set(listed)
+        assert listed["m8"]["umbrella"] is False and listed["m8"]["classes"] == ["m8"]
+        created = await client.post(url, json={"text": "screw", "classes": ["m8", "m9"]})
+        assert created.status_code == 201, created.text
+        assert created.json()["classes"] == ["m8", "m9"]
+
+
 class TestStore:
     async def test_an_umbrella_counts_every_outline_of_its_classes(
         self, client: AsyncClient

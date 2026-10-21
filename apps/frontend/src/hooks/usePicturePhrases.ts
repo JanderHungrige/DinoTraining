@@ -3,7 +3,7 @@
  * seeded — and refreshed after a change.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   listPhrases,
@@ -26,13 +26,26 @@ function message(cause: unknown): string {
   return cause instanceof Error ? cause.message : String(cause);
 }
 
-export function usePicturePhrases(datasetId: string | null, path: string | null): PicturePhrases {
+export function usePicturePhrases(
+  datasetId: string | null,
+  path: string | null,
+  /** The picture has unsaved edits. When it turns clean, a save made new classes phrases. */
+  dirty = false,
+): PicturePhrases {
   const [phrases, setPhrases] = useState<readonly PhraseInfo[]>([]);
   const [statuses, setStatuses] = useState<readonly PictureStatus[]>([]);
   const [error, setError] = useState('');
   const [generation, setGeneration] = useState(0);
   const reload = useCallback(() => setGeneration((n) => n + 1), []);
+  const wasDirty = useRef(dirty);
+  useEffect(() => {
+    if (wasDirty.current && !dirty) reload();
+    wasDirty.current = dirty;
+  }, [dirty, reload]);
 
+  // Read again on every picture too: classes made in the annotation list exist as phrases
+  // only once saved, and "+ Umbrella term" said "needs two classes" until the dataset was
+  // reopened (Jan, 2026-10-21).
   useEffect(() => {
     if (!datasetId) return;
     let live = true;
@@ -42,7 +55,7 @@ export function usePicturePhrases(datasetId: string | null, path: string | null)
     return () => {
       live = false;
     };
-  }, [datasetId, generation]);
+  }, [datasetId, path, generation]);
 
   useEffect(() => {
     setStatuses([]);
