@@ -617,6 +617,19 @@ body {
 
 /* The view controls that sit under the canvas: what to draw, and what to get out of
    the way. A row of their own so neither is mistaken for an action on the dataset. */
+/* Doc 170: the carry-over checkbox and what it carried. */
+.studio__carry {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.studio__carrynote {
+  color: var(--text-dim);
+}
+
 .studio__viewbar {
   display: flex;
   align-items: center;

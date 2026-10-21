@@ -9,11 +9,13 @@
  */
 
 import type { CanvasBox } from '../types/annotation';
+
+type Box = Pick<CanvasBox, 'x' | 'y' | 'w' | 'h'>;
 import { phraseKey } from './phraseEdit';
 
 export const SAME_OBJECT_IOU = 0.5;
 
-function iou(a: CanvasBox, b: CanvasBox): number {
+export function iou(a: Box, b: Box): number {
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
   const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
   if (w <= 0 || h <= 0) return 0;

@@ -5,11 +5,13 @@
  * somewhere else right now), the Pexels credit". The appearance switch moved here from
  * Models & Datasets › Official models. The language stays in the top bar, where it can be
  * changed from every tab.
+ * Doc 171: "Report an issue" lives here too, not only beside an error.
  */
 
 import type { JSX } from 'react';
 
 import { AppearancePanel } from '../components/AppearancePanel';
+import { ReportIssuePanel } from '../components/ReportIssuePanel';
 import { useT } from '../i18n';
 
 export const BACKGROUND_SOURCE = 'https://www.pexels.com/video/trees-in-the-forest-5121476/';
@@ -21,6 +23,7 @@ export function SettingsTab(): JSX.Element {
       <h2 className="admin__title">{t('settings.title')}</h2>
       <p className="settings__lead">{t('settings.lead')}</p>
       <AppearancePanel />
+      <ReportIssuePanel />
       <section className="admin__group settings__credits" aria-labelledby="settings-credits">
         <h3 className="admin__grouptitle" id="settings-credits">{t('settings.credits.title')}</h3>
         <p>
