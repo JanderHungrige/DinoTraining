@@ -170,4 +170,7 @@ export const studio2En = {
   'studio.back.saveAndGo': 'Save and go back',
   'studio.back.discard': 'Go back without saving',
   'studio.back.stay': 'Stay',
+  'studio.carry.label': 'Carry my corrections to the next picture',
+  'studio.carry.hint': 'For video frames. When the model proposes the same object again (same class, nearly the same place), it gets what you did on the previous picture: your class, your verdict, or removed. Everything else stays a normal proposal.',
+  'studio.carry.done': 'Carried from the previous picture: renamed {renamed} · verdict changed {verdicts} · removed {removed}',
 } as const;
