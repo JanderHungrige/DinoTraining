@@ -99,7 +99,6 @@ describe('the Inference Viewer in German', () => {
         onStartChange={vi.fn()}
         onCountChange={vi.fn()}
         onFpsChange={vi.fn()}
-        onRun={vi.fn()}
         foundationIds={['rf-detr-nano']}
         headCount={0}
         renderOverlay={() => null}
@@ -107,7 +106,6 @@ describe('the Inference Viewer in German', () => {
     );
 
     expect(screen.getByLabelText('Wie viele Frames')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '50 Frames analysieren' })).toBeInTheDocument();
     expect(screen.getByText(/davon zu analysieren dauert etwa/)).toBeInTheDocument();
   });
 });

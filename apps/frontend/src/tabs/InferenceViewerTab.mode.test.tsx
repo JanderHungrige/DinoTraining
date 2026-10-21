@@ -51,3 +51,34 @@ describe('a single picture in the video mode', () => {
     expect(screen.getByRole('button', { name: /^Run/ })).toBeEnabled();
   });
 });
+
+describe('one Run button for a video or folder (Jan, 2026-10-21)', () => {
+  it('"Run models" starts the analysis once a model is chosen; the player has no button of its own', async () => {
+    const FOLDER = '/Users/jan/frames';
+    localStorage.setItem('dinotraining.v1.viewer.path', JSON.stringify(FOLDER));
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation((input: unknown, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/video/probe')) return Promise.resolve(json({ source: FOLDER, frames: 120, fps: 10, kind: 'folder' }));
+      if (url.includes('/video/runs') && init?.method === 'POST') {
+        return Promise.resolve(json({ job_id: 'j1', state: 'running', done: 0, total: 60, unreadable: 0, message: '', start: 0, frames: [] }));
+      }
+      if (url.includes('/inference/source')) return Promise.resolve(json({ kind: 'folder', root: FOLDER, truncated: false, items: [{ item_id: 'a', name: '000.png', path: `${FOLDER}/000.png` }] }));
+      return base!(input as RequestInfo, init);
+    });
+    const user = userEvent.setup();
+    render(<InferenceViewerTab />);
+    expect(await screen.findByLabelText(/How many frames/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Analyse/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Run/ })).toBeDisabled(); // no model yet
+
+    await user.click(await screen.findByRole('checkbox', { name: /Thermal spotter/ }));
+    const run = screen.getByRole('button', { name: /^Run/ });
+    await waitFor(() => expect(run).toBeEnabled());
+    await user.click(run);
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url, init]) => String(url).includes('/video/runs') && init?.method === 'POST')).toBe(true),
+    );
+  });
+});
+

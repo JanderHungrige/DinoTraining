@@ -18,7 +18,7 @@ test_files:
   - apps/frontend/src/components/KeepHeight.test.tsx
 data_flow: reads-existing
 last_synced: 2026-10-21
-status: in_progress
+status: complete
 phase: all
 mdd_version: 11
 tags: [bugfix, umbrella-terms, phrases, annotation-studio, scroll]
@@ -26,8 +26,7 @@ path: Fixes/Studio/UmbrellaAndScroll
 initiative: dinotraining
 integration_contracts: []
 satisfies_contracts: []
-known_issues:
-  - "The scroll jump between pictures was not reproduced in the browser pane (Chromium, with and without scroll anchoring); KeepHeight closes a real collapse but may not be Jan's cause. Waiting for his details (desktop app or browser, target and mode, auto-save, full jump to the top or partial)."
+known_issues: []
 security_read_sites: []
 sister_projects: []
 ---
@@ -80,3 +79,7 @@ sister_projects: []
 - **Frontend** (1219 in total):
   - the phrase list is read again after a save and on the next picture;
   - `KeepHeight` keeps 640 px while a placeholder shows and lets go after.
+
+## Confirmed (2026-10-21)
+
+- Jan, after the merge: "jumping seems fine now". KeepHeight was the fix for his setup.

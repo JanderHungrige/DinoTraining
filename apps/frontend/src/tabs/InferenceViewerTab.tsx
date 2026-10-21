@@ -102,6 +102,9 @@ export function InferenceViewerTab(): JSX.Element {
   const run = useHeadRun(current?.path ?? null);
 
   const predictions = run.result?.predictions ?? [];
+  // One Run button (Jan, 2026-10-21): in the video mode it asks the player to analyse.
+  const [sequenceRun, setSequenceRun] = useState(0);
+  const [sequenceReady, setSequenceReady] = useState(false);
   const [minScore, setMinScore] = usePersistentState('viewer.minScore', DEFAULT_MIN_SCORE, isNumber);
 
   return (
@@ -155,6 +158,8 @@ export function InferenceViewerTab(): JSX.Element {
           backboneId={run.backboneId ?? ''}
           concept={run.concept}
           onOpenAsImage={() => setMode('image')}
+          runRequest={sequenceRun}
+          onReadyChange={setSequenceReady}
         />
       )}
 
@@ -177,11 +182,11 @@ export function InferenceViewerTab(): JSX.Element {
           Running still needs an image, which is what `disabled` says. */}
       <HeadRunPanel
         state={run}
-        onRun={() => current && void run.run(current.path)}
+        onRun={() => (mode === 'video' ? setSequenceRun((n) => n + 1) : current && void run.run(current.path))}
         disabled={source.loading}
-        // Single-image runs draw only in the single-image view; in this mode they ran and
-        // showed nothing (2026-10-02). The player analyses a sequence itself.
-        runDisabled={!current || mode === 'video'}
+        // In the video mode the button starts the player's analysis, once there is a
+        // sequence to analyse (a single picture is not one; doc 166).
+        runDisabled={mode === 'video' ? !sequenceReady : !current}
         imageWidth={imageWidth}
       />
 
